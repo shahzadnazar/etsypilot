@@ -6,10 +6,10 @@
 ## 1. Current Status
 
 **Phase:** 0 — Discovery & Audit (COMPLETE)
-**Current task:** Awaiting approval to begin Phase 1 — Foundation
+**Current task:** Awaiting go-ahead to begin Phase 1 — Foundation
 **Current file being worked on:** None
-**Last completed task:** Full source + screen audit → docs/PHASE-0-AUDIT.md
-**Blockers:** 5 decisions needed before Phase 1 schema/shell: C1 brand colour, C3 product name lockup, C5 Profit Reality scope, C6 navigation IA, C7 agency/team MVP scope
+**Last completed task:** Recorded confirmed decisions → docs/DECISIONS.md
+**Blockers:** O2 (agency/team MVP scope) blocks final schema only. O1 (dark neutrals: D1 vs Q2 contradict), O3 (home for orphaned designed surfaces), O4 (pricing) are non-blocking.
 
 ## 2. Current Objective
 
@@ -46,6 +46,9 @@ Keep the latest 5–10 meaningful items.
 - Confirmed PRD.md is byte-identical to the original product MD.
 - Identified 17 missing features (M1-M17) and 14 unclear items (U1-U14).
 - Wrote docs/PHASE-0-AUDIT.md.
+- Received EtsyPilot Shop Pulse & Profit Reality.dc.html — closes M1/M2/M3/M4/M5 and C4/C5/C6.
+- Owner confirmed C1 (Warm Editorial tokens), C2 (terracotta signed off), C3 (one-word "EtsyPilot").
+- Wrote docs/DECISIONS.md with D1-D8 locked and O1-O4 open.
 
 ## 6. Files Currently Being Modified
 
@@ -59,7 +62,8 @@ None
 
 ```text
 docs/PHASE-0-AUDIT.md
-docs/source/**   (archived spec docs + screens)
+docs/DECISIONS.md
+docs/source/**   (archived spec docs + screens, incl. Shop Pulse & Profit Reality)
 memory.md
 ```
 
@@ -116,12 +120,25 @@ Impact:
 ### 2026-08-19 — Design tokens come from the screens, not design.md
 Decision: Adopt the "Warm Editorial" token set (terracotta #B4472A on cream #FBF8F3) applied in all 12 canvas files.
 Reason: design.md §2 states existing screens override the fallback palette. The Color Themes file offered 11 options and this one was applied across every screen. The blue #2563EB in Foundations caption text is stale copy from the original brief.
-Impact: Tailwind theme + globals.css derive from this set. PENDING USER CONFIRMATION (conflict C1).
+Impact: Tailwind theme + globals.css derive from this set. CONFIRMED by owner 2026-08-19 (see docs/DECISIONS.md D1). Ship exact values, no re-derivation.
 
-### 2026-08-19 — Shop Pulse must be designed before Phase 3
-Decision: Shop Pulse has no artboard anywhere in the screen set despite being a Phase 3 gate.
-Reason: Exhaustive search: the term appears only as a sidebar label and an extension button; CORRELATED/RULED_OUT/UNKNOWN appear zero times.
-Impact: Phase 3 requires a design pass in the established visual language first (conflict C4).
+### 2026-08-19 — Shop Pulse and Profit Reality designed (gap closed)
+Decision: Owner supplied artboards 91 (Shop Pulse) and 92 (Profit Reality).
+Reason: Closed the M1/M2/M3/M4/M5 gaps found in the Phase 0 audit.
+Impact: Phase 3 and Phase 5 now have a visual source. New diagnosis badge component
+(CORRELATED / RULED OUT / UNKNOWN, 6px square, leading rule) is the only new visual
+vocabulary in the product. Profit Reality REPLACES the old Profit & fees waterfall.
+
+### 2026-08-19 — Navigation IA is PRD section 9
+Decision: Dashboard / Research / Listings / Profit / Tools / Data / Billing / Settings.
+Reason: Stated explicitly in the Shop Pulse file as the answer to the three-nav-tree conflict.
+Impact: Route map rewritten. Orphaned designed surfaces (Shop Analytics, Sales Map,
+Experiments, Orders, Change History) need placement — open item O3.
+
+### 2026-08-19 — Product name is "EtsyPilot", one word
+Decision: One word everywhere; EP monogram lockup unchanged; no two-word variant.
+Reason: Owner confirmation, matching every screen.
+Impact: All UI copy, metadata, docs and error strings.
 
 ## 14. Things NOT To Forget
 
@@ -143,8 +160,8 @@ Always keep exactly one clear next step.
 
 ```text
 Next:
-Await answers to conflicts C1, C3, C5, C6, C7 in docs/PHASE-0-AUDIT.md §12,
-then begin Phase 1 — Foundation.
+Await go-ahead for Phase 1 — Foundation. Only O2 (agency/team MVP scope)
+gates the final schema; everything else in Phase 1 can proceed.
 ```
 
 ## 16. Memory Update Rule
