@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:var(--page-bg,#FBF8F3);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--brand,#B4472A)}a:hover{color:var(--brand-strong,#8C371F)}
+*{box-sizing:border-box}
+.tnum{font-variant-numeric:tabular-nums}
+</style>
+<script>
+(function(){
+  var DARK = {"--brand":"#E07A4A","--brand-strong":"#F3B08C","--brand-tint":"rgba(224,122,74,.16)","--ink-1":"#F1F5F9","--ink-2":"#CBD5E1","--muted-1":"#94A3B8","--muted-2":"#64748B","--border":"#2B3444","--canvas-soft":"#1E293B","--page-bg":"#0F172A","--success":"#34D399","--success-strong":"#34D399","--warning":"#FBBF24","--warning-strong":"#FBBF24","--danger":"#F87171","--danger-strong":"#FCA5A5","--accent-ai":"#C4B5FD","--accent-calc":"#67E8F9","--surface":"#1E293B"};
+  var LIGHT = {"--brand":"#B4472A","--brand-strong":"#8C371F","--brand-tint":"#FBEEE7","--ink-1":"#241B12","--ink-2":"#4A4234","--muted-1":"#6B6152","--muted-2":"#8C7F6C","--border":"#E9E2D6","--canvas-soft":"#FBF8F3","--page-bg":"#FBF8F3","--success":"#15803D","--success-strong":"#15803D","--warning":"#B45309","--warning-strong":"#B45309","--danger":"#B91C1C","--danger-strong":"#B91C1C","--accent-ai":"#7C3AED","--accent-calc":"#0891B2","--surface":"#FFFFFF"};
+  function apply(mode){
+    var resolved = mode === 'system' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : mode;
+    var tokens = resolved === 'dark' ? DARK : LIGHT;
+    var root = document.documentElement.style;
+    for (var k in tokens) root.setProperty(k, tokens[k]);
+    document.documentElement.setAttribute('data-rankkw-theme', resolved);
+    document.querySelectorAll('[data-rankkw-toggle]').forEach(function(el){
+      el.style.background = el.getAttribute('data-mode') === mode ? tokens['--brand'] : 'transparent';
+      el.style.color = el.getAttribute('data-mode') === mode ? '#fff' : tokens['--ink-2'];
+    });
+  }
+  window.rankkwSetTheme = function(mode){ localStorage.setItem('rankkw-theme', mode); apply(mode); };
+  var saved = localStorage.getItem('rankkw-theme') || 'system';
+  apply(saved);
+  document.addEventListener('click', function(e){ var t = e.target.closest && e.target.closest('[data-rankkw-toggle]'); if (t) { window.rankkwSetTheme(t.getAttribute('data-mode')); } });
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){ if((localStorage.getItem('rankkw-theme')||'system')==='system') apply('system'); });
+})();
+</script>
+</helmet>
+<div data-rankkw-screens-nav="1">
+<details style="position:fixed;top:16px;left:16px;z-index:999">
+<summary style="cursor:pointer;padding:8px 12px;border-radius:999px;background:var(--surface,#fff);border:1px solid var(--border,#E9E2D6);font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);box-shadow:0 4px 16px rgba(0,0,0,.14)">Screens ▾</summary>
+<div style="margin-top:6px;background:var(--surface,#fff);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:1px;box-shadow:0 8px 24px rgba(0,0,0,.16);min-width:210px;max-height:70vh;overflow:auto"><a href="RankKW%20Foundations.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Foundations</a><a href="RankKW%20Auth%20&amp;%20Onboarding.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Auth & Onboarding</a><a href="RankKW%20Home%20&amp;%20Action%20Center.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Home & Action Center</a><a href="RankKW%20Research.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Research</a><a href="RankKW%20Shop%20Management.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Shop Management</a><a href="RankKW%20Analytics%20&amp;%20Profit.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Analytics & Profit</a><a href="RankKW%20Optimization%20&amp;%20AI.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Optimization & AI</a><a href="RankKW%20Settings%20&amp;%20Compliance.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Settings & Compliance</a><a href="RankKW%20States%20&amp;%20Responsive.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">States & Responsive</a><a href="RankKW%20Browser%20Extension.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Browser Extension</a><a href="RankKW%20Simple%20Calculator.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Simple Calculator</a></div>
+</details></div>
+<div style="position:fixed;top:16px;right:16px;z-index:999;display:flex;gap:2px;padding:3px;border-radius:999px;background:var(--surface,#fff);border:1px solid var(--border,#E9E2D6);box-shadow:0 4px 16px rgba(0,0,0,.14)">
+  <button data-rankkw-toggle data-mode="light" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Light</button>
+  <button data-rankkw-toggle data-mode="dark" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Dark</button>
+  <button data-rankkw-toggle data-mode="system" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">System</button>
+</div>
+
+<div style="padding:48px 56px 80px;display:flex;flex-direction:column;gap:56px">
+
+  <div style="display:flex;flex-direction:column;gap:20px;max-width:980px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:34px;height:34px;border-radius:9px;background:var(--brand,#B4472A);display:flex;align-items:center;justify-content:center;color:#fff;font:700 15px/1 Inter,sans-serif">EP</div>
+      <div style="font:700 20px/1 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.01em">EtsyPilot</div>
+      <div style="padding:4px 8px;border-radius:6px;background:var(--border,#E9E2D6);color:var(--ink-2,#4A4234);font:600 11px/1 Inter,sans-serif">Phase 1 · Foundations</div>
+    </div>
+    <div style="font:600 32px/1.15 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.02em;max-width:760px;text-wrap:pretty">Design direction: make smarter Etsy decisions with data you can trust</div>
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 32px;max-width:900px">
+      <div style="font:400 14px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">1 — Provenance is the product. Every number carries a Verified / Calculated / Estimated / Seller input / AI draft / Unavailable badge.</div>
+      <div style="font:400 14px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">2 — Estimates are ranges with confidence, never falsely precise integers.</div>
+      <div style="font:400 14px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">3 — Calm light canvas; borders and spacing do the structural work, not shadows or gradients.</div>
+      <div style="font:400 14px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">4 — One obvious primary action per screen; secondary actions stay quiet.</div>
+      <div style="font:400 14px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">5 — Blue is EtsyPilot. Etsy appears only as a labeled connected platform, never as brand colour.</div>
+      <div style="font:400 14px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">6 — Shop context and sync freshness are permanently visible in the top bar.</div>
+      <div style="font:400 14px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">7 — Unavailable data explains why and offers a supported next action instead of a number.</div>
+      <div style="font:400 14px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">8 — Bulk and destructive work is a stepper: validate → preview → confirm → progress → rollback.</div>
+      <div style="font:400 14px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">9 — AI output is always a draft with source chips and an explicit human approval step.</div>
+      <div style="font:400 14px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">10 — Mobile is re-composed around actions and summaries, not a shrunken dashboard.</div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">01 · Color tokens</div>
+    <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:26px">
+      <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px">
+        <div style="display:flex;flex-direction:column;gap:8px"><div style="height:64px;border-radius:10px;background:var(--brand,#B4472A)"></div><div style="font:600 13px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12)">Brand 600</div><div style="font:400 12px/1.2 Inter,sans-serif;color:var(--muted-1,#6B6152)" class="tnum">#2563EB · primary, active nav, links</div></div>
+        <div style="display:flex;flex-direction:column;gap:8px"><div style="height:64px;border-radius:10px;background:var(--brand-strong,#8C371F)"></div><div style="font:600 13px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12)">Brand 700</div><div style="font:400 12px/1.2 Inter,sans-serif;color:var(--muted-1,#6B6152)" class="tnum">#1D4ED8 · hover, pressed</div></div>
+        <div style="display:flex;flex-direction:column;gap:8px"><div style="height:64px;border-radius:10px;background:var(--brand-tint,#FBEEE7);border:1px solid var(--border,#E9E2D6)"></div><div style="font:600 13px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12)">Brand 50</div><div style="font:400 12px/1.2 Inter,sans-serif;color:var(--muted-1,#6B6152)" class="tnum">#EFF6FF · selected rows</div></div>
+        <div style="display:flex;flex-direction:column;gap:8px"><div style="height:64px;border-radius:10px;background:var(--ink-1,#241B12)"></div><div style="font:600 13px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12)">Ink 950</div><div style="font:400 12px/1.2 Inter,sans-serif;color:var(--muted-1,#6B6152)" class="tnum">#0F172A · headings</div></div>
+        <div style="display:flex;flex-direction:column;gap:8px"><div style="height:64px;border-radius:10px;background:var(--ink-2,#4A4234)"></div><div style="font:600 13px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12)">Ink 700</div><div style="font:400 12px/1.2 Inter,sans-serif;color:var(--muted-1,#6B6152)" class="tnum">#334155 · body</div></div>
+        <div style="display:flex;flex-direction:column;gap:8px"><div style="height:64px;border-radius:10px;background:var(--muted-1,#6B6152)"></div><div style="font:600 13px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12)">Ink 500</div><div style="font:400 12px/1.2 Inter,sans-serif;color:var(--muted-1,#6B6152)" class="tnum">#64748B · secondary labels</div></div>
+        <div style="display:flex;flex-direction:column;gap:8px"><div style="height:64px;border-radius:10px;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6)"></div><div style="font:600 13px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12)">Surface</div><div style="font:400 12px/1.2 Inter,sans-serif;color:var(--muted-1,#6B6152)" class="tnum">#FFFFFF · cards, tables</div></div>
+        <div style="display:flex;flex-direction:column;gap:8px"><div style="height:64px;border-radius:10px;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6)"></div><div style="font:600 13px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12)">Canvas</div><div style="font:400 12px/1.2 Inter,sans-serif;color:var(--muted-1,#6B6152)" class="tnum">#F8FAFC · app background</div></div>
+        <div style="display:flex;flex-direction:column;gap:8px"><div style="height:64px;border-radius:10px;background:var(--border,#E9E2D6)"></div><div style="font:600 13px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12)">Border</div><div style="font:400 12px/1.2 Inter,sans-serif;color:var(--muted-1,#6B6152)" class="tnum">#E2E8F0 · dividers, inputs</div></div>
+        <div style="display:flex;flex-direction:column;gap:8px"><div style="height:64px;border-radius:10px;background:var(--success,#15803D)"></div><div style="font:600 13px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12)">Success</div><div style="font:400 12px/1.2 Inter,sans-serif;color:var(--muted-1,#6B6152)" class="tnum">#16A34A · verified, connected</div></div>
+        <div style="display:flex;flex-direction:column;gap:8px"><div style="height:64px;border-radius:10px;background:var(--warning,#B45309)"></div><div style="font:600 13px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12)">Warning</div><div style="font:400 12px/1.2 Inter,sans-serif;color:var(--muted-1,#6B6152)" class="tnum">#D97706 · estimated, attention</div></div>
+        <div style="display:flex;flex-direction:column;gap:8px"><div style="height:64px;border-radius:10px;background:var(--danger,#B91C1C)"></div><div style="font:600 13px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12)">Danger</div><div style="font:400 12px/1.2 Inter,sans-serif;color:var(--muted-1,#6B6152)" class="tnum">#DC2626 · destructive, negative margin</div></div>
+        <div style="display:flex;flex-direction:column;gap:8px"><div style="height:64px;border-radius:10px;background:var(--accent-ai,#7C3AED)"></div><div style="font:600 13px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12)">Purple</div><div style="font:400 12px/1.2 Inter,sans-serif;color:var(--muted-1,#6B6152)" class="tnum">#7C3AED · AI-assisted content</div></div>
+        <div style="display:flex;flex-direction:column;gap:8px"><div style="height:64px;border-radius:10px;background:var(--accent-calc,#0891B2)"></div><div style="font:600 13px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12)">Cyan</div><div style="font:400 12px/1.2 Inter,sans-serif;color:var(--muted-1,#6B6152)" class="tnum">#0891B2 · calculated metrics</div></div>
+        <div style="display:flex;flex-direction:column;gap:8px"><div style="height:64px;border-radius:10px;background:var(--muted-2,#8C7F6C)"></div><div style="font:600 13px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12)">Muted</div><div style="font:400 12px/1.2 Inter,sans-serif;color:var(--muted-1,#6B6152)" class="tnum">#94A3B8 · unavailable</div></div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border:1px solid var(--border,#E9E2D6);border-radius:12px;background:var(--canvas-soft,#FBF8F3)">
+        <div style="font:600 12px/1.5 Inter,sans-serif;color:var(--ink-1,#241B12);white-space:nowrap">Dark mode set</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:7px;padding:5px 9px;border-radius:8px;background:#0B1220"><span style="width:12px;height:12px;border-radius:3px;background:#0B1220;border:1px solid #1E293B"></span><span style="font:500 11px/1 Inter,sans-serif;color:#CBD5E1">canvas #0B1220</span></div>
+          <div style="display:flex;align-items:center;gap:7px;padding:5px 9px;border-radius:8px;background:var(--ink-1,#241B12)"><span style="width:12px;height:12px;border-radius:3px;background:#111C31;border:1px solid #223049"></span><span style="font:500 11px/1 Inter,sans-serif;color:#CBD5E1">surface #111C31</span></div>
+          <div style="display:flex;align-items:center;gap:7px;padding:5px 9px;border-radius:8px;background:var(--ink-1,#241B12)"><span style="width:12px;height:12px;border-radius:3px;background:#1E293B"></span><span style="font:500 11px/1 Inter,sans-serif;color:#CBD5E1">border #1E293B</span></div>
+          <div style="display:flex;align-items:center;gap:7px;padding:5px 9px;border-radius:8px;background:var(--ink-1,#241B12)"><span style="width:12px;height:12px;border-radius:3px;background:#60A5FA"></span><span style="font:500 11px/1 Inter,sans-serif;color:#CBD5E1">brand #60A5FA</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">02 · Typography &amp; metric style</div>
+    <div style="display:grid;grid-template-columns:1.45fr 1fr;gap:20px;align-items:start">
+      <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:20px">
+        <div style="display:flex;align-items:baseline;gap:20px"><div style="width:150px;font:500 12px/1.3 Inter,sans-serif;color:var(--muted-1,#6B6152);flex:none">Display · 36/1.1 · 600</div><div style="font:600 36px/1.1 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.02em">Good morning, Salman</div></div>
+        <div style="display:flex;align-items:baseline;gap:20px"><div style="width:150px;font:500 12px/1.3 Inter,sans-serif;color:var(--muted-1,#6B6152);flex:none">Page · 26/1.2 · 600</div><div style="font:600 26px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.015em">Keyword research</div></div>
+        <div style="display:flex;align-items:baseline;gap:20px"><div style="width:150px;font:500 12px/1.3 Inter,sans-serif;color:var(--muted-1,#6B6152);flex:none">Section · 18/1.3 · 600</div><div style="font:600 18px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Action center</div></div>
+        <div style="display:flex;align-items:baseline;gap:20px"><div style="width:150px;font:500 12px/1.3 Inter,sans-serif;color:var(--muted-1,#6B6152);flex:none">Body · 14/1.55 · 400</div><div style="font:400 14px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234);max-width:420px">Profit is calculated for 62% of sales because 38 listings do not have a product cost.</div></div>
+        <div style="display:flex;align-items:baseline;gap:20px"><div style="width:150px;font:500 12px/1.3 Inter,sans-serif;color:var(--muted-1,#6B6152);flex:none">Table label · 12/1.2 · 600</div><div style="font:600 12px/1.2 Inter,sans-serif;color:var(--muted-1,#6B6152);letter-spacing:.02em">Estimated monthly revenue</div></div>
+        <div style="display:flex;align-items:baseline;gap:20px"><div style="width:150px;font:500 12px/1.3 Inter,sans-serif;color:var(--muted-1,#6B6152);flex:none">Metric · 30/1 · 600 tabular</div><div class="tnum" style="font:600 30px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$18,420.65</div></div>
+      </div>
+      <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:18px">
+        <div style="font:600 14px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Spacing &amp; shape</div>
+        <div style="display:flex;align-items:flex-end;gap:10px">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:4px;height:22px;background:var(--brand,#B4472A);border-radius:2px"></div><span style="font:500 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">4</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:8px;height:22px;background:var(--brand,#B4472A);border-radius:2px"></div><span style="font:500 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">8</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:12px;height:22px;background:var(--brand,#B4472A);border-radius:2px"></div><span style="font:500 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">12</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:16px;height:22px;background:var(--brand,#B4472A);border-radius:2px"></div><span style="font:500 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">16</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:24px;height:22px;background:var(--brand,#B4472A);border-radius:2px"></div><span style="font:500 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">24</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:32px;height:22px;background:var(--brand,#B4472A);border-radius:2px"></div><span style="font:500 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">32</span></div>
+        </div>
+        <div style="display:flex;gap:12px">
+          <div style="flex:1;height:56px;border:1px solid var(--border,#E9E2D6);border-radius:8px;display:flex;align-items:center;justify-content:center;font:500 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">8 · controls</div>
+          <div style="flex:1;height:56px;border:1px solid var(--border,#E9E2D6);border-radius:12px;display:flex;align-items:center;justify-content:center;font:500 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">12 · inputs, cards</div>
+          <div style="flex:1;height:56px;border:1px solid var(--border,#E9E2D6);border-radius:16px;display:flex;align-items:center;justify-content:center;font:500 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">16 · panels</div>
+        </div>
+        <div style="font:400 13px/1.55 Inter,sans-serif;color:var(--muted-1,#6B6152)">Elevation is reserved for overlays: dialogs and menus use <span class="tnum">0 12px 32px rgba(15,23,42,.12)</span>. Cards and tables never carry shadow.</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">03 · Data-provenance badge system</div>
+    <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:22px">
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px">
+        <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:inline-flex;align-self:flex-start;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:#F0FDF4;border:1px solid #BBF7D0"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--success,#15803D)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6z"></path><path d="M9 12l2 2 4-4"></path></svg><span style="font:600 11px/1 Inter,sans-serif;color:#166534">Verified</span></div>
+          <div style="font:400 13px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Received from your connected Etsy shop.</div>
+          <div style="font:500 11px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">Orders · Gross sales · Active listings</div>
+        </div>
+        <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:inline-flex;align-self:flex-start;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:#ECFEFF;border:1px solid #A5F3FC"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent-calc,#0891B2)" stroke-width="2.2" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="2"></rect><path d="M9 7h6M9 12h.01M12 12h.01M15 12h.01M9 16h.01M12 16h.01M15 16h.01"></path></svg><span style="font:600 11px/1 Inter,sans-serif;color:#0E7490">Calculated</span></div>
+          <div style="font:400 13px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Calculated from verified orders and your cost inputs.</div>
+          <div style="font:500 11px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">Net profit · Margin · Opportunity</div>
+        </div>
+        <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:inline-flex;align-self:flex-start;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:#FFFBEB;border:1px solid #FDE68A"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--warning,#B45309)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16l5-6 4 4 6-8"></path></svg><span style="font:600 11px/1 Inter,sans-serif;color:var(--warning-strong,#B45309)">Estimated</span></div>
+          <div style="font:400 13px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Modeled estimate — not official Etsy sales data.</div>
+          <div style="font:500 11px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">Competitor sales · Keyword demand</div>
+        </div>
+        <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:inline-flex;align-self:flex-start;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:var(--canvas-soft,#FBF8F3);border:1px solid #CBD5E1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4-1 11-11-3-3L5 16z"></path></svg><span style="font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Seller input</span></div>
+          <div style="font:400 13px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Entered or imported by a shop team member.</div>
+          <div style="font:500 11px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">COGS · Ad spend · Shipping cost</div>
+        </div>
+        <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:inline-flex;align-self:flex-start;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:#F5F3FF;border:1px solid #DDD6FE"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent-ai,#7C3AED)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19L17 7"></path><path d="M15 5l1.5 1.5M19 9l-1.5-1.5M7 3l.8 2.2L10 6l-2.2.8L7 9l-.8-2.2L4 6l2.2-.8z"></path></svg><span style="font:600 11px/1 Inter,sans-serif;color:#6D28D9">AI draft</span></div>
+          <div style="font:400 13px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">AI-generated draft requiring review.</div>
+          <div style="font:500 11px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">Titles · Tags · Descriptions</div>
+        </div>
+        <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:inline-flex;align-self:flex-start;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:#F1F5F9;border:1px solid var(--border,#E9E2D6)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted-2,#8C7F6C)" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="8"></circle><path d="M6.5 6.5l11 11"></path></svg><span style="font:600 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Unavailable</span></div>
+          <div style="font:400 13px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Etsy does not provide sufficient data through the public API.</div>
+          <div style="font:500 11px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">Listing views · Etsy Ads without import</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="font:600 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Methodology tooltip — hover an estimated value</div>
+          <div style="position:relative;border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:18px;background:var(--canvas-soft,#FBF8F3);min-height:190px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="tnum" style="font:600 20px/1 Inter,sans-serif;color:var(--ink-1,#241B12);border-bottom:1.5px dashed #D97706;padding-bottom:2px">$1,200–$1,850</span>
+              <span style="display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:#FFFBEB;border:1px solid #FDE68A;font:600 11px/1 Inter,sans-serif;color:var(--warning-strong,#B45309)">Estimated</span>
+            </div>
+            <div style="margin-top:12px;width:330px;background:var(--ink-1,#241B12);border-radius:12px;padding:14px 16px;box-shadow:0 12px 32px rgba(15,23,42,.22);display:flex;flex-direction:column;gap:9px">
+              <div style="font:600 13px/1.3 Inter,sans-serif;color:#fff">Estimated monthly revenue</div>
+              <div style="font:400 12.5px/1.5 Inter,sans-serif;color:#CBD5E1">Modeled from public listing signals — review velocity, favorites and price — observed over 90 days. Not official Etsy sales data.</div>
+              <div style="display:flex;flex-direction:column;gap:5px;padding-top:4px;border-top:1px solid #1E293B">
+                <div style="display:flex;justify-content:space-between;font:500 11.5px/1.4 Inter,sans-serif;color:var(--muted-2,#8C7F6C)"><span>Source</span><span style="color:var(--border,#E9E2D6)">Public marketplace signals</span></div>
+                <div style="display:flex;justify-content:space-between;font:500 11.5px/1.4 Inter,sans-serif;color:var(--muted-2,#8C7F6C)"><span>Last observed</span><span style="color:var(--border,#E9E2D6)">2 hours ago</span></div>
+                <div style="display:flex;justify-content:space-between;font:500 11.5px/1.4 Inter,sans-serif;color:var(--muted-2,#8C7F6C)"><span>Confidence</span><span style="color:#FCD34D">Medium</span></div>
+                <div style="display:flex;justify-content:space-between;font:500 11.5px/1.4 Inter,sans-serif;color:var(--muted-2,#8C7F6C)"><span>Excludes</span><span style="color:var(--border,#E9E2D6)">Wholesale, off-platform, refunds</span></div>
+              </div>
+              <div style="font:600 12px/1 Inter,sans-serif;color:#93C5FD;padding-top:2px">See full methodology →</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="font:600 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Confidence indicator &amp; freshness</div>
+          <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:18px;background:var(--canvas-soft,#FBF8F3);display:flex;flex-direction:column;gap:14px;min-height:190px">
+            <div style="display:flex;align-items:center;gap:14px">
+              <span style="font:500 12px/1 Inter,sans-serif;color:var(--muted-1,#6B6152);width:78px">High</span>
+              <span style="display:flex;gap:3px"><i style="width:26px;height:6px;border-radius:3px;background:var(--success,#15803D)"></i><i style="width:26px;height:6px;border-radius:3px;background:var(--success,#15803D)"></i><i style="width:26px;height:6px;border-radius:3px;background:var(--success,#15803D)"></i></span>
+              <span style="font:400 12px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">300+ observations, &lt; 24 h old</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:14px">
+              <span style="font:500 12px/1 Inter,sans-serif;color:var(--muted-1,#6B6152);width:78px">Medium</span>
+              <span style="display:flex;gap:3px"><i style="width:26px;height:6px;border-radius:3px;background:var(--warning,#B45309)"></i><i style="width:26px;height:6px;border-radius:3px;background:var(--warning,#B45309)"></i><i style="width:26px;height:6px;border-radius:3px;background:var(--border,#E9E2D6)"></i></span>
+              <span style="font:400 12px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Sparse or older signals</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:14px">
+              <span style="font:500 12px/1 Inter,sans-serif;color:var(--muted-1,#6B6152);width:78px">Low</span>
+              <span style="display:flex;gap:3px"><i style="width:26px;height:6px;border-radius:3px;background:var(--muted-2,#8C7F6C)"></i><i style="width:26px;height:6px;border-radius:3px;background:var(--border,#E9E2D6)"></i><i style="width:26px;height:6px;border-radius:3px;background:var(--border,#E9E2D6)"></i></span>
+              <span style="font:400 12px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Directional only — do not act alone</span>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;padding-top:6px;border-top:1px solid var(--border,#E9E2D6)">
+              <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:8px;background:#F0FDF4;border:1px solid #BBF7D0;font:500 11.5px/1 Inter,sans-serif;color:#166534"><i style="width:6px;height:6px;border-radius:3px;background:var(--success,#15803D)"></i>Synced 6 minutes ago</span>
+              <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:8px;background:#FFFBEB;border:1px solid #FDE68A;font:500 11.5px/1 Inter,sans-serif;color:var(--warning-strong,#B45309)"><i style="width:6px;height:6px;border-radius:3px;background:var(--warning,#B45309)"></i>Last sync 9 hours ago — data may be outdated</span>
+              <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:8px;background:#FEF2F2;border:1px solid #FECACA;font:500 11.5px/1 Inter,sans-serif;color:var(--danger-strong,#B91C1C)"><i style="width:6px;height:6px;border-radius:3px;background:var(--danger,#B91C1C)"></i>Sync failed — reconnect shop</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">04 · Controls — buttons, inputs, selection</div>
+    <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:28px;display:grid;grid-template-columns:1.1fr 1fr;gap:32px">
+      <div style="display:flex;flex-direction:column;gap:18px">
+        <div style="display:grid;grid-template-columns:70px repeat(5,minmax(0,1fr));gap:10px;align-items:center">
+          <div></div>
+          <div style="font:600 11px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C);text-align:center">Default</div>
+          <div style="font:600 11px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C);text-align:center">Hover</div>
+          <div style="font:600 11px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C);text-align:center">Focus</div>
+          <div style="font:600 11px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C);text-align:center">Loading</div>
+          <div style="font:600 11px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C);text-align:center">Disabled</div>
+
+          <div style="font:500 12px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Primary</div>
+          <button style="height:38px;border:0;border-radius:8px;background:var(--brand,#B4472A);color:#fff;font:600 13px/1 Inter,sans-serif;cursor:pointer" style-hover="background:var(--brand-strong,#8C371F)">Publish</button>
+          <button style="height:38px;border:0;border-radius:8px;background:var(--brand-strong,#8C371F);color:#fff;font:600 13px/1 Inter,sans-serif;cursor:pointer">Publish</button>
+          <button style="height:38px;border:0;border-radius:8px;background:var(--brand,#B4472A);color:#fff;font:600 13px/1 Inter,sans-serif;box-shadow:0 0 0 2px #fff,0 0 0 4px #2563EB;cursor:pointer">Publish</button>
+          <button style="height:38px;border:0;border-radius:8px;background:var(--brand,#B4472A);color:#fff;font:600 13px/1 Inter,sans-serif;opacity:.9;display:flex;align-items:center;justify-content:center;gap:7px"><span style="width:12px;height:12px;border-radius:6px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;display:inline-block"></span>Saving</button>
+          <button style="height:38px;border:0;border-radius:8px;background:#BFDBFE;color:#fff;font:600 13px/1 Inter,sans-serif;cursor:not-allowed">Publish</button>
+
+          <div style="font:500 12px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Secondary</div>
+          <button style="height:38px;border:1px solid #CBD5E1;border-radius:8px;background:var(--surface,#FFFFFF);color:var(--ink-2,#4A4234);font:600 13px/1 Inter,sans-serif;cursor:pointer" style-hover="background:var(--canvas-soft,#FBF8F3)">Save draft</button>
+          <button style="height:38px;border:1px solid var(--muted-2,#8C7F6C);border-radius:8px;background:#F1F5F9;color:var(--ink-2,#4A4234);font:600 13px/1 Inter,sans-serif">Save draft</button>
+          <button style="height:38px;border:1px solid #CBD5E1;border-radius:8px;background:var(--surface,#FFFFFF);color:var(--ink-2,#4A4234);font:600 13px/1 Inter,sans-serif;box-shadow:0 0 0 2px #fff,0 0 0 4px #2563EB">Save draft</button>
+          <button style="height:38px;border:1px solid var(--border,#E9E2D6);border-radius:8px;background:var(--surface,#FFFFFF);color:var(--muted-2,#8C7F6C);font:600 13px/1 Inter,sans-serif">Saving…</button>
+          <button style="height:38px;border:1px solid var(--border,#E9E2D6);border-radius:8px;background:var(--canvas-soft,#FBF8F3);color:#CBD5E1;font:600 13px/1 Inter,sans-serif;cursor:not-allowed">Save draft</button>
+
+          <div style="font:500 12px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Destructive</div>
+          <button style="height:38px;border:1px solid #FECACA;border-radius:8px;background:var(--surface,#FFFFFF);color:var(--danger,#B91C1C);font:600 13px/1 Inter,sans-serif;cursor:pointer" style-hover="background:#FEF2F2">Delete</button>
+          <button style="height:38px;border:1px solid #FCA5A5;border-radius:8px;background:#FEF2F2;color:var(--danger-strong,#B91C1C);font:600 13px/1 Inter,sans-serif">Delete</button>
+          <button style="height:38px;border:1px solid #FECACA;border-radius:8px;background:var(--surface,#FFFFFF);color:var(--danger,#B91C1C);font:600 13px/1 Inter,sans-serif;box-shadow:0 0 0 2px #fff,0 0 0 4px #DC2626">Delete</button>
+          <button style="height:38px;border:0;border-radius:8px;background:var(--danger,#B91C1C);color:#fff;font:600 13px/1 Inter,sans-serif">Deleting…</button>
+          <button style="height:38px;border:1px solid var(--border,#E9E2D6);border-radius:8px;background:var(--canvas-soft,#FBF8F3);color:#CBD5E1;font:600 13px/1 Inter,sans-serif;cursor:not-allowed">Delete</button>
+
+          <div style="font:500 12px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Quiet</div>
+          <button style="height:38px;border:0;border-radius:8px;background:transparent;color:var(--ink-2,#4A4234);font:600 13px/1 Inter,sans-serif;cursor:pointer" style-hover="background:#F1F5F9">Cancel</button>
+          <button style="height:38px;border:0;border-radius:8px;background:#F1F5F9;color:var(--ink-2,#4A4234);font:600 13px/1 Inter,sans-serif">Cancel</button>
+          <button style="height:38px;border:0;border-radius:8px;background:transparent;color:var(--ink-2,#4A4234);font:600 13px/1 Inter,sans-serif;box-shadow:0 0 0 2px #fff,0 0 0 4px #2563EB">Cancel</button>
+          <button style="height:38px;border:0;border-radius:8px;background:transparent;color:var(--muted-2,#8C7F6C);font:600 13px/1 Inter,sans-serif">Cancel</button>
+          <button style="height:38px;border:0;border-radius:8px;background:transparent;color:#CBD5E1;font:600 13px/1 Inter,sans-serif;cursor:not-allowed">Cancel</button>
+        </div>
+        <div style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Focus ring is a 2 px brand outline with a 2 px white offset on every interactive element, including table rows and menu items. Buttons are 38 px on desktop, 44 px on mobile.</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <label style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Keyword</label>
+          <div style="height:40px;border:1px solid #CBD5E1;border-radius:12px;background:var(--surface,#FFFFFF);display:flex;align-items:center;padding:0 12px;gap:8px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted-2,#8C7F6C)" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><span style="font:400 13.5px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">personalized birth flower necklace</span></div>
+          <span style="font:400 11.5px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">Searches the last 12 months in your selected locale.</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <label style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Focused</label>
+          <div style="height:40px;border:1px solid var(--brand,#B4472A);border-radius:12px;background:var(--surface,#FFFFFF);display:flex;align-items:center;padding:0 12px;box-shadow:0 0 0 3px rgba(37,99,235,.16)"><span style="font:400 13.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">custom pet portrait</span><span style="width:1px;height:17px;background:var(--brand,#B4472A);margin-left:1px"></span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <label style="font:600 12px/1 Inter,sans-serif;color:var(--danger,#B91C1C)">Default product cost</label>
+          <div style="height:40px;border:1px solid var(--danger,#B91C1C);border-radius:12px;background:var(--surface,#FFFFFF);display:flex;align-items:center;padding:0 12px"><span style="font:400 13.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">-4.00</span></div>
+          <span style="display:flex;align-items:center;gap:6px;font:500 11.5px/1.4 Inter,sans-serif;color:var(--danger,#B91C1C)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--danger,#B91C1C)" stroke-width="2.2"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v6M12 16.5v.01"></path></svg>Cost must be zero or more. Enter the amount you pay per unit.</span>
+        </div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;padding-top:6px;border-top:1px solid var(--border,#E9E2D6)">
+          <span style="display:inline-flex;align-items:center;gap:8px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span style="width:18px;height:18px;border-radius:5px;background:var(--brand,#B4472A);display:inline-flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"></path></svg></span>Checked</span>
+          <span style="display:inline-flex;align-items:center;gap:8px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span style="width:18px;height:18px;border-radius:5px;border:1.5px solid #CBD5E1;background:var(--surface,#FFFFFF)"></span>Unchecked</span>
+          <span style="display:inline-flex;align-items:center;gap:8px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span style="width:18px;height:18px;border-radius:5px;background:var(--brand,#B4472A);display:inline-flex;align-items:center;justify-content:center"><span style="width:9px;height:2px;background:var(--surface,#FFFFFF);border-radius:1px"></span></span>Indeterminate</span>
+          <span style="display:inline-flex;align-items:center;gap:8px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span style="width:34px;height:20px;border-radius:10px;background:var(--brand,#B4472A);display:inline-flex;align-items:center;padding:2px;justify-content:flex-end"><span style="width:16px;height:16px;border-radius:8px;background:var(--surface,#FFFFFF)"></span></span>Toggle on</span>
+          <span style="display:inline-flex;align-items:center;gap:8px;font:500 13px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)"><span style="width:34px;height:20px;border-radius:10px;background:var(--border,#E9E2D6);display:inline-flex;align-items:center;padding:2px"><span style="width:16px;height:16px;border-radius:8px;background:var(--surface,#FFFFFF)"></span></span>Off</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="display:flex;border:1px solid var(--border,#E9E2D6);border-radius:10px;overflow:hidden;background:var(--canvas-soft,#FBF8F3)">
+            <span style="padding:8px 14px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12);background:var(--surface,#FFFFFF);border-right:1px solid #E2E8F0">Table</span>
+            <span style="padding:8px 14px;font:600 12.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Cards</span>
+          </div>
+          <div style="display:flex;gap:6px">
+            <span style="padding:6px 11px;border-radius:999px;background:var(--brand-tint,#FBEEE7);border:1px solid #BFDBFE;font:600 12px/1 Inter,sans-serif;color:var(--brand-strong,#8C371F)">Jewelry ×</span>
+            <span style="padding:6px 11px;border-radius:999px;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Under $40 ×</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">05 · Surfaces — KPI card, alert, table, dialog, drawer, tabs, chart styles</div>
+    <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px">
+      <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 12.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Gross sales</span><span style="display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:999px;background:#F0FDF4;border:1px solid #BBF7D0;font:600 10.5px/1 Inter,sans-serif;color:#166534">Verified</span></div>
+        <div class="tnum" style="font:600 27px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$18,420.65</div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="display:inline-flex;align-items:center;gap:4px;font:600 12px/1 Inter,sans-serif;color:var(--success,#15803D)">▲ 12.4% <span style="color:var(--muted-2,#8C7F6C);font-weight:500">vs prev 30 d</span></span>
+          <svg width="72" height="26" viewBox="0 0 72 26" fill="none"><path d="M1 20L11 17 21 19 31 12 41 14 51 8 61 9 71 4" stroke="var(--brand,#B4472A)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </div>
+      </div>
+      <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 12.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Net profit</span><span style="display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:999px;background:#ECFEFF;border:1px solid #A5F3FC;font:600 10.5px/1 Inter,sans-serif;color:#0E7490">Calculated</span></div>
+        <div class="tnum" style="font:600 27px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$5,138.20</div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font:600 12px/1 Inter,sans-serif;color:var(--warning-strong,#B45309)">62% cost coverage</span>
+          <span style="font:600 12px/1 Inter,sans-serif;color:var(--brand,#B4472A)">Fix</span>
+        </div>
+      </div>
+      <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 12.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Listing views</span><span style="display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:999px;background:#F1F5F9;border:1px solid var(--border,#E9E2D6);font:600 10.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Unavailable</span></div>
+        <div style="font:600 20px/1.2 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">—</div>
+        <div style="font:400 12px/1.45 Inter,sans-serif;color:var(--muted-1,#6B6152)">Etsy does not provide views through the public API. <span style="color:var(--brand,#B4472A);font-weight:600">Import Etsy Stats file</span></div>
+      </div>
+      <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between"><span style="height:11px;width:74px;border-radius:4px;background:var(--border,#E9E2D6)"></span><span style="height:16px;width:56px;border-radius:999px;background:#F1F5F9"></span></div>
+        <div style="height:26px;width:130px;border-radius:6px;background:var(--border,#E9E2D6)"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between"><span style="height:11px;width:96px;border-radius:4px;background:#EEF2F6"></span><span style="height:20px;width:64px;border-radius:4px;background:#EEF2F6"></span></div>
+        <div style="font:500 10.5px/1 Inter,sans-serif;color:#CBD5E1">Skeleton — loading</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:16px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;overflow:hidden">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border,#E9E2D6)">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font:600 14px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Responsive data table</span>
+              <span style="padding:3px 8px;border-radius:6px;background:var(--brand-tint,#FBEEE7);font:600 11px/1 Inter,sans-serif;color:var(--brand-strong,#8C371F)">3 selected</span>
+            </div>
+            <div style="display:flex;gap:8px">
+              <span style="padding:7px 11px;border:1px solid #CBD5E1;border-radius:8px;font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Columns</span>
+              <span style="padding:7px 11px;border:1px solid #CBD5E1;border-radius:8px;font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Export</span>
+              <span style="padding:7px 11px;border-radius:8px;background:var(--brand,#B4472A);font:600 12px/1 Inter,sans-serif;color:#fff">Bulk edit</span>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:34px 2.1fr .9fr .9fr 1.1fr .8fr;align-items:center;padding:10px 18px;background:var(--canvas-soft,#FBF8F3);border-bottom:1px solid var(--border,#E9E2D6);font:600 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">
+            <span style="width:16px;height:16px;border-radius:4px;border:1.5px solid #CBD5E1;background:var(--surface,#FFFFFF)"></span>
+            <span>Listing</span><span>Status</span><span style="text-align:right">Price</span><span style="text-align:right">Est. monthly sales</span><span style="text-align:right">Margin</span>
+          </div>
+          <div style="display:grid;grid-template-columns:34px 2.1fr .9fr .9fr 1.1fr .8fr;align-items:center;padding:12px 18px;border-bottom:1px solid #F1F5F9;background:var(--brand-tint,#FBEEE7)">
+            <span style="width:16px;height:16px;border-radius:4px;background:var(--brand,#B4472A);display:inline-flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"></path></svg></span>
+            <span style="display:flex;align-items:center;gap:10px"><span style="width:34px;height:34px;border-radius:8px;background:repeating-linear-gradient(135deg,#E2E8F0 0 6px,#F1F5F9 6px 12px)"></span><span style="font:500 13px/1.35 Inter,sans-serif;color:var(--ink-1,#241B12)">Birth flower necklace, personalized</span></span>
+            <span><span style="padding:3px 8px;border-radius:6px;background:#F0FDF4;border:1px solid #BBF7D0;font:600 11px/1 Inter,sans-serif;color:#166534">Active</span></span>
+            <span class="tnum" style="text-align:right;font:500 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$38.00</span>
+            <span class="tnum" style="text-align:right;font:500 13px/1 Inter,sans-serif;color:var(--warning-strong,#B45309)">40–65</span>
+            <span class="tnum" style="text-align:right;font:500 13px/1 Inter,sans-serif;color:var(--success,#15803D)">41%</span>
+          </div>
+          <div style="display:grid;grid-template-columns:34px 2.1fr .9fr .9fr 1.1fr .8fr;align-items:center;padding:12px 18px;border-bottom:1px solid #F1F5F9" style-hover="background:var(--canvas-soft,#FBF8F3)">
+            <span style="width:16px;height:16px;border-radius:4px;border:1.5px solid #CBD5E1;background:var(--surface,#FFFFFF)"></span>
+            <span style="display:flex;align-items:center;gap:10px"><span style="width:34px;height:34px;border-radius:8px;background:repeating-linear-gradient(135deg,#E2E8F0 0 6px,#F1F5F9 6px 12px)"></span><span style="font:500 13px/1.35 Inter,sans-serif;color:var(--ink-1,#241B12)">Custom pet portrait, digital download</span></span>
+            <span><span style="padding:3px 8px;border-radius:6px;background:#F1F5F9;border:1px solid var(--border,#E9E2D6);font:600 11px/1 Inter,sans-serif;color:#475569">Draft</span></span>
+            <span class="tnum" style="text-align:right;font:500 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$24.00</span>
+            <span class="tnum" style="text-align:right;font:500 13px/1 Inter,sans-serif;color:var(--warning-strong,#B45309)">15–30</span>
+            <span class="tnum" style="text-align:right;font:500 13px/1 Inter,sans-serif;color:var(--danger,#B91C1C)">-3%</span>
+          </div>
+          <div style="display:grid;grid-template-columns:34px 2.1fr .9fr .9fr 1.1fr .8fr;align-items:center;padding:12px 18px">
+            <span style="width:16px;height:16px;border-radius:4px;border:1.5px solid #CBD5E1;background:var(--surface,#FFFFFF)"></span>
+            <span style="display:flex;align-items:center;gap:10px"><span style="width:34px;height:34px;border-radius:8px;background:repeating-linear-gradient(135deg,#E2E8F0 0 6px,#F1F5F9 6px 12px)"></span><span style="font:500 13px/1.35 Inter,sans-serif;color:var(--ink-1,#241B12)">Linen apron with pockets, unisex</span></span>
+            <span><span style="padding:3px 8px;border-radius:6px;background:#FFFBEB;border:1px solid #FDE68A;font:600 11px/1 Inter,sans-serif;color:var(--warning-strong,#B45309)">Expiring</span></span>
+            <span class="tnum" style="text-align:right;font:500 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$52.00</span>
+            <span class="tnum" style="text-align:right;font:500 13px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">Not enough data</span>
+            <span class="tnum" style="text-align:right;font:500 13px/1 Inter,sans-serif;color:var(--success,#15803D)">33%</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid var(--border,#E9E2D6);background:var(--canvas-soft,#FBF8F3);font:500 12px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">
+            <span>Showing 1–3 of 412 listings</span><span style="display:flex;gap:6px"><span style="padding:5px 9px;border:1px solid var(--border,#E9E2D6);border-radius:7px;background:var(--surface,#FFFFFF)">Prev</span><span style="padding:5px 9px;border:1px solid var(--border,#E9E2D6);border-radius:7px;background:var(--surface,#FFFFFF)">Next</span></span>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-left:3px solid var(--danger,#B91C1C);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;gap:8px"><span style="padding:3px 8px;border-radius:6px;background:#FEF2F2;font:600 10.5px/1 Inter,sans-serif;color:var(--danger-strong,#B91C1C)">Critical</span><span style="font:600 13.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">4 listings sell below cost</span></div>
+            <div style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Net margin is negative after Etsy fees and your entered product cost. Estimated impact: −$212 this month.</div>
+            <div style="display:flex;gap:8px"><span style="padding:7px 11px;border-radius:8px;background:var(--brand,#B4472A);font:600 12px/1 Inter,sans-serif;color:#fff">Review pricing</span><span style="padding:7px 11px;border:1px solid #CBD5E1;border-radius:8px;font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Snooze 7 days</span></div>
+          </div>
+          <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-left:3px solid var(--warning,#B45309);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;gap:8px"><span style="padding:3px 8px;border-radius:6px;background:#FFFBEB;font:600 10.5px/1 Inter,sans-serif;color:var(--warning-strong,#B45309)">Attention</span><span style="font:600 13.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Sync is 9 hours old</span></div>
+            <div style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Etsy temporarily limited requests. Your sync will continue automatically at 2:40 PM.</div>
+            <div style="display:flex;gap:8px"><span style="padding:7px 11px;border:1px solid #CBD5E1;border-radius:8px;font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Retry now</span><span style="padding:7px 11px;border-radius:8px;font:600 12px/1 Inter,sans-serif;color:var(--brand,#B4472A)">What syncs?</span></div>
+          </div>
+        </div>
+
+        <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;gap:2px;border-bottom:1px solid var(--border,#E9E2D6)">
+              <span style="padding:9px 14px;font:600 13px/1 Inter,sans-serif;color:var(--brand,#B4472A);box-shadow:inset 0 -2px 0 #2563EB">Performance</span>
+              <span style="padding:9px 14px;font:600 13px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Listings</span>
+              <span style="padding:9px 14px;font:600 13px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Customers</span>
+              <span style="padding:9px 14px;font:600 13px/1 Inter,sans-serif;color:#CBD5E1">Experiments</span>
+            </div>
+            <div style="display:flex;gap:14px;font:500 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">
+              <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:14px;height:2px;background:var(--brand,#B4472A);border-radius:1px"></span>Verified</span>
+              <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:14px;height:0;border-top:2px dashed #D97706"></span>Estimated</span>
+              <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:14px;height:8px;background:repeating-linear-gradient(135deg,#E2E8F0 0 3px,#fff 3px 6px);border-radius:2px"></span>No data</span>
+            </div>
+          </div>
+          <div style="font:500 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Gross sales · USD · last 30 days · shop time zone (America/New_York)</div>
+          <svg viewBox="0 0 640 170" style="width:100%;height:170px">
+            <line x1="0" y1="20" x2="640" y2="20" stroke="#F1F5F9" stroke-width="1"></line>
+            <line x1="0" y1="60" x2="640" y2="60" stroke="#F1F5F9" stroke-width="1"></line>
+            <line x1="0" y1="100" x2="640" y2="100" stroke="#F1F5F9" stroke-width="1"></line>
+            <line x1="0" y1="140" x2="640" y2="140" stroke="var(--border,#E9E2D6)" stroke-width="1"></line>
+            <path d="M0 130 L80 118 L160 124 L240 92 L320 96 L400 70" stroke="var(--brand,#B4472A)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M0 130 L80 118 L160 124 L240 92 L320 96 L400 70 L400 140 L0 140 Z" fill="var(--brand,#B4472A)" opacity=".07"></path>
+            <rect x="400" y="20" width="90" height="120" fill="#F1F5F9"></rect>
+            <path d="M490 66 L560 58 L640 44" stroke="var(--warning,#B45309)" stroke-width="2.5" fill="none" stroke-dasharray="6 5" stroke-linecap="round"></path>
+            <circle cx="240" cy="92" r="4" fill="var(--brand,#B4472A)"></circle>
+          </svg>
+          <div style="display:flex;justify-content:space-between;font:500 11px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)"><span>Jul 14</span><span>Jul 21</span><span>Jul 28</span><span>Aug 4 · gap in data</span><span>Aug 11 · projected</span></div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:22px;box-shadow:0 12px 32px rgba(15,23,42,.12);display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:flex-start;gap:12px">
+            <span style="width:34px;height:34px;border-radius:9px;background:#FEF2F2;display:flex;align-items:center;justify-content:center;flex:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--danger,#B91C1C)" stroke-width="2.2" stroke-linecap="round"><path d="M12 4l9 16H3z"></path><path d="M12 10v4M12 17v.01"></path></svg></span>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="font:600 16px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Apply price change to 128 listings?</div>
+              <div style="font:400 13px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">Prices increase by 8%. 6 listings would fall below your cost floor and are excluded. This runs immediately and can be rolled back for 30 days.</div>
+            </div>
+          </div>
+          <div style="border:1px solid var(--border,#E9E2D6);border-radius:10px;background:var(--canvas-soft,#FBF8F3);padding:12px;display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;justify-content:space-between;font:500 12px/1.4 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span>Ready</span><span class="tnum" style="color:var(--success,#15803D);font-weight:600">122</span></div>
+            <div style="display:flex;justify-content:space-between;font:500 12px/1.4 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span>Warnings</span><span class="tnum" style="color:var(--warning-strong,#B45309);font-weight:600">6</span></div>
+            <div style="display:flex;justify-content:space-between;font:500 12px/1.4 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span>Blocked</span><span class="tnum" style="color:var(--danger,#B91C1C);font-weight:600">0</span></div>
+          </div>
+          <label style="display:flex;align-items:center;gap:9px;font:500 12.5px/1.4 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span style="width:17px;height:17px;border-radius:5px;border:1.5px solid #CBD5E1;background:var(--surface,#FFFFFF);flex:none"></span>I understand this updates live Etsy listings.</label>
+          <div style="display:flex;gap:8px;justify-content:flex-end">
+            <span style="padding:9px 14px;border-radius:8px;font:600 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Cancel</span>
+            <span style="padding:9px 14px;border:1px solid #CBD5E1;border-radius:8px;font:600 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Schedule instead</span>
+            <span style="padding:9px 14px;border-radius:8px;background:var(--brand,#B4472A);font:600 13px/1 Inter,sans-serif;color:#fff">Apply to 122</span>
+          </div>
+        </div>
+
+        <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;overflow:hidden">
+          <div style="padding:14px 16px;border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:center;justify-content:space-between">
+            <span style="font:600 13.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Right drawer · methodology</span><span style="font:500 16px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">×</span>
+          </div>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+            <div style="font:400 12.5px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">How estimated monthly sales are produced, what they exclude, and when they were last refreshed. Drawers are 420 px on desktop and full-screen sheets on mobile.</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;justify-content:space-between;padding:9px 11px;border:1px solid var(--border,#E9E2D6);border-radius:9px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span>Source category</span><span style="color:var(--ink-1,#241B12)">Public listing signals</span></div>
+              <div style="display:flex;justify-content:space-between;padding:9px 11px;border:1px solid var(--border,#E9E2D6);border-radius:9px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span>Model refreshed</span><span style="color:var(--ink-1,#241B12)">2 hours ago</span></div>
+              <div style="display:flex;justify-content:space-between;padding:9px 11px;border:1px solid var(--border,#E9E2D6);border-radius:9px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span>Confidence</span><span style="color:var(--warning-strong,#B45309)">Medium</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:var(--ink-1,#241B12);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 12px 32px rgba(15,23,42,.2)">
+          <span style="width:20px;height:20px;border-radius:10px;background:var(--success,#15803D);display:flex;align-items:center;justify-content:center;flex:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"></path></svg></span>
+          <span style="font:500 13px/1.4 Inter,sans-serif;color:var(--border,#E9E2D6);flex:1">Your draft is saved. 12 changes queued for review.</span>
+          <span style="font:600 12.5px/1 Inter,sans-serif;color:#93C5FD">Review</span>
+        </div>
+
+        <div style="background:var(--surface,#FFFFFF);border:1px dashed #CBD5E1;border-radius:16px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
+          <span style="width:44px;height:44px;border-radius:12px;background:#F1F5F9;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--muted-2,#8C7F6C)" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"></rect><path d="M8 7V5a4 4 0 018 0v2"></path></svg></span>
+          <div style="font:600 14px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">No keyword lists yet</div>
+          <div style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152);max-width:250px">Save keywords from research to build a list you can apply to listings later.</div>
+          <span style="padding:9px 14px;border-radius:8px;background:var(--brand,#B4472A);font:600 12.5px/1 Inter,sans-serif;color:#fff">Search a keyword</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">06 · Desktop application shell · 1440 × 900</div>
+    <div style="width:1440px;height:900px;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);border-radius:16px;overflow:hidden;display:flex">
+      <aside style="width:264px;flex:none;background:var(--surface,#FFFFFF);border-right:1px solid #E2E8F0;display:flex;flex-direction:column">
+        <div style="height:64px;flex:none;display:flex;align-items:center;gap:10px;padding:0 18px;border-bottom:1px solid var(--border,#E9E2D6)">
+          <div style="width:28px;height:28px;border-radius:8px;background:var(--brand,#B4472A);display:flex;align-items:center;justify-content:center;color:#fff;font:700 13px/1 Inter,sans-serif">EP</div>
+          <div style="font:700 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.01em;flex:1">EtsyPilot</div>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-2,#8C7F6C)" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"></path></svg>
+        </div>
+        <div style="flex:1;overflow:hidden;padding:12px 12px 0;display:flex;flex-direction:column;gap:2px">
+          <div style="padding:8px 10px 4px;font:600 10.5px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--muted-2,#8C7F6C)">Home</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;background:var(--brand-tint,#FBEEE7);font:600 13px/1 Inter,sans-serif;color:var(--brand-strong,#8C371F)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--brand,#B4472A)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-6 8 6v8a1 1 0 01-1 1h-4v-6H9v6H5a1 1 0 01-1-1z"></path></svg>Overview</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)" style-hover="background:var(--canvas-soft,#FBF8F3)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>Getting started<span style="margin-left:auto;padding:2px 7px;border-radius:999px;background:var(--brand-tint,#FBEEE7);font:600 10.5px/1.4 Inter,sans-serif;color:var(--brand-strong,#8C371F)">2</span></div>
+
+          <div style="padding:14px 10px 4px;font:600 10.5px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--muted-2,#8C7F6C)">Research</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>Find hot products</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h10M4 17h13"></path></svg>Keywords</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l5-6 4 3 7-8"></path></svg>Trends</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect x="13" y="4" width="7" height="7" rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect></svg>Competitors</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">More research<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted-2,#8C7F6C)" stroke-width="2" stroke-linecap="round" style="margin-left:auto"><path d="M6 9l6 6 6-6"></path></svg></div>
+
+          <div style="padding:14px 10px 4px;font:600 10.5px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--muted-2,#8C7F6C)">My shop</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9l1.5-4h13L20 9M4 9h16v10H4z"></path></svg>Shop dashboard</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><rect x="4" y="5" width="16" height="14" rx="2"></rect><path d="M8 9h8M8 13h5"></path></svg>Listings<span style="margin-left:auto;font:500 11.5px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)" class="tnum">412</span></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>Bulk editor</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><path d="M12 7v5l3 2"></path><circle cx="12" cy="12" r="8"></circle></svg>Orders<span style="margin-left:auto;padding:2px 7px;border-radius:999px;background:#FEF2F2;font:600 10.5px/1.4 Inter,sans-serif;color:var(--danger-strong,#B91C1C)">3</span></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><path d="M4 18V7M9 18V4M14 18v-8M19 18v-5"></path></svg>Profit &amp; fees</div>
+
+          <div style="padding:14px 10px 4px;font:600 10.5px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--muted-2,#8C7F6C)">Optimize</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19L17 7M15 5l4 4"></path></svg>Listing audit</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--accent-ai,#7C3AED)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19L17 7"></path><path d="M15 5l1.5 1.5M19 9l-1.5-1.5"></path></svg>AI listing helper<span style="margin-left:auto;padding:2px 7px;border-radius:999px;background:#F5F3FF;font:600 10.5px/1.4 Inter,sans-serif;color:#6D28D9">AI</span></div>
+        </div>
+        <div style="flex:none;padding:12px;border-top:1px solid var(--border,#E9E2D6);display:flex;flex-direction:column;gap:8px">
+          <div style="border:1px solid var(--border,#E9E2D6);border-radius:10px;padding:11px 12px;display:flex;flex-direction:column;gap:7px">
+            <div style="display:flex;justify-content:space-between;font:600 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span>Growth plan</span><span class="tnum" style="color:var(--muted-1,#6B6152)">412 / 500 listings</span></div>
+            <div style="height:5px;border-radius:3px;background:var(--border,#E9E2D6);overflow:hidden"><div style="width:82%;height:100%;background:var(--brand,#B4472A)"></div></div>
+            <div style="font:600 11.5px/1 Inter,sans-serif;color:var(--brand,#B4472A)">Compare plans</div>
+          </div>
+        </div>
+      </aside>
+
+      <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+        <header style="height:64px;flex:none;background:var(--surface,#FFFFFF);border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:center;gap:14px;padding:0 22px">
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 11px;border:1px solid var(--border,#E9E2D6);border-radius:10px;min-width:250px" style-hover="background:var(--canvas-soft,#FBF8F3)">
+            <span style="width:28px;height:28px;border-radius:7px;background:repeating-linear-gradient(135deg,#E2E8F0 0 5px,#F1F5F9 5px 10px);flex:none"></span>
+            <span style="display:flex;flex-direction:column;gap:2px;flex:1">
+              <span style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Willow &amp; Fern Studio</span>
+              <span style="display:flex;align-items:center;gap:5px;font:500 11px/1 Inter,sans-serif;color:var(--success,#15803D)"><i style="width:6px;height:6px;border-radius:3px;background:var(--success,#15803D)"></i>Connected · synced 6 min ago</span>
+            </span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted-2,#8C7F6C)" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--border,#E9E2D6);border-radius:10px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><rect x="4" y="5" width="16" height="16" rx="2"></rect><path d="M8 3v4M16 3v4M4 11h16"></path></svg>Last 30 days<span style="color:var(--muted-2,#8C7F6C)">· Jul 14 – Aug 12</span></div>
+          <div style="flex:1;max-width:360px;display:flex;align-items:center;gap:9px;padding:8px 12px;border:1px solid var(--border,#E9E2D6);border-radius:10px;background:var(--canvas-soft,#FBF8F3)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted-2,#8C7F6C)" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+            <span style="font:400 12.5px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C);flex:1">Search or jump to…</span>
+            <span class="tnum" style="padding:2px 6px;border:1px solid var(--border,#E9E2D6);border-radius:5px;background:var(--surface,#FFFFFF);font:600 10.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">⌘K</span>
+          </div>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
+            <span style="width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;position:relative" style-hover="background:#F1F5F9"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 1112 0c0 5 2 6 2 6H4s2-1 2-6z"></path><path d="M10 20h4"></path></svg><i style="position:absolute;top:7px;right:8px;width:7px;height:7px;border-radius:4px;background:var(--danger,#B91C1C);border:1.5px solid #fff"></i></span>
+            <span style="width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M9.5 9.5a2.5 2.5 0 113 3.5v1M12 17v.01"></path></svg></span>
+            <span style="width:1px;height:26px;background:var(--border,#E9E2D6);margin:0 4px"></span>
+            <span style="display:flex;align-items:center;gap:8px;padding:4px 8px 4px 4px;border-radius:9px" style-hover="background:#F1F5F9"><span style="width:28px;height:28px;border-radius:8px;background:var(--ink-1,#241B12);color:#fff;display:flex;align-items:center;justify-content:center;font:600 11.5px/1 Inter,sans-serif">SR</span><span style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Salman</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted-2,#8C7F6C)" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg></span>
+          </div>
+        </header>
+
+        <div style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+          <div style="padding:24px 28px 18px;display:flex;align-items:flex-start;justify-content:space-between;gap:20px;border-bottom:1px solid var(--border,#E9E2D6);background:var(--surface,#FFFFFF)">
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <div style="display:flex;align-items:center;gap:7px;font:500 12px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)"><span>Home</span><span>/</span><span style="color:var(--ink-2,#4A4234)">Overview</span></div>
+              <div style="font:600 26px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.015em">Good morning, Salman</div>
+              <div style="font:400 13.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Willow &amp; Fern Studio · Jul 14 – Aug 12 · all figures in USD</div>
+            </div>
+            <div style="display:flex;gap:8px;flex:none">
+              <span style="padding:10px 14px;border:1px solid #CBD5E1;border-radius:9px;font:600 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">View profit</span>
+              <span style="padding:10px 14px;border-radius:9px;background:var(--brand,#B4472A);font:600 13px/1 Inter,sans-serif;color:#fff">Optimize listings</span>
+            </div>
+          </div>
+          <div style="flex:1;padding:24px 28px;display:flex;gap:20px;align-items:stretch">
+            <div style="flex:1;border:1px dashed #CBD5E1;border-radius:14px;background:var(--surface,#FFFFFF);display:flex;align-items:center;justify-content:center;font:500 13px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">Main content region — max 1,600 px, 24 px gutters</div>
+            <div style="width:320px;flex:none;border:1px dashed #CBD5E1;border-radius:14px;background:var(--surface,#FFFFFF);display:flex;align-items:center;justify-content:center;text-align:center;padding:16px;font:500 13px/1.5 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">Optional contextual drawer<br>320–420 px</div>
+          </div>
+          <div style="flex:none;padding:14px 28px;border-top:1px solid var(--border,#E9E2D6);background:var(--surface,#FFFFFF);display:flex;align-items:center;justify-content:space-between;gap:20px">
+            <span style="font:400 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152);max-width:720px">The term “Etsy” is a trademark of Etsy, Inc. This Application uses Etsy’s API, but is not endorsed or certified by Etsy.</span>
+            <span style="display:flex;gap:16px;font:500 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)"><span>Status</span><span>Privacy</span><span>Terms</span><span>Help</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">07 · Collapsed sidebar · shop switcher · command palette · mobile shell</div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
+
+      <div style="display:flex;flex-direction:column;gap:8px;flex:none">
+        <div style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Collapsed · 72 px</div>
+        <div style="width:72px;height:520px;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:8px">
+          <div style="width:30px;height:30px;border-radius:8px;background:var(--brand,#B4472A);display:flex;align-items:center;justify-content:center;color:#fff;font:700 13px/1 Inter,sans-serif">EP</div>
+          <div style="width:36px;height:1px;background:var(--border,#E9E2D6);margin:6px 0"></div>
+          <div style="width:40px;height:40px;border-radius:10px;background:var(--brand-tint,#FBEEE7);display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand,#B4472A)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-6 8 6v8a1 1 0 01-1 1h-4v-6H9v6H5a1 1 0 01-1-1z"></path></svg></div>
+          <div style="width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg></div>
+          <div style="width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><rect x="4" y="5" width="16" height="14" rx="2"></rect><path d="M8 9h8"></path></svg></div>
+          <div style="width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;position:relative"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><path d="M4 18V7M9 18V4M14 18v-8M19 18v-5"></path></svg><i style="position:absolute;top:6px;right:6px;width:6px;height:6px;border-radius:3px;background:var(--danger,#B91C1C)"></i></div>
+          <div style="width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-ai,#7C3AED)" stroke-width="2" stroke-linecap="round"><path d="M5 19L17 7M15 5l4 4"></path></svg></div>
+          <div style="margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:10px">
+            <div style="width:28px;height:28px;border-radius:8px;background:var(--ink-1,#241B12);color:#fff;display:flex;align-items:center;justify-content:center;font:600 11px/1 Inter,sans-serif">SR</div>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-2,#8C7F6C)" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Shop switcher — agency, grouped by client</div>
+        <div style="width:360px;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;box-shadow:0 12px 32px rgba(15,23,42,.12);overflow:hidden">
+          <div style="padding:12px;border-bottom:1px solid var(--border,#E9E2D6)"><div style="height:34px;border:1px solid var(--border,#E9E2D6);border-radius:9px;background:var(--canvas-soft,#FBF8F3);display:flex;align-items:center;padding:0 10px;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted-2,#8C7F6C)" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><span style="font:400 12.5px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">Search shops or clients</span></div></div>
+          <div style="padding:10px 12px 4px;font:600 10.5px/1 Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2,#8C7F6C)">My shops</div>
+          <div style="padding:10px 12px;display:flex;gap:10px;align-items:center;background:var(--brand-tint,#FBEEE7);border-left:2px solid #2563EB">
+            <span style="width:32px;height:32px;border-radius:8px;background:repeating-linear-gradient(135deg,#E2E8F0 0 5px,#F1F5F9 5px 10px);flex:none"></span>
+            <span style="flex:1;display:flex;flex-direction:column;gap:3px"><span style="font:600 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Willow &amp; Fern Studio</span><span class="tnum" style="font:500 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Growth · 412 listings · synced 6 min ago</span></span>
+            <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:999px;background:#F0FDF4;border:1px solid #BBF7D0;font:600 10px/1 Inter,sans-serif;color:#166534">Connected</span>
+          </div>
+          <div style="padding:10px 12px;display:flex;gap:10px;align-items:center">
+            <span style="width:32px;height:32px;border-radius:8px;background:repeating-linear-gradient(135deg,#E2E8F0 0 5px,#F1F5F9 5px 10px);flex:none"></span>
+            <span style="flex:1;display:flex;flex-direction:column;gap:3px"><span style="font:600 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Northlight Print Co.</span><span class="tnum" style="font:500 11px/1 Inter,sans-serif;color:var(--warning-strong,#B45309)">Solo · 88 listings · sync 9 h ago</span></span>
+            <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:999px;background:#FFFBEB;border:1px solid #FDE68A;font:600 10px/1 Inter,sans-serif;color:var(--warning-strong,#B45309)">Stale</span>
+          </div>
+          <div style="padding:10px 12px 4px;font:600 10.5px/1 Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2,#8C7F6C);border-top:1px solid #F1F5F9">Client · Harbour Goods</div>
+          <div style="padding:10px 12px;display:flex;gap:10px;align-items:center">
+            <span style="width:32px;height:32px;border-radius:8px;background:repeating-linear-gradient(135deg,#E2E8F0 0 5px,#F1F5F9 5px 10px);flex:none"></span>
+            <span style="flex:1;display:flex;flex-direction:column;gap:3px"><span style="font:600 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Harbour Ceramics</span><span class="tnum" style="font:500 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Agency seat · 1,204 listings</span></span>
+            <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:999px;background:#F1F5F9;border:1px solid var(--border,#E9E2D6);font:600 10px/1 Inter,sans-serif;color:#475569">Read only</span>
+          </div>
+          <div style="padding:11px 12px;border-top:1px solid var(--border,#E9E2D6);display:flex;justify-content:space-between;font:600 12px/1 Inter,sans-serif;color:var(--brand,#B4472A)"><span>Connect another shop</span><span style="color:var(--muted-1,#6B6152)">Manage shops</span></div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Command palette — ⌘K</div>
+        <div style="width:520px;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;box-shadow:0 20px 48px rgba(15,23,42,.18);overflow:hidden">
+          <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border,#E9E2D6)">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-2,#8C7F6C)" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+            <span style="font:400 14.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12);flex:1">bulk<span style="display:inline-block;width:1px;height:16px;background:var(--brand,#B4472A);vertical-align:middle;margin-left:1px"></span></span>
+            <span style="padding:3px 7px;border:1px solid var(--border,#E9E2D6);border-radius:6px;font:600 10.5px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">esc</span>
+          </div>
+          <div style="padding:8px 8px 4px 14px;font:600 10.5px/1 Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2,#8C7F6C)">Actions</div>
+          <div style="margin:0 8px;padding:9px 10px;border-radius:9px;background:var(--brand-tint,#FBEEE7);display:flex;align-items:center;gap:10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--brand,#B4472A)" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"></path></svg><span style="font:600 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12);flex:1">Create bulk edit</span><span style="font:500 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Willow &amp; Fern</span><span style="padding:2px 6px;border:1px solid #BFDBFE;border-radius:5px;font:600 10.5px/1.4 Inter,sans-serif;color:var(--brand-strong,#8C371F)">↵</span></div>
+          <div style="margin:0 8px;padding:9px 10px;border-radius:9px;display:flex;align-items:center;gap:10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><path d="M4 17l5-6 4 3 7-8"></path></svg><span style="font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);flex:1">View bulk operation progress</span></div>
+          <div style="margin:0 8px;padding:9px 10px;border-radius:9px;display:flex;align-items:center;gap:10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg><span style="font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);flex:1">Bulk keywords — check 200 terms</span></div>
+          <div style="padding:8px 8px 4px 14px;font:600 10.5px/1 Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2,#8C7F6C)">Recent</div>
+          <div style="margin:0 8px 8px;padding:9px 10px;border-radius:9px;display:flex;align-items:center;gap:10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg><span style="font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);flex:1">Bulk price change · 128 listings</span><span style="font:500 11px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">yesterday</span></div>
+          <div style="padding:10px 14px;border-top:1px solid var(--border,#E9E2D6);background:var(--canvas-soft,#FBF8F3);display:flex;gap:16px;font:500 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)"><span>↑↓ navigate</span><span>↵ select</span><span>⌘⇧S switch shop</span></div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:20px;flex:none">
+        <div style="display:flex;flex-direction:column;gap:8px;flex:none">
+          <div style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Mobile shell · 390 × 844</div>
+          <div style="width:390px;height:844px;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);border-radius:22px;overflow:hidden;display:flex;flex-direction:column">
+            <div style="height:56px;flex:none;background:var(--surface,#FFFFFF);border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:center;gap:10px;padding:0 14px">
+              <span style="width:44px;height:44px;margin-left:-10px;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2,#4A4234)" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></span>
+              <span style="display:flex;align-items:center;gap:8px;padding:5px 9px;border:1px solid var(--border,#E9E2D6);border-radius:9px;flex:1;min-width:0">
+                <span style="width:22px;height:22px;border-radius:6px;background:repeating-linear-gradient(135deg,#E2E8F0 0 5px,#F1F5F9 5px 10px);flex:none"></span>
+                <span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font:600 12px/1 Inter,sans-serif;color:var(--ink-1,#241B12);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Willow &amp; Fern Studio</span><span style="font:500 10px/1 Inter,sans-serif;color:var(--success,#15803D)">Synced 6 min ago</span></span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted-2,#8C7F6C)" stroke-width="2" stroke-linecap="round" style="margin-left:auto;flex:none"><path d="M6 9l6 6 6-6"></path></svg>
+              </span>
+              <span style="width:44px;height:44px;margin-right:-10px;display:flex;align-items:center;justify-content:center;position:relative"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2,#4A4234)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 1112 0c0 5 2 6 2 6H4s2-1 2-6z"></path><path d="M10 20h4"></path></svg><i style="position:absolute;top:10px;right:9px;width:7px;height:7px;border-radius:4px;background:var(--danger,#B91C1C);border:1.5px solid #fff"></i></span>
+            </div>
+            <div style="flex:1;overflow:hidden;padding:16px 14px;display:flex;flex-direction:column;gap:14px">
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <div style="font:600 21px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.01em">Good morning, Salman</div>
+                <div style="font:400 12.5px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">Last 30 days · USD</div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:13px;display:flex;flex-direction:column;gap:7px">
+                  <span style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Gross sales</span><span style="width:7px;height:7px;border-radius:4px;background:var(--success,#15803D)"></span></span>
+                  <span class="tnum" style="font:600 19px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$18,420</span>
+                  <span style="font:600 11px/1 Inter,sans-serif;color:var(--success,#15803D)">▲ 12.4%</span>
+                </div>
+                <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:13px;display:flex;flex-direction:column;gap:7px">
+                  <span style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Net profit</span><span style="width:7px;height:7px;border-radius:4px;background:var(--accent-calc,#0891B2)"></span></span>
+                  <span class="tnum" style="font:600 19px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$5,138</span>
+                  <span style="font:600 11px/1 Inter,sans-serif;color:var(--warning-strong,#B45309)">62% coverage</span>
+                </div>
+              </div>
+              <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-left:3px solid var(--danger,#B91C1C);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:9px">
+                <span style="font:600 13.5px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">4 listings sell below cost</span>
+                <span style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Estimated impact −$212 this month.</span>
+                <span style="height:44px;border-radius:9px;background:var(--brand,#B4472A);color:#fff;font:600 13px/44px Inter,sans-serif;text-align:center">Review pricing</span>
+              </div>
+              <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
+                <span style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Sales</span><span style="font:500 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Gross · USD</span></span>
+                <svg viewBox="0 0 300 80" style="width:100%;height:80px"><path d="M0 64 L60 56 L120 60 L180 38 L240 42 L300 22" stroke="var(--brand,#B4472A)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"></path><path d="M0 64 L60 56 L120 60 L180 38 L240 42 L300 22 L300 80 L0 80Z" fill="var(--brand,#B4472A)" opacity=".07"></path></svg>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding:12px 13px;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px">
+                <span style="font:400 11px/1.45 Inter,sans-serif;color:var(--muted-1,#6B6152)">The term “Etsy” is a trademark of Etsy, Inc. This Application uses Etsy’s API, but is not endorsed or certified by Etsy.</span>
+              </div>
+            </div>
+            <div style="height:76px;flex:none;background:var(--surface,#FFFFFF);border-top:1px solid var(--border,#E9E2D6);display:grid;grid-template-columns:repeat(5,1fr);padding:6px 6px 14px">
+              <span style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border-radius:10px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="var(--brand,#B4472A)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-6 8 6v8a1 1 0 01-1 1h-4v-6H9v6H5a1 1 0 01-1-1z"></path></svg><span style="font:600 10.5px/1 Inter,sans-serif;color:var(--brand,#B4472A)">Home</span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><span style="font:500 10.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Research</span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><rect x="4" y="5" width="16" height="14" rx="2"></rect><path d="M8 9h8"></path></svg><span style="font:500 10.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Listings</span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><path d="M4 18V7M9 18V4M14 18v-8M19 18v-5"></path></svg><span style="font:500 10.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Analytics</span></span>
+              <span style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><path d="M5 12h.01M12 12h.01M19 12h.01"></path></svg><span style="font:500 10.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">More</span></span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Mobile nav drawer</div>
+          <div style="width:390px;height:844px;background:rgba(15,23,42,.45);border:1px solid var(--border,#E9E2D6);border-radius:22px;overflow:hidden;display:flex">
+            <div style="width:312px;background:var(--surface,#FFFFFF);display:flex;flex-direction:column;padding:16px 14px;gap:4px">
+              <div style="display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--border,#E9E2D6)">
+                <span style="width:30px;height:30px;border-radius:8px;background:var(--brand,#B4472A);color:#fff;display:flex;align-items:center;justify-content:center;font:700 13px/1 Inter,sans-serif">EP</span>
+                <span style="font:700 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12);flex:1">EtsyPilot</span>
+                <span style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;font:400 20px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">×</span>
+              </div>
+              <div style="padding:12px 8px 6px;font:600 10.5px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--muted-2,#8C7F6C)">Home</div>
+              <div style="min-height:44px;display:flex;align-items:center;gap:11px;padding:0 10px;border-radius:10px;background:var(--brand-tint,#FBEEE7);font:600 14px/1 Inter,sans-serif;color:var(--brand-strong,#8C371F)">Overview</div>
+              <div style="min-height:44px;display:flex;align-items:center;gap:11px;padding:0 10px;font:500 14px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Getting started</div>
+              <div style="padding:12px 8px 6px;font:600 10.5px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--muted-2,#8C7F6C)">Research</div>
+              <div style="min-height:44px;display:flex;align-items:center;gap:11px;padding:0 10px;font:500 14px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Find hot products</div>
+              <div style="min-height:44px;display:flex;align-items:center;gap:11px;padding:0 10px;font:500 14px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Keywords</div>
+              <div style="min-height:44px;display:flex;align-items:center;gap:11px;padding:0 10px;font:500 14px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Trends<span style="margin-left:auto;font:500 12px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">▾</span></div>
+              <div style="padding:12px 8px 6px;font:600 10.5px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--muted-2,#8C7F6C)">My shop</div>
+              <div style="min-height:44px;display:flex;align-items:center;gap:11px;padding:0 10px;font:500 14px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Listings<span class="tnum" style="margin-left:auto;font:500 12px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">412</span></div>
+              <div style="min-height:44px;display:flex;align-items:center;gap:11px;padding:0 10px;font:500 14px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Orders<span style="margin-left:auto;padding:3px 8px;border-radius:999px;background:#FEF2F2;font:600 11px/1.3 Inter,sans-serif;color:var(--danger-strong,#B91C1C)">3</span></div>
+              <div style="min-height:44px;display:flex;align-items:center;gap:11px;padding:0 10px;font:500 14px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Profit &amp; fees</div>
+              <div style="margin-top:auto;padding-top:12px;border-top:1px solid var(--border,#E9E2D6);display:flex;align-items:center;gap:10px">
+                <span style="width:32px;height:32px;border-radius:9px;background:var(--ink-1,#241B12);color:#fff;display:flex;align-items:center;justify-content:center;font:600 12px/1 Inter,sans-serif">SR</span>
+                <span style="display:flex;flex-direction:column;gap:2px"><span style="font:600 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Salman Riaz</span><span style="font:500 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Growth plan · Settings</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="border-top:1px solid #CBD5E1;padding-top:24px;display:flex;flex-direction:column;gap:8px;max-width:900px">
+    <div style="font:600 14px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Next up</div>
+    <div style="font:400 13.5px/1.6 Inter,sans-serif;color:var(--ink-2,#4A4234)">Phase 2 — authentication and onboarding: login, registration, role &amp; goal selection, connect Etsy shop, permissions explanation, sync progress, setup checklist. Then Phase 3 — home overview (connected, unconnected, syncing), action center, notifications, and the research screens.</div>
+  </div>
+
+</div>
+
+</x-dc>
+</body>
+</html>

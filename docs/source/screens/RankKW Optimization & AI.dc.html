@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:var(--page-bg,#FBF8F3);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--brand,#B4472A)}a:hover{color:var(--brand-strong,#8C371F)}
+*{box-sizing:border-box}
+.tnum{font-variant-numeric:tabular-nums}
+</style>
+<script>
+(function(){
+  var DARK = {"--brand":"#E07A4A","--brand-strong":"#F3B08C","--brand-tint":"rgba(224,122,74,.16)","--ink-1":"#F1F5F9","--ink-2":"#CBD5E1","--muted-1":"#94A3B8","--muted-2":"#64748B","--border":"#2B3444","--canvas-soft":"#1E293B","--page-bg":"#0F172A","--success":"#34D399","--success-strong":"#34D399","--warning":"#FBBF24","--warning-strong":"#FBBF24","--danger":"#F87171","--danger-strong":"#FCA5A5","--accent-ai":"#C4B5FD","--accent-calc":"#67E8F9","--surface":"#1E293B"};
+  var LIGHT = {"--brand":"#B4472A","--brand-strong":"#8C371F","--brand-tint":"#FBEEE7","--ink-1":"#241B12","--ink-2":"#4A4234","--muted-1":"#6B6152","--muted-2":"#8C7F6C","--border":"#E9E2D6","--canvas-soft":"#FBF8F3","--page-bg":"#FBF8F3","--success":"#15803D","--success-strong":"#15803D","--warning":"#B45309","--warning-strong":"#B45309","--danger":"#B91C1C","--danger-strong":"#B91C1C","--accent-ai":"#7C3AED","--accent-calc":"#0891B2","--surface":"#FFFFFF"};
+  function apply(mode){
+    var resolved = mode === 'system' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : mode;
+    var tokens = resolved === 'dark' ? DARK : LIGHT;
+    var root = document.documentElement.style;
+    for (var k in tokens) root.setProperty(k, tokens[k]);
+    document.documentElement.setAttribute('data-rankkw-theme', resolved);
+    document.querySelectorAll('[data-rankkw-toggle]').forEach(function(el){
+      el.style.background = el.getAttribute('data-mode') === mode ? tokens['--brand'] : 'transparent';
+      el.style.color = el.getAttribute('data-mode') === mode ? '#fff' : tokens['--ink-2'];
+    });
+  }
+  window.rankkwSetTheme = function(mode){ localStorage.setItem('rankkw-theme', mode); apply(mode); };
+  var saved = localStorage.getItem('rankkw-theme') || 'system';
+  apply(saved);
+  document.addEventListener('click', function(e){ var t = e.target.closest && e.target.closest('[data-rankkw-toggle]'); if (t) { window.rankkwSetTheme(t.getAttribute('data-mode')); } });
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){ if((localStorage.getItem('rankkw-theme')||'system')==='system') apply('system'); });
+})();
+</script>
+</helmet>
+<div data-rankkw-screens-nav="1">
+<details style="position:fixed;top:16px;left:16px;z-index:999">
+<summary style="cursor:pointer;padding:8px 12px;border-radius:999px;background:var(--surface,#fff);border:1px solid var(--border,#E9E2D6);font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);box-shadow:0 4px 16px rgba(0,0,0,.14)">Screens ▾</summary>
+<div style="margin-top:6px;background:var(--surface,#fff);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:1px;box-shadow:0 8px 24px rgba(0,0,0,.16);min-width:210px;max-height:70vh;overflow:auto"><a href="RankKW%20Foundations.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Foundations</a><a href="RankKW%20Auth%20&amp;%20Onboarding.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Auth & Onboarding</a><a href="RankKW%20Home%20&amp;%20Action%20Center.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Home & Action Center</a><a href="RankKW%20Research.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Research</a><a href="RankKW%20Shop%20Management.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Shop Management</a><a href="RankKW%20Analytics%20&amp;%20Profit.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Analytics & Profit</a><a href="RankKW%20Optimization%20&amp;%20AI.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Optimization & AI</a><a href="RankKW%20Settings%20&amp;%20Compliance.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Settings & Compliance</a><a href="RankKW%20States%20&amp;%20Responsive.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">States & Responsive</a><a href="RankKW%20Browser%20Extension.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Browser Extension</a><a href="RankKW%20Simple%20Calculator.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Simple Calculator</a></div>
+</details></div>
+<div style="position:fixed;top:16px;right:16px;z-index:999;display:flex;gap:2px;padding:3px;border-radius:999px;background:var(--surface,#fff);border:1px solid var(--border,#E9E2D6);box-shadow:0 4px 16px rgba(0,0,0,.14)">
+  <button data-rankkw-toggle data-mode="light" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Light</button>
+  <button data-rankkw-toggle data-mode="dark" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Dark</button>
+  <button data-rankkw-toggle data-mode="system" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">System</button>
+</div>
+
+<div style="padding:48px 56px 80px;display:flex;flex-direction:column;gap:52px">
+
+  <div style="display:flex;flex-direction:column;gap:12px;max-width:900px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:34px;height:34px;border-radius:9px;background:var(--brand,#B4472A);display:flex;align-items:center;justify-content:center;color:#fff;font:700 15px/1 Inter,sans-serif">EP</div>
+      <div style="font:700 20px/1 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.01em">EtsyPilot</div>
+      <div style="padding:4px 8px;border-radius:6px;background:var(--border,#E9E2D6);color:var(--ink-2,#4A4234);font:600 11px/1 Inter,sans-serif">Phase 7 · Optimization &amp; AI</div>
+    </div>
+    <div style="font:400 13.5px/1.6 Inter,sans-serif;color:var(--ink-2,#4A4234);max-width:800px">Screens 61–70. Audits state what is wrong, why it matters and the exact fix. AI output is purple, always labelled a draft, always shows its sources, and never reaches Etsy without an explicit human approval — including in bulk, where approval is per-listing.</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">61–62 · Listing audit overview and detail · 1440 × 980</div>
+    <div style="width:1440px;height:980px;flex:none;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);border-radius:16px;overflow:hidden;display:flex;flex-direction:column">
+      <header style="height:64px;flex:none;background:var(--surface,#FFFFFF);border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:center;gap:14px;padding:0 26px">
+        <span style="width:28px;height:28px;border-radius:8px;background:var(--brand,#B4472A);color:#fff;display:flex;align-items:center;justify-content:center;font:700 12px/1 Inter,sans-serif">EP</span>
+        <span style="font:700 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">EtsyPilot</span>
+        <span style="margin-left:12px;display:flex;align-items:center;gap:7px;font:500 12px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">Optimize<span>/</span><span style="color:var(--ink-2,#4A4234)">Listing audit</span></span>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+          <span style="display:flex;align-items:center;gap:8px;padding:7px 11px;border:1px solid var(--border,#E9E2D6);border-radius:10px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><i style="width:6px;height:6px;border-radius:3px;background:var(--success,#15803D)"></i>Willow &amp; Fern Studio · last audit 14 min ago</span>
+          <span style="width:28px;height:28px;border-radius:8px;background:var(--ink-1,#241B12);color:#fff;display:flex;align-items:center;justify-content:center;font:600 11.5px/1 Inter,sans-serif">SR</span>
+        </div>
+      </header>
+
+      <div style="padding:20px 26px 16px;background:var(--surface,#FFFFFF);border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:flex-start;justify-content:space-between;gap:20px">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font:600 26px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.015em">Listing audit</div>
+          <div class="tnum" style="font:400 13px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">412 listings checked against 14 rules · 37 errors, 98 warnings, 239 pass</div>
+        </div>
+        <div style="display:flex;gap:8px;flex:none">
+          <span style="padding:9px 13px;border:1px solid #CBD5E1;border-radius:9px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Audit settings</span>
+          <span style="padding:9px 13px;border:1px solid #CBD5E1;border-radius:9px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Re-run audit</span>
+          <span style="padding:9px 13px;border-radius:9px;background:var(--brand,#B4472A);color:#fff;font:600 12.5px/1 Inter,sans-serif">Fix 24 in bulk</span>
+        </div>
+      </div>
+
+      <div style="flex:1;overflow:hidden;padding:20px 26px;display:flex;gap:16px">
+        <div style="width:300px;flex:none;display:flex;flex-direction:column;gap:14px">
+          <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:14px">
+            <span style="font:600 14px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Health score</span>
+            <div style="display:flex;align-items:baseline;gap:9px"><span class="tnum" style="font:600 34px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">72</span><span style="font:500 13px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">/ 100</span><span style="font:600 12px/1 Inter,sans-serif;color:var(--success,#15803D);margin-left:auto">▲ 6 in 30 d</span></div>
+            <div style="height:8px;border-radius:4px;background:var(--border,#E9E2D6);overflow:hidden"><div style="width:72%;height:100%;background:var(--success,#15803D)"></div></div>
+            <div style="font:400 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Calculated from rule severity weighted by each listing’s share of verified revenue.</div>
+          </div>
+          <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:11px;flex:1;min-height:0">
+            <span style="font:600 14px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Issues by rule</span>
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <span style="display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;background:var(--brand-tint,#FBEEE7);font:600 12.5px/1 Inter,sans-serif;color:var(--brand-strong,#8C371F)"><i style="width:7px;height:7px;border-radius:4px;background:var(--danger,#B91C1C)"></i>Missing required attribute<span class="tnum" style="margin-left:auto">14</span></span>
+              <span style="display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><i style="width:7px;height:7px;border-radius:4px;background:var(--danger,#B91C1C)"></i>Below cost<span class="tnum" style="margin-left:auto;color:var(--ink-1,#241B12);font-weight:600">4</span></span>
+              <span style="display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><i style="width:7px;height:7px;border-radius:4px;background:var(--danger,#B91C1C)"></i>Active but out of stock<span class="tnum" style="margin-left:auto;color:var(--ink-1,#241B12);font-weight:600">2</span></span>
+              <span style="display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><i style="width:7px;height:7px;border-radius:4px;background:var(--warning,#B45309)"></i>Fewer than 13 tags<span class="tnum" style="margin-left:auto;color:var(--ink-1,#241B12);font-weight:600">62</span></span>
+              <span style="display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><i style="width:7px;height:7px;border-radius:4px;background:var(--warning,#B45309)"></i>Title over 140 characters<span class="tnum" style="margin-left:auto;color:var(--ink-1,#241B12);font-weight:600">18</span></span>
+              <span style="display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><i style="width:7px;height:7px;border-radius:4px;background:var(--warning,#B45309)"></i>Fewer than 5 photos<span class="tnum" style="margin-left:auto;color:var(--ink-1,#241B12);font-weight:600">11</span></span>
+              <span style="display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><i style="width:7px;height:7px;border-radius:4px;background:var(--warning,#B45309)"></i>Duplicate tags across listings<span class="tnum" style="margin-left:auto;color:var(--ink-1,#241B12);font-weight:600">7</span></span>
+            </div>
+            <div style="margin-top:auto;padding-top:12px;border-top:1px solid var(--border,#E9E2D6);font:400 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Rules follow Etsy’s documented listing requirements plus your own thresholds. <span style="color:var(--brand,#B4472A);font-weight:600">Edit thresholds</span></div>
+          </div>
+        </div>
+
+        <div style="flex:1;display:flex;flex-direction:column;gap:16px;min-width:0">
+          <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;overflow:hidden;flex:1;min-height:0;display:flex;flex-direction:column">
+            <div style="padding:14px 18px;border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:center;gap:12px">
+              <span style="font:600 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Missing required attribute</span>
+              <span style="padding:3px 8px;border-radius:6px;background:#FEF2F2;font:600 11px/1.4 Inter,sans-serif;color:var(--danger-strong,#B91C1C)">Error · blocks publishing</span>
+              <span style="margin-left:auto;font:500 12px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">14 listings · <span style="color:var(--brand,#B4472A);font-weight:600">Select all</span></span>
+            </div>
+            <div style="padding:15px 18px;border-bottom:1px solid var(--border,#E9E2D6);background:var(--canvas-soft,#FBF8F3);display:flex;flex-direction:column;gap:8px">
+              <span style="font:600 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Why this matters</span>
+              <span style="font:400 12.5px/1.6 Inter,sans-serif;color:var(--ink-2,#4A4234)">Etsy requires category-specific attributes such as metal purity or material. Listings without them cannot be updated through the API and may rank lower in category browsing. <span style="font-weight:600;color:var(--ink-1,#241B12)">The fix:</span> set the attribute once per listing, or apply one value across all 14 where the material is identical.</span>
+            </div>
+            <div style="display:grid;grid-template-columns:34px 2.6fr 1.2fr 1.4fr 1fr;align-items:center;gap:10px;padding:9px 18px;background:var(--canvas-soft,#FBF8F3);border-bottom:1px solid var(--border,#E9E2D6);font:600 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)"><span style="width:16px;height:16px;border-radius:4px;border:1.5px solid #CBD5E1;background:var(--surface,#FFFFFF)"></span><span>Listing</span><span>Missing</span><span>Suggested value</span><span style="text-align:right">Revenue at risk</span></div>
+            <div style="display:grid;grid-template-columns:34px 2.6fr 1.2fr 1.4fr 1fr;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid #F1F5F9;background:var(--brand-tint,#FBEEE7)">
+              <span style="width:16px;height:16px;border-radius:4px;background:var(--brand,#B4472A);display:inline-flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"></path></svg></span>
+              <span style="display:flex;align-items:center;gap:10px;min-width:0"><span style="width:34px;height:34px;border-radius:8px;background:repeating-linear-gradient(135deg,#E2E8F0 0 6px,#F1F5F9 6px 12px);flex:none"></span><span style="font:500 13px/1.35 Inter,sans-serif;color:var(--ink-1,#241B12);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Birth flower necklace, personalized gold pendant</span></span>
+              <span style="font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Metal purity</span>
+              <span style="font:500 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12);padding:6px 9px;border:1px solid #CBD5E1;border-radius:8px;background:var(--surface,#FFFFFF);justify-self:start">14k gold filled ▾</span>
+              <span class="tnum" style="text-align:right;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$4,864</span>
+            </div>
+            <div style="display:grid;grid-template-columns:34px 2.6fr 1.2fr 1.4fr 1fr;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid #F1F5F9">
+              <span style="width:16px;height:16px;border-radius:4px;background:var(--brand,#B4472A);display:inline-flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"></path></svg></span>
+              <span style="display:flex;align-items:center;gap:10px;min-width:0"><span style="width:34px;height:34px;border-radius:8px;background:repeating-linear-gradient(135deg,#E2E8F0 0 6px,#F1F5F9 6px 12px);flex:none"></span><span style="font:500 13px/1.35 Inter,sans-serif;color:var(--ink-1,#241B12);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Birth flower locket, sterling silver</span></span>
+              <span style="font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Metal purity</span>
+              <span style="font:500 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12);padding:6px 9px;border:1px solid #CBD5E1;border-radius:8px;background:var(--surface,#FFFFFF);justify-self:start">925 sterling ▾</span>
+              <span class="tnum" style="text-align:right;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$1,204</span>
+            </div>
+            <div style="display:grid;grid-template-columns:34px 2.6fr 1.2fr 1.4fr 1fr;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid #F1F5F9">
+              <span style="width:16px;height:16px;border-radius:4px;border:1.5px solid #CBD5E1;background:var(--surface,#FFFFFF)"></span>
+              <span style="display:flex;align-items:center;gap:10px;min-width:0"><span style="width:34px;height:34px;border-radius:8px;background:repeating-linear-gradient(135deg,#E2E8F0 0 6px,#F1F5F9 6px 12px);flex:none"></span><span style="font:500 13px/1.35 Inter,sans-serif;color:var(--ink-1,#241B12);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Ceramic mug, hand-thrown speckled stoneware</span></span>
+              <span style="font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Primary material</span>
+              <span style="font:500 12.5px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C);padding:6px 9px;border:1px solid #CBD5E1;border-radius:8px;background:var(--surface,#FFFFFF);justify-self:start">Choose value ▾</span>
+              <span class="tnum" style="text-align:right;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$3,264</span>
+            </div>
+            <div style="padding:14px 18px;background:var(--canvas-soft,#FBF8F3);border-top:1px solid var(--border,#E9E2D6);display:flex;align-items:center;gap:12px;margin-top:auto">
+              <span class="tnum" style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">2 selected</span>
+              <span style="font:500 12px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Suggested values are pre-filled from your listing text and can be changed before applying.</span>
+              <span style="margin-left:auto;padding:9px 13px;border:1px solid #CBD5E1;border-radius:9px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Open in editor</span>
+              <span style="padding:9px 13px;border-radius:9px;background:var(--brand,#B4472A);color:#fff;font:600 12.5px/1 Inter,sans-serif">Review &amp; apply 2</span>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-left:3px solid var(--danger,#B91C1C);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:9px">
+              <div style="display:flex;align-items:center;gap:8px"><span style="padding:3px 8px;border-radius:6px;background:#FEF2F2;font:600 10.5px/1 Inter,sans-serif;color:var(--danger-strong,#B91C1C)">Error</span><span style="font:600 13.5px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">4 listings sell below cost</span></div>
+              <div style="font:400 12.5px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span style="font-weight:600;color:var(--ink-1,#241B12)">Why:</span> price minus Etsy fees minus your product cost is negative. <span style="font-weight:600;color:var(--ink-1,#241B12)">Fix:</span> raise price to your margin floor, or reduce cost.</div>
+              <span style="align-self:flex-start;padding:8px 12px;border-radius:8px;background:var(--brand,#B4472A);color:#fff;font:600 12.5px/1 Inter,sans-serif">Open pricing fix</span>
+            </div>
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-left:3px solid var(--warning,#B45309);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:9px">
+              <div style="display:flex;align-items:center;gap:8px"><span style="padding:3px 8px;border-radius:6px;background:#FFFBEB;font:600 10.5px/1 Inter,sans-serif;color:var(--warning-strong,#B45309)">Warning</span><span style="font:600 13.5px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">62 listings use fewer than 13 tags</span></div>
+              <div style="font:400 12.5px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span style="font-weight:600;color:var(--ink-1,#241B12)">Why:</span> unused tag slots reduce the terms a listing can match. <span style="font-weight:600;color:var(--ink-1,#241B12)">Fix:</span> fill remaining slots from a keyword list — review each addition before publishing.</div>
+              <span style="align-self:flex-start;padding:8px 12px;border:1px solid #CBD5E1;border-radius:8px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Open tag optimizer</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">65–68 · AI listing helper · split view with draft approval · 1440 × 940</div>
+    <div style="width:1440px;height:940px;flex:none;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);border-radius:16px;overflow:hidden;display:flex;flex-direction:column">
+      <div style="padding:18px 26px;background:var(--surface,#FFFFFF);border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:center;gap:14px">
+        <span style="width:30px;height:30px;border-radius:9px;background:#F5F3FF;border:1px solid #DDD6FE;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-ai,#7C3AED)" stroke-width="2.2" stroke-linecap="round"><path d="M5 19L17 7M15 5l4 4"></path></svg></span>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <span style="font:600 18px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">AI listing helper</span>
+          <span style="font:400 12px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Birth flower necklace, personalized gold pendant · draft 2 of 3</span>
+        </div>
+        <span style="margin-left:16px;display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:#F5F3FF;border:1px solid #DDD6FE;font:600 11px/1 Inter,sans-serif;color:#6D28D9"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent-ai,#7C3AED)" stroke-width="2.4" stroke-linecap="round"><path d="M5 19L17 7M15 5l4 4"></path></svg>AI draft — nothing publishes without your approval</span>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <span class="tnum" style="font:500 12px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">42 of 60 monthly generations used</span>
+          <span style="padding:9px 13px;border:1px solid #CBD5E1;border-radius:9px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Discard draft</span>
+          <span style="padding:9px 13px;border-radius:9px;background:var(--brand,#B4472A);color:#fff;font:600 12.5px/1 Inter,sans-serif">Approve &amp; publish</span>
+        </div>
+      </div>
+
+      <div style="flex:1;overflow:hidden;display:flex;gap:16px;padding:20px 26px">
+        <div style="width:300px;flex:none;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:15px">
+          <span style="font:600 14px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Generation inputs</span>
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <label style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Keyword source</label>
+            <div style="padding:9px 11px;border:1px solid #CBD5E1;border-radius:10px;display:flex;align-items:center;justify-content:space-between;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">List: Autumn gifting<span style="color:var(--muted-2,#8C7F6C)">▾</span></div>
+            <span class="tnum" style="font:400 11.5px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">28 keywords · 6 used in this draft</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <label style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Tone</label>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <span style="padding:6px 10px;border-radius:999px;background:var(--brand-tint,#FBEEE7);border:1px solid #BFDBFE;font:600 11.5px/1 Inter,sans-serif;color:var(--brand-strong,#8C371F)">Warm</span>
+              <span style="padding:6px 10px;border-radius:999px;border:1px solid var(--border,#E9E2D6);font:500 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Plain</span>
+              <span style="padding:6px 10px;border-radius:999px;border:1px solid var(--border,#E9E2D6);font:500 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Premium</span>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <label style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Locked terms</label>
+            <div style="padding:8px;border:1px solid #CBD5E1;border-radius:10px;display:flex;flex-wrap:wrap;gap:6px"><span style="padding:5px 9px;border-radius:7px;background:#F0FDF4;border:1px solid #BBF7D0;font:500 11.5px/1 Inter,sans-serif;color:#166534">Willow &amp; Fern ×</span><span style="padding:5px 9px;border-radius:7px;background:#F0FDF4;border:1px solid #BBF7D0;font:500 11.5px/1 Inter,sans-serif;color:#166534">14k gold filled ×</span></div>
+            <span style="font:400 11.5px/1.45 Inter,sans-serif;color:var(--muted-1,#6B6152)">Locked terms are always preserved exactly as written.</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <label style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Guardrails</label>
+            <span style="display:flex;align-items:center;gap:9px;font:500 12px/1.3 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span style="width:17px;height:17px;border-radius:5px;background:var(--brand,#B4472A);display:inline-flex;align-items:center;justify-content:center;flex:none"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"></path></svg></span>Stay under 140 characters</span>
+            <span style="display:flex;align-items:center;gap:9px;font:500 12px/1.3 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span style="width:17px;height:17px;border-radius:5px;background:var(--brand,#B4472A);display:inline-flex;align-items:center;justify-content:center;flex:none"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"></path></svg></span>No competitor brand names</span>
+            <span style="display:flex;align-items:center;gap:9px;font:500 12px/1.3 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span style="width:17px;height:17px;border-radius:5px;background:var(--brand,#B4472A);display:inline-flex;align-items:center;justify-content:center;flex:none"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"></path></svg></span>No unverifiable claims (“best”, “#1”)</span>
+            <span style="display:flex;align-items:center;gap:9px;font:500 12px/1.3 Inter,sans-serif;color:var(--muted-1,#6B6152)"><span style="width:17px;height:17px;border-radius:5px;border:1.5px solid #CBD5E1;flex:none"></span>Rewrite description as well</span>
+          </div>
+          <div style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
+            <span style="padding:10px;border-radius:9px;background:var(--accent-ai,#7C3AED);color:#fff;font:600 12.5px/1 Inter,sans-serif;text-align:center">Regenerate draft</span>
+            <span style="font:400 11px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152);text-align:center">AI can be wrong. Review facts, materials and measurements before publishing.</span>
+          </div>
+        </div>
+
+        <div style="flex:1;display:flex;flex-direction:column;gap:16px;min-width:0">
+          <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;overflow:hidden;flex:1;min-height:0;display:flex;flex-direction:column">
+            <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border,#E9E2D6)">
+              <span style="padding:12px 18px;font:600 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);border-right:1px solid #E2E8F0;display:flex;align-items:center;gap:8px">Current — live on Etsy<span style="padding:2px 7px;border-radius:999px;background:#F0FDF4;border:1px solid #BBF7D0;font:600 10px/1.5 Inter,sans-serif;color:#166534">Verified</span></span>
+              <span style="padding:12px 18px;font:600 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);display:flex;align-items:center;gap:8px">AI draft<span style="padding:2px 7px;border-radius:999px;background:#F5F3FF;border:1px solid #DDD6FE;font:600 10px/1.5 Inter,sans-serif;color:#6D28D9">Needs approval</span></span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;flex:1;min-height:0">
+              <div style="border-right:1px solid #E2E8F0;padding:18px;display:flex;flex-direction:column;gap:16px">
+                <div style="display:flex;flex-direction:column;gap:7px">
+                  <span style="display:flex;justify-content:space-between;font:600 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Title<span class="tnum">128 chars</span></span>
+                  <span style="font:400 13px/1.6 Inter,sans-serif;color:var(--ink-2,#4A4234)">Personalized Birth Flower Necklace, Gold Filled Pendant, Custom Birth Month <span style="background:#FEF2F2;color:var(--danger-strong,#B91C1C);padding:0 3px;border-radius:3px">Gift</span> for Mom, Handmade Jewelry <span style="background:#FEF2F2;color:var(--danger-strong,#B91C1C);padding:0 3px;border-radius:3px">Gift</span></span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:7px">
+                  <span style="display:flex;justify-content:space-between;font:600 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Tags<span class="tnum">11 of 13</span></span>
+                  <span style="display:flex;flex-wrap:wrap;gap:6px"><span style="padding:5px 9px;border-radius:7px;background:#F1F5F9;font:500 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">birth flower necklace</span><span style="padding:5px 9px;border-radius:7px;background:#F1F5F9;font:500 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">personalized gift</span><span style="padding:5px 9px;border-radius:7px;background:#F1F5F9;font:500 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">gold filled</span><span style="padding:5px 9px;border-radius:7px;background:#F1F5F9;font:500 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">gift for mom</span><span style="padding:5px 9px;border-radius:7px;background:#F1F5F9;font:500 11.5px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">+7</span></span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:7px;flex:1;min-height:0">
+                  <span style="font:600 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Description opening</span>
+                  <span style="font:400 12.5px/1.65 Inter,sans-serif;color:var(--ink-2,#4A4234)">A delicate gold-filled pendant stamped with your chosen birth month flower. Each necklace is hand-finished in our Vermont studio and arrives in a linen gift pouch.</span>
+                </div>
+              </div>
+              <div style="padding:18px;display:flex;flex-direction:column;gap:16px;background:#FDFCFF">
+                <div style="display:flex;flex-direction:column;gap:7px">
+                  <span style="display:flex;justify-content:space-between;font:600 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Title<span class="tnum" style="color:#166534">116 chars</span></span>
+                  <span style="font:400 13px/1.6 Inter,sans-serif;color:var(--ink-1,#241B12)">Personalized Birth Flower Necklace, <span style="background:#F0FDF4;color:#166534;padding:0 3px;border-radius:3px">14k Gold Filled</span> Custom Pendant, <span style="background:#F0FDF4;color:#166534;padding:0 3px;border-radius:3px">Birth Month Jewelry</span>, Handmade Gift for Mom</span>
+                  <span style="display:flex;flex-wrap:wrap;gap:6px"><span style="padding:4px 8px;border-radius:7px;background:#F5F3FF;font:500 11px/1.3 Inter,sans-serif;color:#6D28D9">Source: keyword list “Autumn gifting”</span><span style="padding:4px 8px;border-radius:7px;background:#F5F3FF;font:500 11px/1.3 Inter,sans-serif;color:#6D28D9">Source: your current title</span><span style="padding:4px 8px;border-radius:7px;background:#F0FDF4;font:500 11px/1.3 Inter,sans-serif;color:#166534">Locked terms preserved</span></span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:7px">
+                  <span style="display:flex;justify-content:space-between;font:600 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Tags<span class="tnum" style="color:#166534">13 of 13</span></span>
+                  <span style="display:flex;flex-wrap:wrap;gap:6px"><span style="padding:5px 9px;border-radius:7px;background:#F1F5F9;font:500 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">birth flower necklace</span><span style="padding:5px 9px;border-radius:7px;background:#F1F5F9;font:500 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">personalized gift</span><span style="padding:5px 9px;border-radius:7px;background:#F0FDF4;border:1px solid #BBF7D0;font:600 11.5px/1 Inter,sans-serif;color:#166534">+ birth month jewelry</span><span style="padding:5px 9px;border-radius:7px;background:#F0FDF4;border:1px solid #BBF7D0;font:600 11.5px/1 Inter,sans-serif;color:#166534">+ dainty flower charm</span><span style="padding:5px 9px;border-radius:7px;background:#FEF2F2;border:1px solid #FECACA;font:600 11.5px/1 Inter,sans-serif;color:var(--danger-strong,#B91C1C)">− gift for mom</span></span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:7px;flex:1;min-height:0">
+                  <span style="font:600 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">What changed and why</span>
+                  <div style="border:1px solid var(--border,#E9E2D6);border-radius:11px;padding:12px;background:var(--surface,#FFFFFF);display:flex;flex-direction:column;gap:7px">
+                    <span style="font:400 12.5px/1.6 Inter,sans-serif;color:var(--ink-2,#4A4234)">Removed the duplicated “Gift” so the title reads once and stays under 140 characters. Added “birth month jewelry” — a rising term in your saved list with medium competition. Dropped “gift for mom” from tags because it already appears in the title.</span>
+                    <span style="font:400 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Estimated impact is not predicted. Track results in the experiment tracker after publishing.</span>
+                  </div>
+                </div>
+                <div style="display:flex;gap:8px">
+                  <span style="flex:1;padding:10px;border-radius:9px;background:var(--accent-ai,#7C3AED);color:#fff;font:600 12.5px/1 Inter,sans-serif;text-align:center">Accept draft</span>
+                  <span style="padding:10px 13px;border:1px solid #CBD5E1;border-radius:9px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Edit before accepting</span>
+                  <span style="padding:10px 13px;border:1px solid #CBD5E1;border-radius:9px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Reject</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:18px;display:flex;align-items:center;gap:16px">
+            <div style="display:flex;flex-direction:column;gap:5px;flex:1">
+              <span style="font:600 14px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Bulk AI drafts · 7 listings queued</span>
+              <span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Each draft is approved individually. Bulk generation never publishes automatically, and rejected drafts leave the live listing untouched.</span>
+            </div>
+            <div style="display:flex;gap:14px;flex:none">
+              <span style="display:flex;flex-direction:column;gap:3px;align-items:flex-end"><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:var(--success,#15803D)">3</span><span style="font:500 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Approved</span></span>
+              <span style="display:flex;flex-direction:column;gap:3px;align-items:flex-end"><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#6D28D9">4</span><span style="font:500 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Awaiting review</span></span>
+              <span style="padding:10px 14px;border-radius:9px;background:var(--brand,#B4472A);color:#fff;font:600 12.5px/1 Inter,sans-serif;align-self:center">Review next draft</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">63–64, 69–70 · Tag optimizer, compare listings, AI error and limit states, mobile</div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
+      <div style="width:640px;flex:none;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:15px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px">
+          <div style="display:flex;flex-direction:column;gap:5px"><span style="font:600 16px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Tag optimizer</span><span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Birth flower necklace · 11 of 13 tags used</span></div>
+          <span style="padding:9px 13px;border-radius:9px;background:var(--brand,#B4472A);color:#fff;font:600 12.5px/1 Inter,sans-serif;flex:none">Review 4 changes</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
+            <span style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Current tags</span>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              <span style="padding:5px 9px;border-radius:7px;background:#F1F5F9;font:500 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">birth flower necklace</span>
+              <span style="padding:5px 9px;border-radius:7px;background:#F1F5F9;font:500 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">personalized gift</span>
+              <span style="padding:5px 9px;border-radius:7px;background:#F1F5F9;font:500 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">gold filled</span>
+              <span style="padding:5px 9px;border-radius:7px;background:#FFFBEB;border:1px solid #FDE68A;font:500 11.5px/1 Inter,sans-serif;color:#92400E">gift for mom · in title</span>
+              <span style="padding:5px 9px;border-radius:7px;background:#FFFBEB;border:1px solid #FDE68A;font:500 11.5px/1 Inter,sans-serif;color:#92400E">necklace · too broad</span>
+              <span style="padding:5px 9px;border-radius:7px;background:#F1F5F9;font:500 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">handmade jewelry</span>
+            </div>
+            <span style="font:400 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">2 tags flagged: one duplicates the title, one is too broad to rank.</span>
+          </div>
+          <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
+            <span style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Suggested from your lists</span>
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <span style="display:flex;align-items:center;gap:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span style="width:16px;height:16px;border-radius:4px;background:var(--brand,#B4472A);display:inline-flex;align-items:center;justify-content:center;flex:none"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"></path></svg></span>birth month jewelry<span class="tnum" style="margin-left:auto;color:var(--warning-strong,#B45309);font-weight:600">3K–5K</span></span>
+              <span style="display:flex;align-items:center;gap:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span style="width:16px;height:16px;border-radius:4px;background:var(--brand,#B4472A);display:inline-flex;align-items:center;justify-content:center;flex:none"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"></path></svg></span>dainty flower charm<span class="tnum" style="margin-left:auto;color:var(--warning-strong,#B45309);font-weight:600">1K–3K</span></span>
+              <span style="display:flex;align-items:center;gap:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span style="width:16px;height:16px;border-radius:4px;border:1.5px solid #CBD5E1;flex:none"></span>november birth flower<span style="margin-left:auto;color:var(--muted-2,#8C7F6C)">Sparse</span></span>
+              <span style="display:flex;align-items:center;gap:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span style="width:16px;height:16px;border-radius:4px;border:1.5px solid #CBD5E1;flex:none"></span>flower pendant gold<span class="tnum" style="margin-left:auto;color:var(--warning-strong,#B45309);font-weight:600">1K–2K</span></span>
+            </div>
+            <span style="font:400 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Demand values are estimated ranges from modeled marketplace signals.</span>
+          </div>
+        </div>
+        <div style="padding:13px 14px;border:1px solid var(--border,#E9E2D6);background:var(--canvas-soft,#FBF8F3);border-radius:12px;display:flex;flex-direction:column;gap:8px">
+          <span style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Result after changes</span>
+          <span class="tnum" style="font:500 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">13 of 13 tags used · 2 flagged tags removed · 4 terms added from “Autumn gifting”</span>
+        </div>
+      </div>
+
+      <div style="width:640px;flex:none;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:15px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px">
+          <div style="display:flex;flex-direction:column;gap:5px"><span style="font:600 16px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Compare listings</span><span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Your listing against two tracked competitors · public fields only</span></div>
+          <span style="padding:9px 13px;border:1px solid #CBD5E1;border-radius:9px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);flex:none">Add competitor</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1.1fr 1fr 1fr 1fr;gap:10px;font:600 11.5px/1.3 Inter,sans-serif;color:var(--muted-1,#6B6152);padding-bottom:9px;border-bottom:1px solid var(--border,#E9E2D6)"><span></span><span>Yours</span><span>Aurelia Made</span><span>Petal &amp; Pine</span></div>
+        <div style="display:grid;grid-template-columns:1.1fr 1fr 1fr 1fr;gap:10px;align-items:center;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);padding:8px 0;border-bottom:1px solid #F1F5F9"><span style="color:var(--muted-1,#6B6152)">Price</span><span class="tnum" style="color:var(--ink-1,#241B12);font-weight:600">$38.00</span><span class="tnum">$42.00</span><span class="tnum">$46.00</span></div>
+        <div style="display:grid;grid-template-columns:1.1fr 1fr 1fr 1fr;gap:10px;align-items:center;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);padding:8px 0;border-bottom:1px solid #F1F5F9"><span style="color:var(--muted-1,#6B6152)">Reviews</span><span class="tnum" style="color:var(--ink-1,#241B12);font-weight:600">1,204</span><span class="tnum">9,842</span><span class="tnum">806</span></div>
+        <div style="display:grid;grid-template-columns:1.1fr 1fr 1fr 1fr;gap:10px;align-items:center;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);padding:8px 0;border-bottom:1px solid #F1F5F9"><span style="color:var(--muted-1,#6B6152)">Photos</span><span class="tnum" style="color:var(--ink-1,#241B12);font-weight:600">6</span><span class="tnum">10</span><span class="tnum">9</span></div>
+        <div style="display:grid;grid-template-columns:1.1fr 1fr 1fr 1fr;gap:10px;align-items:center;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);padding:8px 0;border-bottom:1px solid #F1F5F9"><span style="color:var(--muted-1,#6B6152)">Tags used</span><span class="tnum" style="color:var(--warning-strong,#B45309);font-weight:600">11 of 13</span><span class="tnum">13 of 13</span><span class="tnum">13 of 13</span></div>
+        <div style="display:grid;grid-template-columns:1.1fr 1fr 1fr 1fr;gap:10px;align-items:center;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);padding:8px 0;border-bottom:1px solid #F1F5F9"><span style="color:var(--muted-1,#6B6152)">Personalization</span><span style="color:var(--ink-1,#241B12);font-weight:600">Yes</span><span>Yes</span><span>Yes</span></div>
+        <div style="display:grid;grid-template-columns:1.1fr 1fr 1fr 1fr;gap:10px;align-items:center;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);padding:8px 0"><span style="color:var(--muted-1,#6B6152)">Est. monthly sales</span><span class="tnum" style="color:var(--ink-1,#241B12);font-weight:600">128 verified</span><span class="tnum" style="color:var(--warning-strong,#B45309)">40–65</span><span class="tnum" style="color:var(--warning-strong,#B45309)">25–45</span></div>
+        <div style="padding:12px 13px;border:1px solid #FDE68A;background:#FFFBEB;border-radius:11px;font:400 12px/1.55 Inter,sans-serif;color:#92400E">Your figure is verified from your own orders; competitor figures are modeled estimates. The two are not directly comparable.</div>
+      </div>
+
+      <div style="width:460px;flex:none;display:flex;flex-direction:column;gap:16px">
+        <div style="background:var(--surface,#FFFFFF);border:1px solid #FECACA;border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:8px"><span style="padding:3px 8px;border-radius:6px;background:#FEF2F2;font:600 10.5px/1 Inter,sans-serif;color:var(--danger-strong,#B91C1C)">AI error</span><span style="font:600 13.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Draft could not be generated</span></div>
+          <div style="font:400 12.5px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">The request timed out before a draft was produced. Nothing was changed on your listing and no generation was counted against your limit.</div>
+          <div style="display:flex;gap:8px"><span style="padding:9px 13px;border-radius:9px;background:var(--brand,#B4472A);color:#fff;font:600 12.5px/1 Inter,sans-serif">Try again</span><span style="padding:9px 13px;border:1px solid #CBD5E1;border-radius:9px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Edit manually</span></div>
+        </div>
+
+        <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:11px">
+          <div style="display:flex;align-items:center;gap:8px"><span style="padding:3px 8px;border-radius:6px;background:var(--brand-tint,#FBEEE7);font:600 10.5px/1 Inter,sans-serif;color:var(--brand-strong,#8C371F)">Limit reached</span><span style="font:600 13.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">60 of 60 AI generations used</span></div>
+          <div style="height:7px;border-radius:4px;background:var(--border,#E9E2D6);overflow:hidden"><div style="width:100%;height:100%;background:var(--brand,#B4472A)"></div></div>
+          <div style="font:400 12.5px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">Your monthly allowance resets Sep 1. Manual editing, audits and bulk edits are unaffected. Growth includes 500 generations per month.</div>
+          <div style="display:flex;gap:8px"><span style="padding:9px 13px;border-radius:9px;background:var(--brand,#B4472A);color:#fff;font:600 12.5px/1 Inter,sans-serif">Compare plans</span><span style="padding:9px 13px;border:1px solid #CBD5E1;border-radius:9px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Continue manually</span></div>
+        </div>
+
+        <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:11px">
+          <span style="font:600 13.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">AI transparency, in plain words</span>
+          <div style="display:flex;gap:9px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent-ai,#7C3AED)" stroke-width="2.4" stroke-linecap="round" style="flex:none;margin-top:2px"><path d="M5 19L17 7M15 5l4 4"></path></svg><span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Drafts are generated from your listing text and your saved keywords — not from competitors’ descriptions.</span></div>
+          <div style="display:flex;gap:9px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent-ai,#7C3AED)" stroke-width="2.4" stroke-linecap="round" style="flex:none;margin-top:2px"><path d="M5 19L17 7M15 5l4 4"></path></svg><span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Every change is shown as a diff with a reason before it can be accepted.</span></div>
+          <div style="display:flex;gap:9px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent-ai,#7C3AED)" stroke-width="2.4" stroke-linecap="round" style="flex:none;margin-top:2px"><path d="M5 19L17 7M15 5l4 4"></path></svg><span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">AI never predicts sales, ranking positions or revenue outcomes.</span></div>
+          <div style="display:flex;gap:9px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent-ai,#7C3AED)" stroke-width="2.4" stroke-linecap="round" style="flex:none;margin-top:2px"><path d="M5 19L17 7M15 5l4 4"></path></svg><span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Approved drafts are recorded in change history as AI-assisted, with the approving user.</span></div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;flex:none">
+        <div style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">AI draft review on mobile · 390</div>
+        <div style="width:390px;height:844px;flex:none;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);border-radius:22px;overflow:hidden;display:flex;flex-direction:column">
+          <div style="height:56px;flex:none;background:var(--surface,#FFFFFF);border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:center;gap:10px;padding:0 14px">
+            <span style="width:44px;height:44px;margin-left:-10px;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2,#4A4234)" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"></path></svg></span>
+            <span style="font:600 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12);flex:1">AI draft 2 of 7</span>
+            <span style="padding:4px 9px;border-radius:999px;background:#F5F3FF;border:1px solid #DDD6FE;font:600 10.5px/1 Inter,sans-serif;color:#6D28D9">Draft</span>
+          </div>
+          <div style="flex:1;overflow:hidden;padding:14px;display:flex;flex-direction:column;gap:12px">
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px">
+              <span style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Current title</span><span style="padding:2px 7px;border-radius:999px;background:#F0FDF4;font:600 10px/1.5 Inter,sans-serif;color:#166534">Live</span></span>
+              <span style="font:400 12.5px/1.6 Inter,sans-serif;color:var(--ink-2,#4A4234)">Personalized Birth Flower Necklace, Gold Filled Pendant, Custom Birth Month Gift for Mom, Handmade Jewelry Gift</span>
+            </div>
+            <div style="background:var(--surface,#FFFFFF);border:1px solid #DDD6FE;border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:9px">
+              <span style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">AI draft</span><span class="tnum" style="font:600 11px/1 Inter,sans-serif;color:#166534">116 chars</span></span>
+              <span style="font:400 12.5px/1.6 Inter,sans-serif;color:var(--ink-1,#241B12)">Personalized Birth Flower Necklace, <span style="background:#F0FDF4;color:#166534;padding:0 3px;border-radius:3px">14k Gold Filled</span> Custom Pendant, <span style="background:#F0FDF4;color:#166534;padding:0 3px;border-radius:3px">Birth Month Jewelry</span>, Handmade Gift for Mom</span>
+              <span style="display:flex;flex-wrap:wrap;gap:6px"><span style="padding:4px 8px;border-radius:7px;background:#F5F3FF;font:500 10.5px/1.3 Inter,sans-serif;color:#6D28D9">Source: “Autumn gifting”</span><span style="padding:4px 8px;border-radius:7px;background:#F0FDF4;font:500 10.5px/1.3 Inter,sans-serif;color:#166534">Brand term locked</span></span>
+            </div>
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px">
+              <span style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">What changed</span>
+              <span style="font:400 12px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">Removed a duplicated “Gift”, added “birth month jewelry”, kept the title under 140 characters. Two tag changes are included.</span>
+            </div>
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:7px">
+              <span style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Tags</span>
+              <span style="display:flex;flex-wrap:wrap;gap:6px"><span style="padding:5px 9px;border-radius:7px;background:#F0FDF4;border:1px solid #BBF7D0;font:600 11.5px/1 Inter,sans-serif;color:#166534">+ birth month jewelry</span><span style="padding:5px 9px;border-radius:7px;background:#FEF2F2;border:1px solid #FECACA;font:600 11.5px/1 Inter,sans-serif;color:var(--danger-strong,#B91C1C)">− gift for mom</span></span>
+            </div>
+            <div style="margin-top:auto;display:flex;flex-direction:column;gap:9px">
+              <span style="height:48px;border-radius:11px;background:var(--accent-ai,#7C3AED);color:#fff;font:600 14px/48px Inter,sans-serif;text-align:center">Approve this draft</span>
+              <div style="display:flex;gap:9px"><span style="flex:1;height:44px;border:1px solid #CBD5E1;border-radius:10px;font:600 13px/42px Inter,sans-serif;color:var(--ink-2,#4A4234);text-align:center">Edit</span><span style="flex:1;height:44px;border:1px solid #CBD5E1;border-radius:10px;font:600 13px/42px Inter,sans-serif;color:var(--ink-2,#4A4234);text-align:center">Skip</span></div>
+              <span style="font:400 11px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152);text-align:center">AI can be wrong. Check materials and measurements before publishing.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="border-top:1px solid #CBD5E1;padding-top:24px;display:flex;flex-direction:column;gap:8px;max-width:900px">
+    <div style="font:600 14px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Next up</div>
+    <div style="font:400 13.5px/1.6 Inter,sans-serif;color:var(--ink-2,#4A4234)">Phase 8 — settings, plans and compliance: profile, shop connections and permissions, team &amp; roles, notifications, billing and plan comparison, data export and deletion, plus the legal and status surfaces. Continuing from screen 71.</div>
+  </div>
+
+</div>
+
+</x-dc>
+</body>
+</html>

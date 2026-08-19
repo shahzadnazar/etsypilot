@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#EEF1F5;font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+.tnum{font-variant-numeric:tabular-nums}
+</style>
+</helmet>
+
+<div style="padding:40px 48px 80px;display:flex;flex-direction:column;gap:16px">
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:900px">
+    <div style="font:700 20px/1 Inter,sans-serif;color:#0F172A">EtsyPilot — Home &amp; Action Center color exploration</div>
+    <div style="font:400 13px/1.6 Inter,sans-serif;color:#334155">Same layout, sidebar, KPI cards, Action Center and chart as the existing dashboard — only the color tokens change across the five variants below. Existing screens are untouched; this is a comparison only.</div>
+  </div>
+
+  <div style="display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start">
+
+    <!-- 1. LIGHT PROFESSIONAL -->
+    <div style="display:flex;flex-direction:column;gap:8px;flex:none">
+      <div style="font:600 13px/1 Inter,sans-serif;color:#0F172A">1 · Light Professional</div>
+      <div style="width:900px;height:640px;flex:none;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;display:flex">
+        <aside style="width:190px;flex:none;background:#fff;border-right:1px solid #E2E8F0;display:flex;flex-direction:column;padding:14px 10px">
+          <div style="display:flex;align-items:center;gap:8px;padding-bottom:12px;border-bottom:1px solid #E2E8F0"><span style="width:24px;height:24px;border-radius:7px;background:#334155;color:#fff;display:flex;align-items:center;justify-content:center;font:700 11px/1 Inter,sans-serif">EP</span><span style="font:700 13px/1 Inter,sans-serif;color:#0F172A">EtsyPilot</span></div>
+          <div style="display:flex;flex-direction:column;gap:3px;padding-top:10px">
+            <span style="padding:8px 9px;border-radius:8px;background:#F1F5F9;font:600 11.5px/1 Inter,sans-serif;color:#334155">Overview</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#64748B">Keywords</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#64748B">Listings</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#64748B">Profit &amp; fees</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#64748B">Shop Pulse</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#64748B">Simple Calculator</span>
+          </div>
+        </aside>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <header style="height:46px;flex:none;background:#fff;border-bottom:1px solid #E2E8F0;display:flex;align-items:center;gap:10px;padding:0 16px"><span style="padding:5px 9px;border:1px solid #E2E8F0;border-radius:8px;font:500 11px/1 Inter,sans-serif;color:#334155">Willow &amp; Fern · synced 6m</span><span style="margin-left:auto;width:22px;height:22px;border-radius:7px;background:#334155;color:#fff;display:flex;align-items:center;justify-content:center;font:600 10px/1 Inter,sans-serif">SR</span></header>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:12px;flex:1;overflow:hidden">
+            <div style="font:600 18px/1.2 Inter,sans-serif;color:#0F172A">Good morning, Salman</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:9px">
+              <div style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#64748B">Gross sales</span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#0F172A">$18,420</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#15803D">▲ 12.4%</span></div>
+              <div style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#64748B">Orders</span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#0F172A">438</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#15803D">▲ 8.1%</span></div>
+              <div style="background:#fff;border:1px solid #334155;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#334155">Net profit</span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#0F172A">$5,138</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#B45309">62% coverage</span></div>
+              <div style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#64748B">Active listings</span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#0F172A">412</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#334155">Review</span></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:10px;flex:1;min-height:0">
+              <div style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:center;gap:8px"><span style="font:600 12.5px/1 Inter,sans-serif;color:#0F172A">Action Center</span><span style="padding:2px 6px;border-radius:999px;background:#FEF2F2;font:600 9.5px/1.4 Inter,sans-serif;color:#B91C1C">2 critical</span></div>
+                <div style="border-left:3px solid #B91C1C;background:#F8FAFC;border-radius:7px;padding:9px;display:flex;flex-direction:column;gap:4px"><span style="font:600 11.5px/1.3 Inter,sans-serif;color:#0F172A">4 listings sell below cost</span><span style="align-self:flex-start;padding:5px 9px;border-radius:7px;background:#334155;color:#fff;font:600 10.5px/1 Inter,sans-serif;margin-top:2px">Review pricing</span></div>
+                <div style="border-left:3px solid #B45309;background:#F8FAFC;border-radius:7px;padding:9px;display:flex;flex-direction:column;gap:4px"><span style="font:600 11.5px/1.3 Inter,sans-serif;color:#0F172A">38 listings have no cost</span></div>
+              </div>
+              <div style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px">
+                <span style="font:600 12.5px/1 Inter,sans-serif;color:#0F172A">Sales</span>
+                <svg viewBox="0 0 260 90" style="width:100%;flex:1"><path d="M0 76 L52 66 L104 70 L156 40 L208 48 L260 22" stroke="#334155" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"></path><path d="M0 76 L52 66 L104 70 L156 40 L208 48 L260 22 L260 90 L0 90Z" fill="#334155" opacity=".07"></path></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. DARK PROFESSIONAL -->
+    <div style="display:flex;flex-direction:column;gap:8px;flex:none">
+      <div style="font:600 13px/1 Inter,sans-serif;color:#0F172A">2 · Dark Professional</div>
+      <div style="width:900px;height:640px;flex:none;background:#0B1220;border:1px solid #1E293B;border-radius:14px;overflow:hidden;display:flex">
+        <aside style="width:190px;flex:none;background:#111C31;border-right:1px solid #1E293B;display:flex;flex-direction:column;padding:14px 10px">
+          <div style="display:flex;align-items:center;gap:8px;padding-bottom:12px;border-bottom:1px solid #1E293B"><span style="width:24px;height:24px;border-radius:7px;background:#60A5FA;color:#0B1220;display:flex;align-items:center;justify-content:center;font:700 11px/1 Inter,sans-serif">EP</span><span style="font:700 13px/1 Inter,sans-serif;color:#F1F5F9">EtsyPilot</span></div>
+          <div style="display:flex;flex-direction:column;gap:3px;padding-top:10px">
+            <span style="padding:8px 9px;border-radius:8px;background:rgba(96,165,250,.12);font:600 11.5px/1 Inter,sans-serif;color:#93C5FD">Overview</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#94A3B8">Keywords</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#94A3B8">Listings</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#94A3B8">Profit &amp; fees</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#94A3B8">Shop Pulse</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#94A3B8">Simple Calculator</span>
+          </div>
+        </aside>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <header style="height:46px;flex:none;background:#111C31;border-bottom:1px solid #1E293B;display:flex;align-items:center;gap:10px;padding:0 16px"><span style="padding:5px 9px;border:1px solid #1E293B;border-radius:8px;font:500 11px/1 Inter,sans-serif;color:#CBD5E1">Willow &amp; Fern · synced 6m</span><span style="margin-left:auto;width:22px;height:22px;border-radius:7px;background:#60A5FA;color:#0B1220;display:flex;align-items:center;justify-content:center;font:600 10px/1 Inter,sans-serif">SR</span></header>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:12px;flex:1;overflow:hidden">
+            <div style="font:600 18px/1.2 Inter,sans-serif;color:#F1F5F9">Good morning, Salman</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:9px">
+              <div style="background:#111C31;border:1px solid #1E293B;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#94A3B8">Gross sales</span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#F1F5F9">$18,420</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#4ADE80">▲ 12.4%</span></div>
+              <div style="background:#111C31;border:1px solid #1E293B;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#94A3B8">Orders</span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#F1F5F9">438</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#4ADE80">▲ 8.1%</span></div>
+              <div style="background:#111C31;border:1px solid #60A5FA;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#93C5FD">Net profit</span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#F1F5F9">$5,138</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#FBBF24">62% coverage</span></div>
+              <div style="background:#111C31;border:1px solid #1E293B;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#94A3B8">Active listings</span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#F1F5F9">412</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#93C5FD">Review</span></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:10px;flex:1;min-height:0">
+              <div style="background:#111C31;border:1px solid #1E293B;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:center;gap:8px"><span style="font:600 12.5px/1 Inter,sans-serif;color:#F1F5F9">Action Center</span><span style="padding:2px 6px;border-radius:999px;background:rgba(248,113,113,.16);font:600 9.5px/1.4 Inter,sans-serif;color:#FCA5A5">2 critical</span></div>
+                <div style="border-left:3px solid #F87171;background:#0B1220;border-radius:7px;padding:9px;display:flex;flex-direction:column;gap:4px"><span style="font:600 11.5px/1.3 Inter,sans-serif;color:#F1F5F9">4 listings sell below cost</span><span style="align-self:flex-start;padding:5px 9px;border-radius:7px;background:#60A5FA;color:#0B1220;font:600 10.5px/1 Inter,sans-serif;margin-top:2px">Review pricing</span></div>
+                <div style="border-left:3px solid #FBBF24;background:#0B1220;border-radius:7px;padding:9px;display:flex;flex-direction:column;gap:4px"><span style="font:600 11.5px/1.3 Inter,sans-serif;color:#F1F5F9">38 listings have no cost</span></div>
+              </div>
+              <div style="background:#111C31;border:1px solid #1E293B;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px">
+                <span style="font:600 12.5px/1 Inter,sans-serif;color:#F1F5F9">Sales</span>
+                <svg viewBox="0 0 260 90" style="width:100%;flex:1"><path d="M0 76 L52 66 L104 70 L156 40 L208 48 L260 22" stroke="#60A5FA" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"></path><path d="M0 76 L52 66 L104 70 L156 40 L208 48 L260 22 L260 90 L0 90Z" fill="#60A5FA" opacity=".12"></path></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. BLUE SAAS -->
+    <div style="display:flex;flex-direction:column;gap:8px;flex:none">
+      <div style="font:600 13px/1 Inter,sans-serif;color:#0F172A">3 · Blue SaaS</div>
+      <div style="width:900px;height:640px;flex:none;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;display:flex">
+        <aside style="width:190px;flex:none;background:#fff;border-right:1px solid #E2E8F0;display:flex;flex-direction:column;padding:14px 10px">
+          <div style="display:flex;align-items:center;gap:8px;padding-bottom:12px;border-bottom:1px solid #E2E8F0"><span style="width:24px;height:24px;border-radius:7px;background:#2563EB;color:#fff;display:flex;align-items:center;justify-content:center;font:700 11px/1 Inter,sans-serif">EP</span><span style="font:700 13px/1 Inter,sans-serif;color:#0F172A">EtsyPilot</span></div>
+          <div style="display:flex;flex-direction:column;gap:3px;padding-top:10px">
+            <span style="padding:8px 9px;border-radius:8px;background:#EFF6FF;font:600 11.5px/1 Inter,sans-serif;color:#1D4ED8">Overview</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#64748B">Keywords</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#64748B">Listings</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#64748B">Profit &amp; fees</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#64748B">Shop Pulse</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#64748B">Simple Calculator</span>
+          </div>
+        </aside>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <header style="height:46px;flex:none;background:#fff;border-bottom:1px solid #E2E8F0;display:flex;align-items:center;gap:10px;padding:0 16px"><span style="padding:5px 9px;border:1px solid #E2E8F0;border-radius:8px;font:500 11px/1 Inter,sans-serif;color:#334155">Willow &amp; Fern · synced 6m</span><span style="margin-left:auto;width:22px;height:22px;border-radius:7px;background:#2563EB;color:#fff;display:flex;align-items:center;justify-content:center;font:600 10px/1 Inter,sans-serif">SR</span></header>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:12px;flex:1;overflow:hidden">
+            <div style="font:600 18px/1.2 Inter,sans-serif;color:#0F172A">Good morning, Salman</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:9px">
+              <div style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#64748B">Gross sales</span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#0F172A">$18,420</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#16A34A">▲ 12.4%</span></div>
+              <div style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#64748B">Orders</span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#0F172A">438</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#16A34A">▲ 8.1%</span></div>
+              <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#1D4ED8">Net profit</span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#0F172A">$5,138</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#B45309">62% coverage</span></div>
+              <div style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#64748B">Active listings</span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#0F172A">412</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#2563EB">Review</span></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:10px;flex:1;min-height:0">
+              <div style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:center;gap:8px"><span style="font:600 12.5px/1 Inter,sans-serif;color:#0F172A">Action Center</span><span style="padding:2px 6px;border-radius:999px;background:#FEF2F2;font:600 9.5px/1.4 Inter,sans-serif;color:#B91C1C">2 critical</span></div>
+                <div style="border-left:3px solid #DC2626;background:#F8FAFC;border-radius:7px;padding:9px;display:flex;flex-direction:column;gap:4px"><span style="font:600 11.5px/1.3 Inter,sans-serif;color:#0F172A">4 listings sell below cost</span><span style="align-self:flex-start;padding:5px 9px;border-radius:7px;background:#2563EB;color:#fff;font:600 10.5px/1 Inter,sans-serif;margin-top:2px">Review pricing</span></div>
+                <div style="border-left:3px solid #D97706;background:#F8FAFC;border-radius:7px;padding:9px;display:flex;flex-direction:column;gap:4px"><span style="font:600 11.5px/1.3 Inter,sans-serif;color:#0F172A">38 listings have no cost</span></div>
+              </div>
+              <div style="background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px">
+                <span style="font:600 12.5px/1 Inter,sans-serif;color:#0F172A">Sales</span>
+                <svg viewBox="0 0 260 90" style="width:100%;flex:1"><path d="M0 76 L52 66 L104 70 L156 40 L208 48 L260 22" stroke="#2563EB" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"></path><path d="M0 76 L52 66 L104 70 L156 40 L208 48 L260 22 L260 90 L0 90Z" fill="#2563EB" opacity=".08"></path></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. PURPLE / INDIGO SAAS -->
+    <div style="display:flex;flex-direction:column;gap:8px;flex:none">
+      <div style="font:600 13px/1 Inter,sans-serif;color:#0F172A">4 · Purple / Indigo SaaS</div>
+      <div style="width:900px;height:640px;flex:none;background:#F8FAFC;border:1px solid #E5E3F0;border-radius:14px;overflow:hidden;display:flex">
+        <aside style="width:190px;flex:none;background:#fff;border-right:1px solid #E5E3F0;display:flex;flex-direction:column;padding:14px 10px">
+          <div style="display:flex;align-items:center;gap:8px;padding-bottom:12px;border-bottom:1px solid #E5E3F0"><span style="width:24px;height:24px;border-radius:7px;background:#6D28D9;color:#fff;display:flex;align-items:center;justify-content:center;font:700 11px/1 Inter,sans-serif">EP</span><span style="font:700 13px/1 Inter,sans-serif;color:#0F172A">EtsyPilot</span></div>
+          <div style="display:flex;flex-direction:column;gap:3px;padding-top:10px">
+            <span style="padding:8px 9px;border-radius:8px;background:#F5F3FF;font:600 11.5px/1 Inter,sans-serif;color:#6D28D9">Overview</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#64748B">Keywords</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#64748B">Listings</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#64748B">Profit &amp; fees</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#64748B">Shop Pulse</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#64748B">Simple Calculator</span>
+          </div>
+        </aside>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <header style="height:46px;flex:none;background:#fff;border-bottom:1px solid #E5E3F0;display:flex;align-items:center;gap:10px;padding:0 16px"><span style="padding:5px 9px;border:1px solid #E5E3F0;border-radius:8px;font:500 11px/1 Inter,sans-serif;color:#334155">Willow &amp; Fern · synced 6m</span><span style="margin-left:auto;width:22px;height:22px;border-radius:7px;background:#6D28D9;color:#fff;display:flex;align-items:center;justify-content:center;font:600 10px/1 Inter,sans-serif">SR</span></header>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:12px;flex:1;overflow:hidden">
+            <div style="font:600 18px/1.2 Inter,sans-serif;color:#0F172A">Good morning, Salman</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:9px">
+              <div style="background:#fff;border:1px solid #E5E3F0;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#64748B">Gross sales</span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#0F172A">$18,420</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#16A34A">▲ 12.4%</span></div>
+              <div style="background:#fff;border:1px solid #E5E3F0;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#64748B">Orders</span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#0F172A">438</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#16A34A">▲ 8.1%</span></div>
+              <div style="background:#F5F3FF;border:1px solid #DDD6FE;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#6D28D9">Net profit</span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#0F172A">$5,138</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#B45309">62% coverage</span></div>
+              <div style="background:#fff;border:1px solid #E5E3F0;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#64748B">Active listings</span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#0F172A">412</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#6D28D9">Review</span></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:10px;flex:1;min-height:0">
+              <div style="background:#fff;border:1px solid #E5E3F0;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:center;gap:8px"><span style="font:600 12.5px/1 Inter,sans-serif;color:#0F172A">Action Center</span><span style="padding:2px 6px;border-radius:999px;background:#FEF2F2;font:600 9.5px/1.4 Inter,sans-serif;color:#B91C1C">2 critical</span></div>
+                <div style="border-left:3px solid #DC2626;background:#F8FAFC;border-radius:7px;padding:9px;display:flex;flex-direction:column;gap:4px"><span style="font:600 11.5px/1.3 Inter,sans-serif;color:#0F172A">4 listings sell below cost</span><span style="align-self:flex-start;padding:5px 9px;border-radius:7px;background:#6D28D9;color:#fff;font:600 10.5px/1 Inter,sans-serif;margin-top:2px">Review pricing</span></div>
+                <div style="border-left:3px solid #D97706;background:#F8FAFC;border-radius:7px;padding:9px;display:flex;flex-direction:column;gap:4px"><span style="font:600 11.5px/1.3 Inter,sans-serif;color:#0F172A">38 listings have no cost</span></div>
+              </div>
+              <div style="background:#fff;border:1px solid #E5E3F0;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px">
+                <span style="font:600 12.5px/1 Inter,sans-serif;color:#0F172A">Sales</span>
+                <svg viewBox="0 0 260 90" style="width:100%;flex:1"><path d="M0 76 L52 66 L104 70 L156 40 L208 48 L260 22" stroke="#6D28D9" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"></path><path d="M0 76 L52 66 L104 70 L156 40 L208 48 L260 22 L260 90 L0 90Z" fill="#6D28D9" opacity=".08"></path></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. GREEN / TEAL SAAS -->
+    <div style="display:flex;flex-direction:column;gap:8px;flex:none">
+      <div style="font:600 13px/1 Inter,sans-serif;color:#0F172A">5 · Green / Teal SaaS</div>
+      <div style="width:900px;height:640px;flex:none;background:#F7FAF9;border:1px solid #DCE8E3;border-radius:14px;overflow:hidden;display:flex">
+        <aside style="width:190px;flex:none;background:#fff;border-right:1px solid #DCE8E3;display:flex;flex-direction:column;padding:14px 10px">
+          <div style="display:flex;align-items:center;gap:8px;padding-bottom:12px;border-bottom:1px solid #DCE8E3"><span style="width:24px;height:24px;border-radius:7px;background:#0F766E;color:#fff;display:flex;align-items:center;justify-content:center;font:700 11px/1 Inter,sans-serif">EP</span><span style="font:700 13px/1 Inter,sans-serif;color:#0F172A">EtsyPilot</span></div>
+          <div style="display:flex;flex-direction:column;gap:3px;padding-top:10px">
+            <span style="padding:8px 9px;border-radius:8px;background:#ECFDF5;font:600 11.5px/1 Inter,sans-serif;color:#0F766E">Overview</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#64748B">Keywords</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#64748B">Listings</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#64748B">Profit &amp; fees</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#64748B">Shop Pulse</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#64748B">Simple Calculator</span>
+          </div>
+        </aside>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <header style="height:46px;flex:none;background:#fff;border-bottom:1px solid #DCE8E3;display:flex;align-items:center;gap:10px;padding:0 16px"><span style="padding:5px 9px;border:1px solid #DCE8E3;border-radius:8px;font:500 11px/1 Inter,sans-serif;color:#334155">Willow &amp; Fern · synced 6m</span><span style="margin-left:auto;width:22px;height:22px;border-radius:7px;background:#0F766E;color:#fff;display:flex;align-items:center;justify-content:center;font:600 10px/1 Inter,sans-serif">SR</span></header>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:12px;flex:1;overflow:hidden">
+            <div style="font:600 18px/1.2 Inter,sans-serif;color:#0F172A">Good morning, Salman</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:9px">
+              <div style="background:#fff;border:1px solid #DCE8E3;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#64748B">Gross sales</span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#0F172A">$18,420</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#15803D">▲ 12.4%</span></div>
+              <div style="background:#fff;border:1px solid #DCE8E3;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#64748B">Orders</span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#0F172A">438</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#15803D">▲ 8.1%</span></div>
+              <div style="background:#ECFDF5;border:1px solid #A7F3D0;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#0F766E">Net profit</span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#0F172A">$5,138</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#B45309">62% coverage</span></div>
+              <div style="background:#fff;border:1px solid #DCE8E3;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#64748B">Active listings</span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#0F172A">412</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#0F766E">Review</span></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:10px;flex:1;min-height:0">
+              <div style="background:#fff;border:1px solid #DCE8E3;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:center;gap:8px"><span style="font:600 12.5px/1 Inter,sans-serif;color:#0F172A">Action Center</span><span style="padding:2px 6px;border-radius:999px;background:#FEF2F2;font:600 9.5px/1.4 Inter,sans-serif;color:#B91C1C">2 critical</span></div>
+                <div style="border-left:3px solid #DC2626;background:#F7FAF9;border-radius:7px;padding:9px;display:flex;flex-direction:column;gap:4px"><span style="font:600 11.5px/1.3 Inter,sans-serif;color:#0F172A">4 listings sell below cost</span><span style="align-self:flex-start;padding:5px 9px;border-radius:7px;background:#0F766E;color:#fff;font:600 10.5px/1 Inter,sans-serif;margin-top:2px">Review pricing</span></div>
+                <div style="border-left:3px solid #D97706;background:#F7FAF9;border-radius:7px;padding:9px;display:flex;flex-direction:column;gap:4px"><span style="font:600 11.5px/1.3 Inter,sans-serif;color:#0F172A">38 listings have no cost</span></div>
+              </div>
+              <div style="background:#fff;border:1px solid #DCE8E3;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px">
+                <span style="font:600 12.5px/1 Inter,sans-serif;color:#0F172A">Sales</span>
+                <svg viewBox="0 0 260 90" style="width:100%;flex:1"><path d="M0 76 L52 66 L104 70 L156 40 L208 48 L260 22" stroke="#0F766E" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"></path><path d="M0 76 L52 66 L104 70 L156 40 L208 48 L260 22 L260 90 L0 90Z" fill="#0F766E" opacity=".08"></path></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. VIBRANT PROFESSIONAL -->
+    <div style="display:flex;flex-direction:column;gap:8px;flex:none">
+      <div style="font:600 13px/1 Inter,sans-serif;color:#0F172A">6 · Vibrant Professional — new</div>
+      <div style="width:900px;height:640px;flex:none;background:#F9FAFB;border:1px solid #E7E9EF;border-radius:14px;overflow:hidden;display:flex">
+        <aside style="width:190px;flex:none;background:#fff;border-right:1px solid #E7E9EF;display:flex;flex-direction:column;padding:14px 10px">
+          <div style="display:flex;align-items:center;gap:8px;padding-bottom:12px;border-bottom:1px solid #E7E9EF"><span style="width:24px;height:24px;border-radius:7px;background:linear-gradient(135deg,#15803D,#22C55E);color:#fff;display:flex;align-items:center;justify-content:center;font:700 11px/1 Inter,sans-serif">EP</span><span style="font:700 13px/1 Inter,sans-serif;color:#111827">EtsyPilot</span></div>
+          <div style="display:flex;flex-direction:column;gap:3px;padding-top:10px">
+            <span style="padding:8px 9px;border-radius:8px;background:#EEFCF3;font:600 11.5px/1 Inter,sans-serif;color:#15803D">Overview</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#6B7280">Keywords</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#6B7280">Listings</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#6B7280">Profit &amp; fees</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#6B7280">Shop Pulse</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#6B7280">Simple Calculator</span>
+          </div>
+        </aside>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <header style="height:46px;flex:none;background:#fff;border-bottom:1px solid #E7E9EF;display:flex;align-items:center;gap:10px;padding:0 16px"><span style="padding:5px 9px;border:1px solid #E7E9EF;border-radius:8px;font:500 11px/1 Inter,sans-serif;color:#374151">Willow &amp; Fern · synced 6m</span><span style="margin-left:auto;width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,#15803D,#22C55E);color:#fff;display:flex;align-items:center;justify-content:center;font:600 10px/1 Inter,sans-serif">SR</span></header>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:12px;flex:1;overflow:hidden">
+            <div style="font:600 18px/1.2 Inter,sans-serif;color:#111827">Good morning, Salman</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:9px">
+              <div style="background:#fff;border:1px solid #E7E9EF;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="display:flex;align-items:center;gap:6px;font:600 10.5px/1 Inter,sans-serif;color:#6B7280"><i style="width:6px;height:6px;border-radius:3px;background:#15803D"></i>Gross sales</span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#111827">$18,420</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#16A34A">▲ 12.4%</span></div>
+              <div style="background:#fff;border:1px solid #E7E9EF;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="display:flex;align-items:center;gap:6px;font:600 10.5px/1 Inter,sans-serif;color:#6B7280"><i style="width:6px;height:6px;border-radius:3px;background:#22C55E"></i>Orders</span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#111827">438</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#16A34A">▲ 8.1%</span></div>
+              <div style="background:linear-gradient(135deg,#EEFCF3,#F3FDF6);border:1px solid #A7E3BC;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#15803D">Net profit</span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#111827">$5,138</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#B45309">62% coverage</span></div>
+              <div style="background:#fff;border:1px solid #E7E9EF;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#6B7280">Active listings</span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#111827">412</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#15803D">Review</span></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:10px;flex:1;min-height:0">
+              <div style="background:#fff;border:1px solid #E7E9EF;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:center;gap:8px"><span style="font:600 12.5px/1 Inter,sans-serif;color:#111827">Action Center</span><span style="padding:2px 6px;border-radius:999px;background:#FEF2F2;font:600 9.5px/1.4 Inter,sans-serif;color:#B91C1C">2 critical</span></div>
+                <div style="border-left:3px solid #DC2626;background:#F9FAFB;border-radius:7px;padding:9px;display:flex;flex-direction:column;gap:4px"><span style="font:600 11.5px/1.3 Inter,sans-serif;color:#111827">4 listings sell below cost</span><span style="align-self:flex-start;padding:5px 9px;border-radius:7px;background:linear-gradient(135deg,#15803D,#22C55E);color:#fff;font:600 10.5px/1 Inter,sans-serif;margin-top:2px">Review pricing</span></div>
+                <div style="border-left:3px solid #D97706;background:#F9FAFB;border-radius:7px;padding:9px;display:flex;flex-direction:column;gap:4px"><span style="font:600 11.5px/1.3 Inter,sans-serif;color:#111827">38 listings have no cost</span></div>
+              </div>
+              <div style="background:#fff;border:1px solid #E7E9EF;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px">
+                <span style="font:600 12.5px/1 Inter,sans-serif;color:#111827">Sales</span>
+                <svg viewBox="0 0 260 90" style="width:100%;flex:1"><defs><linearGradient id="g6" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#15803D"></stop><stop offset="1" stop-color="#22C55E"></stop></linearGradient></defs><path d="M0 76 L52 66 L104 70 L156 40 L208 48 L260 22" stroke="url(#g6)" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"></path><path d="M0 76 L52 66 L104 70 L156 40 L208 48 L260 22 L260 90 L0 90Z" fill="#15803D" opacity=".08"></path></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="font:400 12px/1.5 Inter,sans-serif;color:#64748B;max-width:900px">Green gradient as a restrained brand signature (logo mark, active nav, primary CTA, chart line) on a clean near-white surface — no blue anywhere. Note: since green is also this file's semantic "success" color, use it as brand only if success states get a slightly different shade or an icon distinction to avoid ambiguity.</div>
+    </div>
+
+    <!-- 7. DARK TEAL DASHBOARD -->
+    <div style="display:flex;flex-direction:column;gap:8px;flex:none">
+      <div style="font:600 13px/1 Inter,sans-serif;color:#0F172A">7 · Dark Teal Dashboard — reference-inspired</div>
+      <div style="width:900px;height:640px;flex:none;background:#0B1917;border:1px solid #16302B;border-radius:14px;overflow:hidden;display:flex">
+        <aside style="width:190px;flex:none;background:#0E1F1C;border-right:1px solid #16302B;display:flex;flex-direction:column;padding:14px 10px">
+          <div style="display:flex;align-items:center;gap:8px;padding-bottom:12px;border-bottom:1px solid #16302B"><span style="width:24px;height:24px;border-radius:7px;background:#2DD4A8;color:#0B1917;display:flex;align-items:center;justify-content:center;font:700 11px/1 Inter,sans-serif">EP</span><span style="font:700 13px/1 Inter,sans-serif;color:#F0FBF7">EtsyPilot</span></div>
+          <div style="display:flex;flex-direction:column;gap:3px;padding-top:10px">
+            <span style="padding:8px 9px;border-radius:8px;background:rgba(45,212,168,.14);font:600 11.5px/1 Inter,sans-serif;color:#5EEAC7">Overview</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#7FA69C">Keywords</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#7FA69C">Listings</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#7FA69C">Profit &amp; fees</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#7FA69C">Shop Pulse</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#7FA69C">Simple Calculator</span>
+          </div>
+        </aside>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <header style="height:46px;flex:none;background:#0E1F1C;border-bottom:1px solid #16302B;display:flex;align-items:center;gap:10px;padding:0 16px"><span style="padding:5px 9px;border:1px solid #16302B;border-radius:8px;font:500 11px/1 Inter,sans-serif;color:#B7CFC8">Willow &amp; Fern · synced 6m</span><span style="margin-left:auto;width:22px;height:22px;border-radius:7px;background:#2DD4A8;color:#0B1917;display:flex;align-items:center;justify-content:center;font:600 10px/1 Inter,sans-serif">SR</span></header>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:12px;flex:1;overflow:hidden">
+            <div style="font:600 18px/1.2 Inter,sans-serif;color:#F0FBF7">Good morning, Salman</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:9px">
+              <div style="background:#122622;border:1px solid #1E3A34;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#7FA69C">Gross sales</span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#F0FBF7">$18,420</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#5EEAC7">▲ 12.4%</span></div>
+              <div style="background:#122622;border:1px solid #1E3A34;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#7FA69C">Orders</span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#F0FBF7">438</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#5EEAC7">▲ 8.1%</span></div>
+              <div style="background:#153B33;border:1px solid #2DD4A8;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#5EEAC7">Net profit</span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#F0FBF7">$5,138</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#FBBF24">62% coverage</span></div>
+              <div style="background:#122622;border:1px solid #1E3A34;border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#7FA69C">Active listings</span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:#F0FBF7">412</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#2DD4A8">Review</span></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:10px;flex:1;min-height:0">
+              <div style="background:#122622;border:1px solid #1E3A34;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:center;gap:8px"><span style="font:600 12.5px/1 Inter,sans-serif;color:#F0FBF7">Action Center</span><span style="padding:2px 6px;border-radius:999px;background:rgba(248,113,113,.16);font:600 9.5px/1.4 Inter,sans-serif;color:#FCA5A5">2 critical</span></div>
+                <div style="border-left:3px solid #F87171;background:#0E1F1C;border-radius:7px;padding:9px;display:flex;flex-direction:column;gap:4px"><span style="font:600 11.5px/1.3 Inter,sans-serif;color:#F0FBF7">4 listings sell below cost</span><span style="align-self:flex-start;padding:5px 9px;border-radius:7px;background:#2DD4A8;color:#0B1917;font:600 10.5px/1 Inter,sans-serif;margin-top:2px">Review pricing</span></div>
+                <div style="border-left:3px solid #FBBF24;background:#0E1F1C;border-radius:7px;padding:9px;display:flex;flex-direction:column;gap:4px"><span style="font:600 11.5px/1.3 Inter,sans-serif;color:#F0FBF7">38 listings have no cost</span></div>
+              </div>
+              <div style="background:#122622;border:1px solid #1E3A34;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px">
+                <span style="font:600 12.5px/1 Inter,sans-serif;color:#F0FBF7">Sales</span>
+                <svg viewBox="0 0 260 90" style="width:100%;flex:1"><defs><linearGradient id="g7" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2DD4A8"></stop><stop offset="1" stop-color="#5EEAC7"></stop></linearGradient></defs><path d="M0 76 L52 66 L104 70 L156 40 L208 48 L260 22" stroke="url(#g7)" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"></path><path d="M0 76 L52 66 L104 70 L156 40 L208 48 L260 22 L260 90 L0 90Z" fill="#2DD4A8" opacity=".14"></path></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="font:400 12px/1.5 Inter,sans-serif;color:#64748B;max-width:900px">Dark charcoal-teal surfaces (deep green-black, not pure black) with a single mint/teal accent for the logo, active nav, highlighted KPI, primary button and chart line — matches the reference dashboard's mood while keeping red/amber semantics for alerts.</div>
+    </div>
+
+    <!-- 8. DARK VIOLET DASHBOARD -->
+    <div style="display:flex;flex-direction:column;gap:8px;flex:none">
+      <div style="font:600 13px/1 Inter,sans-serif;color:#0F172A">8 · Dark Magenta-Gold Dashboard — unique, audited</div>
+      <div style="width:900px;height:640px;flex:none;background:#170D13;border:1px solid #3A1B2C;border-radius:14px;overflow:hidden;display:flex">
+        <aside style="width:190px;flex:none;background:#1C0F17;border-right:1px solid #3A1B2C;display:flex;flex-direction:column;padding:16px 12px">
+          <div style="display:flex;align-items:center;gap:8px;padding-bottom:16px;border-bottom:1px solid #3A1B2C"><span style="width:24px;height:24px;border-radius:7px;background:linear-gradient(135deg,#BE185D,#EAB84B);color:#170D13;display:flex;align-items:center;justify-content:center;font:700 11px/1 Inter,sans-serif">EP</span><span style="font:700 13px/1 Inter,sans-serif;color:#FCEEF3;letter-spacing:-.01em">EtsyPilot</span></div>
+          <div style="padding:12px 8px 4px;font:600 9.5px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:#8A6C79">Home</div>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <span style="display:flex;align-items:center;gap:8px;padding:8px 9px;border-radius:8px;background:rgba(190,24,93,.18);box-shadow:inset 2px 0 0 #BE185D;font:600 11.5px/1 Inter,sans-serif;color:#F9BFDA"><i style="width:5px;height:5px;border-radius:3px;background:#EAB84B"></i>Overview</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#B291A0">Keywords</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#B291A0">Listings</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#B291A0">Profit &amp; fees</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#B291A0">Shop Pulse</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#B291A0">Simple Calculator</span>
+          </div>
+        </aside>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <header style="height:48px;flex:none;background:#1C0F17;border-bottom:1px solid #3A1B2C;display:flex;align-items:center;gap:10px;padding:0 16px">
+            <span style="padding:5px 9px;border:1px solid #3D2130;border-radius:8px;font:500 11px/1 Inter,sans-serif;color:#DDBBC9;display:flex;align-items:center;gap:6px"><i style="width:6px;height:6px;border-radius:3px;background:#34D399"></i>Willow &amp; Fern · synced 6m</span>
+            <span style="margin-left:auto;width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,#BE185D,#EAB84B);color:#170D13;display:flex;align-items:center;justify-content:center;font:600 10px/1 Inter,sans-serif;box-shadow:0 0 0 2px #1C0F17,0 0 0 4px #BE185D">SR</span>
+          </header>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:16px;flex:1;overflow:hidden">
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font:500 10.5px/1 Inter,sans-serif;color:#8A6C79">Home / Overview</span>
+              <span style="font:600 19px/1.2 Inter,sans-serif;color:#FDF2F6;letter-spacing:-.01em">Good morning, Salman</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+              <div style="background:#241220;border:1px solid #3D2130;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:7px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#B291A0">Gross sales</span><span class="tnum" style="font:600 19px/1 Inter,sans-serif;color:#FDF2F6">$18,420</span><span style="display:flex;align-items:center;gap:4px;font:600 10.5px/1 Inter,sans-serif;color:#34D399">▲ 12.4%</span></div>
+              <div style="background:#241220;border:1px solid #3D2130;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:7px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#B291A0">Orders</span><span class="tnum" style="font:600 19px/1 Inter,sans-serif;color:#FDF2F6">438</span><span style="display:flex;align-items:center;gap:4px;font:600 10.5px/1 Inter,sans-serif;color:#34D399">▲ 8.1%</span></div>
+              <div style="background:linear-gradient(135deg,#4A1A38,#2E1027);border:1px solid #BE185D;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:7px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#F9BFDA">Net profit</span><span class="tnum" style="font:600 19px/1 Inter,sans-serif;color:#FDF2F6">$5,138</span><span style="display:flex;align-items:center;gap:4px;font:600 10.5px/1 Inter,sans-serif;color:#FBBF24">⚠ 62% coverage</span></div>
+              <div style="background:#fff;border:1px solid #F5D9E4;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:7px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#6B7280">Active listings</span><span class="tnum" style="font:600 19px/1 Inter,sans-serif;color:#170D13">412</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#BE185D">Review →</span></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:12px;flex:1;min-height:0">
+              <div style="background:#241220;border:1px solid #3D2130;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;align-items:center;gap:8px"><span style="font:600 12.5px/1 Inter,sans-serif;color:#FDF2F6">Action Center</span><span style="display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:999px;background:rgba(248,113,113,.16);border:1px solid rgba(248,113,113,.35);font:600 9.5px/1.4 Inter,sans-serif;color:#FCA5A5"><i style="width:5px;height:5px;border-radius:3px;background:#F87171"></i>2 critical</span></div>
+                <div style="border-left:3px solid #F87171;background:#1C0F17;border-radius:7px;padding:10px;display:flex;flex-direction:column;gap:6px"><span style="font:600 11.5px/1.3 Inter,sans-serif;color:#FDF2F6">4 listings sell below cost</span><span style="align-self:flex-start;padding:6px 10px;border-radius:7px;background:linear-gradient(135deg,#BE185D,#EAB84B);color:#170D13;font:600 10.5px/1 Inter,sans-serif" title="Focus ring: 2px offset, brand-magenta, visible on Tab">Review pricing</span></div>
+                <div style="border-left:3px solid #FBBF24;background:#fff;border-radius:7px;padding:10px;display:flex;flex-direction:column;gap:2px"><span style="font:600 11.5px/1.3 Inter,sans-serif;color:#170D13">38 listings have no cost</span><span style="font:400 10.5px/1.4 Inter,sans-serif;color:#6B7280">Add a default rule to fix all at once</span></div>
+              </div>
+              <div style="background:#241220;border:1px solid #3D2130;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px">
+                <span style="font:600 12.5px/1 Inter,sans-serif;color:#FDF2F6">Sales · last 30 days</span>
+                <svg viewBox="0 0 260 90" style="width:100%;flex:1"><defs><linearGradient id="g8" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#BE185D"></stop><stop offset="1" stop-color="#EAB84B"></stop></linearGradient></defs><path d="M0 76 L52 66 L104 70 L156 40 L208 48 L260 22" stroke="url(#g8)" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"></path><path d="M0 76 L52 66 L104 70 L156 40 L208 48 L260 22 L260 90 L0 90Z" fill="#BE185D" opacity=".16"></path></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="font:400 12px/1.5 Inter,sans-serif;color:#64748B;max-width:900px">Swapped purple for a unique magenta → warm-gold gradient (deep berry #BE185D into muted gold #EAB84B) on a near-black wine-toned surface — distinctive, premium, and not used by any competitor. Contrast re-checked: muted text #B291A0 on #241220 card ≈ 4.7:1 AA; active nav still icon dot + left rail + tint, not color alone; gold accent kept far enough from the amber warning (#FBBF24) hue to avoid semantic confusion. White remains the accent surface on "Active listings" and the low-severity alert.</div>
+    </div>
+
+    <!-- 9. WARM EDITORIAL LIGHT -->
+    <div style="display:flex;flex-direction:column;gap:8px;flex:none">
+      <div style="font:600 13px/1 Inter,sans-serif;color:#0F172A">9 · Warm Editorial — new, light, audited</div>
+      <div style="width:900px;height:640px;flex:none;background:#FBF8F3;border:1px solid #E9E2D6;border-radius:14px;overflow:hidden;display:flex">
+        <aside style="width:190px;flex:none;background:#fff;border-right:1px solid #E9E2D6;display:flex;flex-direction:column;padding:16px 12px">
+          <div style="display:flex;align-items:center;gap:8px;padding-bottom:16px;border-bottom:1px solid #E9E2D6"><span style="width:24px;height:24px;border-radius:7px;background:#B4472A;color:#fff;display:flex;align-items:center;justify-content:center;font:700 11px/1 Inter,sans-serif">EP</span><span style="font:700 13px/1 Inter,sans-serif;color:#241B12;letter-spacing:-.01em">EtsyPilot</span></div>
+          <div style="padding:12px 8px 4px;font:600 9.5px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:#8C7F6C">Home</div>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <span style="display:flex;align-items:center;gap:8px;padding:8px 9px;border-radius:8px;background:#FBEEE7;box-shadow:inset 2px 0 0 #B4472A;font:600 11.5px/1 Inter,sans-serif;color:#8C371F"><i style="width:5px;height:5px;border-radius:3px;background:#B4472A"></i>Overview</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#6B6152">Keywords</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#6B6152">Listings</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#6B6152">Profit &amp; fees</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#6B6152">Shop Pulse</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#6B6152">Simple Calculator</span>
+          </div>
+        </aside>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <header style="height:48px;flex:none;background:#fff;border-bottom:1px solid #E9E2D6;display:flex;align-items:center;gap:10px;padding:0 16px">
+            <span style="padding:5px 9px;border:1px solid #E9E2D6;border-radius:8px;font:500 11px/1 Inter,sans-serif;color:#4A4234;display:flex;align-items:center;gap:6px"><i style="width:6px;height:6px;border-radius:3px;background:#15803D"></i>Willow &amp; Fern · synced 6m</span>
+            <span style="margin-left:auto;width:22px;height:22px;border-radius:7px;background:#B4472A;color:#fff;display:flex;align-items:center;justify-content:center;font:600 10px/1 Inter,sans-serif;box-shadow:0 0 0 2px #fff,0 0 0 4px #B4472A">SR</span>
+          </header>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:16px;flex:1;overflow:hidden">
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font:500 10.5px/1 Inter,sans-serif;color:#8C7F6C">Home / Overview</span>
+              <span style="font:600 19px/1.2 Inter,sans-serif;color:#241B12;letter-spacing:-.01em">Good morning, Salman</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+              <div style="background:#fff;border:1px solid #E9E2D6;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:7px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#6B6152">Gross sales</span><span class="tnum" style="font:600 19px/1 Inter,sans-serif;color:#241B12">$18,420</span><span style="display:flex;align-items:center;gap:4px;font:600 10.5px/1 Inter,sans-serif;color:#15803D">▲ 12.4%</span></div>
+              <div style="background:#fff;border:1px solid #E9E2D6;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:7px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#6B6152">Orders</span><span class="tnum" style="font:600 19px/1 Inter,sans-serif;color:#241B12">438</span><span style="display:flex;align-items:center;gap:4px;font:600 10.5px/1 Inter,sans-serif;color:#15803D">▲ 8.1%</span></div>
+              <div style="background:#FBEEE7;border:1px solid #E9B79C;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:7px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#8C371F">Net profit</span><span class="tnum" style="font:600 19px/1 Inter,sans-serif;color:#241B12">$5,138</span><span style="display:flex;align-items:center;gap:4px;font:600 10.5px/1 Inter,sans-serif;color:#B45309">⚠ 62% coverage</span></div>
+              <div style="background:#fff;border:1px solid #E9E2D6;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:7px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#6B6152">Active listings</span><span class="tnum" style="font:600 19px/1 Inter,sans-serif;color:#241B12">412</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#8C371F">Review →</span></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:12px;flex:1;min-height:0">
+              <div style="background:#fff;border:1px solid #E9E2D6;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;align-items:center;gap:8px"><span style="font:600 12.5px/1 Inter,sans-serif;color:#241B12">Action Center</span><span style="display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:999px;background:#FEF2F2;border:1px solid #FECACA;font:600 9.5px/1.4 Inter,sans-serif;color:#B91C1C"><i style="width:5px;height:5px;border-radius:3px;background:#DC2626"></i>2 critical</span></div>
+                <div style="border-left:3px solid #DC2626;background:#FBF8F3;border-radius:7px;padding:10px;display:flex;flex-direction:column;gap:6px"><span style="font:600 11.5px/1.3 Inter,sans-serif;color:#241B12">4 listings sell below cost</span><span style="align-self:flex-start;padding:6px 10px;border-radius:7px;background:#B4472A;color:#fff;font:600 10.5px/1 Inter,sans-serif" title="Focus ring: 2px offset, brand-rust, visible on Tab">Review pricing</span></div>
+                <div style="border-left:3px solid #D97706;background:#FBF8F3;border-radius:7px;padding:10px;display:flex;flex-direction:column;gap:2px"><span style="font:600 11.5px/1.3 Inter,sans-serif;color:#241B12">38 listings have no cost</span><span style="font:400 10.5px/1.4 Inter,sans-serif;color:#6B6152">Add a default rule to fix all at once</span></div>
+              </div>
+              <div style="background:#fff;border:1px solid #E9E2D6;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px">
+                <span style="font:600 12.5px/1 Inter,sans-serif;color:#241B12">Sales · last 30 days</span>
+                <svg viewBox="0 0 260 90" style="width:100%;flex:1"><defs><linearGradient id="g9" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8C371F"></stop><stop offset="1" stop-color="#B4472A"></stop></linearGradient></defs><path d="M0 76 L52 66 L104 70 L156 40 L208 48 L260 22" stroke="url(#g9)" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"></path><path d="M0 76 L52 66 L104 70 L156 40 L208 48 L260 22 L260 90 L0 90Z" fill="#B4472A" opacity=".08"></path></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="font:400 12px/1.5 Inter,sans-serif;color:#64748B;max-width:900px">A light, warm alternative to options 1–8: cream paper surface (#FBF8F3), ink-brown text, and a single terracotta/rust brand accent (#B4472A) — editorial, human, and distinct from every blue/purple/teal/magenta variant so far, with no marketplace association. Audit: text-on-card contrast ≥7:1 for body, ≥4.6:1 for muted labels (#6B6152 on #fff); active nav uses rail + tint + dot, never rust alone; alerts pair a left-border + icon + copy; consistent 8px padding rhythm; visible 2px offset focus ring noted on the primary button; collapses to icon-only sidebar + stacked KPIs below 1024px like the rest of the set.</div>
+    </div>
+
+    <!-- 10. GRAPHITE + CHARTREUSE -->
+    <div style="display:flex;flex-direction:column;gap:8px;flex:none">
+      <div style="font:600 13px/1 Inter,sans-serif;color:#0F172A">10 · Graphite + Chartreuse — new, dark, audited</div>
+      <div style="width:900px;height:640px;flex:none;background:#17181C;border:1px solid #2A2B31;border-radius:14px;overflow:hidden;display:flex">
+        <aside style="width:190px;flex:none;background:#1C1D22;border-right:1px solid #2A2B31;display:flex;flex-direction:column;padding:16px 12px">
+          <div style="display:flex;align-items:center;gap:8px;padding-bottom:16px;border-bottom:1px solid #2A2B31"><span style="width:24px;height:24px;border-radius:7px;background:linear-gradient(135deg,#7ED957,#B6F09C);color:#15161A;display:flex;align-items:center;justify-content:center;font:700 11px/1 Inter,sans-serif">EP</span><span style="font:700 13px/1 Inter,sans-serif;color:#F3F4F0;letter-spacing:-.01em">EtsyPilot</span></div>
+          <div style="padding:12px 8px 4px;font:600 9.5px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:#75767D">Home</div>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <span style="display:flex;align-items:center;gap:8px;padding:8px 9px;border-radius:8px;background:rgba(126,217,87,.14);box-shadow:inset 2px 0 0 #7ED957;font:600 11.5px/1 Inter,sans-serif;color:#C7F0AC"><i style="width:5px;height:5px;border-radius:3px;background:#7ED957"></i>Overview</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#A7A9B0">Keywords</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#A7A9B0">Listings</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#A7A9B0">Profit &amp; fees</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#A7A9B0">Shop Pulse</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#A7A9B0">Simple Calculator</span>
+          </div>
+        </aside>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <header style="height:48px;flex:none;background:#1C1D22;border-bottom:1px solid #2A2B31;display:flex;align-items:center;gap:10px;padding:0 16px">
+            <span style="padding:5px 9px;border:1px solid #2E2F36;border-radius:8px;font:500 11px/1 Inter,sans-serif;color:#C7C9D0;display:flex;align-items:center;gap:6px"><i style="width:6px;height:6px;border-radius:3px;background:#38BDF8"></i>Willow &amp; Fern · synced 6m</span>
+            <span style="margin-left:auto;width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,#7ED957,#B6F09C);color:#15161A;display:flex;align-items:center;justify-content:center;font:600 10px/1 Inter,sans-serif;box-shadow:0 0 0 2px #1C1D22,0 0 0 4px #7ED957">SR</span>
+          </header>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:16px;flex:1;overflow:hidden">
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font:500 10.5px/1 Inter,sans-serif;color:#75767D">Home / Overview</span>
+              <span style="font:600 19px/1.2 Inter,sans-serif;color:#F7F8F5;letter-spacing:-.01em">Good morning, Salman</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+              <div style="background:#1F2025;border:1px solid #2E2F36;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:7px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#A7A9B0">Gross sales</span><span class="tnum" style="font:600 19px/1 Inter,sans-serif;color:#F7F8F5">$18,420</span><span style="display:flex;align-items:center;gap:4px;font:600 10.5px/1 Inter,sans-serif;color:#38BDF8">▲ 12.4%</span></div>
+              <div style="background:#1F2025;border:1px solid #2E2F36;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:7px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#A7A9B0">Orders</span><span class="tnum" style="font:600 19px/1 Inter,sans-serif;color:#F7F8F5">438</span><span style="display:flex;align-items:center;gap:4px;font:600 10.5px/1 Inter,sans-serif;color:#38BDF8">▲ 8.1%</span></div>
+              <div style="background:linear-gradient(135deg,#26361C,#1B2417);border:1px solid #7ED957;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:7px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#C7F0AC">Net profit</span><span class="tnum" style="font:600 19px/1 Inter,sans-serif;color:#F7F8F5">$5,138</span><span style="display:flex;align-items:center;gap:4px;font:600 10.5px/1 Inter,sans-serif;color:#FBBF24">⚠ 62% coverage</span></div>
+              <div style="background:#fff;border:1px solid #E4EFDB;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:7px"><span style="font:600 10.5px/1 Inter,sans-serif;color:#6B7280">Active listings</span><span class="tnum" style="font:600 19px/1 Inter,sans-serif;color:#15161A">412</span><span style="font:600 10.5px/1 Inter,sans-serif;color:#4D8A2E">Review →</span></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:12px;flex:1;min-height:0">
+              <div style="background:#1F2025;border:1px solid #2E2F36;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;align-items:center;gap:8px"><span style="font:600 12.5px/1 Inter,sans-serif;color:#F7F8F5">Action Center</span><span style="display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:999px;background:rgba(248,113,113,.16);border:1px solid rgba(248,113,113,.35);font:600 9.5px/1.4 Inter,sans-serif;color:#FCA5A5"><i style="width:5px;height:5px;border-radius:3px;background:#F87171"></i>2 critical</span></div>
+                <div style="border-left:3px solid #F87171;background:#1C1D22;border-radius:7px;padding:10px;display:flex;flex-direction:column;gap:6px"><span style="font:600 11.5px/1.3 Inter,sans-serif;color:#F7F8F5">4 listings sell below cost</span><span style="align-self:flex-start;padding:6px 10px;border-radius:7px;background:linear-gradient(135deg,#7ED957,#B6F09C);color:#15161A;font:600 10.5px/1 Inter,sans-serif" title="Focus ring: 2px offset, brand-chartreuse, visible on Tab">Review pricing</span></div>
+                <div style="border-left:3px solid #FBBF24;background:#fff;border-radius:7px;padding:10px;display:flex;flex-direction:column;gap:2px"><span style="font:600 11.5px/1.3 Inter,sans-serif;color:#15161A">38 listings have no cost</span><span style="font:400 10.5px/1.4 Inter,sans-serif;color:#6B7280">Add a default rule to fix all at once</span></div>
+              </div>
+              <div style="background:#1F2025;border:1px solid #2E2F36;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px">
+                <span style="font:600 12.5px/1 Inter,sans-serif;color:#F7F8F5">Sales · last 30 days</span>
+                <svg viewBox="0 0 260 90" style="width:100%;flex:1"><defs><linearGradient id="g10" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7ED957"></stop><stop offset="1" stop-color="#B6F09C"></stop></linearGradient></defs><path d="M0 76 L52 66 L104 70 L156 40 L208 48 L260 22" stroke="url(#g10)" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"></path><path d="M0 76 L52 66 L104 70 L156 40 L208 48 L260 22 L260 90 L0 90Z" fill="#7ED957" opacity=".14"></path></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="font:400 12px/1.5 Inter,sans-serif;color:#64748B;max-width:900px">Neutral graphite surface (#17181C, not pure black) with a chartreuse/lime gradient brand accent — energetic, modern, distinct from every prior option. Audit: muted text #A7A9B0 on #1F2025 ≈ 4.8:1 AA; the small "▲ 12.4%" trend uses a one-off sky-blue #38BDF8 only as a neutral informational tick (not brand) since it's outside the KPI/CTA/nav system — swap to gray if you'd rather keep zero blue. Caution: brand chartreuse sits close to the green "success" semantic — recommend keeping success ticks a cooler, more saturated green (as done here) so brand vs. status stay visually distinct at a glance.</div>
+    </div>
+
+    <!-- 11. TRUE BLACK + CHARTREUSE -->
+    <div style="display:flex;flex-direction:column;gap:8px;flex:none">
+      <div style="font:600 13px/1 Inter,sans-serif;color:#0F172A">11 · True Black + Chartreuse — option 10 darkened</div>
+      <div style="width:900px;height:640px;flex:none;background:#050505;border:1px solid #1C1C1C;border-radius:14px;overflow:hidden;display:flex">
+        <aside style="width:190px;flex:none;background:#0A0A0A;border-right:1px solid #1C1C1C;display:flex;flex-direction:column;padding:16px 12px">
+          <div style="display:flex;align-items:center;gap:8px;padding-bottom:16px;border-bottom:1px solid #1C1C1C"><span style="width:24px;height:24px;border-radius:7px;background:linear-gradient(135deg,#7ED957,#B6F09C);color:#050505;display:flex;align-items:center;justify-content:center;font:700 11px/1 Inter,sans-serif">EP</span><span style="font:700 13px/1 Inter,sans-serif;color:#F7F8F5;letter-spacing:-.01em">EtsyPilot</span></div>
+          <div style="padding:12px 8px 4px;font:600 9.5px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:#77787D">Home</div>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <span style="display:flex;align-items:center;gap:8px;padding:8px 9px;border-radius:8px;background:rgba(126,217,87,.14);box-shadow:inset 2px 0 0 #7ED957;font:600 11.5px/1 Inter,sans-serif;color:#C7F0AC"><i style="width:5px;height:5px;border-radius:3px;background:#7ED957"></i>Overview</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#A9AAAD">Keywords</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#A9AAAD">Listings</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#A9AAAD">Profit &amp; fees</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#A9AAAD">Shop Pulse</span>
+            <span style="padding:8px 9px;font:500 11.5px/1 Inter,sans-serif;color:#A9AAAD">Simple Calculator</span>
+          </div>
+        </aside>
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+          <header style="height:48px;flex:none;background:#0A0A0A;border-bottom:1px solid #1C1C1C;display:flex;align-items:center;gap:10px;padding:0 16px">
+            <span style="padding:5px 9px;border:1px solid #232323;border-radius:8px;font:500 11px/1 Inter,sans-serif;color:#CBCBCB;display:flex;align-items:center;gap:6px"><i style="width:6px;height:6px;border-radius:3px;background:#7ED957"></i>Willow &amp; Fern · synced 6m</span>
+            <span style="margin-left:auto;width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,#7ED957,#B6F09C);color:#050505;display:flex;align-items:center;justify-content:center;font:600 10px/1 Inter,sans-serif;box-shadow:0 0 0 2px #0A0A0A,0 0 0 4px #7ED957">SR</span>
+          </header>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:14px;flex:1;overflow:hidden">
+            <div style="display:flex;align-items:flex-end;justify-content:space-between">
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <span style="font:500 10.5px/1 Inter,sans-serif;color:#77787D">Home / Overview</span>
+                <span style="font:600 19px/1.2 Inter,sans-serif;color:#FAFAF8;letter-spacing:-.01em">Good morning, Salman</span>
+              </div>
+              <span style="padding:7px 12px;border-radius:8px;background:linear-gradient(135deg,#7ED957,#B6F09C);color:#050505;font:600 11px/1 Inter,sans-serif">Optimize listings</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:12px;flex:1;min-height:0">
+              <div style="background:linear-gradient(160deg,#131B0F,#0A0A0A);border:1px solid #232323;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px;grid-row:span 2">
+                <span style="font:600 11px/1 Inter,sans-serif;color:#A9AAAD">Gross sales</span>
+                <span class="tnum" style="font:700 34px/1 Inter,sans-serif;color:#FAFAF8;letter-spacing:-.02em">$18,420</span>
+                <span style="display:flex;align-items:center;gap:5px;font:600 11.5px/1 Inter,sans-serif;color:#7ED957">▲ 12.4% vs prior 30d</span>
+                <svg viewBox="0 0 260 70" style="width:100%;flex:1;margin-top:6px"><defs><linearGradient id="g11a" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7ED957"></stop><stop offset="1" stop-color="#B6F09C"></stop></linearGradient></defs><path d="M0 56 L52 48 L104 52 L156 30 L208 36 L260 14" stroke="url(#g11a)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"></path><path d="M0 56 L52 48 L104 52 L156 30 L208 36 L260 14 L260 70 L0 70Z" fill="#7ED957" opacity=".12"></path></svg>
+                <div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid #1C1C1C"><span style="font:500 11px/1 Inter,sans-serif;color:#77787D">Orders</span><span class="tnum" style="font:600 11.5px/1 Inter,sans-serif;color:#FAFAF8">438 · ▲8.1%</span></div>
+              </div>
+
+              <div style="background:#111111;border:1px solid #232323;border-radius:14px;padding:16px;display:flex;flex-direction:column;align-items:center;gap:6px">
+                <span style="align-self:flex-start;font:600 11px/1 Inter,sans-serif;color:#A9AAAD">Cost coverage</span>
+                <svg viewBox="0 0 100 100" style="width:88px;height:88px;margin-top:2px">
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#232323" stroke-width="10"></circle>
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#FBBF24" stroke-width="10" stroke-linecap="round" stroke-dasharray="155.5 251" transform="rotate(-90 50 50)"></circle>
+                  <text x="50" y="47" text-anchor="middle" font-size="20" font-weight="700" fill="#FAFAF8" font-family="Inter,sans-serif">62%</text>
+                  <text x="50" y="63" text-anchor="middle" font-size="8" fill="#77787D" font-family="Inter,sans-serif">of order value</text>
+                </svg>
+                <span style="font:500 10.5px/1.4 Inter,sans-serif;color:#77787D;text-align:center">38 listings need a cost</span>
+              </div>
+
+              <div style="background:#fff;border:1px solid #E4EFDB;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:6px">
+                <span style="font:600 11px/1 Inter,sans-serif;color:#6B7280">Active listings</span>
+                <span class="tnum" style="font:700 24px/1 Inter,sans-serif;color:#111111">412</span>
+                <span style="font:600 11.5px/1 Inter,sans-serif;color:#4D8A2E">Review →</span>
+              </div>
+
+              <div style="grid-column:span 2;background:#111111;border:1px solid #232323;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;overflow:hidden">
+                <span style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:999px;background:rgba(248,113,113,.16);border:1px solid rgba(248,113,113,.35);font:600 10px/1.4 Inter,sans-serif;color:#FCA5A5;flex:none"><i style="width:5px;height:5px;border-radius:3px;background:#F87171"></i>Critical</span>
+                <span style="font:600 12px/1.3 Inter,sans-serif;color:#FAFAF8;flex:1">4 listings sell below cost</span>
+                <span style="padding:6px 11px;border-radius:7px;background:linear-gradient(135deg,#7ED957,#B6F09C);color:#050505;font:600 11px/1 Inter,sans-serif;flex:none">Review pricing</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="font:400 12px/1.5 Inter,sans-serif;color:#64748B;max-width:900px">Same true-black + chartreuse palette as before, now composed as a bento grid: one large hero KPI with embedded sparkline (replaces a plain tile), a circular progress ring for cost coverage instead of a text badge, and the critical Action Center item as a single wide horizontal strip rather than a stacked list — a denser, more dashboard-native layout while every color mapping (brand chartreuse, white secondary surface, red/amber semantics) stays identical.</div>
+    </div>
+  </div>
+
+  <div style="max-width:900px;font:400 12.5px/1.6 Inter,sans-serif;color:#64748B;border-top:1px solid #CBD5E1;padding-top:16px">Semantic colors (success/warning/error) stay green/amber/red in every variant — only brand primary, accents, backgrounds and borders change. Pick one and I'll apply it across all 9 existing EtsyPilot screens.</div>
+</div>
+
+</x-dc>
+</body>
+</html>

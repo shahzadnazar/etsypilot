@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:var(--page-bg,#FBF8F3);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--brand,#B4472A)}a:hover{color:var(--brand-strong,#8C371F)}
+*{box-sizing:border-box}
+.tnum{font-variant-numeric:tabular-nums}
+</style>
+<script>
+(function(){
+  var DARK = {"--brand":"#E07A4A","--brand-strong":"#F3B08C","--brand-tint":"rgba(224,122,74,.16)","--ink-1":"#F1F5F9","--ink-2":"#CBD5E1","--muted-1":"#94A3B8","--muted-2":"#64748B","--border":"#2B3444","--canvas-soft":"#1E293B","--page-bg":"#0F172A","--success":"#34D399","--success-strong":"#34D399","--warning":"#FBBF24","--warning-strong":"#FBBF24","--danger":"#F87171","--danger-strong":"#FCA5A5","--accent-ai":"#C4B5FD","--accent-calc":"#67E8F9","--surface":"#1E293B"};
+  var LIGHT = {"--brand":"#B4472A","--brand-strong":"#8C371F","--brand-tint":"#FBEEE7","--ink-1":"#241B12","--ink-2":"#4A4234","--muted-1":"#6B6152","--muted-2":"#8C7F6C","--border":"#E9E2D6","--canvas-soft":"#FBF8F3","--page-bg":"#FBF8F3","--success":"#15803D","--success-strong":"#15803D","--warning":"#B45309","--warning-strong":"#B45309","--danger":"#B91C1C","--danger-strong":"#B91C1C","--accent-ai":"#7C3AED","--accent-calc":"#0891B2","--surface":"#FFFFFF"};
+  function apply(mode){
+    var resolved = mode === 'system' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : mode;
+    var tokens = resolved === 'dark' ? DARK : LIGHT;
+    var root = document.documentElement.style;
+    for (var k in tokens) root.setProperty(k, tokens[k]);
+    document.documentElement.setAttribute('data-rankkw-theme', resolved);
+    document.querySelectorAll('[data-rankkw-toggle]').forEach(function(el){
+      el.style.background = el.getAttribute('data-mode') === mode ? tokens['--brand'] : 'transparent';
+      el.style.color = el.getAttribute('data-mode') === mode ? '#fff' : tokens['--ink-2'];
+    });
+  }
+  window.rankkwSetTheme = function(mode){ localStorage.setItem('rankkw-theme', mode); apply(mode); };
+  var saved = localStorage.getItem('rankkw-theme') || 'system';
+  apply(saved);
+  document.addEventListener('click', function(e){ var t = e.target.closest && e.target.closest('[data-rankkw-toggle]'); if (t) { window.rankkwSetTheme(t.getAttribute('data-mode')); } });
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){ if((localStorage.getItem('rankkw-theme')||'system')==='system') apply('system'); });
+})();
+</script>
+</helmet>
+<div data-rankkw-screens-nav="1">
+<details style="position:fixed;top:16px;left:16px;z-index:999">
+<summary style="cursor:pointer;padding:8px 12px;border-radius:999px;background:var(--surface,#fff);border:1px solid var(--border,#E9E2D6);font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);box-shadow:0 4px 16px rgba(0,0,0,.14)">Screens ▾</summary>
+<div style="margin-top:6px;background:var(--surface,#fff);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:1px;box-shadow:0 8px 24px rgba(0,0,0,.16);min-width:210px;max-height:70vh;overflow:auto"><a href="RankKW%20Foundations.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Foundations</a><a href="RankKW%20Auth%20&amp;%20Onboarding.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Auth & Onboarding</a><a href="RankKW%20Home%20&amp;%20Action%20Center.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Home & Action Center</a><a href="RankKW%20Research.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Research</a><a href="RankKW%20Shop%20Management.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Shop Management</a><a href="RankKW%20Analytics%20&amp;%20Profit.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Analytics & Profit</a><a href="RankKW%20Optimization%20&amp;%20AI.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Optimization & AI</a><a href="RankKW%20Settings%20&amp;%20Compliance.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Settings & Compliance</a><a href="RankKW%20States%20&amp;%20Responsive.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">States & Responsive</a><a href="RankKW%20Browser%20Extension.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Browser Extension</a><a href="RankKW%20Simple%20Calculator.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Simple Calculator</a></div>
+</details></div>
+<div style="position:fixed;top:16px;right:16px;z-index:999;display:flex;gap:2px;padding:3px;border-radius:999px;background:var(--surface,#fff);border:1px solid var(--border,#E9E2D6);box-shadow:0 4px 16px rgba(0,0,0,.14)">
+  <button data-rankkw-toggle data-mode="light" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Light</button>
+  <button data-rankkw-toggle data-mode="dark" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Dark</button>
+  <button data-rankkw-toggle data-mode="system" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">System</button>
+</div>
+
+<div style="padding:48px 56px 80px;display:flex;flex-direction:column;gap:52px">
+
+  <div style="display:flex;flex-direction:column;gap:12px;max-width:900px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:34px;height:34px;border-radius:9px;background:var(--brand,#B4472A);display:flex;align-items:center;justify-content:center;color:#fff;font:700 15px/1 Inter,sans-serif">EP</div>
+      <div style="font:700 20px/1 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.01em">EtsyPilot</div>
+      <div style="padding:4px 8px;border-radius:6px;background:var(--border,#E9E2D6);color:var(--ink-2,#4A4234);font:600 11px/1 Inter,sans-serif">Phase 3 · Home &amp; Action Center</div>
+    </div>
+    <div style="font:400 13.5px/1.6 Inter,sans-serif;color:var(--ink-2,#4A4234);max-width:780px">Screens 14–20. The dashboard answers three questions in order: what changed, what needs attention, what to do next. Four KPI cards maximum per row, each with provenance; the Action Center outranks the chart.</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">14–15 · Home overview, connected shop · 1440 × 1180</div>
+    <div style="width:1440px;height:1180px;flex:none;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);border-radius:16px;overflow:hidden;display:flex">
+      <aside style="width:264px;flex:none;background:var(--surface,#FFFFFF);border-right:1px solid #E2E8F0;display:flex;flex-direction:column">
+        <div style="height:64px;flex:none;display:flex;align-items:center;gap:10px;padding:0 18px;border-bottom:1px solid var(--border,#E9E2D6)">
+          <div style="width:28px;height:28px;border-radius:8px;background:var(--brand,#B4472A);display:flex;align-items:center;justify-content:center;color:#fff;font:700 13px/1 Inter,sans-serif">EP</div>
+          <div style="font:700 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12);flex:1">EtsyPilot</div>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-2,#8C7F6C)" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"></path></svg>
+        </div>
+        <div style="flex:1;padding:12px 12px 0;display:flex;flex-direction:column;gap:2px;overflow:hidden">
+          <div style="padding:8px 10px 4px;font:600 10.5px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--muted-2,#8C7F6C)">Home</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;background:var(--brand-tint,#FBEEE7);font:600 13px/1 Inter,sans-serif;color:var(--brand-strong,#8C371F)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--brand,#B4472A)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-6 8 6v8a1 1 0 01-1 1h-4v-6H9v6H5a1 1 0 01-1-1z"></path></svg>Overview</div>
+          <a href="RankKW%20Auth%20&amp;%20Onboarding.dc.html" style="text-decoration:none;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>Getting started<span style="margin-left:auto;padding:2px 7px;border-radius:999px;background:var(--brand-tint,#FBEEE7);font:600 10.5px/1.4 Inter,sans-serif;color:var(--brand-strong,#8C371F)">2</span></a>
+          <div style="padding:14px 10px 4px;font:600 10.5px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--muted-2,#8C7F6C)">Research</div>
+          <a href="RankKW%20Research.dc.html" style="text-decoration:none;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>Find hot products</a>
+          <a href="RankKW%20Research.dc.html" style="text-decoration:none;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h10M4 17h13"></path></svg>Keywords</a>
+          <a href="RankKW%20Research.dc.html" style="text-decoration:none;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l5-6 4 3 7-8"></path></svg>Trends</a>
+          <a href="RankKW%20Research.dc.html" style="text-decoration:none;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect x="13" y="4" width="7" height="7" rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect></svg>Competitors</a>
+          <a href="RankKW%20Research.dc.html" style="text-decoration:none;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">More research<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted-2,#8C7F6C)" stroke-width="2" stroke-linecap="round" style="margin-left:auto"><path d="M6 9l6 6 6-6"></path></svg></a>
+          <div style="padding:14px 10px 4px;font:600 10.5px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--muted-2,#8C7F6C)">My shop</div>
+          <a href="RankKW%20Shop%20Management.dc.html" style="text-decoration:none;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9l1.5-4h13L20 9M4 9h16v10H4z"></path></svg>Shop dashboard</a>
+          <a href="RankKW%20Shop%20Management.dc.html" style="text-decoration:none;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><rect x="4" y="5" width="16" height="14" rx="2"></rect><path d="M8 9h8M8 13h5"></path></svg>Listings<span class="tnum" style="margin-left:auto;font:500 11.5px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">412</span></a>
+          <a href="RankKW%20Shop%20Management.dc.html" style="text-decoration:none;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>Bulk editor</a>
+          <a href="RankKW%20Shop%20Management.dc.html" style="text-decoration:none;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"></circle><path d="M12 7v5l3 2"></path></svg>Orders<span style="margin-left:auto;padding:2px 7px;border-radius:999px;background:#FEF2F2;font:600 10.5px/1.4 Inter,sans-serif;color:var(--danger-strong,#B91C1C)">3</span></a>
+          <a href="RankKW%20Analytics%20&amp;%20Profit.dc.html" style="text-decoration:none;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><path d="M4 18V7M9 18V4M14 18v-8M19 18v-5"></path></svg>Profit &amp; fees</a>
+          <div style="padding:14px 10px 4px;font:600 10.5px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--muted-2,#8C7F6C)">Tools</div>
+          <a href="RankKW%20Simple%20Calculator.dc.html" style="text-decoration:none;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect x="13" y="4" width="7" height="7" rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect><rect x="13" y="13" width="7" height="7" rx="1.5"></rect></svg>Simple Calculator</a>
+          <div style="padding:14px 10px 4px;font:600 10.5px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--muted-2,#8C7F6C)">Optimize</div>
+          <a href="RankKW%20Optimization%20&amp;%20AI.dc.html" style="text-decoration:none;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19L17 7M15 5l4 4"></path></svg>Listing audit</a>
+          <a href="RankKW%20Optimization%20&amp;%20AI.dc.html" style="text-decoration:none;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--accent-ai,#7C3AED)" stroke-width="2" stroke-linecap="round"><path d="M5 19L17 7M15 5l4 4"></path></svg>AI listing helper<span style="margin-left:auto;padding:2px 7px;border-radius:999px;background:#F5F3FF;font:600 10.5px/1.4 Inter,sans-serif;color:#6D28D9">AI</span></a>
+        </div>
+        <div style="flex:none;padding:12px;border-top:1px solid var(--border,#E9E2D6)">
+          <div style="border:1px solid var(--border,#E9E2D6);border-radius:10px;padding:11px 12px;display:flex;flex-direction:column;gap:7px">
+            <div style="display:flex;justify-content:space-between;font:600 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span>Growth plan</span><span class="tnum" style="color:var(--muted-1,#6B6152)">412 / 500</span></div>
+            <div style="height:5px;border-radius:3px;background:var(--border,#E9E2D6);overflow:hidden"><div style="width:82%;height:100%;background:var(--brand,#B4472A)"></div></div>
+            <div style="font:600 11.5px/1 Inter,sans-serif;color:var(--brand,#B4472A)">Compare plans</div>
+          </div>
+        </div>
+      </aside>
+
+      <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+        <header style="height:64px;flex:none;background:var(--surface,#FFFFFF);border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:center;gap:14px;padding:0 22px">
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 11px;border:1px solid var(--border,#E9E2D6);border-radius:10px;min-width:250px">
+            <span style="width:28px;height:28px;border-radius:7px;background:repeating-linear-gradient(135deg,#E2E8F0 0 5px,#F1F5F9 5px 10px);flex:none"></span>
+            <span style="display:flex;flex-direction:column;gap:2px;flex:1"><span style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Willow &amp; Fern Studio</span><span style="display:flex;align-items:center;gap:5px;font:500 11px/1 Inter,sans-serif;color:var(--success,#15803D)"><i style="width:6px;height:6px;border-radius:3px;background:var(--success,#15803D)"></i>Connected · synced 6 min ago</span></span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted-2,#8C7F6C)" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--border,#E9E2D6);border-radius:10px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><rect x="4" y="5" width="16" height="16" rx="2"></rect><path d="M8 3v4M16 3v4M4 11h16"></path></svg>Last 30 days<span style="color:var(--muted-2,#8C7F6C)">· Jul 14 – Aug 12</span></div>
+          <div style="flex:1;max-width:360px;display:flex;align-items:center;gap:9px;padding:8px 12px;border:1px solid var(--border,#E9E2D6);border-radius:10px;background:var(--canvas-soft,#FBF8F3)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted-2,#8C7F6C)" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+            <span style="font:400 12.5px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C);flex:1">Search or jump to…</span>
+            <span class="tnum" style="padding:2px 6px;border:1px solid var(--border,#E9E2D6);border-radius:5px;background:var(--surface,#FFFFFF);font:600 10.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">⌘K</span>
+          </div>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
+            <span style="width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;position:relative"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 1112 0c0 5 2 6 2 6H4s2-1 2-6z"></path><path d="M10 20h4"></path></svg><i style="position:absolute;top:7px;right:8px;width:7px;height:7px;border-radius:4px;background:var(--danger,#B91C1C);border:1.5px solid #fff"></i></span>
+            <span style="width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M9.5 9.5a2.5 2.5 0 113 3.5v1M12 17v.01"></path></svg></span>
+            <span style="width:1px;height:26px;background:var(--border,#E9E2D6);margin:0 4px"></span>
+            <span style="display:flex;align-items:center;gap:8px;padding:4px 8px 4px 4px;border-radius:9px"><span style="width:28px;height:28px;border-radius:8px;background:var(--ink-1,#241B12);color:#fff;display:flex;align-items:center;justify-content:center;font:600 11.5px/1 Inter,sans-serif">SR</span><span style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Salman</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted-2,#8C7F6C)" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg></span>
+          </div>
+        </header>
+
+        <div style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+          <div style="padding:24px 28px 18px;display:flex;align-items:flex-start;justify-content:space-between;gap:20px;border-bottom:1px solid var(--border,#E9E2D6);background:var(--surface,#FFFFFF)">
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <div style="display:flex;align-items:center;gap:7px;font:500 12px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)"><span>Home</span><span>/</span><span style="color:var(--ink-2,#4A4234)">Overview</span></div>
+              <div style="font:600 26px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.015em">Good morning, Salman</div>
+              <div style="font:400 13.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Willow &amp; Fern Studio · Jul 14 – Aug 12 · all figures in USD</div>
+            </div>
+            <div style="display:flex;gap:8px;flex:none">
+              <a href="RankKW%20Analytics%20&amp;%20Profit.dc.html" style="text-decoration:none;padding:10px 14px;border:1px solid #CBD5E1;border-radius:9px;font:600 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">View profit</a>
+              <a href="RankKW%20Optimization%20&amp;%20AI.dc.html" style="text-decoration:none;padding:10px 14px;border-radius:9px;background:var(--brand,#B4472A);font:600 13px/1 Inter,sans-serif;color:#fff">Optimize listings</a>
+            </div>
+          </div>
+          <div style="flex:1;padding:24px 28px;display:flex;gap:20px;align-items:stretch">
+            <div style="flex:1;border:1px dashed #CBD5E1;border-radius:14px;background:var(--surface,#FFFFFF);display:flex;align-items:center;justify-content:center;font:500 13px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">Main content region — max 1,600 px, 24 px gutters</div>
+            <div style="width:320px;flex:none;display:flex;flex-direction:column;gap:14px">
+              <div style="border:1px dashed #CBD5E1;border-radius:14px;background:var(--surface,#FFFFFF);flex:1;display:flex;align-items:center;justify-content:center;text-align:center;padding:16px;font:500 13px/1.5 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">Optional contextual drawer<br>320–420 px</div>
+              <div style="border:1px solid var(--border,#E9E2D6);border-radius:14px;background:var(--surface,#FFFFFF);padding:16px;display:flex;flex-direction:column;gap:10px;flex:none">
+                <span style="font:600 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Quick Tools</span>
+                <span style="display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid var(--border,#E9E2D6);border-radius:9px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect x="13" y="4" width="7" height="7" rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect></svg>Simple Calculator</span>
+                <span style="display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid var(--border,#E9E2D6);border-radius:9px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><rect x="4" y="5" width="16" height="16" rx="2"></rect><path d="M8 3v4M16 3v4M4 11h16"></path></svg>Fee Calculator</span>
+                <span style="display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid var(--border,#E9E2D6);border-radius:9px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><path d="M4 18V7M9 18V4M14 18v-8M19 18v-5"></path></svg>Profit Calculator</span>
+              </div>
+            </div>
+          </div>
+          <div style="flex:none;padding:14px 28px;border-top:1px solid var(--border,#E9E2D6);background:var(--surface,#FFFFFF);display:flex;align-items:center;justify-content:space-between;gap:20px">
+            <span style="font:400 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152);max-width:720px">The term “Etsy” is a trademark of Etsy, Inc. This Application uses Etsy’s API, but is not endorsed or certified by Etsy.</span>
+            <span style="display:flex;gap:16px;font:500 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)"><span>Status</span><span>Privacy</span><span>Terms</span><span>Help</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">16 · Unconnected shop · syncing · stale-data states</div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
+      <div style="width:840px;flex:none;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:26px;display:flex;flex-direction:column;gap:18px">
+        <div style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Unconnected — research still works</div>
+        <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:26px;display:flex;gap:26px;align-items:center">
+          <div style="flex:1;display:flex;flex-direction:column;gap:12px">
+            <div style="font:600 22px/1.25 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.01em">Connect your shop to unlock profit, listings and orders</div>
+            <div style="font:400 13.5px/1.6 Inter,sans-serif;color:var(--ink-2,#4A4234);max-width:440px">Research tools are open to everyone. Verified sales, net profit, bulk editing and the sales map need your own Etsy data — only Etsy can release it to you.</div>
+            <div style="display:flex;gap:9px"><span style="padding:11px 16px;border-radius:10px;background:var(--brand,#B4472A);color:#fff;font:600 13.5px/1 Inter,sans-serif">Connect Etsy shop</span><span style="padding:11px 16px;border:1px solid #CBD5E1;border-radius:10px;font:600 13.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Keep researching</span></div>
+          </div>
+          <div style="width:320px;flex:none;display:flex;flex-direction:column;gap:10px">
+            <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px;background:var(--canvas-soft,#FBF8F3)">
+              <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 12px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Net profit</span><span style="display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:999px;background:#F1F5F9;border:1px solid var(--border,#E9E2D6);font:600 10.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Unavailable</span></div>
+              <div style="font:600 18px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">—</div>
+              <div style="font:400 11.5px/1.45 Inter,sans-serif;color:var(--muted-1,#6B6152)">Needs your own order and fee records.</div>
+            </div>
+            <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px">
+              <div style="font:600 12px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Open to you now</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px"><span style="padding:5px 9px;border-radius:8px;background:var(--brand-tint,#FBEEE7);font:600 11px/1 Inter,sans-serif;color:var(--brand-strong,#8C371F)">Keyword research</span><span style="padding:5px 9px;border-radius:8px;background:var(--brand-tint,#FBEEE7);font:600 11px/1 Inter,sans-serif;color:var(--brand-strong,#8C371F)">Hot products</span><span style="padding:5px 9px;border-radius:8px;background:var(--brand-tint,#FBEEE7);font:600 11px/1 Inter,sans-serif;color:var(--brand-strong,#8C371F)">Fee calculator</span><span style="padding:5px 9px;border-radius:8px;background:var(--brand-tint,#FBEEE7);font:600 11px/1 Inter,sans-serif;color:var(--brand-strong,#8C371F)">Trends</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div style="background:var(--surface,#FFFFFF);border:1px solid #FDE68A;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:9px">
+            <div style="display:flex;align-items:center;gap:8px"><span style="padding:3px 8px;border-radius:6px;background:#FFFBEB;font:600 10.5px/1 Inter,sans-serif;color:var(--warning-strong,#B45309)">Stale data</span><span style="font:600 13.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Last successful sync: 9 hours ago</span></div>
+            <div style="font:400 12.5px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">Some Etsy data may be outdated. Figures below are from the last complete sync at 5:12 AM.</div>
+            <div style="display:flex;gap:8px"><span style="padding:8px 12px;border-radius:8px;background:var(--brand,#B4472A);color:#fff;font:600 12.5px/1 Inter,sans-serif">Sync now</span><span style="padding:8px 12px;border:1px solid #CBD5E1;border-radius:8px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Sync details</span></div>
+          </div>
+          <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;gap:8px"><span style="width:16px;height:16px;border-radius:8px;border:2.5px solid #BFDBFE;border-top-color:var(--brand,#B4472A)"></span><span style="font:600 13.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Still syncing order history</span></div>
+            <div style="font:400 12.5px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">Sales and listings are ready. Profit unlocks when 24 months of orders finish importing — about 2 minutes.</div>
+            <div style="height:6px;border-radius:3px;background:var(--border,#E9E2D6);overflow:hidden"><div style="width:68%;height:100%;background:var(--brand,#B4472A)"></div></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div style="border:1px solid var(--border,#E9E2D6);border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="height:9px;width:60px;border-radius:4px;background:var(--border,#E9E2D6)"></span><span style="height:20px;width:96px;border-radius:5px;background:var(--border,#E9E2D6)"></span></div>
+              <div style="border:1px solid var(--border,#E9E2D6);border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:6px"><span style="height:9px;width:52px;border-radius:4px;background:var(--border,#E9E2D6)"></span><span style="height:20px;width:76px;border-radius:5px;background:var(--border,#E9E2D6)"></span></div>
+            </div>
+          </div>
+          <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:9px">
+            <div style="display:flex;align-items:center;gap:8px"><span style="padding:3px 8px;border-radius:6px;background:#F1F5F9;font:600 10.5px/1 Inter,sans-serif;color:#475569">Permission missing</span><span style="font:600 13.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Orders access was revoked</span></div>
+            <div style="font:400 12.5px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">Profit, fees and the sales map are paused because the “Orders &amp; financials” permission is no longer granted on Etsy.</div>
+            <span style="align-self:flex-start;padding:8px 12px;border-radius:8px;background:var(--brand,#B4472A);color:#fff;font:600 12.5px/1 Inter,sans-serif">Restore permission</span>
+          </div>
+          <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:9px">
+            <div style="display:flex;align-items:center;gap:8px"><span style="padding:3px 8px;border-radius:6px;background:var(--brand-tint,#FBEEE7);font:600 10.5px/1 Inter,sans-serif;color:var(--brand-strong,#8C371F)">Upgrade required</span><span style="font:600 13.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Automation rules are on Growth</span></div>
+            <div style="font:400 12.5px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">Your Solo plan includes bulk edits and profit. Rules, approvals and multi-shop reporting start at Growth — $29/month, cancel any time.</div>
+            <div style="display:flex;gap:8px"><span style="padding:8px 12px;border-radius:8px;background:var(--brand,#B4472A);color:#fff;font:600 12.5px/1 Inter,sans-serif">Compare plans</span><span style="padding:8px 12px;border:1px solid #CBD5E1;border-radius:8px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Not now</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;flex:none">
+        <div style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">18 · Notifications panel</div>
+        <div style="width:420px;height:640px;flex:none;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;box-shadow:0 12px 32px rgba(15,23,42,.12);overflow:hidden;display:flex;flex-direction:column">
+          <div style="padding:15px 18px;border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:center;justify-content:space-between">
+            <span style="font:600 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Notifications</span>
+            <span style="font:600 12px/1 Inter,sans-serif;color:var(--brand,#B4472A)">Mark all read</span>
+          </div>
+          <div style="padding:10px 18px;border-bottom:1px solid var(--border,#E9E2D6);display:flex;gap:6px">
+            <span style="padding:6px 11px;border-radius:999px;background:var(--ink-1,#241B12);color:#fff;font:600 11.5px/1 Inter,sans-serif">All 9</span>
+            <span style="padding:6px 11px;border-radius:999px;border:1px solid var(--border,#E9E2D6);font:600 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Profit</span>
+            <span style="padding:6px 11px;border-radius:999px;border:1px solid var(--border,#E9E2D6);font:600 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Sync</span>
+            <span style="padding:6px 11px;border-radius:999px;border:1px solid var(--border,#E9E2D6);font:600 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Approvals</span>
+          </div>
+          <div style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+            <div style="padding:14px 18px;border-bottom:1px solid #F1F5F9;background:var(--canvas-soft,#FBF8F3);display:flex;gap:11px">
+              <i style="width:7px;height:7px;border-radius:4px;background:var(--brand,#B4472A);margin-top:6px;flex:none"></i>
+              <span style="display:flex;flex-direction:column;gap:4px"><span style="font:600 13px/1.4 Inter,sans-serif;color:var(--ink-1,#241B12)">Bulk price change finished</span><span style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">122 listings updated, 6 skipped. Download the error report or roll back.</span><span style="font:500 11px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">12 minutes ago</span></span>
+            </div>
+            <div style="padding:14px 18px;border-bottom:1px solid #F1F5F9;background:var(--canvas-soft,#FBF8F3);display:flex;gap:11px">
+              <i style="width:7px;height:7px;border-radius:4px;background:var(--brand,#B4472A);margin-top:6px;flex:none"></i>
+              <span style="display:flex;flex-direction:column;gap:4px"><span style="font:600 13px/1.4 Inter,sans-serif;color:var(--ink-1,#241B12)">Low margin alert · 4 listings</span><span style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Margin fell below your 10% threshold after the last fee update.</span><span style="font:500 11px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">1 hour ago</span></span>
+            </div>
+            <div style="padding:14px 18px;border-bottom:1px solid #F1F5F9;display:flex;gap:11px">
+              <i style="width:7px;height:7px;border-radius:4px;background:transparent;margin-top:6px;flex:none"></i>
+              <span style="display:flex;flex-direction:column;gap:4px"><span style="font:500 13px/1.4 Inter,sans-serif;color:var(--ink-1,#241B12)">Approval requested by Maya</span><span style="font:400 12px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Tag changes on 31 listings for Harbour Ceramics.</span><span style="font:500 11px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">3 hours ago</span></span>
+            </div>
+            <div style="padding:14px 18px;border-bottom:1px solid #F1F5F9;display:flex;gap:11px">
+              <i style="width:7px;height:7px;border-radius:4px;background:transparent;margin-top:6px;flex:none"></i>
+              <span style="display:flex;flex-direction:column;gap:4px"><span style="font:500 13px/1.4 Inter,sans-serif;color:var(--ink-1,#241B12)">Sync resumed after rate limit</span><span style="font:400 12px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Order history is up to date as of 2:41 PM.</span><span style="font:500 11px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">Yesterday</span></span>
+            </div>
+            <div style="padding:14px 18px;display:flex;gap:11px">
+              <i style="width:7px;height:7px;border-radius:4px;background:transparent;margin-top:6px;flex:none"></i>
+              <span style="display:flex;flex-direction:column;gap:4px"><span style="font:500 13px/1.4 Inter,sans-serif;color:var(--ink-1,#241B12)">Scheduled change published</span><span style="font:400 12px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Autumn tags applied to 18 listings at 6:00 AM.</span><span style="font:500 11px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">2 days ago</span></span>
+            </div>
+          </div>
+          <div style="padding:13px 18px;border-top:1px solid var(--border,#E9E2D6);background:var(--canvas-soft,#FBF8F3);display:flex;justify-content:space-between;font:600 12px/1 Inter,sans-serif;color:var(--brand,#B4472A)"><span>Open alerts center</span><span style="color:var(--muted-1,#6B6152)">Notification settings</span></div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;flex:none">
+        <div style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Mobile home · 390 × 844</div>
+        <div style="width:390px;height:844px;flex:none;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);border-radius:22px;overflow:hidden;display:flex;flex-direction:column">
+          <div style="height:56px;flex:none;background:var(--surface,#FFFFFF);border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:center;gap:10px;padding:0 14px">
+            <span style="width:44px;height:44px;margin-left:-10px;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2,#4A4234)" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></span>
+            <span style="display:flex;align-items:center;gap:8px;padding:5px 9px;border:1px solid var(--border,#E9E2D6);border-radius:9px;flex:1;min-width:0">
+              <span style="width:22px;height:22px;border-radius:6px;background:repeating-linear-gradient(135deg,#E2E8F0 0 5px,#F1F5F9 5px 10px);flex:none"></span>
+              <span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font:600 12px/1 Inter,sans-serif;color:var(--ink-1,#241B12);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Willow &amp; Fern Studio</span><span style="font:500 10px/1 Inter,sans-serif;color:var(--success,#15803D)">Synced 6 min ago</span></span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted-2,#8C7F6C)" stroke-width="2" stroke-linecap="round" style="margin-left:auto;flex:none"><path d="M6 9l6 6 6-6"></path></svg>
+            </span>
+            <span style="width:44px;height:44px;margin-right:-10px;display:flex;align-items:center;justify-content:center;position:relative"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2,#4A4234)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 1112 0c0 5 2 6 2 6H4s2-1 2-6z"></path><path d="M10 20h4"></path></svg><i style="position:absolute;top:10px;right:9px;width:7px;height:7px;border-radius:4px;background:var(--danger,#B91C1C);border:1.5px solid #fff"></i></span>
+          </div>
+          <div style="flex:1;overflow:hidden;padding:16px 14px;display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <div style="font:600 21px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.01em">Good morning, Salman</div>
+              <div style="font:400 12.5px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">Last 30 days · USD</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:13px;display:flex;flex-direction:column;gap:7px">
+                <span style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Gross sales</span><span style="width:7px;height:7px;border-radius:4px;background:var(--success,#15803D)"></span></span>
+                <span class="tnum" style="font:600 19px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$18,420</span>
+                <span style="font:600 11px/1 Inter,sans-serif;color:var(--success,#15803D)">▲ 12.4%</span>
+              </div>
+              <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:13px;display:flex;flex-direction:column;gap:7px">
+                <span style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Net profit</span><span style="width:7px;height:7px;border-radius:4px;background:var(--accent-calc,#0891B2)"></span></span>
+                <span class="tnum" style="font:600 19px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$5,138</span>
+                <span style="font:600 11px/1 Inter,sans-serif;color:var(--warning-strong,#B45309)">62% coverage</span>
+              </div>
+            </div>
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-left:3px solid var(--danger,#B91C1C);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:9px">
+              <span style="font:600 13.5px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">4 listings sell below cost</span>
+              <span style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Estimated impact −$212 this month.</span>
+              <a href="RankKW%20Analytics%20&amp;%20Profit.dc.html" style="text-decoration:none;height:44px;border-radius:9px;background:var(--brand,#B4472A);color:#fff;font:600 13px/44px Inter,sans-serif;text-align:center;display:block">Review pricing</a>
+            </div>
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-left:3px solid var(--warning,#B45309);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:9px">
+              <span style="display:flex;align-items:center;gap:7px"><span style="padding:3px 7px;border-radius:6px;background:#FFFBEB;font:600 10px/1 Inter,sans-serif;color:var(--warning-strong,#B45309)">Attention</span><span style="font:600 13.5px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Average margin dropped to 34%</span></span>
+              <span style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Down from 41% last period.</span>
+              <span style="height:44px;border-radius:9px;background:var(--brand,#B4472A);color:#fff;font:600 13px/44px Inter,sans-serif;text-align:center">Calculate New Price</span>
+            </div>
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:9px">
+              <span style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Catalog health</span><span style="font:500 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">412 listings</span></span>
+              <span style="display:flex;height:9px;border-radius:5px;overflow:hidden"><i style="width:58%;background:var(--success,#15803D)"></i><i style="width:24%;background:var(--warning,#B45309)"></i><i style="width:9%;background:var(--danger,#B91C1C)"></i><i style="width:9%;background:#CBD5E1"></i></span>
+              <span style="display:flex;gap:12px;font:500 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)"><span>239 optimized</span><span>98 attention</span><span>37 errors</span></span>
+            </div>
+          </div>
+          <div style="height:76px;flex:none;background:var(--surface,#FFFFFF);border-top:1px solid var(--border,#E9E2D6);display:grid;grid-template-columns:repeat(5,1fr);padding:6px 6px 14px">
+            <span style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="var(--brand,#B4472A)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-6 8 6v8a1 1 0 01-1 1h-4v-6H9v6H5a1 1 0 01-1-1z"></path></svg><span style="font:600 10.5px/1 Inter,sans-serif;color:var(--brand,#B4472A)">Home</span></span>
+            <span style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><span style="font:500 10.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Research</span></span>
+            <span style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><rect x="4" y="5" width="16" height="14" rx="2"></rect><path d="M8 9h8"></path></svg><span style="font:500 10.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Listings</span></span>
+            <span style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><path d="M4 18V7M9 18V4M14 18v-8M19 18v-5"></path></svg><span style="font:500 10.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Analytics</span></span>
+            <span style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><path d="M5 12h.01M12 12h.01M19 12h.01"></path></svg><span style="font:500 10.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">More</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="border-top:1px solid #CBD5E1;padding-top:24px;display:flex;flex-direction:column;gap:8px;max-width:900px">
+    <div style="font:600 14px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Additions</div>
+    <div style="font:400 13.5px/1.6 Inter,sans-serif;color:var(--ink-2,#4A4234)">A "Quick Tools" card was added to the desktop overview's side rail (Simple Calculator, Fee Calculator, Profit Calculator) and the mobile Action Center now includes a margin-drop alert linking to "Calculate New Price" — both reuse existing card and alert styles.</div>
+  </div>
+
+</div>
+
+</x-dc>
+</body>
+</html>

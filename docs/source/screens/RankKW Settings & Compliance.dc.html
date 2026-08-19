@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+<template id="__bundler_thumbnail" data-bg-color="#EEF1F5">
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+<rect width="120" height="120" fill="var(--page-bg,#FBF8F3)"/>
+<rect x="24" y="24" width="30" height="30" rx="8" fill="var(--brand,#B4472A)"/>
+<text x="39" y="45" font-family="Arial" font-size="18" fill="#fff" text-anchor="middle" font-weight="700">R</text>
+</svg>
+</template>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:var(--page-bg,#FBF8F3);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--brand,#B4472A)}a:hover{color:var(--brand-strong,#8C371F)}
+*{box-sizing:border-box}
+.tnum{font-variant-numeric:tabular-nums}
+</style>
+<script>
+(function(){
+  var DARK = {"--brand":"#E07A4A","--brand-strong":"#F3B08C","--brand-tint":"rgba(224,122,74,.16)","--ink-1":"#F1F5F9","--ink-2":"#CBD5E1","--muted-1":"#94A3B8","--muted-2":"#64748B","--border":"#2B3444","--canvas-soft":"#1E293B","--page-bg":"#0F172A","--success":"#34D399","--success-strong":"#34D399","--warning":"#FBBF24","--warning-strong":"#FBBF24","--danger":"#F87171","--danger-strong":"#FCA5A5","--accent-ai":"#C4B5FD","--accent-calc":"#67E8F9","--surface":"#1E293B"};
+  var LIGHT = {"--brand":"#B4472A","--brand-strong":"#8C371F","--brand-tint":"#FBEEE7","--ink-1":"#241B12","--ink-2":"#4A4234","--muted-1":"#6B6152","--muted-2":"#8C7F6C","--border":"#E9E2D6","--canvas-soft":"#FBF8F3","--page-bg":"#FBF8F3","--success":"#15803D","--success-strong":"#15803D","--warning":"#B45309","--warning-strong":"#B45309","--danger":"#B91C1C","--danger-strong":"#B91C1C","--accent-ai":"#7C3AED","--accent-calc":"#0891B2","--surface":"#FFFFFF"};
+  function apply(mode){
+    var resolved = mode === 'system' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : mode;
+    var tokens = resolved === 'dark' ? DARK : LIGHT;
+    var root = document.documentElement.style;
+    for (var k in tokens) root.setProperty(k, tokens[k]);
+    document.documentElement.setAttribute('data-rankkw-theme', resolved);
+    document.querySelectorAll('[data-rankkw-toggle]').forEach(function(el){
+      el.style.background = el.getAttribute('data-mode') === mode ? tokens['--brand'] : 'transparent';
+      el.style.color = el.getAttribute('data-mode') === mode ? '#fff' : tokens['--ink-2'];
+    });
+  }
+  window.rankkwSetTheme = function(mode){ localStorage.setItem('rankkw-theme', mode); apply(mode); };
+  var saved = localStorage.getItem('rankkw-theme') || 'system';
+  apply(saved);
+  document.addEventListener('click', function(e){ var t = e.target.closest && e.target.closest('[data-rankkw-toggle]'); if (t) { window.rankkwSetTheme(t.getAttribute('data-mode')); } });
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){ if((localStorage.getItem('rankkw-theme')||'system')==='system') apply('system'); });
+})();
+</script>
+</helmet>
+<div data-rankkw-screens-nav="1">
+<details style="position:fixed;top:16px;left:16px;z-index:999">
+<summary style="cursor:pointer;padding:8px 12px;border-radius:999px;background:var(--surface,#fff);border:1px solid var(--border,#E9E2D6);font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);box-shadow:0 4px 16px rgba(0,0,0,.14)">Screens ▾</summary>
+<div style="margin-top:6px;background:var(--surface,#fff);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:1px;box-shadow:0 8px 24px rgba(0,0,0,.16);min-width:210px;max-height:70vh;overflow:auto"><a href="RankKW%20Foundations.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Foundations</a><a href="RankKW%20Auth%20&amp;%20Onboarding.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Auth & Onboarding</a><a href="RankKW%20Home%20&amp;%20Action%20Center.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Home & Action Center</a><a href="RankKW%20Research.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Research</a><a href="RankKW%20Shop%20Management.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Shop Management</a><a href="RankKW%20Analytics%20&amp;%20Profit.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Analytics & Profit</a><a href="RankKW%20Optimization%20&amp;%20AI.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Optimization & AI</a><a href="RankKW%20Settings%20&amp;%20Compliance.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Settings & Compliance</a><a href="RankKW%20States%20&amp;%20Responsive.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">States & Responsive</a><a href="RankKW%20Browser%20Extension.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Browser Extension</a><a href="RankKW%20Simple%20Calculator.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Simple Calculator</a></div>
+</details></div>
+<div style="position:fixed;top:16px;right:16px;z-index:999;display:flex;gap:2px;padding:3px;border-radius:999px;background:var(--surface,#fff);border:1px solid var(--border,#E9E2D6);box-shadow:0 4px 16px rgba(0,0,0,.14)">
+  <button data-rankkw-toggle data-mode="light" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Light</button>
+  <button data-rankkw-toggle data-mode="dark" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Dark</button>
+  <button data-rankkw-toggle data-mode="system" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">System</button>
+</div>
+
+<div style="padding:48px 56px 80px;display:flex;flex-direction:column;gap:52px">
+
+  <div style="display:flex;flex-direction:column;gap:12px;max-width:900px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:34px;height:34px;border-radius:9px;background:var(--brand,#B4472A);display:flex;align-items:center;justify-content:center;color:#fff;font:700 15px/1 Inter,sans-serif">EP</div>
+      <div style="font:700 20px/1 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.01em">EtsyPilot</div>
+      <div style="padding:4px 8px;border-radius:6px;background:var(--border,#E9E2D6);color:var(--ink-2,#4A4234);font:600 11px/1 Inter,sans-serif">Phase 8 · Settings, plans &amp; compliance</div>
+    </div>
+    <div style="font:400 13.5px/1.6 Inter,sans-serif;color:var(--ink-2,#4A4234);max-width:800px">Screens 71–80. Permissions state exactly what each scope enables and what breaks if revoked; disconnecting and deleting are honest about consequences and always reversible where they can be. Plans compare on capability, never on fear.</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">72–73 · Shop connections &amp; data permissions · 1440 × 980</div>
+    <div style="width:1440px;height:980px;flex:none;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);border-radius:16px;overflow:hidden;display:flex;flex-direction:column">
+      <header style="height:64px;flex:none;background:var(--surface,#FFFFFF);border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:center;gap:14px;padding:0 26px">
+        <span style="width:28px;height:28px;border-radius:8px;background:var(--brand,#B4472A);color:#fff;display:flex;align-items:center;justify-content:center;font:700 12px/1 Inter,sans-serif">EP</span>
+        <span style="font:700 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">EtsyPilot</span>
+        <span style="margin-left:12px;display:flex;align-items:center;gap:7px;font:500 12px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">Settings<span>/</span><span style="color:var(--ink-2,#4A4234)">Shop connections</span></span>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+          <span style="display:flex;align-items:center;gap:8px;padding:7px 11px;border:1px solid var(--border,#E9E2D6);border-radius:10px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><i style="width:6px;height:6px;border-radius:3px;background:var(--success,#15803D)"></i>Willow &amp; Fern Studio</span>
+          <span style="width:28px;height:28px;border-radius:8px;background:var(--ink-1,#241B12);color:#fff;display:flex;align-items:center;justify-content:center;font:600 11.5px/1 Inter,sans-serif">SR</span>
+        </div>
+      </header>
+
+      <div style="flex:1;overflow:hidden;display:flex">
+        <aside style="width:240px;flex:none;background:var(--surface,#FFFFFF);border-right:1px solid #E2E8F0;padding:18px 12px;display:flex;flex-direction:column;gap:2px">
+          <div style="padding:6px 10px 8px;font:600 10.5px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--muted-2,#8C7F6C)">Account</div>
+          <span style="padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Profile</span>
+          <span style="padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Security</span>
+          <span style="padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Notifications</span>
+          <div style="padding:14px 10px 8px;font:600 10.5px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--muted-2,#8C7F6C)">Shops &amp; data</div>
+          <span style="padding:9px 10px;border-radius:9px;background:var(--brand-tint,#FBEEE7);font:600 13px/1 Inter,sans-serif;color:var(--brand-strong,#8C371F)">Shop connections</span>
+          <span style="padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Data permissions</span>
+          <span style="padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Costs &amp; fees</span>
+          <span style="padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Export &amp; deletion</span>
+          <span style="padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Integrations</span>
+          <span style="padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Browser Extension</span>
+          <div style="padding:14px 10px 8px;font:600 10.5px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--muted-2,#8C7F6C)">Workspace</div>
+          <span style="padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Team &amp; roles</span>
+          <span style="padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Billing &amp; plan</span>
+          <span style="padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Audit log</span>
+        </aside>
+
+        <div style="flex:1;overflow:hidden;padding:24px 26px;display:flex;flex-direction:column;gap:18px;min-width:0">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="font:600 24px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.015em">Shop connections</div>
+              <div style="font:400 13px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Connected shops, what each connection can access, and when it last synced.</div>
+            </div>
+            <span style="padding:10px 14px;border-radius:9px;background:var(--brand,#B4472A);color:#fff;font:600 12.5px/1 Inter,sans-serif;flex:none">Connect another shop</span>
+          </div>
+
+          <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;overflow:hidden">
+            <div style="padding:18px;display:flex;gap:16px;align-items:flex-start;border-bottom:1px solid var(--border,#E9E2D6)">
+              <span style="width:48px;height:48px;border-radius:12px;background:repeating-linear-gradient(135deg,#E2E8F0 0 6px,#F1F5F9 6px 12px);flex:none"></span>
+              <div style="flex:1;display:flex;flex-direction:column;gap:7px">
+                <div style="display:flex;align-items:center;gap:9px"><span style="font:600 16px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Willow &amp; Fern Studio</span><span style="padding:3px 8px;border-radius:999px;background:#F0FDF4;border:1px solid #BBF7D0;font:600 10.5px/1 Inter,sans-serif;color:#166534">Connected</span><span style="padding:3px 8px;border-radius:999px;background:var(--brand-tint,#FBEEE7);font:600 10.5px/1 Inter,sans-serif;color:var(--brand-strong,#8C371F)">Owner</span></div>
+                <div class="tnum" style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Connected Aug 12, 2026 · 412 listings · synced 6 minutes ago · next sync in 54 minutes</div>
+              </div>
+              <div style="display:flex;gap:8px;flex:none">
+                <span style="padding:9px 13px;border:1px solid #CBD5E1;border-radius:9px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Sync now</span>
+                <span style="padding:9px 13px;border:1px solid #FECACA;border-radius:9px;font:600 12.5px/1 Inter,sans-serif;color:var(--danger,#B91C1C)">Disconnect</span>
+              </div>
+            </div>
+            <div style="padding:18px;display:flex;flex-direction:column;gap:12px">
+              <span style="font:600 13.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Permissions granted on Etsy</span>
+              <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+                <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;gap:12px">
+                  <span style="width:34px;height:20px;border-radius:10px;background:var(--brand,#B4472A);display:inline-flex;align-items:center;padding:2px;justify-content:flex-end;flex:none;margin-top:2px"><span style="width:16px;height:16px;border-radius:8px;background:var(--surface,#FFFFFF)"></span></span>
+                  <span style="display:flex;flex-direction:column;gap:4px"><span style="font:600 12.5px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Read shop &amp; listings</span><span style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Enables listings, audits and catalog health. Required — revoking disconnects the shop.</span></span>
+                </div>
+                <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;gap:12px">
+                  <span style="width:34px;height:20px;border-radius:10px;background:var(--brand,#B4472A);display:inline-flex;align-items:center;padding:2px;justify-content:flex-end;flex:none;margin-top:2px"><span style="width:16px;height:16px;border-radius:8px;background:var(--surface,#FFFFFF)"></span></span>
+                  <span style="display:flex;flex-direction:column;gap:4px"><span style="font:600 12.5px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Manage listings</span><span style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Enables publishing edits, bulk changes and scheduling. Revoking leaves EtsyPilot read-only.</span></span>
+                </div>
+                <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;gap:12px">
+                  <span style="width:34px;height:20px;border-radius:10px;background:var(--brand,#B4472A);display:inline-flex;align-items:center;padding:2px;justify-content:flex-end;flex:none;margin-top:2px"><span style="width:16px;height:16px;border-radius:8px;background:var(--surface,#FFFFFF)"></span></span>
+                  <span style="display:flex;flex-direction:column;gap:4px"><span style="font:600 12.5px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Orders &amp; financials</span><span style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Enables profit, fees and the sales map. Revoking pauses those pages; existing data is retained for 30 days.</span></span>
+                </div>
+                <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;gap:12px">
+                  <span style="width:34px;height:20px;border-radius:10px;background:var(--border,#E9E2D6);display:inline-flex;align-items:center;padding:2px;flex:none;margin-top:2px"><span style="width:16px;height:16px;border-radius:8px;background:var(--surface,#FFFFFF)"></span></span>
+                  <span style="display:flex;flex-direction:column;gap:4px"><span style="font:600 12.5px/1.3 Inter,sans-serif;color:var(--muted-1,#6B6152)">Inventory updates</span><span style="font:400 12px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Not granted. Automation rules that adjust quantity stay unavailable until you enable it.</span></span>
+                </div>
+              </div>
+              <div style="display:flex;gap:11px;padding:13px 14px;border:1px solid var(--border,#E9E2D6);background:var(--canvas-soft,#FBF8F3);border-radius:12px">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--success,#15803D)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:1px"><path d="M12 3l7 3v6c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6z"></path><path d="M9 12l2 2 4-4"></path></svg>
+                <span style="font:400 12.5px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">Access is granted by Etsy, not by a password. You can revoke it here or from your Etsy account at any time. EtsyPilot never stores your Etsy credentials.</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:16px;flex:1;min-height:0">
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;overflow:hidden;display:flex;flex-direction:column">
+              <div style="padding:15px 18px;border-bottom:1px solid var(--border,#E9E2D6);font:600 14px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Other shops</div>
+              <div style="padding:15px 18px;border-bottom:1px solid #F1F5F9;display:flex;gap:13px;align-items:center">
+                <span style="width:38px;height:38px;border-radius:10px;background:repeating-linear-gradient(135deg,#E2E8F0 0 5px,#F1F5F9 5px 10px);flex:none"></span>
+                <span style="flex:1;display:flex;flex-direction:column;gap:4px"><span style="font:600 13.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Northlight Print Co.</span><span class="tnum" style="font:400 12px/1 Inter,sans-serif;color:var(--warning-strong,#B45309)">Sync failed 9 hours ago · token expired</span></span>
+                <span style="padding:8px 12px;border-radius:8px;background:var(--brand,#B4472A);color:#fff;font:600 12px/1 Inter,sans-serif;flex:none">Reconnect</span>
+              </div>
+              <div style="padding:15px 18px;display:flex;gap:13px;align-items:center">
+                <span style="width:38px;height:38px;border-radius:10px;background:repeating-linear-gradient(135deg,#E2E8F0 0 5px,#F1F5F9 5px 10px);flex:none"></span>
+                <span style="flex:1;display:flex;flex-direction:column;gap:4px"><span style="font:600 13.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Harbour Ceramics</span><span class="tnum" style="font:400 12px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Client shop · agency seat · read only · 1,204 listings</span></span>
+                <span style="padding:8px 12px;border:1px solid #CBD5E1;border-radius:8px;font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);flex:none">Request write access</span>
+              </div>
+            </div>
+
+            <div style="background:var(--surface,#FFFFFF);border:1px solid #FECACA;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;align-items:center gap:8px"><span style="font:600 14px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Disconnect Willow &amp; Fern Studio?</span></div>
+              <div style="font:400 12.5px/1.6 Inter,sans-serif;color:var(--ink-2,#4A4234)">EtsyPilot will stop syncing immediately. Your listings and orders on Etsy are unaffected — nothing is deleted or deactivated there.</div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <span style="display:flex;gap:9px;font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span style="color:var(--danger,#B91C1C);font-weight:700">·</span>Profit, listings, orders and audits become unavailable.</span>
+                <span style="display:flex;gap:9px;font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span style="color:var(--danger,#B91C1C);font-weight:700">·</span>Scheduled changes and automation rules are cancelled.</span>
+                <span style="display:flex;gap:9px;font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span style="color:var(--danger,#B91C1C);font-weight:700">·</span>Change history and rollback points are kept for 30 days, then deleted.</span>
+                <span style="display:flex;gap:9px;font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span style="color:var(--success,#15803D);font-weight:700">·</span>Keyword lists and saved research stay in your account.</span>
+              </div>
+              <div class="tnum" style="padding:11px 12px;border:1px solid var(--border,#E9E2D6);border-radius:10px;background:var(--canvas-soft,#FBF8F3);font:500 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Type <span style="font-weight:700;color:var(--ink-1,#241B12)">WILLOW &amp; FERN STUDIO</span> to confirm</div>
+              <div style="height:40px;border:1px solid #CBD5E1;border-radius:10px;display:flex;align-items:center;padding:0 12px;font:400 13px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">Shop name</div>
+              <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:auto"><span style="padding:9px 13px;border-radius:9px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Cancel</span><span style="padding:9px 13px;border-radius:9px;background:#F1F5F9;font:600 12.5px/1 Inter,sans-serif;color:#CBD5E1">Disconnect shop</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">76–77 · Billing and plan comparison · 1440 × 820</div>
+    <div style="width:1440px;height:820px;flex:none;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);border-radius:16px;overflow:hidden;display:flex;flex-direction:column">
+      <div style="padding:22px 26px 18px;background:var(--surface,#FFFFFF);border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:flex-start;justify-content:space-between;gap:20px">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font:600 24px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.015em">Billing &amp; plan</div>
+          <div class="tnum" style="font:400 13px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Growth · $29 per month · renews Sep 12, 2026 · Visa ending 4242</div>
+        </div>
+        <div style="display:flex;gap:8px;flex:none">
+          <span style="padding:9px 13px;border:1px solid #CBD5E1;border-radius:9px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Invoices</span>
+          <span style="padding:9px 13px;border:1px solid #CBD5E1;border-radius:9px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Update payment</span>
+        </div>
+      </div>
+      <div style="flex:1;overflow:hidden;padding:22px 26px;display:flex;flex-direction:column;gap:18px">
+        <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px">
+          <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:15px;display:flex;flex-direction:column;gap:8px"><span style="font:600 12px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Listings</span><span class="tnum" style="font:600 20px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">412 / 500</span><span style="height:6px;border-radius:3px;background:var(--border,#E9E2D6);overflow:hidden"><span style="display:block;width:82%;height:100%;background:var(--brand,#B4472A)"></span></span></div>
+          <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:15px;display:flex;flex-direction:column;gap:8px"><span style="font:600 12px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">AI generations</span><span class="tnum" style="font:600 20px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">42 / 500</span><span style="height:6px;border-radius:3px;background:var(--border,#E9E2D6);overflow:hidden"><span style="display:block;width:8%;height:100%;background:var(--brand,#B4472A)"></span></span></div>
+          <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:15px;display:flex;flex-direction:column;gap:8px"><span style="font:600 12px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Connected shops</span><span class="tnum" style="font:600 20px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">2 / 3</span><span style="height:6px;border-radius:3px;background:var(--border,#E9E2D6);overflow:hidden"><span style="display:block;width:66%;height:100%;background:var(--brand,#B4472A)"></span></span></div>
+          <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:15px;display:flex;flex-direction:column;gap:8px"><span style="font:600 12px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Team seats</span><span class="tnum" style="font:600 20px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">2 / 5</span><span style="height:6px;border-radius:3px;background:var(--border,#E9E2D6);overflow:hidden"><span style="display:block;width:40%;height:100%;background:var(--brand,#B4472A)"></span></span></div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;flex:1;min-height:0">
+          <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:13px">
+            <div style="display:flex;flex-direction:column;gap:5px"><span style="font:600 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Free</span><span class="tnum" style="font:600 26px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$0</span><span style="font:400 12px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">Research without a connected shop</span></div>
+            <div style="display:flex;flex-direction:column;gap:8px;font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">
+              <span style="display:flex;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success,#15803D)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:3px"><path d="M5 12l5 5L19 7"></path></svg>Keyword and product research</span>
+              <span style="display:flex;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success,#15803D)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:3px"><path d="M5 12l5 5L19 7"></path></svg>Fee calculator</span>
+              <span style="display:flex;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted-2,#8C7F6C)" stroke-width="2.4" style="flex:none;margin-top:3px"><circle cx="12" cy="12" r="8"></circle><path d="M6.5 6.5l11 11"></path></svg><span style="color:var(--muted-1,#6B6152)">No shop connection or profit</span></span>
+            </div>
+            <span style="margin-top:auto;padding:10px;border:1px solid #CBD5E1;border-radius:9px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-align:center">Current for new accounts</span>
+          </div>
+          <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:13px">
+            <div style="display:flex;flex-direction:column;gap:5px"><span style="font:600 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Solo</span><span class="tnum" style="font:600 26px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$15<span style="font:500 13px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)"> / mo</span></span><span style="font:400 12px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">One shop, up to 200 listings</span></div>
+            <div style="display:flex;flex-direction:column;gap:8px;font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">
+              <span style="display:flex;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success,#15803D)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:3px"><path d="M5 12l5 5L19 7"></path></svg>Profit, fees and listings</span>
+              <span style="display:flex;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success,#15803D)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:3px"><path d="M5 12l5 5L19 7"></path></svg>Bulk edits with rollback</span>
+              <span style="display:flex;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success,#15803D)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:3px"><path d="M5 12l5 5L19 7"></path></svg>60 AI generations / month</span>
+              <span style="display:flex;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted-2,#8C7F6C)" stroke-width="2.4" style="flex:none;margin-top:3px"><circle cx="12" cy="12" r="8"></circle><path d="M6.5 6.5l11 11"></path></svg><span style="color:var(--muted-1,#6B6152)">No automation or team seats</span></span>
+            </div>
+            <span style="margin-top:auto;padding:10px;border:1px solid #CBD5E1;border-radius:9px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-align:center">Downgrade</span>
+          </div>
+          <div style="background:var(--surface,#FFFFFF);border:1.5px solid #2563EB;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:13px;position:relative">
+            <span style="position:absolute;top:-11px;left:20px;padding:3px 9px;border-radius:999px;background:var(--brand,#B4472A);color:#fff;font:600 10.5px/1.5 Inter,sans-serif">Your plan</span>
+            <div style="display:flex;flex-direction:column;gap:5px"><span style="font:600 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Growth</span><span class="tnum" style="font:600 26px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$29<span style="font:500 13px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)"> / mo</span></span><span style="font:400 12px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">3 shops, up to 500 listings</span></div>
+            <div style="display:flex;flex-direction:column;gap:8px;font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">
+              <span style="display:flex;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success,#15803D)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:3px"><path d="M5 12l5 5L19 7"></path></svg>Everything in Solo</span>
+              <span style="display:flex;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success,#15803D)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:3px"><path d="M5 12l5 5L19 7"></path></svg>Automation rules and scheduling</span>
+              <span style="display:flex;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success,#15803D)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:3px"><path d="M5 12l5 5L19 7"></path></svg>5 team seats with approvals</span>
+              <span style="display:flex;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success,#15803D)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:3px"><path d="M5 12l5 5L19 7"></path></svg>500 AI generations / month</span>
+            </div>
+            <span style="margin-top:auto;padding:10px;border-radius:9px;background:var(--brand-tint,#FBEEE7);font:600 12.5px/1 Inter,sans-serif;color:var(--brand-strong,#8C371F);text-align:center">Manage plan</span>
+          </div>
+          <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:13px">
+            <div style="display:flex;flex-direction:column;gap:5px"><span style="font:600 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Agency</span><span class="tnum" style="font:600 26px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$79<span style="font:500 13px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)"> / mo</span></span><span style="font:400 12px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">10 shops, unlimited listings</span></div>
+            <div style="display:flex;flex-direction:column;gap:8px;font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">
+              <span style="display:flex;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success,#15803D)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:3px"><path d="M5 12l5 5L19 7"></path></svg>Everything in Growth</span>
+              <span style="display:flex;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success,#15803D)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:3px"><path d="M5 12l5 5L19 7"></path></svg>Client workspaces and approvals</span>
+              <span style="display:flex;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success,#15803D)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:3px"><path d="M5 12l5 5L19 7"></path></svg>White-label reports</span>
+              <span style="display:flex;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success,#15803D)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:3px"><path d="M5 12l5 5L19 7"></path></svg>Priority support</span>
+            </div>
+            <span style="margin-top:auto;padding:10px;border-radius:9px;background:var(--brand,#B4472A);color:#fff;font:600 12.5px/1 Inter,sans-serif;text-align:center">Upgrade to Agency</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:11px;padding:13px 15px;border:1px solid var(--border,#E9E2D6);background:var(--surface,#FFFFFF);border-radius:12px">
+          <span style="font:400 12.5px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">Downgrading keeps your data. If a plan limit is exceeded, EtsyPilot pauses new bulk jobs and automation instead of deleting anything — you choose what to remove. Cancel any time; access continues to the end of the paid period.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">74–75, 78–80 · Team &amp; roles, notifications, export &amp; deletion, legal, status</div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
+      <div style="width:640px;flex:none;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:15px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px">
+          <div style="display:flex;flex-direction:column;gap:5px"><span style="font:600 16px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Team &amp; roles</span><span class="tnum" style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">2 of 5 seats used · Growth plan</span></div>
+          <span style="padding:9px 13px;border-radius:9px;background:var(--brand,#B4472A);color:#fff;font:600 12.5px/1 Inter,sans-serif;flex:none">Invite member</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1.6fr 1fr 1.1fr .8fr;gap:10px;padding-bottom:9px;border-bottom:1px solid var(--border,#E9E2D6);font:600 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)"><span>Member</span><span>Role</span><span>Shops</span><span style="text-align:right">Status</span></div>
+        <div style="display:grid;grid-template-columns:1.6fr 1fr 1.1fr .8fr;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid #F1F5F9">
+          <span style="display:flex;align-items:center;gap:10px"><span style="width:32px;height:32px;border-radius:9px;background:var(--ink-1,#241B12);color:#fff;display:flex;align-items:center;justify-content:center;font:600 12px/1 Inter,sans-serif">SR</span><span style="display:flex;flex-direction:column;gap:2px"><span style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Salman Riaz</span><span style="font:400 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">salman@willowandfern.co</span></span></span>
+          <span style="font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Owner</span>
+          <span style="font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">All shops</span>
+          <span style="text-align:right"><span style="padding:3px 8px;border-radius:6px;background:#F0FDF4;border:1px solid #BBF7D0;font:600 11px/1 Inter,sans-serif;color:#166534">Active</span></span>
+        </div>
+        <div style="display:grid;grid-template-columns:1.6fr 1fr 1.1fr .8fr;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid #F1F5F9">
+          <span style="display:flex;align-items:center;gap:10px"><span style="width:32px;height:32px;border-radius:9px;background:var(--ink-2,#4A4234);color:#fff;display:flex;align-items:center;justify-content:center;font:600 12px/1 Inter,sans-serif">MK</span><span style="display:flex;flex-direction:column;gap:2px"><span style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Maya Khan</span><span style="font:400 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">maya@willowandfern.co</span></span></span>
+          <span style="font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Editor</span>
+          <span style="font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Willow &amp; Fern</span>
+          <span style="text-align:right"><span style="padding:3px 8px;border-radius:6px;background:#F0FDF4;border:1px solid #BBF7D0;font:600 11px/1 Inter,sans-serif;color:#166534">Active</span></span>
+        </div>
+        <div style="display:grid;grid-template-columns:1.6fr 1fr 1.1fr .8fr;gap:10px;align-items:center;padding:9px 0">
+          <span style="display:flex;align-items:center;gap:10px"><span style="width:32px;height:32px;border-radius:9px;background:var(--border,#E9E2D6);color:var(--muted-1,#6B6152);display:flex;align-items:center;justify-content:center;font:600 12px/1 Inter,sans-serif">JD</span><span style="display:flex;flex-direction:column;gap:2px"><span style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">jordan@harbourgoods.com</span><span style="font:400 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Invited 2 days ago</span></span></span>
+          <span style="font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Viewer</span>
+          <span style="font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Harbour Ceramics</span>
+          <span style="text-align:right"><span style="padding:3px 8px;border-radius:6px;background:#FFFBEB;border:1px solid #FDE68A;font:600 11px/1 Inter,sans-serif;color:var(--warning-strong,#B45309)">Pending</span></span>
+        </div>
+        <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;overflow:hidden">
+          <div style="display:grid;grid-template-columns:1.4fr repeat(4,minmax(0,1fr));gap:8px;padding:10px 13px;background:var(--canvas-soft,#FBF8F3);border-bottom:1px solid var(--border,#E9E2D6);font:600 11px/1.3 Inter,sans-serif;color:var(--muted-1,#6B6152)"><span>Capability</span><span style="text-align:center">Owner</span><span style="text-align:center">Admin</span><span style="text-align:center">Editor</span><span style="text-align:center">Viewer</span></div>
+          <div style="display:grid;grid-template-columns:1.4fr repeat(4,minmax(0,1fr));gap:8px;padding:9px 13px;border-bottom:1px solid #F1F5F9;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);align-items:center"><span>View research &amp; analytics</span><span style="text-align:center;color:var(--success,#15803D);font-weight:700">✓</span><span style="text-align:center;color:var(--success,#15803D);font-weight:700">✓</span><span style="text-align:center;color:var(--success,#15803D);font-weight:700">✓</span><span style="text-align:center;color:var(--success,#15803D);font-weight:700">✓</span></div>
+          <div style="display:grid;grid-template-columns:1.4fr repeat(4,minmax(0,1fr));gap:8px;padding:9px 13px;border-bottom:1px solid #F1F5F9;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);align-items:center"><span>Edit listings, submit bulk jobs</span><span style="text-align:center;color:var(--success,#15803D);font-weight:700">✓</span><span style="text-align:center;color:var(--success,#15803D);font-weight:700">✓</span><span style="text-align:center;color:var(--success,#15803D);font-weight:700">✓</span><span style="text-align:center;color:#CBD5E1">—</span></div>
+          <div style="display:grid;grid-template-columns:1.4fr repeat(4,minmax(0,1fr));gap:8px;padding:9px 13px;border-bottom:1px solid #F1F5F9;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);align-items:center"><span>Approve or publish changes</span><span style="text-align:center;color:var(--success,#15803D);font-weight:700">✓</span><span style="text-align:center;color:var(--success,#15803D);font-weight:700">✓</span><span style="text-align:center;color:#CBD5E1">—</span><span style="text-align:center;color:#CBD5E1">—</span></div>
+          <div style="display:grid;grid-template-columns:1.4fr repeat(4,minmax(0,1fr));gap:8px;padding:9px 13px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);align-items:center"><span>Manage connections &amp; billing</span><span style="text-align:center;color:var(--success,#15803D);font-weight:700">✓</span><span style="text-align:center;color:#CBD5E1">—</span><span style="text-align:center;color:#CBD5E1">—</span><span style="text-align:center;color:#CBD5E1">—</span></div>
+        </div>
+      </div>
+
+      <div style="width:460px;flex:none;display:flex;flex-direction:column;gap:16px">
+        <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px">
+          <span style="font:600 16px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Notification preferences</span>
+          <div style="display:grid;grid-template-columns:1.5fr .6fr .6fr;gap:8px;padding-bottom:9px;border-bottom:1px solid var(--border,#E9E2D6);font:600 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)"><span>Event</span><span style="text-align:center">In app</span><span style="text-align:center">Email</span></div>
+          <div style="display:grid;grid-template-columns:1.5fr .6fr .6fr;gap:8px;align-items:center;font:500 12.5px/1.4 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span>Low margin or below-cost alerts</span><span style="justify-self:center;width:32px;height:19px;border-radius:10px;background:var(--brand,#B4472A);display:inline-flex;align-items:center;padding:2px;justify-content:flex-end"><i style="width:15px;height:15px;border-radius:8px;background:var(--surface,#FFFFFF)"></i></span><span style="justify-self:center;width:32px;height:19px;border-radius:10px;background:var(--brand,#B4472A);display:inline-flex;align-items:center;padding:2px;justify-content:flex-end"><i style="width:15px;height:15px;border-radius:8px;background:var(--surface,#FFFFFF)"></i></span></div>
+          <div style="display:grid;grid-template-columns:1.5fr .6fr .6fr;gap:8px;align-items:center;font:500 12.5px/1.4 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span>Bulk job finished or failed</span><span style="justify-self:center;width:32px;height:19px;border-radius:10px;background:var(--brand,#B4472A);display:inline-flex;align-items:center;padding:2px;justify-content:flex-end"><i style="width:15px;height:15px;border-radius:8px;background:var(--surface,#FFFFFF)"></i></span><span style="justify-self:center;width:32px;height:19px;border-radius:10px;background:var(--border,#E9E2D6);display:inline-flex;align-items:center;padding:2px"><i style="width:15px;height:15px;border-radius:8px;background:var(--surface,#FFFFFF)"></i></span></div>
+          <div style="display:grid;grid-template-columns:1.5fr .6fr .6fr;gap:8px;align-items:center;font:500 12.5px/1.4 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span>Sync failures and expired access</span><span style="justify-self:center;width:32px;height:19px;border-radius:10px;background:var(--brand,#B4472A);display:inline-flex;align-items:center;padding:2px;justify-content:flex-end"><i style="width:15px;height:15px;border-radius:8px;background:var(--surface,#FFFFFF)"></i></span><span style="justify-self:center;width:32px;height:19px;border-radius:10px;background:var(--brand,#B4472A);display:inline-flex;align-items:center;padding:2px;justify-content:flex-end"><i style="width:15px;height:15px;border-radius:8px;background:var(--surface,#FFFFFF)"></i></span></div>
+          <div style="display:grid;grid-template-columns:1.5fr .6fr .6fr;gap:8px;align-items:center;font:500 12.5px/1.4 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span>Approvals requested by team</span><span style="justify-self:center;width:32px;height:19px;border-radius:10px;background:var(--brand,#B4472A);display:inline-flex;align-items:center;padding:2px;justify-content:flex-end"><i style="width:15px;height:15px;border-radius:8px;background:var(--surface,#FFFFFF)"></i></span><span style="justify-self:center;width:32px;height:19px;border-radius:10px;background:var(--border,#E9E2D6);display:inline-flex;align-items:center;padding:2px"><i style="width:15px;height:15px;border-radius:8px;background:var(--surface,#FFFFFF)"></i></span></div>
+          <div style="display:grid;grid-template-columns:1.5fr .6fr .6fr;gap:8px;align-items:center;font:500 12.5px/1.4 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span>Weekly summary</span><span style="justify-self:center;width:32px;height:19px;border-radius:10px;background:var(--border,#E9E2D6);display:inline-flex;align-items:center;padding:2px"><i style="width:15px;height:15px;border-radius:8px;background:var(--surface,#FFFFFF)"></i></span><span style="justify-self:center;width:32px;height:19px;border-radius:10px;background:var(--brand,#B4472A);display:inline-flex;align-items:center;padding:2px;justify-content:flex-end"><i style="width:15px;height:15px;border-radius:8px;background:var(--surface,#FFFFFF)"></i></span></div>
+          <div style="padding-top:12px;border-top:1px solid var(--border,#E9E2D6);display:flex;flex-direction:column;gap:8px">
+            <span style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Alert thresholds</span>
+            <span class="tnum" style="font:400 12px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Warn when net margin falls below <span style="color:var(--ink-1,#241B12);font-weight:600">10%</span> · notify on stock under <span style="color:var(--ink-1,#241B12);font-weight:600">3 units</span> · quiet hours 9 PM – 8 AM</span>
+          </div>
+        </div>
+
+        <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px">
+          <span style="font:600 16px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Browser Extension</span>
+          <span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Use EtsyPilot while browsing Etsy — same account, no separate login.</span>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:13px;display:flex;align-items:center;gap:11px"><span style="width:32px;height:32px;border-radius:9px;background:#F1F5F9;display:flex;align-items:center;justify-content:center;font:700 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Ch</span><span style="flex:1;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Chrome</span><span style="padding:7px 11px;border-radius:8px;background:var(--brand,#B4472A);color:#fff;font:600 11.5px/1 Inter,sans-serif">Install Chrome Extension</span></div>
+            <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:13px;display:flex;align-items:center;gap:11px"><span style="width:32px;height:32px;border-radius:9px;background:#F1F5F9;display:flex;align-items:center;justify-content:center;font:700 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Fx</span><span style="flex:1;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Firefox</span><span style="padding:7px 11px;border:1px solid #CBD5E1;border-radius:8px;font:600 11.5px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">Coming Soon</span></div>
+          </div>
+        </div>
+
+        <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px">
+          <span style="font:600 16px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Data export &amp; deletion</span>
+          <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:9px">
+            <span style="font:600 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Export your data</span>
+            <span style="font:400 12.5px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">Listings, cost inputs, keyword lists, change history and calculated profit as CSV or JSON. Ready within 15 minutes; download link valid 7 days.</span>
+            <div style="display:flex gap:8px"><span style="padding:9px 13px;border:1px solid #CBD5E1;border-radius:9px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Request export</span></div>
+          </div>
+          <div style="border:1px solid #FECACA;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:9px">
+            <span style="font:600 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Delete your EtsyPilot account</span>
+            <span style="font:400 12.5px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">Removes your account, shop connections, cost inputs and history from EtsyPilot within 30 days. <span style="font-weight:600;color:var(--ink-1,#241B12)">Your Etsy shop, listings and orders are not affected.</span> Deletion cannot be undone once the 7-day grace period passes.</span>
+            <div style="display:flex;gap:8px"><span style="padding:9px 13px;border:1px solid #FECACA;border-radius:9px;font:600 12.5px/1 Inter,sans-serif;color:var(--danger,#B91C1C)">Delete account</span><span style="padding:9px 13px;border:1px solid #CBD5E1;border-radius:9px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Export first</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="width:460px;flex:none;display:flex;flex-direction:column;gap:16px">
+        <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px">
+          <span style="font:600 16px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">System status</span>
+          <div style="display:flex;align-items:center;gap:10px;padding:12px 13px;border:1px solid #BBF7D0;background:#F0FDF4;border-radius:11px"><i style="width:8px;height:8px;border-radius:4px;background:var(--success,#15803D)"></i><span style="font:600 13px/1 Inter,sans-serif;color:#166534;flex:1">All systems operational</span><span class="tnum" style="font:500 11.5px/1 Inter,sans-serif;color:#166534">updated 2 min ago</span></div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <span style="display:flex;align-items:center;gap:10px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><i style="width:7px;height:7px;border-radius:4px;background:var(--success,#15803D)"></i>Application<span style="margin-left:auto;color:var(--muted-1,#6B6152)">Operational</span></span>
+            <span style="display:flex;align-items:center;gap:10px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><i style="width:7px;height:7px;border-radius:4px;background:var(--warning,#B45309)"></i>Etsy sync<span style="margin-left:auto;color:var(--warning-strong,#B45309)">Degraded — rate limited</span></span>
+            <span style="display:flex;align-items:center;gap:10px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><i style="width:7px;height:7px;border-radius:4px;background:var(--success,#15803D)"></i>Research data refresh<span style="margin-left:auto;color:var(--muted-1,#6B6152)">Operational</span></span>
+            <span style="display:flex;align-items:center;gap:10px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><i style="width:7px;height:7px;border-radius:4px;background:var(--success,#15803D)"></i>AI generation<span style="margin-left:auto;color:var(--muted-1,#6B6152)">Operational</span></span>
+          </div>
+          <div style="padding:12px 13px;border:1px solid #FDE68A;background:#FFFBEB;border-radius:11px;font:400 12px/1.55 Inter,sans-serif;color:#92400E">Etsy is limiting requests platform-wide. Syncs are queued and will complete automatically — no data is lost.</div>
+        </div>
+
+        <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:13px">
+          <span style="font:600 16px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Legal &amp; attribution</span>
+          <div style="padding:13px 14px;border:1px solid var(--border,#E9E2D6);background:var(--canvas-soft,#FBF8F3);border-radius:11px;font:400 12.5px/1.6 Inter,sans-serif;color:var(--ink-2,#4A4234)">The term “Etsy” is a trademark of Etsy, Inc. This Application uses Etsy’s API, but is not endorsed or certified by Etsy.</div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <span style="display:flex;align-items:center;justify-content:space-between;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Terms of Service<span style="color:var(--brand,#B4472A);font-weight:600">Open</span></span>
+            <span style="display:flex;align-items:center;justify-content:space-between;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Privacy Policy<span style="color:var(--brand,#B4472A);font-weight:600">Open</span></span>
+            <span style="display:flex;align-items:center;justify-content:space-between;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Data methodology<span style="color:var(--brand,#B4472A);font-weight:600">Open</span></span>
+            <span style="display:flex;align-items:center;justify-content:space-between;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Subprocessors<span style="color:var(--brand,#B4472A);font-weight:600">Open</span></span>
+            <span style="display:flex;align-items:center;justify-content:space-between;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">AI usage disclosure<span style="color:var(--brand,#B4472A);font-weight:600">Open</span></span>
+          </div>
+          <div style="font:400 11.5px/1.55 Inter,sans-serif;color:var(--muted-1,#6B6152)">Estimated figures throughout EtsyPilot are modeled from public marketplace signals and are not official Etsy data. EtsyPilot does not guarantee sales, ranking or revenue outcomes.</div>
+        </div>
+
+        <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:12px">
+          <span style="font:600 16px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Audit log</span>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="display:flex;gap:10px"><i style="width:7px;height:7px;border-radius:4px;background:var(--brand,#B4472A);margin-top:5px;flex:none"></i><span style="display:flex;flex-direction:column;gap:2px"><span style="font:500 12.5px/1.4 Inter,sans-serif;color:var(--ink-1,#241B12)">Orders permission re-granted</span><span class="tnum" style="font:400 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Salman R. · Aug 12, 9:38 AM · IP 24.14.…</span></span></span>
+            <span style="display:flex;gap:10px"><i style="width:7px;height:7px;border-radius:4px;background:var(--muted-2,#8C7F6C);margin-top:5px;flex:none"></i><span style="display:flex;flex-direction:column;gap:2px"><span style="font:500 12.5px/1.4 Inter,sans-serif;color:var(--ink-1,#241B12)">Editor invited: maya@willowandfern.co</span><span class="tnum" style="font:400 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Salman R. · Aug 9, 4:02 PM</span></span></span>
+            <span style="display:flex;gap:10px"><i style="width:7px;height:7px;border-radius:4px;background:var(--muted-2,#8C7F6C);margin-top:5px;flex:none"></i><span style="display:flex;flex-direction:column;gap:2px"><span style="font:500 12.5px/1.4 Inter,sans-serif;color:var(--ink-1,#241B12)">Data export requested</span><span class="tnum" style="font:400 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Salman R. · Aug 3, 11:20 AM</span></span></span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;flex:none">
+        <div style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Settings on mobile · 390</div>
+        <div style="width:390px;height:844px;flex:none;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);border-radius:22px;overflow:hidden;display:flex;flex-direction:column">
+          <div style="height:56px;flex:none;background:var(--surface,#FFFFFF);border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:center;gap:10px;padding:0 14px">
+            <span style="width:44px;height:44px;margin-left:-10px;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2,#4A4234)" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"></path></svg></span>
+            <span style="font:600 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12);flex:1">Shop connections</span>
+          </div>
+          <div style="flex:1;overflow:hidden;padding:14px;display:flex;flex-direction:column;gap:12px">
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:11px">
+              <div style="display:flex;gap:11px;align-items:center">
+                <span style="width:42px;height:42px;border-radius:11px;background:repeating-linear-gradient(135deg,#E2E8F0 0 6px,#F1F5F9 6px 12px);flex:none"></span>
+                <span style="display:flex;flex-direction:column;gap:3px;min-width:0"><span style="font:600 13.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Willow &amp; Fern Studio</span><span style="font:400 11.5px/1 Inter,sans-serif;color:var(--success,#15803D)">Connected · synced 6 min ago</span></span>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px"><span style="padding:5px 9px;border-radius:7px;background:#F1F5F9;font:500 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Read listings</span><span style="padding:5px 9px;border-radius:7px;background:#F1F5F9;font:500 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Manage listings</span><span style="padding:5px 9px;border-radius:7px;background:#F1F5F9;font:500 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Orders</span></div>
+              <div style="display:flex;gap:9px"><span style="flex:1;height:44px;border:1px solid #CBD5E1;border-radius:10px;font:600 13px/42px Inter,sans-serif;color:var(--ink-2,#4A4234);text-align:center">Sync now</span><span style="flex:1;height:44px;border:1px solid #FECACA;border-radius:10px;font:600 13px/42px Inter,sans-serif;color:var(--danger,#B91C1C);text-align:center">Disconnect</span></div>
+            </div>
+            <div style="background:var(--surface,#FFFFFF);border:1px solid #FDE68A;border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px">
+              <span style="display:flex;align-items:center;gap:9px"><span style="width:38px;height:38px;border-radius:10px;background:repeating-linear-gradient(135deg,#E2E8F0 0 5px,#F1F5F9 5px 10px);flex:none"></span><span style="display:flex;flex-direction:column;gap:3px"><span style="font:600 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Northlight Print Co.</span><span style="font:400 11.5px/1 Inter,sans-serif;color:var(--warning-strong,#B45309)">Token expired 9 h ago</span></span></span>
+              <span style="height:44px;border-radius:10px;background:var(--brand,#B4472A);color:#fff;font:600 13px/44px Inter,sans-serif;text-align:center">Reconnect</span>
+            </div>
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px">
+              <span style="font:600 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Plan usage</span>
+              <span style="display:flex;justify-content:space-between;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Listings<span class="tnum" style="color:var(--ink-1,#241B12);font-weight:600">412 / 500</span></span>
+              <span style="height:6px;border-radius:3px;background:var(--border,#E9E2D6);overflow:hidden"><i style="display:block;width:82%;height:100%;background:var(--brand,#B4472A)"></i></span>
+              <span style="display:flex;justify-content:space-between;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">AI generations<span class="tnum" style="color:var(--ink-1,#241B12);font-weight:600">42 / 500</span></span>
+              <span style="height:6px;border-radius:3px;background:var(--border,#E9E2D6);overflow:hidden"><i style="display:block;width:8%;height:100%;background:var(--brand,#B4472A)"></i></span>
+            </div>
+            <div style="margin-top:auto;padding:13px 14px;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;font:400 11px/1.55 Inter,sans-serif;color:var(--muted-1,#6B6152)">The term “Etsy” is a trademark of Etsy, Inc. This Application uses Etsy’s API, but is not endorsed or certified by Etsy.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="border-top:1px solid #CBD5E1;padding-top:24px;display:flex;flex-direction:column;gap:8px;max-width:900px">
+    <div style="font:600 14px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Next up</div>
+    <div style="font:400 13.5px/1.6 Inter,sans-serif;color:var(--ink-2,#4A4234)">Final phase — cross-cutting states and edge cases: rate limiting, offline, empty catalog, huge catalog, permission errors, 404 and 500, accessibility annotations, plus the responsive breakpoint set.</div>
+  </div>
+
+</div>
+
+</x-dc>
+</body>
+</html>

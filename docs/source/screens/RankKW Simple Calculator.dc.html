@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:var(--page-bg,#FBF8F3);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--brand,#B4472A)}a:hover{color:var(--brand-strong,#8C371F)}
+*{box-sizing:border-box}
+.tnum{font-variant-numeric:tabular-nums}
+</style>
+<script>
+(function(){
+  var DARK = {"--brand":"#E07A4A","--brand-strong":"#F3B08C","--brand-tint":"rgba(224,122,74,.16)","--ink-1":"#F1F5F9","--ink-2":"#CBD5E1","--muted-1":"#94A3B8","--muted-2":"#64748B","--border":"#2B3444","--canvas-soft":"#1E293B","--page-bg":"#0F172A","--success":"#34D399","--success-strong":"#34D399","--warning":"#FBBF24","--warning-strong":"#FBBF24","--danger":"#F87171","--danger-strong":"#FCA5A5","--accent-ai":"#C4B5FD","--accent-calc":"#67E8F9","--surface":"#1E293B"};
+  var LIGHT = {"--brand":"#B4472A","--brand-strong":"#8C371F","--brand-tint":"#FBEEE7","--ink-1":"#241B12","--ink-2":"#4A4234","--muted-1":"#6B6152","--muted-2":"#8C7F6C","--border":"#E9E2D6","--canvas-soft":"#FBF8F3","--page-bg":"#FBF8F3","--success":"#15803D","--success-strong":"#15803D","--warning":"#B45309","--warning-strong":"#B45309","--danger":"#B91C1C","--danger-strong":"#B91C1C","--accent-ai":"#7C3AED","--accent-calc":"#0891B2","--surface":"#FFFFFF"};
+  function apply(mode){
+    var resolved = mode === 'system' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : mode;
+    var tokens = resolved === 'dark' ? DARK : LIGHT;
+    var root = document.documentElement.style;
+    for (var k in tokens) root.setProperty(k, tokens[k]);
+    document.documentElement.setAttribute('data-rankkw-theme', resolved);
+    document.querySelectorAll('[data-rankkw-toggle]').forEach(function(el){
+      el.style.background = el.getAttribute('data-mode') === mode ? tokens['--brand'] : 'transparent';
+      el.style.color = el.getAttribute('data-mode') === mode ? '#fff' : tokens['--ink-2'];
+    });
+  }
+  window.rankkwSetTheme = function(mode){ localStorage.setItem('rankkw-theme', mode); apply(mode); };
+  var saved = localStorage.getItem('rankkw-theme') || 'system';
+  apply(saved);
+  document.addEventListener('click', function(e){ var t = e.target.closest && e.target.closest('[data-rankkw-toggle]'); if (t) { window.rankkwSetTheme(t.getAttribute('data-mode')); } });
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){ if((localStorage.getItem('rankkw-theme')||'system')==='system') apply('system'); });
+})();
+</script>
+</helmet>
+<div data-rankkw-screens-nav="1">
+<details style="position:fixed;top:16px;left:16px;z-index:999">
+<summary style="cursor:pointer;padding:8px 12px;border-radius:999px;background:var(--surface,#fff);border:1px solid var(--border,#E9E2D6);font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);box-shadow:0 4px 16px rgba(0,0,0,.14)">Screens ▾</summary>
+<div style="margin-top:6px;background:var(--surface,#fff);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:1px;box-shadow:0 8px 24px rgba(0,0,0,.16);min-width:210px;max-height:70vh;overflow:auto"><a href="RankKW%20Foundations.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Foundations</a><a href="RankKW%20Auth%20&amp;%20Onboarding.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Auth & Onboarding</a><a href="RankKW%20Home%20&amp;%20Action%20Center.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Home & Action Center</a><a href="RankKW%20Research.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Research</a><a href="RankKW%20Shop%20Management.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Shop Management</a><a href="RankKW%20Analytics%20&amp;%20Profit.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Analytics & Profit</a><a href="RankKW%20Optimization%20&amp;%20AI.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Optimization & AI</a><a href="RankKW%20Settings%20&amp;%20Compliance.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Settings & Compliance</a><a href="RankKW%20States%20&amp;%20Responsive.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">States & Responsive</a><a href="RankKW%20Browser%20Extension.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Browser Extension</a><a href="RankKW%20Simple%20Calculator.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Simple Calculator</a></div>
+</details></div>
+<div style="position:fixed;top:16px;right:16px;z-index:999;display:flex;gap:2px;padding:3px;border-radius:999px;background:var(--surface,#fff);border:1px solid var(--border,#E9E2D6);box-shadow:0 4px 16px rgba(0,0,0,.14)">
+  <button data-rankkw-toggle data-mode="light" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Light</button>
+  <button data-rankkw-toggle data-mode="dark" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Dark</button>
+  <button data-rankkw-toggle data-mode="system" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">System</button>
+</div>
+
+<div style="padding:48px 56px 80px;display:flex;flex-direction:column;gap:52px">
+
+  <div style="display:flex;flex-direction:column;gap:12px;max-width:900px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:34px;height:34px;border-radius:9px;background:var(--brand,#B4472A);display:flex;align-items:center;justify-content:center;color:#fff;font:700 15px/1 Inter,sans-serif">EP</div>
+      <div style="font:700 20px/1 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.01em">EtsyPilot</div>
+      <div style="padding:4px 8px;border-radius:6px;background:var(--border,#E9E2D6);color:var(--ink-2,#4A4234);font:600 11px/1 Inter,sans-serif">Addition · Tools · Simple Calculator</div>
+    </div>
+    <div style="font:400 13.5px/1.6 Inter,sans-serif;color:var(--ink-2,#4A4234);max-width:800px">Lives under the existing Tools group, next to Fee, Ads ROI and Profit calculators — not merged with Profit Reality. One number in, one number out, with the formula always shown. Works without a connected Etsy shop, so it can later stand alone as a free acquisition tool.</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">Tools navigation · Simple Calculator page · 1440 × 900</div>
+    <div style="width:1440px;height:900px;flex:none;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);border-radius:16px;overflow:hidden;display:flex">
+      <aside style="width:264px;flex:none;background:var(--surface,#FFFFFF);border-right:1px solid #E2E8F0;display:flex;flex-direction:column">
+        <div style="height:64px;flex:none;display:flex;align-items:center;gap:10px;padding:0 18px;border-bottom:1px solid var(--border,#E9E2D6)">
+          <div style="width:28px;height:28px;border-radius:8px;background:var(--brand,#B4472A);display:flex;align-items:center;justify-content:center;color:#fff;font:700 13px/1 Inter,sans-serif">EP</div>
+          <div style="font:700 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12);flex:1">EtsyPilot</div>
+        </div>
+        <div style="flex:1;padding:12px 12px 0;display:flex;flex-direction:column;gap:2px;overflow:hidden">
+          <div style="padding:8px 10px 4px;font:600 10.5px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--muted-2,#8C7F6C)">Home</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Overview</div>
+          <div style="padding:14px 10px 4px;font:600 10.5px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--muted-2,#8C7F6C)">Research</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Find hot products</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Keywords</div>
+          <div style="padding:14px 10px 4px;font:600 10.5px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--muted-2,#8C7F6C)">My shop</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Listings</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Profit &amp; fees</div>
+          <div style="padding:14px 10px 4px;font:600 10.5px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--muted-2,#8C7F6C)">Tools</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;background:var(--brand-tint,#FBEEE7);font:600 13px/1 Inter,sans-serif;color:var(--brand-strong,#8C371F)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--brand,#B4472A)" stroke-width="2" stroke-linecap="round"><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect x="13" y="4" width="7" height="7" rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect><rect x="13" y="13" width="7" height="7" rx="1.5"></rect></svg>Simple Calculator</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Fee Calculator</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Ads ROI Calculator</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Profit Calculator</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Category Finder</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Seasonal Calendar</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Keyword Lists</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Trademark Screening</div>
+        </div>
+        <div style="flex:none;padding:12px;border-top:1px solid var(--border,#E9E2D6)"><div style="border:1px solid var(--border,#E9E2D6);border-radius:10px;padding:11px 12px;font:500 11.5px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">Growth plan · 412 / 500 listings</div></div>
+      </aside>
+
+      <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+        <header style="height:64px;flex:none;background:var(--surface,#FFFFFF);border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:center;gap:14px;padding:0 26px">
+          <span style="display:flex;align-items:center;gap:7px;font:500 12px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">Tools<span>/</span><span style="color:var(--ink-2,#4A4234)">Simple Calculator</span></span>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+            <span style="display:flex;align-items:center;gap:8px;padding:7px 11px;border:1px solid var(--border,#E9E2D6);border-radius:10px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><i style="width:6px;height:6px;border-radius:3px;background:var(--success,#15803D)"></i>Willow &amp; Fern Studio</span>
+            <span style="width:28px;height:28px;border-radius:8px;background:var(--ink-1,#241B12);color:#fff;display:flex;align-items:center;justify-content:center;font:600 11.5px/1 Inter,sans-serif">SR</span>
+          </div>
+        </header>
+
+        <div style="flex:1;overflow:hidden;padding:24px 26px;display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="font:600 26px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.015em">Simple Calculator</div>
+              <div style="font:400 13px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Quick calculations for your Etsy business — no shop connection required.</div>
+            </div>
+            <div style="display:flex;gap:9px;padding:9px 13px;border:1px solid var(--border,#E9E2D6);background:var(--surface,#FFFFFF);border-radius:10px;align-items:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2" stroke-linecap="round"><path d="M4 18V7M9 18V4M14 18v-8M19 18v-5"></path></svg><span style="font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Need full margin and fee breakdowns? <span style="color:var(--brand,#B4472A);font-weight:600">Open Profit Reality</span></span></div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:18px;flex:1;min-height:0">
+            <div style="display:flex;flex-direction:column;gap:16px;min-height:0">
+              <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:16px">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                  <div style="display:flex;flex-direction:column;gap:6px">
+                    <label style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Amount</label>
+                    <div style="height:44px;border:1px solid var(--brand,#B4472A);border-radius:11px;display:flex;align-items:center;padding:0 13px;gap:6px;box-shadow:0 0 0 3px rgba(37,99,235,.14)"><span style="font:500 14px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">$</span><span class="tnum" style="font:500 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">29.00</span></div>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:6px">
+                    <label style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Calculation</label>
+                    <div style="height:44px;border:1px solid #CBD5E1;border-radius:11px;display:flex;align-items:center;justify-content:space-between;padding:0 13px;font:500 14px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Discount<span style="color:var(--muted-2,#8C7F6C)">▾</span></div>
+                  </div>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:7px">
+                  <span style="padding:6px 11px;border-radius:999px;background:var(--brand-tint,#FBEEE7);border:1px solid #BFDBFE;font:600 11.5px/1 Inter,sans-serif;color:var(--brand-strong,#8C371F)">Percentage</span>
+                  <span style="padding:6px 11px;border-radius:999px;background:var(--ink-1,#241B12);font:600 11.5px/1 Inter,sans-serif;color:#fff">Discount</span>
+                  <span style="padding:6px 11px;border-radius:999px;border:1px solid var(--border,#E9E2D6);font:500 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Profit</span>
+                  <span style="padding:6px 11px;border-radius:999px;border:1px solid var(--border,#E9E2D6);font:500 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Margin</span>
+                  <span style="padding:6px 11px;border-radius:999px;border:1px solid var(--border,#E9E2D6);font:500 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Markup</span>
+                  <span style="padding:6px 11px;border-radius:999px;border:1px solid var(--border,#E9E2D6);font:500 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Fee</span>
+                  <span style="padding:6px 11px;border-radius:999px;border:1px solid var(--border,#E9E2D6);font:500 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Net Revenue</span>
+                  <span style="padding:6px 11px;border-radius:999px;border:1px solid var(--border,#E9E2D6);font:500 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Break-even</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <label style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Discount</label>
+                  <div style="height:44px;width:160px;border:1px solid #CBD5E1;border-radius:11px;display:flex;align-items:center;padding:0 13px;gap:4px"><span class="tnum" style="font:500 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">20</span><span style="font:500 14px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">%</span></div>
+                </div>
+                <div style="border:1px solid var(--border,#E9E2D6);background:var(--canvas-soft,#FBF8F3);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:10px">
+                  <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 11.5px/1 Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-1,#6B6152)">Result</span><span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;background:#ECFEFF;border:1px solid #A5F3FC;font:600 10.5px/1 Inter,sans-serif;color:#0E7490">Calculated</span></div>
+                  <div style="display:flex;align-items:baseline;gap:14px">
+                    <span class="tnum" style="font:600 34px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$23.20</span>
+                    <span class="tnum" style="font:500 13px/1 Inter,sans-serif;color:var(--success,#15803D)">Savings $5.80</span>
+                  </div>
+                  <span class="tnum" style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">$29 × (1 − 20%) = $23.20 · calculated from the values you entered</span>
+                  <div style="display:flex;gap:8px;padding-top:4px"><span style="padding:9px 13px;border-radius:9px;background:var(--brand,#B4472A);color:#fff;font:600 12.5px/1 Inter,sans-serif">Copy Result</span><span style="padding:9px 13px;border:1px solid #CBD5E1;border-radius:9px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Reset</span></div>
+                </div>
+              </div>
+
+              <div style="background:var(--surface,#FFFFFF);border:1px solid #FECACA;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:center;gap:8px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--danger,#B91C1C)" stroke-width="2.4"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v6M12 16.5v.01"></path></svg><span style="font:600 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Validation error</span></div>
+                <span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Enter an amount greater than 0.</span>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:16px;min-height:0">
+              <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px">
+                <span style="font:600 14px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Quick calculations</span>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                  <div style="border:1px solid var(--border,#E9E2D6);border-radius:11px;padding:13px;display:flex;flex-direction:column;gap:7px"><span style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Discount</span><span style="font:400 11.5px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">Final price after a discount.</span><span style="align-self:flex-start;font:600 11.5px/1 Inter,sans-serif;color:var(--brand,#B4472A)">Calculate</span></div>
+                  <div style="border:1px solid var(--border,#E9E2D6);border-radius:11px;padding:13px;display:flex;flex-direction:column;gap:7px"><span style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Profit</span><span style="font:400 11.5px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">Profit from revenue and costs.</span><span style="align-self:flex-start;font:600 11.5px/1 Inter,sans-serif;color:var(--brand,#B4472A)">Calculate</span></div>
+                  <div style="border:1px solid var(--border,#E9E2D6);border-radius:11px;padding:13px;display:flex;flex-direction:column;gap:7px"><span style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Margin</span><span style="font:400 11.5px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">Profit margin percentage.</span><span style="align-self:flex-start;font:600 11.5px/1 Inter,sans-serif;color:var(--brand,#B4472A)">Calculate</span></div>
+                  <div style="border:1px solid var(--border,#E9E2D6);border-radius:11px;padding:13px;display:flex;flex-direction:column;gap:7px"><span style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Markup</span><span style="font:400 11.5px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">Markup over cost.</span><span style="align-self:flex-start;font:600 11.5px/1 Inter,sans-serif;color:var(--brand,#B4472A)">Calculate</span></div>
+                  <div style="border:1px solid var(--border,#E9E2D6);border-radius:11px;padding:13px;display:flex;flex-direction:column;gap:7px"><span style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Break-even</span><span style="font:400 11.5px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">Minimum selling price.</span><span style="align-self:flex-start;font:600 11.5px/1 Inter,sans-serif;color:var(--brand,#B4472A)">Calculate</span></div>
+                  <div style="border:1px solid var(--border,#E9E2D6);border-radius:11px;padding:13px;display:flex;flex-direction:column;gap:7px"><span style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Fee</span><span style="font:400 11.5px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">Marketplace or processor fee.</span><span style="align-self:flex-start;font:600 11.5px/1 Inter,sans-serif;color:var(--brand,#B4472A)">Calculate</span></div>
+                </div>
+              </div>
+
+              <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:11px;flex:1;min-height:0">
+                <span style="font:600 14px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Data labels used here</span>
+                <div style="display:flex;gap:9px;align-items:flex-start"><span style="padding:3px 8px;border-radius:999px;background:#ECFEFF;border:1px solid #A5F3FC;font:600 10.5px/1.4 Inter,sans-serif;color:#0E7490;flex:none">Calculated</span><span style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Pure math from what you typed in.</span></div>
+                <div style="display:flex;gap:9px;align-items:flex-start"><span style="padding:3px 8px;border-radius:999px;background:var(--canvas-soft,#FBF8F3);border:1px solid #CBD5E1;font:600 10.5px/1.4 Inter,sans-serif;color:var(--ink-2,#4A4234);flex:none">Seller input</span><span style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Assumptions you provide, like cost or target margin.</span></div>
+                <div style="display:flex;gap:9px;align-items:flex-start"><span style="padding:3px 8px;border-radius:999px;background:#FFFBEB;border:1px solid #FDE68A;font:600 10.5px/1.4 Inter,sans-serif;color:var(--warning-strong,#B45309);flex:none">Estimated</span><span style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Only if a marketplace-average fee rate is used instead of your verified rate.</span></div>
+                <div style="display:flex;gap:9px;align-items:flex-start"><span style="padding:3px 8px;border-radius:999px;background:#F1F5F9;border:1px solid var(--border,#E9E2D6);font:600 10.5px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152);flex:none">Unavailable</span><span style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Never labelled “official Etsy fee” unless it matches verified current fee rules.</span></div>
+                <div style="margin-top:auto;padding-top:10px;border-top:1px solid var(--border,#E9E2D6);font:400 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">For orders, real fees, COGS and multi-scenario profit, use Profit Reality — this tool is intentionally one calculation at a time.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">Worked examples · mobile · public free-tool variant</div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
+      <div style="width:900px;flex:none;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:20px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px">
+        <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px"><span style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Discount</span><span class="tnum" style="font:400 12px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">$29 price, 20% off</span><span class="tnum" style="font:600 19px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$23.20</span><span class="tnum" style="font:500 12px/1 Inter,sans-serif;color:var(--success,#15803D)">Savings $5.80</span></div>
+        <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px"><span style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Profit</span><span class="tnum" style="font:400 12px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">$100 revenue, $35 costs</span><span class="tnum" style="font:600 19px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$65</span><span style="font:500 12px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">profit</span></div>
+        <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px"><span style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Margin</span><span class="tnum" style="font:400 12px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">$100 revenue, $65 profit</span><span class="tnum" style="font:600 19px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">65%</span></div>
+        <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px"><span style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Markup</span><span class="tnum" style="font:400 12px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">$20 cost, $30 selling price</span><span class="tnum" style="font:600 19px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">50%</span></div>
+        <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px"><span style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Break-even</span><span class="tnum" style="font:400 12px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">$20 cost, 30% target margin</span><span class="tnum" style="font:600 19px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$28.57</span></div>
+        <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px"><span style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Fee</span><span class="tnum" style="font:400 12px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">$100 amount, 6.5% rate</span><span class="tnum" style="font:600 19px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$6.50</span></div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;flex:none">
+        <div style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Mobile · 390</div>
+        <div style="width:390px;height:700px;flex:none;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);border-radius:22px;overflow:hidden;display:flex;flex-direction:column">
+          <div style="height:56px;flex:none;background:var(--surface,#FFFFFF);border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:center;gap:10px;padding:0 14px"><span style="width:44px;height:44px;margin-left:-10px;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2,#4A4234)" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"></path></svg></span><span style="font:600 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12);flex:1">Simple Calculator</span></div>
+          <div style="flex:1;overflow:hidden;padding:14px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;flex-direction:column;gap:6px"><label style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Amount</label><div style="height:44px;border:1px solid var(--brand,#B4472A);border-radius:11px;display:flex;align-items:center;padding:0 13px;gap:6px"><span style="font:500 14px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">$</span><span class="tnum" style="font:500 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">29.00</span></div></div>
+            <div style="display:flex;gap:7px;overflow:hidden"><span style="padding:8px 12px;border-radius:999px;background:var(--ink-1,#241B12);color:#fff;font:600 12px/1 Inter,sans-serif;flex:none">Discount</span><span style="padding:8px 12px;border-radius:999px;border:1px solid var(--border,#E9E2D6);font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);flex:none">Profit</span><span style="padding:8px 12px;border-radius:999px;border:1px solid var(--border,#E9E2D6);font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);flex:none">Margin</span></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><label style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Discount</label><div style="height:44px;width:140px;border:1px solid #CBD5E1;border-radius:11px;display:flex;align-items:center;padding:0 13px;gap:4px"><span class="tnum" style="font:500 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">20</span><span style="font:500 14px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">%</span></div></div>
+            <div style="border:1px solid var(--border,#E9E2D6);background:var(--surface,#FFFFFF);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:9px">
+              <span style="font:600 11px/1 Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-1,#6B6152)">Result</span>
+              <span class="tnum" style="font:600 28px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$23.20</span>
+              <span class="tnum" style="font:400 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">$29 × (1 − 20%) = $23.20</span>
+              <div style="display:flex;gap:8px"><span style="flex:1;height:44px;border-radius:9px;background:var(--brand,#B4472A);color:#fff;font:600 13px/44px Inter,sans-serif;text-align:center">Copy</span><span style="flex:1;height:44px;border:1px solid #CBD5E1;border-radius:9px;font:600 13px/42px Inter,sans-serif;color:var(--ink-2,#4A4234);text-align:center">Reset</span></div>
+            </div>
+            <div style="margin-top:auto;padding:12px 13px;border:1px solid var(--border,#E9E2D6);background:var(--surface,#FFFFFF);border-radius:11px;font:400 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Works without connecting an Etsy shop.</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="width:900px;flex:none;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:10px">
+        <span style="font:600 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Public free-tool variant — no login required</span>
+        <span style="font:400 12.5px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">Same component, hosted at a marketing URL (e.g. rankkw.com/tools/etsy-seller-calculator) for SEO and acquisition. No Etsy connection prompt anywhere on this page; a quiet banner invites sign-up only after a result is shown.</span>
+        <div style="display:flex;align-items:center;gap:11px;padding:12px 14px;border:1px solid var(--border,#E9E2D6);background:var(--canvas-soft,#FBF8F3);border-radius:11px"><span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234);flex:1">Want this synced with your real Etsy fees and costs?</span><span style="padding:8px 12px;border-radius:8px;background:var(--brand,#B4472A);color:#fff;font:600 12px/1 Inter,sans-serif">Create free EtsyPilot account</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="border-top:1px solid #CBD5E1;padding-top:24px;display:flex;flex-direction:column;gap:8px;max-width:900px">
+    <div style="font:600 14px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Implementation notes</div>
+    <div style="font:400 13.5px/1.6 Inter,sans-serif;color:var(--ink-2,#4A4234)">Reuses the existing Tools sidebar, card, badge, input and provenance-badge components as-is — no new visual language introduced. Kept deliberately separate from Profit Reality (single calculation vs. full order-level financial model) so the two are never confused in copy or navigation.</div>
+  </div>
+
+</div>
+
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:var(--page-bg,#FBF8F3);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--brand,#B4472A)}a:hover{color:var(--brand-strong,#8C371F)}
+*{box-sizing:border-box}
+.tnum{font-variant-numeric:tabular-nums}
+</style>
+<script>
+(function(){
+  var DARK = {"--brand":"#E07A4A","--brand-strong":"#F3B08C","--brand-tint":"rgba(224,122,74,.16)","--ink-1":"#F1F5F9","--ink-2":"#CBD5E1","--muted-1":"#94A3B8","--muted-2":"#64748B","--border":"#2B3444","--canvas-soft":"#1E293B","--page-bg":"#0F172A","--success":"#34D399","--success-strong":"#34D399","--warning":"#FBBF24","--warning-strong":"#FBBF24","--danger":"#F87171","--danger-strong":"#FCA5A5","--accent-ai":"#C4B5FD","--accent-calc":"#67E8F9","--surface":"#1E293B"};
+  var LIGHT = {"--brand":"#B4472A","--brand-strong":"#8C371F","--brand-tint":"#FBEEE7","--ink-1":"#241B12","--ink-2":"#4A4234","--muted-1":"#6B6152","--muted-2":"#8C7F6C","--border":"#E9E2D6","--canvas-soft":"#FBF8F3","--page-bg":"#FBF8F3","--success":"#15803D","--success-strong":"#15803D","--warning":"#B45309","--warning-strong":"#B45309","--danger":"#B91C1C","--danger-strong":"#B91C1C","--accent-ai":"#7C3AED","--accent-calc":"#0891B2","--surface":"#FFFFFF"};
+  function apply(mode){
+    var resolved = mode === 'system' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : mode;
+    var tokens = resolved === 'dark' ? DARK : LIGHT;
+    var root = document.documentElement.style;
+    for (var k in tokens) root.setProperty(k, tokens[k]);
+    document.documentElement.setAttribute('data-rankkw-theme', resolved);
+    document.querySelectorAll('[data-rankkw-toggle]').forEach(function(el){
+      el.style.background = el.getAttribute('data-mode') === mode ? tokens['--brand'] : 'transparent';
+      el.style.color = el.getAttribute('data-mode') === mode ? '#fff' : tokens['--ink-2'];
+    });
+  }
+  window.rankkwSetTheme = function(mode){ localStorage.setItem('rankkw-theme', mode); apply(mode); };
+  var saved = localStorage.getItem('rankkw-theme') || 'system';
+  apply(saved);
+  document.addEventListener('click', function(e){ var t = e.target.closest && e.target.closest('[data-rankkw-toggle]'); if (t) { window.rankkwSetTheme(t.getAttribute('data-mode')); } });
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){ if((localStorage.getItem('rankkw-theme')||'system')==='system') apply('system'); });
+})();
+</script>
+</helmet>
+<div data-rankkw-screens-nav="1">
+<details style="position:fixed;top:16px;left:16px;z-index:999">
+<summary style="cursor:pointer;padding:8px 12px;border-radius:999px;background:var(--surface,#fff);border:1px solid var(--border,#E9E2D6);font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);box-shadow:0 4px 16px rgba(0,0,0,.14)">Screens ▾</summary>
+<div style="margin-top:6px;background:var(--surface,#fff);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:1px;box-shadow:0 8px 24px rgba(0,0,0,.16);min-width:210px;max-height:70vh;overflow:auto"><a href="RankKW%20Foundations.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Foundations</a><a href="RankKW%20Auth%20&amp;%20Onboarding.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Auth & Onboarding</a><a href="RankKW%20Home%20&amp;%20Action%20Center.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Home & Action Center</a><a href="RankKW%20Research.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Research</a><a href="RankKW%20Shop%20Management.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Shop Management</a><a href="RankKW%20Analytics%20&amp;%20Profit.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Analytics & Profit</a><a href="RankKW%20Optimization%20&amp;%20AI.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Optimization & AI</a><a href="RankKW%20Settings%20&amp;%20Compliance.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Settings & Compliance</a><a href="RankKW%20States%20&amp;%20Responsive.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">States & Responsive</a><a href="RankKW%20Browser%20Extension.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Browser Extension</a><a href="RankKW%20Simple%20Calculator.dc.html" style="padding:7px 9px;border-radius:8px;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-decoration:none;display:block">Simple Calculator</a></div>
+</details></div>
+<div style="position:fixed;top:16px;right:16px;z-index:999;display:flex;gap:2px;padding:3px;border-radius:999px;background:var(--surface,#fff);border:1px solid var(--border,#E9E2D6);box-shadow:0 4px 16px rgba(0,0,0,.14)">
+  <button data-rankkw-toggle data-mode="light" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Light</button>
+  <button data-rankkw-toggle data-mode="dark" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Dark</button>
+  <button data-rankkw-toggle data-mode="system" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">System</button>
+</div>
+
+<div style="padding:48px 56px 80px;display:flex;flex-direction:column;gap:52px">
+
+  <div style="display:flex;flex-direction:column;gap:12px;max-width:900px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:34px;height:34px;border-radius:9px;background:var(--brand,#B4472A);display:flex;align-items:center;justify-content:center;color:#fff;font:700 15px/1 Inter,sans-serif">EP</div>
+      <div style="font:700 20px/1 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.01em">EtsyPilot</div>
+      <div style="padding:4px 8px;border-radius:6px;background:var(--border,#E9E2D6);color:var(--ink-2,#4A4234);font:600 11px/1 Inter,sans-serif">Addition · Browser Extension</div>
+    </div>
+    <div style="font:400 13.5px/1.6 Inter,sans-serif;color:var(--ink-2,#4A4234);max-width:800px">A companion popup for Chrome and Firefox — same design system, same provenance badges. It surfaces EtsyPilot intelligence while browsing an Etsy listing; it never edits, publishes or holds Etsy credentials. Real Etsy data connects later through the existing account session — everything here runs on mock data behind the same API shape.</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">Popup · listing detected · Chrome and Firefox chrome</div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
+
+      <div style="display:flex;flex-direction:column;gap:8px;flex:none">
+        <div style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Chrome · 380 × 600</div>
+        <div style="width:380px;height:600px;flex:none;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(15,23,42,.14)">
+          <div style="height:22px;flex:none;background:var(--border,#E9E2D6);display:flex;align-items:center;gap:5px;padding:0 10px"><i style="width:7px;height:7px;border-radius:4px;background:#FCA5A5"></i><i style="width:7px;height:7px;border-radius:4px;background:#FDE68A"></i><i style="width:7px;height:7px;border-radius:4px;background:#BBF7D0"></i></div>
+          <div style="height:52px;flex:none;background:var(--surface,#FFFFFF);border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:center;gap:9px;padding:0 14px">
+            <span style="width:26px;height:26px;border-radius:7px;background:var(--brand,#B4472A);color:#fff;display:flex;align-items:center;justify-content:center;font:700 12px/1 Inter,sans-serif">EP</span>
+            <span style="font:700 14px/1 Inter,sans-serif;color:var(--ink-1,#241B12);flex:1">EtsyPilot</span>
+            <span style="font:500 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Etsy Listing Intelligence</span>
+          </div>
+          <div style="flex:1;overflow:hidden;padding:14px;display:flex;flex-direction:column;gap:12px">
+            <div style="font:400 11px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Birth flower necklace, personalized gold pendant · Aurelia Made</div>
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:13px;display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Listing health</span><span style="padding:2px 7px;border-radius:999px;background:#F0FDF4;border:1px solid #BBF7D0;font:600 10px/1.4 Inter,sans-serif;color:#166534">Good</span></div>
+              <div style="display:flex;align-items:baseline;gap:6px"><span class="tnum" style="font:600 24px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">78</span><span style="font:500 12px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">/ 100</span></div>
+              <div style="height:6px;border-radius:3px;background:var(--border,#E9E2D6);overflow:hidden"><div style="width:78%;height:100%;background:var(--success,#15803D)"></div></div>
+              <span style="font:400 11.5px/1.4 Inter,sans-serif;color:var(--ink-2,#4A4234)">3 improvements recommended</span>
+            </div>
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:13px;display:flex;flex-direction:column;gap:9px">
+              <span style="font:600 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Keywords</span>
+              <div style="display:flex;justify-content:space-between;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Primary keyword<span style="color:var(--ink-1,#241B12);font-weight:600">wall art</span></div>
+              <div style="display:flex;justify-content:space-between;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Opportunity<span style="color:var(--success,#15803D);font-weight:600">High</span></div>
+              <div style="display:flex;justify-content:space-between;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Competition<span style="color:var(--warning-strong,#B45309);font-weight:600">Medium</span></div>
+            </div>
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:13px;display:flex;flex-direction:column;gap:9px">
+              <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Data</span><span style="display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:999px;background:#FFFBEB;border:1px solid #FDE68A;font:600 10px/1.4 Inter,sans-serif;color:var(--warning-strong,#B45309)">Estimated</span></div>
+              <div style="display:flex;justify-content:space-between;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Monthly sales<span class="tnum" style="color:var(--ink-1,#241B12);font-weight:600">120–160</span></div>
+              <div style="display:flex;align-items:center;gap:7px;font:500 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Confidence<span style="flex:1;height:5px;border-radius:3px;background:var(--border,#E9E2D6);overflow:hidden"><i style="display:block;width:72%;height:100%;background:var(--warning,#B45309)"></i></span><span class="tnum" style="color:var(--ink-1,#241B12);font-weight:600">72%</span></div>
+              <span style="font:600 11px/1 Inter,sans-serif;color:var(--brand,#B4472A)">How is this calculated?</span>
+            </div>
+            <div style="background:#F5F3FF;border:1px solid #DDD6FE;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px">
+              <span style="font:600 11.5px/1 Inter,sans-serif;color:#6D28D9">Recommended action</span>
+              <span style="font:400 11.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Your title could better match the strongest keyword opportunity.</span>
+              <span style="align-self:flex-start;padding:7px 11px;border-radius:8px;background:var(--brand,#B4472A);color:#fff;font:600 11.5px/1 Inter,sans-serif">Open Listing Audit</span>
+            </div>
+            <div style="margin-top:auto;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <span style="padding:9px;border:1px solid #CBD5E1;border-radius:9px;font:600 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-align:center">Keyword Research</span>
+              <span style="padding:9px;border:1px solid #CBD5E1;border-radius:9px;font:600 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-align:center">Shop Pulse</span>
+              <span style="padding:9px;border:1px solid #CBD5E1;border-radius:9px;font:600 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-align:center">Action Center</span>
+              <span style="padding:9px;border-radius:9px;background:var(--brand,#B4472A);color:#fff;font:600 11.5px/1 Inter,sans-serif;text-align:center">Audit Listing</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;flex:none">
+        <div style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Firefox · identical UI, browser chrome only</div>
+        <div style="width:380px;height:600px;flex:none;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(15,23,42,.14)">
+          <div style="height:24px;flex:none;background:var(--ink-1,#241B12);display:flex;align-items:center;gap:8px;padding:0 10px"><span style="width:14px;height:14px;border-radius:3px;background:#FF7139"></span><span style="height:6px;width:60px;border-radius:3px;background:var(--ink-2,#4A4234)"></span></div>
+          <div style="height:52px;flex:none;background:var(--surface,#FFFFFF);border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:center;gap:9px;padding:0 14px">
+            <span style="width:26px;height:26px;border-radius:7px;background:var(--brand,#B4472A);color:#fff;display:flex;align-items:center;justify-content:center;font:700 12px/1 Inter,sans-serif">EP</span>
+            <span style="font:700 14px/1 Inter,sans-serif;color:var(--ink-1,#241B12);flex:1">EtsyPilot</span>
+            <span style="font:500 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Etsy Listing Intelligence</span>
+          </div>
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:30px;text-align:center">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+              <span style="width:44px;height:44px;border-radius:12px;background:#F1F5F9;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--muted-2,#8C7F6C)" stroke-width="2" stroke-linecap="round"><rect x="4" y="5" width="16" height="14" rx="2"></rect><path d="M8 9h8M8 13h5"></path></svg></span>
+              <span style="font:600 14px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Open an Etsy listing to use EtsyPilot Listing Intelligence.</span>
+              <span style="padding:9px 14px;border-radius:9px;background:var(--brand,#B4472A);color:#fff;font:600 12.5px/1 Inter,sans-serif">Go to Etsy</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;flex:none">
+        <div style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">State · logged out</div>
+        <div style="width:340px;height:600px;flex:none;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(15,23,42,.14)">
+          <div style="height:52px;flex:none;border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:center;gap:9px;padding:0 14px"><span style="width:26px;height:26px;border-radius:7px;background:var(--brand,#B4472A);color:#fff;display:flex;align-items:center;justify-content:center;font:700 12px/1 Inter,sans-serif">EP</span><span style="font:700 14px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">EtsyPilot</span></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:30px;text-align:center">
+            <span style="width:46px;height:46px;border-radius:12px;background:var(--brand-tint,#FBEEE7);display:flex;align-items:center;justify-content:center"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="var(--brand,#B4472A)" stroke-width="2" stroke-linecap="round"><rect x="4" y="10" width="16" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 018 0v3"></path></svg></span>
+            <span style="font:600 15px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Connect your EtsyPilot account to continue</span>
+            <span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Sign in once — the extension shares your existing EtsyPilot session, never a separate Etsy login.</span>
+            <div style="display:flex;flex-direction:column;gap:9px;width:100%;padding-top:6px">
+              <span style="height:40px;border-radius:10px;background:var(--brand,#B4472A);color:#fff;font:600 13px/40px Inter,sans-serif;text-align:center">Log In</span>
+              <span style="height:40px;border:1px solid #CBD5E1;border-radius:10px;font:600 13px/38px Inter,sans-serif;color:var(--ink-2,#4A4234);text-align:center">Create Account</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;flex:none">
+        <div style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">State · no shop connected</div>
+        <div style="width:340px;height:600px;flex:none;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(15,23,42,.14)">
+          <div style="height:52px;flex:none;border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:center;gap:9px;padding:0 14px"><span style="width:26px;height:26px;border-radius:7px;background:var(--brand,#B4472A);color:#fff;display:flex;align-items:center;justify-content:center;font:700 12px/1 Inter,sans-serif">EP</span><span style="font:700 14px/1 Inter,sans-serif;color:var(--ink-1,#241B12);flex:1">EtsyPilot</span><span style="width:22px;height:22px;border-radius:8px;background:var(--ink-1,#241B12);color:#fff;display:flex;align-items:center;justify-content:center;font:600 10px/1 Inter,sans-serif">SR</span></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:30px;text-align:center">
+            <span style="width:46px;height:46px;border-radius:12px;background:#F1F5F9;display:flex;align-items:center;justify-content:center"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="var(--muted-2,#8C7F6C)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9l1.5-4h13L20 9M4 9h16v10H4z"></path></svg></span>
+            <span style="font:600 15px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">No Etsy shop connected</span>
+            <span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Connect a shop in EtsyPilot to unlock listing health and your own verified figures here.</span>
+            <span style="padding:10px 14px;border-radius:9px;background:var(--brand,#B4472A);color:#fff;font:600 12.5px/1 Inter,sans-serif">Connect Etsy Shop</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">Loading, unavailable, estimated and error states</div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap">
+      <div style="width:340px;flex:none;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:11px">
+        <span style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Loading</span>
+        <div style="display:flex;align-items:center;justify-content:space-between"><span style="height:11px;width:90px;border-radius:4px;background:var(--border,#E9E2D6)"></span><span style="height:16px;width:50px;border-radius:999px;background:#F1F5F9"></span></div>
+        <span style="height:26px;width:70px;border-radius:6px;background:var(--border,#E9E2D6)"></span>
+        <span style="height:6px;border-radius:3px;background:#EEF2F6"></span>
+        <span style="height:11px;width:60%;border-radius:4px;background:#EEF2F6"></span>
+        <span style="font:400 11px/1 Inter,sans-serif;color:#CBD5E1">Same skeleton pattern as the main app</span>
+      </div>
+      <div style="width:340px;flex:none;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;gap:8px"><span style="padding:3px 8px;border-radius:999px;background:#F1F5F9;border:1px solid var(--border,#E9E2D6);font:600 10.5px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">Unavailable</span></div>
+        <span style="font:400 12.5px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">EtsyPilot cannot verify this metric from available Etsy data.</span>
+        <span style="font:400 11.5px/1.5 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">Listing views are not exposed by Etsy's public API — this is never estimated.</span>
+      </div>
+      <div style="width:340px;flex:none;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;gap:8px"><span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;background:#FFFBEB;border:1px solid #FDE68A;font:600 10.5px/1.4 Inter,sans-serif;color:var(--warning-strong,#B45309)">Estimated</span><span class="tnum" style="font:500 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Confidence: 72%</span></div>
+        <span style="font:400 12.5px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">Modeled from public listing signals observed over 90 days.</span>
+        <span style="font:600 11.5px/1 Inter,sans-serif;color:var(--brand,#B4472A)">View Methodology</span>
+      </div>
+      <div style="width:340px;flex:none;background:var(--surface,#FFFFFF);border:1px solid #FECACA;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;gap:8px"><span style="padding:3px 8px;border-radius:999px;background:#FEF2F2;font:600 10.5px/1.4 Inter,sans-serif;color:var(--danger-strong,#B91C1C)">Error</span></div>
+        <span style="font:400 12.5px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">We couldn't load EtsyPilot intelligence for this listing.</span>
+        <span style="align-self:flex-start;padding:8px 12px;border-radius:8px;background:var(--brand,#B4472A);color:#fff;font:600 12px/1 Inter,sans-serif">Retry</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">Security note · settings section · marketing page</div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
+      <div style="width:460px;flex:none;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:11px">
+        <div style="display:flex;align-items:center;gap:9px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--success,#15803D)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6z"></path><path d="M9 12l2 2 4-4"></path></svg><span style="font:600 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">What the extension can never do</span></div>
+        <span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">It authenticates with your EtsyPilot account only — it never sees your Etsy password, and Etsy API secrets stay server-side.</span>
+        <div style="display:flex;flex-direction:column;gap:8px;padding-top:4px;border-top:1px solid var(--border,#E9E2D6)">
+          <span style="display:flex;gap:9px;font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted-2,#8C7F6C)" stroke-width="2.4" style="flex:none;margin-top:2px"><circle cx="12" cy="12" r="8"></circle><path d="M6.5 6.5l11 11"></path></svg>Store or expose Etsy API keys or secrets in the browser</span>
+          <span style="display:flex;gap:9px;font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted-2,#8C7F6C)" stroke-width="2.4" style="flex:none;margin-top:2px"><circle cx="12" cy="12" r="8"></circle><path d="M6.5 6.5l11 11"></path></svg>Ask for your Etsy password</span>
+          <span style="display:flex;gap:9px;font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted-2,#8C7F6C)" stroke-width="2.4" style="flex:none;margin-top:2px"><circle cx="12" cy="12" r="8"></circle><path d="M6.5 6.5l11 11"></path></svg>Edit, publish or deactivate listings automatically</span>
+          <span style="display:flex;gap:9px;font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted-2,#8C7F6C)" stroke-width="2.4" style="flex:none;margin-top:2px"><circle cx="12" cy="12" r="8"></circle><path d="M6.5 6.5l11 11"></path></svg>Claim data it cannot actually access</span>
+        </div>
+      </div>
+
+      <div style="width:460px;flex:none;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px">
+        <span style="font:600 16px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Settings → Browser Extension</span>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px">
+            <span style="width:34px;height:34px;border-radius:9px;background:#F1F5F9;display:flex;align-items:center;justify-content:center;font:700 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Ch</span>
+            <span style="flex:1;font:600 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Chrome</span>
+            <span style="padding:8px 12px;border-radius:8px;background:var(--brand,#B4472A);color:#fff;font:600 12px/1 Inter,sans-serif">Install Chrome Extension</span>
+          </div>
+          <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px">
+            <span style="width:34px;height:34px;border-radius:9px;background:#F1F5F9;display:flex;align-items:center;justify-content:center;font:700 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Fx</span>
+            <span style="flex:1;font:600 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Firefox</span>
+            <span style="padding:8px 12px;border:1px solid #CBD5E1;border-radius:8px;font:600 12px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)">Coming Soon</span>
+          </div>
+        </div>
+        <span style="font:400 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Not yet published to either store — buttons stay disabled with “Coming Soon” until listings go live.</span>
+      </div>
+    </div>
+
+    <div style="width:1440px;flex:none;background:var(--ink-1,#241B12);border-radius:16px;padding:36px 44px;display:flex;align-items:center;gap:32px">
+      <div style="flex:1;display:flex;flex-direction:column;gap:12px">
+        <span style="font:600 26px/1.2 Inter,sans-serif;color:#fff;letter-spacing:-.015em">EtsyPilot Browser Extension</span>
+        <span style="font:400 14px/1.5 Inter,sans-serif;color:#CBD5E1;max-width:520px">Get EtsyPilot intelligence while you browse Etsy.</span>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:520px;padding-top:6px">
+          <span style="display:flex;gap:8px;font:400 12.5px/1 Inter,sans-serif;color:var(--border,#E9E2D6)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success,#15803D)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"></path></svg>Analyze listings instantly</span>
+          <span style="display:flex;gap:8px;font:400 12.5px/1 Inter,sans-serif;color:var(--border,#E9E2D6)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success,#15803D)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"></path></svg>Find keyword opportunities</span>
+          <span style="display:flex;gap:8px;font:400 12.5px/1 Inter,sans-serif;color:var(--border,#E9E2D6)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success,#15803D)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"></path></svg>Check listing health</span>
+          <span style="display:flex;gap:8px;font:400 12.5px/1 Inter,sans-serif;color:var(--border,#E9E2D6)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success,#15803D)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"></path></svg>Access Shop Pulse</span>
+          <span style="display:flex;gap:8px;font:400 12.5px/1 Inter,sans-serif;color:var(--border,#E9E2D6)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success,#15803D)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"></path></svg>Open Listing Audit</span>
+          <span style="display:flex;gap:8px;font:400 12.5px/1 Inter,sans-serif;color:var(--border,#E9E2D6)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success,#15803D)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"></path></svg>Take action faster</span>
+        </div>
+        <div style="display:flex;gap:10px;padding-top:8px">
+          <span style="padding:11px 16px;border-radius:10px;background:var(--brand,#B4472A);color:#fff;font:600 13px/1 Inter,sans-serif">Chrome Extension</span>
+          <span style="padding:11px 16px;border:1px solid var(--ink-2,#4A4234);border-radius:10px;color:var(--muted-2,#8C7F6C);font:600 13px/1 Inter,sans-serif">Firefox — Coming Soon</span>
+        </div>
+      </div>
+      <div style="width:260px;height:200px;flex:none;border-radius:14px;background:#111C31;border:1px solid #1E293B;display:flex;align-items:center;justify-content:center;font:500 12px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152);text-align:center">extension popup<br>preview mockup</div>
+    </div>
+  </div>
+
+  <div style="border-top:1px solid #CBD5E1;padding-top:24px;display:flex;flex-direction:column;gap:8px;max-width:900px">
+    <div style="font:600 14px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Implementation notes</div>
+    <div style="font:400 13.5px/1.6 Inter,sans-serif;color:var(--ink-2,#4A4234)">Chrome and Firefox share one UI, one API client and one auth flow (Manifest V3 for Chrome, WebExtensions-compatible for Firefox); only manifest and packaging differ. All data shown is mock, served behind the same abstraction the main app calls, so wiring the real Etsy API later only changes the backend adapter — no UI change.</div>
+  </div>
+
+</div>
+
+</x-dc>
+</body>
+</html>
