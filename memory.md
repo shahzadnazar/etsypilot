@@ -84,6 +84,15 @@ Keep the latest 5–10 meaningful items.
   an Etsy fee; projected lines relabelled CALCULATED outside BASE; reconciliation with
   a resolution on every exception; missing data as a first-class panel; four-tab
   Profit Reality. 128 tests.
+- D32 recorded and audited: swept domain/ for verified figures being divided or scaled.
+  Two hits, both in the profit inputs panel - Average price and effective Etsy fee rate
+  were implying Verified and are now CALCULATED with the transform named. Sales and
+  Offsite Ads stay VERIFIED (exact aggregates, not transforms). Every inputs row now
+  carries its own badge, so locked is visibly not the same as verified.
+- components/ui/numeric.tsx added: Money / Numeric / NumericCell. Money takes
+  number | null and handles null itself, so no call site can render a null as zero or
+  forget tabular-nums + nowrap. Applied across waterfall, scenarios, transactions,
+  missing data, inputs, both KPI rows and the dashboard metrics.
 
 ## 6. Files Currently Being Modified
 
@@ -124,6 +133,7 @@ app/  layout · page · not-found · error
                    listings/bulk-editor}(+loading)
 tests/unit/{waterfall,provenance,action-center,methodology,shop-pulse,
             narrative,digest,bulk-editor,profit-scenarios}.test.ts
+tests/browser/rendered-output.py   (kept assertions on painted text, see 13b)
 ```
 
 ## 8. Files Modified
@@ -281,6 +291,34 @@ Decision: One word everywhere; EP monogram lockup unchanged; no two-word variant
 Reason: Owner confirmation, matching every screen.
 Impact: All UI copy, metadata, docs and error strings.
 
+## 13b. Permanent Notes (not phase notes — these do not expire)
+
+### The browser catches meaning errors that green tests miss
+Three times now the suite has been green while the screen was wrong, and all
+three were meaning errors, not logic errors:
+
+1. Dark mode rendered white-on-white (a token used as a background inverted).
+2. The thin-sample rule labelled the clearest case "Not enough data".
+3. Scenario selection leaked projected KPIs above the real Transactions receipts.
+
+Each passed typecheck and every unit test. The shared cause is **tests asserting
+what the code does rather than what the seller sees**. A function can be right in
+isolation and wrong in the sentence it lands in.
+
+So: every phase ends with a browser pass, and some assertions stay on rendered
+output permanently. This is not a Phase 5 note — it applies to every phase after it.
+
+These assertions are kept in `tests/browser/rendered-output.py` and run against a
+production build at the end of each phase.
+
+### Assert on what's painted, never on what's shipped
+Scope browser assertions to **visible text** — `page.locator('main').inner_text()`,
+not the raw HTML. Searching the HTML also matches the RSC serialization payload,
+which produced a false pass on "no Verified badge appears in a projected scenario":
+the string was in the wire format, not on the screen.
+
+---
+
 ## 14. Things NOT To Forget
 
 - Do not rebuild existing working product unnecessarily.
@@ -294,6 +332,11 @@ Impact: All UI copy, metadata, docs and error strings.
 - Bulk changes require validation, diff, confirmation, audit, and rollback where supported.
 - Profit Reality must show coverage/confidence.
 - Every important screen needs loading/empty/error/success/partial/unavailable states.
+- Provenance is a property of the number as displayed, not of its source table (D32).
+  Any transform — projection, proration, currency conversion, apportioning a
+  shop-level fee across listings — demotes a verified figure and names what was done.
+- Every money column renders null as an em dash, never 0.00, via the shared
+  Money/NumericCell components. A zero is a claim; "we do not know" is not zero.
 
 ## 15. Next Step
 

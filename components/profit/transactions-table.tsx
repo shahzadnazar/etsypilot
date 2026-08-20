@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Card } from '@/components/ui/card'
 import type { ReconciliationStatus, ReconciliationSummary } from '@/domain/profit/types'
 import { STATUS_LABEL } from '@/domain/profit/types'
+import { Money, NumericCell } from '@/components/ui/numeric'
 import { formatCurrency, formatDate } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
 
@@ -124,27 +125,22 @@ export function TransactionsTable({
                       </span>
                     ) : null}
                   </td>
-                  <td className="tnum whitespace-nowrap px-3 py-3 text-right text-small text-ink-2">
-                    {formatCurrency(row.gross, currency)}
-                  </td>
-                  <td className="tnum whitespace-nowrap px-3 py-3 text-right text-small text-ink-2">
-                    −{formatCurrency(row.fees, currency)}
-                  </td>
-                  <td className="tnum whitespace-nowrap px-3 py-3 text-right text-small">
-                    {/* Not 0.00 — a zero here would be a claim we cannot make. */}
-                    {row.cost === null ? (
-                      <span className="text-muted-1" title="No confirmed cost">—</span>
-                    ) : (
-                      <span className="text-ink-2">−{formatCurrency(row.cost, currency)}</span>
-                    )}
-                  </td>
-                  <td className="tnum whitespace-nowrap px-3 py-3 text-right text-small font-semibold">
-                    {row.profit === null ? (
-                      <span className="text-muted-1">—</span>
-                    ) : (
-                      <span className="text-ink-1">{formatCurrency(row.profit, currency)}</span>
-                    )}
-                  </td>
+                  <NumericCell className="text-ink-2">
+                    <Money value={row.gross} currency={currency} />
+                  </NumericCell>
+                  <NumericCell className="text-ink-2">
+                    <Money value={row.fees} currency={currency} negate />
+                  </NumericCell>
+                  <NumericCell className="text-ink-2">
+                    <Money value={row.cost} currency={currency} negate unknownLabel="No confirmed cost" />
+                  </NumericCell>
+                  <NumericCell className="font-semibold text-ink-1">
+                    <Money
+                      value={row.profit}
+                      currency={currency}
+                      unknownLabel="Not computed — this order has no confirmed cost"
+                    />
+                  </NumericCell>
                   <td className="px-4 py-3">
                     <span
                       className="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold"

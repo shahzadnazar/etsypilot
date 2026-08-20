@@ -5,7 +5,8 @@ import { ProvenanceBadge } from '@/components/provenance/provenance-badge'
 import { Card } from '@/components/ui/card'
 import type { ProfitView } from '@/domain/profit/service'
 import { SCENARIO_LABEL, type ScenarioKind } from '@/domain/profit/types'
-import { formatCurrency, formatPercent } from '@/lib/utils/format'
+import { formatPercent } from '@/lib/utils/format'
+import { Money, Numeric } from '@/components/ui/numeric'
 import { cn } from '@/lib/utils/cn'
 import { InputsPanel } from './inputs-panel'
 import { MissingDataPanel } from './missing-data-panel'
@@ -54,9 +55,24 @@ export function ProfitTabs({ view, demo }: { view: ProfitView; demo: boolean }) 
       ) : null}
 
       <section aria-label="Profit summary" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Kpi label="Gross revenue" value={formatCurrency(result.grossRevenue, view.currency)} type={shown === 'BASE' ? 'VERIFIED' : 'CALCULATED'} demo={demo} />
-        <Kpi label="Total costs" value={`−${formatCurrency(result.totalCosts, view.currency)}`} type="CALCULATED" demo={demo} />
-        <Kpi label="Net profit" value={formatCurrency(result.netProfit, view.currency)} type="CALCULATED" demo={demo} />
+        <Kpi
+          label="Gross revenue"
+          value={<Money value={result.grossRevenue} currency={view.currency} />}
+          type={shown === 'BASE' ? 'VERIFIED' : 'CALCULATED'}
+          demo={demo}
+        />
+        <Kpi
+          label="Total costs"
+          value={<Money value={result.totalCosts} currency={view.currency} negate />}
+          type="CALCULATED"
+          demo={demo}
+        />
+        <Kpi
+          label="Net profit"
+          value={<Money value={result.netProfit} currency={view.currency} />}
+          type="CALCULATED"
+          demo={demo}
+        />
         <Kpi label="Net margin" value={formatPercent(result.marginPercent)} type="CALCULATED" demo={demo} />
       </section>
 
@@ -105,7 +121,7 @@ export function ProfitTabs({ view, demo }: { view: ProfitView; demo: boolean }) 
               currency={view.currency}
               onSelect={setScenario}
             />
-            <InputsPanel rows={view.inputs} />
+            <InputsPanel rows={view.inputs} demo={demo} />
             <p className="text-caption text-muted-1">
               Scenarios are planning tools, not a forecast of your shop.
             </p>
@@ -140,7 +156,7 @@ function Kpi({
   demo,
 }: {
   label: string
-  value: string
+  value: React.ReactNode
   type: 'VERIFIED' | 'CALCULATED'
   demo: boolean
 }) {
@@ -150,16 +166,24 @@ function Kpi({
         <span className="text-label text-muted-1">{label}</span>
         <ProvenanceBadge type={type} demo={demo} />
       </div>
-      <span className="tnum text-metric text-ink-1">{value}</span>
+      <Numeric className="text-metric text-ink-1">{value}</Numeric>
     </Card>
   )
 }
 
-function CostCard({ title, value, detail }: { title: string; value: string; detail: string }) {
+function CostCard({
+  title,
+  value,
+  detail,
+}: {
+  title: string
+  value: React.ReactNode
+  detail: string
+}) {
   return (
     <Card className="flex flex-col gap-1.5 p-[14px]">
       <span className="text-label text-muted-1">{title}</span>
-      <span className="tnum text-[19px] font-semibold text-ink-1">{value}</span>
+      <Numeric className="text-[19px] font-semibold text-ink-1">{value}</Numeric>
       <span className="text-caption leading-snug text-muted-1">{detail}</span>
     </Card>
   )

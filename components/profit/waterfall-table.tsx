@@ -1,7 +1,7 @@
 import { ProvenanceBadge } from '@/components/provenance/provenance-badge'
 import { Card } from '@/components/ui/card'
 import type { ProfitResult } from '@/domain/profit/types'
-import { formatCurrency } from '@/lib/utils/format'
+import { Money } from '@/components/ui/numeric'
 
 /* The eight-cost line, with each line's provenance beside it. */
 export function WaterfallTable({
@@ -51,13 +51,13 @@ export function WaterfallTable({
                     }}
                   />
                 </td>
-                <td
-                  className={`tnum whitespace-nowrap py-2.5 text-right ${
-                    isNet ? 'font-semibold text-ink-1' : 'text-ink-2'
-                  }`}
-                >
-                  {line.amount < 0 ? '−' : ''}
-                  {formatCurrency(Math.abs(line.amount), currency)}
+                <td className="py-2.5 text-right">
+                  <Money
+                    value={line.amount}
+                    currency={currency}
+                    negate={line.amount < 0}
+                    className={isNet ? 'font-semibold text-ink-1' : 'text-ink-2'}
+                  />
                 </td>
                 <td className="py-2.5 pl-4">
                   <ProvenanceBadge

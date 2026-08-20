@@ -1282,3 +1282,54 @@ So each phase now ends with a browser pass that asserts on rendered text, and
 those assertions are kept. Scope them to visible content — searching raw HTML
 also matches the RSC serialization payload, which produced a false positive on
 this phase's "no Verified badge in a projected scenario" check.
+
+---
+
+## D32 — Provenance is a property of the number as displayed
+
+> "Provenance is a property of the number as displayed, not of its source table.
+> Any transform that changes a verified value — projection, proration, currency
+> conversion, apportioning a shop-level fee across listings — demotes it and
+> names what was done."
+
+A figure does not inherit VERIFIED from the table it was read out of. It carries
+VERIFIED only while it is still the number Etsy reported. The moment it is
+projected, prorated, converted, apportioned or averaged, it becomes CALCULATED
+and the note says which of those happened.
+
+The rule generalises the scenario finding: a fee Etsy charged is verified; the
+same fee multiplied by a sales projection is calculated, and the note names the
+projection.
+
+### The audit this produced
+Swept `domain/` for every place a verified figure is divided or scaled
+(`grossRevenue /`, `/ orderCount`, `etsyFees /`, `salesMultiplier`, `/ grossRevenue`).
+Two real hits, both in the Profit Reality inputs panel:
+
+| Row | Was | Now | Note |
+| --- | --- | --- | --- |
+| Average price | implied Verified ("From your receipts") | CALCULATED | Gross revenue ÷ orders — cannot be edited |
+| Etsy fees % | implied Verified | CALCULATED | Fees charged ÷ gross revenue — cannot be edited |
+
+Both are ratios *derived from* verified figures, not verified figures. The design
+already agreed — artboard 51 labels "Average order" Calculated.
+
+`Sales` and `Offsite Ads` stay VERIFIED: a count of orders and an amount Etsy
+charged are exact aggregates, not transforms. Summing does not demote; dividing does.
+
+### Locked is not the same as verified
+Every row in the inputs panel now renders its own `ProvenanceBadge`. Read-only
+rows were previously distinguishable only by being uneditable, which reads as
+"Etsy said so". Two of them were not. The badge makes the difference visible
+rather than inferred.
+
+### The em-dash house rule
+A null money value renders as an em dash with an accessible "Not known" label,
+never `0.00`, in **every** money column — not only profit. A zero is a claim;
+"we do not know" is not zero.
+
+This is enforced by a shared cell rather than by convention: `components/ui/numeric.tsx`
+exports `Money`, `Numeric` and `NumericCell`. `Money` takes `number | null` and
+handles the null case itself, so no call site can render a null as zero or forget
+`font-variant-numeric: tabular-nums` and `white-space: nowrap`. Money cells were
+wrapping mid-value; a shared cell is the fix that cannot be forgotten.

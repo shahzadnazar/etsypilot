@@ -1,5 +1,7 @@
 import { Lock } from 'lucide-react'
+import { ProvenanceBadge } from '@/components/provenance/provenance-badge'
 import { Card } from '@/components/ui/card'
+import { Numeric } from '@/components/ui/numeric'
 import type { InputRow } from '@/domain/profit/scenarios'
 import { cn } from '@/lib/utils/cn'
 
@@ -11,14 +13,15 @@ import { cn } from '@/lib/utils/cn'
  * itself — `computeScenario` has no parameter through which a verified figure
  * could be varied, so even a UI bug here could not adjust an Etsy fee.
  */
-export function InputsPanel({ rows }: { rows: InputRow[] }) {
+export function InputsPanel({ rows, demo = false }: { rows: InputRow[]; demo?: boolean }) {
   return (
     <Card className="overflow-hidden">
       <div className="border-b border-line p-[18px]">
         <h3 className="text-section text-ink-1">Inputs</h3>
         <p className="mt-1 text-caption leading-relaxed text-muted-1">
-          Verified lines are read from your receipts and cannot be edited here. Seller inputs drive
-          the scenarios.
+          Locked lines come from your Etsy data and cannot be edited here — some are read
+          straight from your receipts, some are calculated from them. The badge on each row
+          says which. Seller inputs drive the scenarios.
         </p>
       </div>
 
@@ -32,11 +35,16 @@ export function InputsPanel({ rows }: { rows: InputRow[] }) {
             )}
           >
             <dt className="flex min-w-0 flex-col gap-0.5">
-              <span className="flex items-center gap-1.5 text-small font-semibold text-ink-1">
+              <span className="flex flex-wrap items-center gap-1.5 text-small font-semibold text-ink-1">
                 {row.locked ? (
-                  <Lock size={12} strokeWidth={2.4} className="text-muted-1" aria-hidden />
+                  <>
+                    <Lock size={12} strokeWidth={2.4} className="text-muted-1" aria-hidden />
+                    <span className="sr-only">Locked:</span>
+                  </>
                 ) : null}
                 {row.label}
+                {/* Locked is not the same as verified — the badge says which. */}
+                <ProvenanceBadge type={row.provenance} demo={demo} />
               </span>
               {row.note ? (
                 <span className="text-caption text-muted-1">{row.note}</span>
@@ -46,14 +54,14 @@ export function InputsPanel({ rows }: { rows: InputRow[] }) {
             <dd className="shrink-0">
               {row.locked ? (
                 <>
-                  <span className="tnum text-small font-semibold text-ink-2">{row.value}</span>
+                  <Numeric className="text-small font-semibold text-ink-2">{row.value}</Numeric>
                   <span className="sr-only"> — locked, cannot be edited</span>
                 </>
               ) : (
                 <input
                   defaultValue={row.value}
                   aria-label={row.label}
-                  className="tnum h-9 w-32 rounded-control border border-line bg-surface px-2.5 text-right text-small text-ink-1"
+                  className="tnum h-9 w-32 whitespace-nowrap rounded-control border border-line bg-surface px-2.5 text-right text-small text-ink-1"
                 />
               )}
             </dd>

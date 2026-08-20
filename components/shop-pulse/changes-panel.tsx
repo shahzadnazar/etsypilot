@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { DiagnosisBadge } from '@/components/provenance/diagnosis-badge'
 import { Card } from '@/components/ui/card'
+import { Numeric } from '@/components/ui/numeric'
 import type { DetectedChange } from '@/domain/shop-pulse/types'
 import { CONFIDENCE_LABEL } from '@/lib/provenance/types'
 import { cn } from '@/lib/utils/cn'
@@ -202,7 +203,7 @@ function Meta({ label, value, note }: { label: string; value: string; note: stri
   return (
     <div className="rounded-control border border-line p-3">
       <span className="block text-label text-muted-1">{label}</span>
-      <span className="tnum mt-1 block text-[15px] font-semibold text-ink-1">{value}</span>
+      <Numeric className="mt-1 block text-[15px] font-semibold text-ink-1">{value}</Numeric>
       <span className="mt-0.5 block text-caption leading-snug text-muted-1">{note}</span>
     </div>
   )

@@ -11,7 +11,8 @@ import { getShopPulse } from '@/domain/shop-pulse/service'
 import { getSession } from '@/lib/auth'
 import { DEMO_EVENTS } from '@/lib/etsy/demo-events'
 import { shopContext } from '@/lib/permissions'
-import { formatCurrency, formatDate, formatDelta } from '@/lib/utils/format'
+import { formatDate, formatDelta } from '@/lib/utils/format'
+import { Money, Numeric } from '@/components/ui/numeric'
 
 export const metadata: Metadata = { title: 'Shop Pulse' }
 
@@ -47,15 +48,19 @@ export default async function ShopPulsePage() {
           label="Orders"
           value={String(Math.round(pulse.orders.actualTotal))}
           delta={ordersDelta}
-          note={`vs baseline ${Math.round(pulse.orders.expectedTotal)}`}
+          note={`vs calculated baseline ${Math.round(pulse.orders.expectedTotal)}`}
           type="VERIFIED"
           demo={demo}
         />
         <Kpi
           label="Revenue"
-          value={formatCurrency(pulse.revenue.actualTotal)}
+          value={<Money value={pulse.revenue.actualTotal} />}
           delta={revenueDelta}
-          note={`vs baseline ${formatCurrency(pulse.revenue.expectedTotal)}`}
+          note={
+            <>
+              vs calculated baseline <Money value={pulse.revenue.expectedTotal} />
+            </>
+          }
           type="VERIFIED"
           demo={demo}
         />
@@ -104,9 +109,9 @@ function Kpi({
   methodologyKey,
 }: {
   label: string
-  value: string
+  value: React.ReactNode
   delta?: { text: string; direction: 'up' | 'down' | 'flat' }
-  note: string
+  note: React.ReactNode
   type: 'VERIFIED' | 'CALCULATED'
   demo: boolean
   methodologyKey?: string
@@ -121,7 +126,7 @@ function Kpi({
           <ProvenanceBadge type={type} demo={demo} />
         )}
       </div>
-      <span className="tnum text-metric text-ink-1">{value}</span>
+      <Numeric className="text-metric text-ink-1">{value}</Numeric>
       <span className="tnum flex flex-wrap items-center gap-1.5 text-caption text-muted-1">
         {delta ? (
           <span

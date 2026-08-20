@@ -1,7 +1,8 @@
 import { Card } from '@/components/ui/card'
 import type { ScenarioComparison } from '@/domain/profit/scenarios'
 import { SCENARIO_LABEL, type ScenarioKind } from '@/domain/profit/types'
-import { formatCurrency, formatPercent } from '@/lib/utils/format'
+import { formatPercent } from '@/lib/utils/format'
+import { Money, Numeric } from '@/components/ui/numeric'
 import { cn } from '@/lib/utils/cn'
 
 /*
@@ -47,12 +48,14 @@ export function ScenarioComparisonPanel({
                   </span>
                 ) : null}
               </div>
-              <span className="tnum text-[24px] font-semibold leading-none text-ink-1">
-                {formatCurrency(s.netProfit, currency)}
-              </span>
-              <span className="tnum text-caption text-muted-1">
+              <Money
+                value={s.netProfit}
+                currency={currency}
+                className="text-[24px] font-semibold leading-none text-ink-1"
+              />
+              <Numeric className="text-caption text-muted-1">
                 {formatPercent(s.marginPercent)} margin
-              </span>
+              </Numeric>
               <span className="mt-auto pt-1 text-caption leading-snug text-muted-1">{s.basis}</span>
             </Card>
           </Wrapper>

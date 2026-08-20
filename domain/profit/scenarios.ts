@@ -15,7 +15,7 @@
  */
 
 import { calculated, sellerInput, verified } from '@/lib/provenance/builders'
-import type { Provenance } from '@/lib/provenance/types'
+import type { Provenance, ProvenanceType } from '@/lib/provenance/types'
 import type {
   MissingDataItem,
   ProfitResult,
@@ -151,6 +151,15 @@ export interface InputRow {
   value: string
   /** Verified rows are locked. There is no editable variant of them. */
   locked: boolean
+  /**
+   * Locked is not the same as verified (D32).
+   *
+   * Average price and the effective fee rate are locked because a seller must
+   * not adjust them - but they are ratios DERIVED from verified figures, not
+   * numbers Etsy reported. They carry CALCULATED, and the design agrees:
+   * artboard 51 labels "Average order" Calculated for exactly this reason.
+   */
+  provenance: ProvenanceType
   note?: string
 }
 
@@ -161,26 +170,43 @@ export function inputRows(
 ): InputRow[] {
   const money = (n: number) => formatMoney(n, currency)
   return [
-    { key: 'sales', label: 'Sales', value: `${verifiedTotals.orderCount} orders`, locked: true, note: 'From your receipts' },
+    {
+      key: 'sales',
+      label: 'Sales',
+      value: `${verifiedTotals.orderCount} orders`,
+      locked: true,
+      // A count of receipts is an exact aggregate, not a transform.
+      provenance: 'VERIFIED',
+      note: 'Counted from your receipts',
+    },
     {
       key: 'averagePrice',
       label: 'Average price',
       value: money(verifiedTotals.grossRevenue / Math.max(1, verifiedTotals.orderCount)),
       locked: true,
-      note: 'From your receipts',
+      provenance: 'CALCULATED',
+      note: 'Gross revenue ÷ orders — cannot be edited',
     },
     {
       key: 'etsyFees',
       label: 'Etsy fees',
-      value: `${((verifiedTotals.etsyFees / verifiedTotals.grossRevenue) * 100).toFixed(1)}% actual`,
+      value: `${((verifiedTotals.etsyFees / verifiedTotals.grossRevenue) * 100).toFixed(1)}% effective`,
       locked: true,
+      provenance: 'CALCULATED',
+      note: 'Fees charged ÷ gross revenue — cannot be edited',
+    },
+    {
+      key: 'ads',
+      label: 'Offsite Ads',
+      value: money(verifiedTotals.offsiteAds),
+      locked: true,
+      provenance: 'VERIFIED',
       note: 'Charged by Etsy — cannot be edited',
     },
-    { key: 'ads', label: 'Offsite Ads', value: money(verifiedTotals.offsiteAds), locked: true, note: 'Charged by Etsy — cannot be edited' },
-    { key: 'cogs', label: 'COGS', value: `${(assumptions.cogsPercent * 100).toFixed(1)}%`, locked: false },
-    { key: 'shipping', label: 'Shipping', value: `${money(assumptions.shippingPerOrder)} / order`, locked: false },
-    { key: 'labour', label: 'Labour', value: money(assumptions.labourTotal), locked: false },
-    { key: 'other', label: 'Other costs', value: money(assumptions.otherCosts), locked: false },
+    { key: 'cogs', label: 'COGS', value: `${(assumptions.cogsPercent * 100).toFixed(1)}%`, locked: false, provenance: 'SELLER_INPUT' },
+    { key: 'shipping', label: 'Shipping', value: `${money(assumptions.shippingPerOrder)} / order`, locked: false, provenance: 'SELLER_INPUT' },
+    { key: 'labour', label: 'Labour', value: money(assumptions.labourTotal), locked: false, provenance: 'SELLER_INPUT' },
+    { key: 'other', label: 'Other costs', value: money(assumptions.otherCosts), locked: false, provenance: 'SELLER_INPUT' },
   ]
 }
 

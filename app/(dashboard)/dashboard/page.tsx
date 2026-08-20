@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { PageHeader } from '@/components/layout/page-header'
+import { Numeric } from '@/components/ui/numeric'
 import { ProvenanceButton } from '@/components/provenance/provenance-button'
 import { Card } from '@/components/ui/card'
 import { UnavailableCard } from '@/components/ui/states'
@@ -49,7 +50,7 @@ export default async function DashboardPage() {
                   demo={session.isDemo}
                 />
               </div>
-              <span className="tnum text-metric text-ink-1">{metric.display}</span>
+              <Numeric className="text-metric text-ink-1">{metric.display}</Numeric>
               <span className="tnum flex flex-wrap items-center gap-1.5 text-caption text-muted-1">
                 {delta ? (
                   <span

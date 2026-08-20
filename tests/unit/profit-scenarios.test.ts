@@ -182,3 +182,32 @@ describe('verified totals come from the orders', () => {
     expect(t.orderCount).toBe(2)
   })
 })
+
+describe('D32 — provenance follows the number as displayed, not its source table', () => {
+  it('demotes a ratio derived from verified figures to CALCULATED and names the transform', () => {
+    const rows = inputRows(verified, assumptions, 'USD')
+
+    const average = rows.find((r) => r.key === 'averagePrice')
+    expect(average?.provenance).toBe('CALCULATED')
+    expect(average?.note).toContain('÷')
+
+    const feeRate = rows.find((r) => r.key === 'etsyFees')
+    expect(feeRate?.provenance).toBe('CALCULATED')
+    expect(feeRate?.note).toContain('÷')
+  })
+
+  it('keeps exact aggregates VERIFIED — summing does not demote, dividing does', () => {
+    const rows = inputRows(verified, assumptions, 'USD')
+    expect(rows.find((r) => r.key === 'sales')?.provenance).toBe('VERIFIED')
+    expect(rows.find((r) => r.key === 'ads')?.provenance).toBe('VERIFIED')
+  })
+
+  it('gives every input row a provenance, so locked is never mistaken for verified', () => {
+    const rows = inputRows(verified, assumptions, 'USD')
+    for (const row of rows) {
+      expect(row.provenance).toBeTruthy()
+    }
+    // A locked row that is not verified is exactly the case the badge exists for.
+    expect(rows.some((r) => r.locked && r.provenance !== 'VERIFIED')).toBe(true)
+  })
+})

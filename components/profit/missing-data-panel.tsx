@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { Card } from '@/components/ui/card'
 import type { MissingDataItem } from '@/domain/profit/types'
-import { formatCurrency } from '@/lib/utils/format'
+import { Money } from '@/components/ui/numeric'
 import { cn } from '@/lib/utils/cn'
 
 /*
@@ -45,8 +45,8 @@ export function MissingDataPanel({
             <span className="text-small leading-relaxed text-ink-2">{item.detail}</span>
 
             {item.affectedValue !== undefined ? (
-              <span className="tnum text-caption text-muted-1">
-                {formatCurrency(item.affectedValue, currency)} of order value affected
+              <span className="text-caption text-muted-1">
+                <Money value={item.affectedValue} currency={currency} /> of order value affected
               </span>
             ) : null}
 
