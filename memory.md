@@ -8,9 +8,9 @@
 **Phase:** 0 — Discovery & Audit (COMPLETE)
 **Current task:** Ready to begin Phase 1 — Foundation
 **Current file being worked on:** None
-**Last completed task:** Round 3 decisions D19-D22 recorded → docs/DECISIONS.md
-**Blockers:** NONE. O1-O4 all resolved. D22 (plan copy) is proposed and awaiting a
-decision, but touches no Phase 1 surface.
+**Last completed task:** D22 plan copy approved and locked → docs/DECISIONS.md
+**Blockers:** NONE. O1-O4 and D22 all resolved. One flagged non-blocking item: D22 7a,
+Audit log placement in the settings sidebar.
 
 ## 2. Current Objective
 
@@ -55,7 +55,10 @@ Keep the latest 5–10 meaningful items.
   and O4. Recorded as D9-D18.
 - Round 3: O1 resolved (dark stays cool slate), O2 resolved (multi-user out of MVP,
   seams built), O3 resolved (Analytics group of three; Orders/Reviews/Inventory/
-  Delivery omitted). Recorded as D19-D21. Plan copy proposed as D22.
+  Delivery omitted). Recorded as D19-D21.
+- D22 approved: three tiers (Free $0 / Solo $15 / Growth $29), Agency held, Growth cap
+  500 -> 2,000. Seven screen consequences locked, incl. shop switcher collapse and
+  settings nav rework.
 
 ## 6. Files Currently Being Modified
 
@@ -178,6 +181,16 @@ Profit. Change History moves under Listings. Orders, Reviews, Inventory and Deli
 status are omitted from nav entirely - they have no design and must not look built.
 Reason: Owner correction - Orders is a nav item from the old brief, not a designed screen.
 Impact: Supersedes the route map in PHASE-0-AUDIT.md section 5.
+
+### 2026-08-19 — Three pricing tiers; Agency held until its features exist
+Decision: Free $0 / Solo $15 / Growth $29. Growth cap 500 -> 2,000 listings. No Agency
+card; an unpriced line under the table instead. When Agency returns it is a new tier at
+a price set then - do not resurrect the old card.
+Reason: With multi-shop and team parked, all four Agency bullets are empty. Selling it
+would be the dark pattern rules.md section 7 forbids.
+Impact: Billing screen, usage meters, upgrade-required state, shop switcher, command
+palette and settings nav all change. Settings Workspace group is deleted; Billing & plan
+and Audit log fold into Account.
 
 ### 2026-08-19 — Product name is "EtsyPilot", one word
 Decision: One word everywhere; EP monogram lockup unchanged; no two-word variant.

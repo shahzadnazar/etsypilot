@@ -892,3 +892,134 @@ charges automatically, 14-day refund window.
 - ~~**O4** pricing~~ → **RESOLVED by D17.** Solo is $15.
 
 **No blockers remain for Phase 1.**
+
+---
+
+## D22 — Plan copy — APPROVED (supersedes the proposal above)
+
+**Three tiers. Agency held.**
+
+Rationale on the record: a $79 card whose four bullets are all parked is exactly what
+`rules.md` §7 forbids, and the capacity-only rewrite is a weak $79 that invites a
+refund request.
+
+### Tiers
+
+| Plan | Price | Positioning |
+|---|---|---|
+| **Free** | `$0` | Research and calculators, no shop connection |
+| **Solo** | `$15/mo` | One shop, up to 200 listings |
+| **Growth** | `$29/mo` | One shop, up to 2,000 listings |
+
+**Free — $0**
+- Keyword, niche and product research
+- All six calculators
+- Methodology and data sources
+- 5 AI generations / month
+- ✕ No shop connection, profit or bulk editing
+
+**Solo — $15/mo**
+- Everything in Free
+- Connect one Etsy shop, up to 200 listings
+- Profit Reality with scenarios, and cost setup
+- Bulk edits with validation, diff and 30-day rollback
+- Shop Pulse with 90-day baseline and weekly digest
+- 60 AI generations / month
+
+**Growth — $29/mo**
+- Everything in Solo
+- Up to 2,000 listings
+- 500 AI generations / month
+- 90-day rollback window
+- 12-month Shop Pulse history
+- Full data export (CSV and JSON)
+- Priority sync and support
+
+**Growth listing cap moves 500 → 2,000 — approved.** With seats and shops removed,
+capacity is the only honest reason for the tier to exist, so it has to be a real jump.
+
+### The line under the table — VERBATIM, do not reword
+
+> "Managing several shops or a team? Multi-shop, roles and client approvals are in
+> development. Tell us what you need — we will not bill you for something that does not
+> exist yet."
+
+No price, no "coming soon" badge, no waitlist. **Keep that sentence exactly** — it is
+the product's voice and it is doing real work.
+
+### Screen consequences — all seven approved
+
+1. **Usage meters (76)** — drop `Connected shops 2/3` and `Team seats 2/5`. Two remain:
+   **Listings** and **AI generations**.
+2. **Upgrade-required state (16)** — automation is parked, so re-point at a real limit:
+   > **Upgrade required · You have reached 200 listings on Solo**
+   > Growth raises the limit to 2,000 listings and 500 AI generations — $29/month,
+   > cancel any time.
+3. **Solo's negative line (76)** — *"No automation or team seats"* → *"One shop"*.
+   Do not advertise the absence of something no tier has.
+4. **Shop connections (72)** — the "Other shops" section (Northlight, Harbour Ceramics)
+   comes out with multi-shop.
+5. **AI quotas** become **Free 5 · Solo 60 · Growth 500**. The Agency 2,000 is held
+   with the tier.
+6. **Shop switcher (top bar, every screen)** — currently a switcher with connection
+   status, plan, listing count and a "Manage shops" link. With one shop it collapses to
+   a **static shop label plus sync freshness**. **Keep the element and its position** —
+   it still carries shop context and sync state — but drop the dropdown affordance and
+   the `Manage shops` link.
+7. **Command palette and settings nav** — remove `Switch shop` and `Invite team member`
+   from the palette; remove `Team & roles` from the settings sidebar. Do not leave a
+   one-item heading behind.
+
+### 7a — Settings sidebar: discrepancy found and resolved
+
+The instruction assumed the Workspace group would be left with only `Billing & plan`.
+The screen (artboard 72) actually shows **three** members:
+
+```
+Workspace    Team & roles · Billing & plan · Audit log
+```
+
+Removing `Team & roles` leaves **two**, not one — so "fold Billing up" alone would
+strand `Audit log` under a Workspace heading with a single child, reproducing the
+problem the instruction was avoiding.
+
+**Resolution: fold both into Account and delete the Workspace group.**
+
+```
+Account       Profile · Security · Notifications · Billing & plan · Audit log
+Shops & data  Shop connections · Data permissions · Costs & fees · Export & deletion
+Integrations  Browser Extension
+```
+
+`Audit log` keeps its value with multi-user parked — it records the owner's own
+security-relevant actions (permission grants, exports, connections), which artboard 80
+already shows. If you would rather it sat under `Security`, that is a one-line change.
+
+**Not to be confused:** `Audit log` (Settings — account and security events) and
+`Change History` (Listings — listing mutations and rollback) are different surfaces and
+do not merge.
+
+### Unchanged
+Trial and refund terms from **D17** stand: 14 days of Growth, no card, nothing charges
+automatically at the end, 14-day refund window.
+
+### Forward instruction — when Agency returns
+**Do not resurrect the old card.** The parked features come back as a tier only when
+they exist, and **the price is set then, not now.**
+
+---
+
+## Status after round 3
+
+All open items are closed. **Phase 1 is unblocked.**
+
+| Item | Resolution |
+|---|---|
+| ~~O1~~ dark neutrals | **D19** — cool slate, exact D1 values; warmed set rejected |
+| ~~O2~~ multi-user scope | **D20** — out of MVP; seams built |
+| ~~O3~~ orphaned surfaces | **D21** — Analytics group of three; four surfaces omitted |
+| ~~O4~~ pricing | **D17** — Solo is $15 |
+| ~~D22~~ plan copy | **Approved** — three tiers, Agency held |
+
+One item carries a flagged resolution awaiting confirmation, non-blocking:
+**7a** — settings sidebar, `Audit log` placement.
