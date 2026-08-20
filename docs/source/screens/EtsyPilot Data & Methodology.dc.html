@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:var(--page-bg,#FBF8F3);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--brand,#B4472A)}a:hover{color:var(--brand-strong,#8C371F)}
+*{box-sizing:border-box}
+.tnum{font-variant-numeric:tabular-nums}
+</style>
+<script>
+(function(){
+  var DARK = {"--brand":"#E07A4A","--brand-strong":"#F3B08C","--brand-tint":"rgba(224,122,74,.16)","--ink-1":"#F1F5F9","--ink-2":"#CBD5E1","--muted-1":"#94A3B8","--muted-2":"#64748B","--border":"#2B3444","--canvas-soft":"#1E293B","--page-bg":"#0F172A","--success":"#34D399","--success-strong":"#34D399","--warning":"#FBBF24","--warning-strong":"#FBBF24","--danger":"#F87171","--danger-strong":"#FCA5A5","--accent-ai":"#C4B5FD","--accent-calc":"#67E8F9","--surface":"#1E293B"};
+  var LIGHT = {"--brand":"#B4472A","--brand-strong":"#8C371F","--brand-tint":"#FBEEE7","--ink-1":"#241B12","--ink-2":"#4A4234","--muted-1":"#6B6152","--muted-2":"#8C7F6C","--border":"#E9E2D6","--canvas-soft":"#FBF8F3","--page-bg":"#FBF8F3","--success":"#15803D","--success-strong":"#15803D","--warning":"#B45309","--warning-strong":"#B45309","--danger":"#B91C1C","--danger-strong":"#B91C1C","--accent-ai":"#7C3AED","--accent-calc":"#0891B2","--surface":"#FFFFFF"};
+  function apply(mode){
+    var resolved = mode === 'system' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : mode;
+    var tokens = resolved === 'dark' ? DARK : LIGHT;
+    var root = document.documentElement.style;
+    for (var k in tokens) root.setProperty(k, tokens[k]);
+    document.documentElement.setAttribute('data-rankkw-theme', resolved);
+    document.querySelectorAll('[data-rankkw-toggle]').forEach(function(el){
+      el.style.background = el.getAttribute('data-mode') === mode ? tokens['--brand'] : 'transparent';
+      el.style.color = el.getAttribute('data-mode') === mode ? '#fff' : tokens['--ink-2'];
+    });
+  }
+  window.rankkwSetTheme = function(mode){ localStorage.setItem('rankkw-theme', mode); apply(mode); };
+  apply(localStorage.getItem('rankkw-theme') || 'system');
+  document.addEventListener('click', function(e){ var t = e.target.closest && e.target.closest('[data-rankkw-toggle]'); if (t) { window.rankkwSetTheme(t.getAttribute('data-mode')); } });
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){ if((localStorage.getItem('rankkw-theme')||'system')==='system') apply('system'); });
+})();
+</script>
+</helmet>
+
+<div style="position:fixed;top:16px;right:16px;z-index:999;display:flex;gap:2px;padding:3px;border-radius:999px;background:var(--surface,#fff);border:1px solid var(--border,#E9E2D6);box-shadow:0 4px 16px rgba(0,0,0,.14)">
+  <button data-rankkw-toggle data-mode="light" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Light</button>
+  <button data-rankkw-toggle data-mode="dark" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Dark</button>
+  <button data-rankkw-toggle data-mode="system" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">System</button>
+</div>
+
+<div style="padding:48px 56px 96px;display:flex;flex-direction:column;gap:56px">
+
+  <div style="display:flex;flex-direction:column;gap:16px;max-width:940px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:34px;height:34px;border-radius:9px;background:var(--brand,#B4472A);display:flex;align-items:center;justify-content:center;color:#fff;font:700 15px/1 Inter,sans-serif">EP</div>
+      <div style="font:700 20px/1 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.01em">EtsyPilot</div>
+      <div style="padding:4px 8px;border-radius:6px;background:var(--border,#E9E2D6);color:var(--ink-2,#4A4234);font:600 11px/1 Inter,sans-serif">PRD §9 · Data group</div>
+    </div>
+    <div style="font:600 30px/1.15 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.02em;max-width:800px;text-wrap:pretty">The two pages every provenance tooltip links into</div>
+    <div style="font:400 14px/1.65 Inter,sans-serif;color:var(--ink-2,#4A4234);max-width:820px">Provenance badges promise an explanation. These are the pages that keep it: Methodology says how each number is produced, Data Sources says where the inputs come from and what they cannot tell you. Both are public — a seller can read them before connecting a shop.</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">93 · Methodology · 1440 × 1120</div>
+    <div data-screen-label="93 Methodology" style="width:1440px;height:1120px;flex:none;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);border-radius:16px;overflow:hidden;display:flex">
+
+      <aside style="width:72px;flex:none;background:var(--surface,#FFFFFF);border-right:1px solid var(--border,#E9E2D6);display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:9px">
+        <span style="width:30px;height:30px;border-radius:8px;background:var(--brand,#B4472A);color:#fff;display:flex;align-items:center;justify-content:center;font:700 12px/1 Inter,sans-serif">EP</span>
+        <span style="width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"></path><path d="M5 10v9h14v-9"></path></svg></span>
+        <span style="width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M16.5 16.5L21 21"></path></svg></span>
+        <span style="width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M4 10h16M10 10v10"></path></svg></span>
+        <span style="width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V6M9 19v-8M14 19v-5M19 19V9"></path></svg></span>
+        <span style="width:36px;height:36px;border-radius:9px;background:var(--brand-tint,#FBEEE7);display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--brand-strong,#8C371F)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"></path></svg></span>
+      </aside>
+
+      <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+        <header style="height:64px;flex:none;background:var(--surface,#FFFFFF);border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:center;gap:14px;padding:0 26px">
+          <span style="display:flex;align-items:center;gap:9px;padding:8px 12px;border:1px solid var(--border,#E9E2D6);border-radius:9px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span style="width:7px;height:7px;border-radius:999px;background:var(--success,#15803D)"></span>Willow &amp; Fern</span>
+          <span class="tnum" style="font:400 12px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Synced 6m ago</span>
+          <span style="margin-left:auto;padding:8px 12px;border:1px solid #CBD5E1;border-radius:9px;font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Download as PDF</span>
+          <span style="width:28px;height:28px;border-radius:8px;background:var(--ink-2,#4A4234);color:#fff;display:flex;align-items:center;justify-content:center;font:600 11px/1 Inter,sans-serif">SR</span>
+        </header>
+
+        <div style="padding:22px 26px 0;background:var(--surface,#FFFFFF);border-bottom:1px solid var(--border,#E9E2D6);display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:column;gap:7px;max-width:900px">
+            <div style="font:600 26px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.015em">Methodology</div>
+            <div style="font:400 13px/1.55 Inter,sans-serif;color:var(--muted-1,#6B6152)">How every number in EtsyPilot is produced, what it excludes, and when it should not be trusted. Last reviewed Aug 12, 2026.</div>
+          </div>
+          <div style="display:flex;gap:22px">
+            <span style="padding:0 2px 11px;border-bottom:2px solid var(--brand,#B4472A);font:600 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Methodology</span>
+            <span style="padding:0 2px 11px;font:500 13px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Data sources</span>
+            <span style="padding:0 2px 11px;font:500 13px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Change log</span>
+          </div>
+        </div>
+
+        <div style="flex:1;overflow:hidden;padding:20px 26px;display:flex;gap:18px;min-height:0">
+
+          <div style="width:212px;flex:none;display:flex;flex-direction:column;gap:2px">
+            <span style="padding:7px 10px 5px;font:600 10.5px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--muted-2,#8C7F6C)">On this page</span>
+            <span style="padding:8px 10px;border-radius:8px;background:var(--brand-tint,#FBEEE7);font:600 12.5px/1 Inter,sans-serif;color:var(--brand-strong,#8C371F)">The five classes</span>
+            <span style="padding:8px 10px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Keyword demand</span>
+            <span style="padding:8px 10px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Competition</span>
+            <span style="padding:8px 10px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Opportunity score</span>
+            <span style="padding:8px 10px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Competitor sales</span>
+            <span style="padding:8px 10px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Net profit</span>
+            <span style="padding:8px 10px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Shop Pulse baseline</span>
+            <span style="padding:8px 10px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Listing health score</span>
+            <span style="padding:8px 10px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">What we never do</span>
+          </div>
+
+          <div style="flex:1;display:flex;flex-direction:column;gap:14px;min-width:0;overflow:hidden">
+
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:13px;flex:none">
+              <span style="font:600 16px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">The five classes</span>
+              <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px">
+                <div style="border:1px solid var(--border,#E9E2D6);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px"><span style="display:inline-flex;align-self:flex-start;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:#F0FDF4;border:1px solid #BBF7D0;font:600 10px/1.5 Inter,sans-serif;color:#166534">Verified</span><span style="font:400 11.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Etsy returned it for your own shop. Exact.</span></div>
+                <div style="border:1px solid var(--border,#E9E2D6);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px"><span style="display:inline-flex;align-self:flex-start;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:#ECFEFF;border:1px solid #A5F3FC;font:600 10px/1.5 Inter,sans-serif;color:#0E7490">Calculated</span><span style="font:400 11.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">A visible formula over visible inputs. Reproducible.</span></div>
+                <div style="border:1px solid var(--border,#E9E2D6);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px"><span style="display:inline-flex;align-self:flex-start;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:#FFFBEB;border:1px solid #FDE68A;font:600 10px/1.5 Inter,sans-serif;color:var(--warning-strong,#B45309)">Estimated</span><span style="font:400 11.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Modelled from observable signals. Always a range.</span></div>
+                <div style="border:1px solid var(--border,#E9E2D6);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px"><span style="display:inline-flex;align-self:flex-start;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:var(--canvas-soft,#FBF8F3);border:1px solid #CBD5E1;font:600 10px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Seller input</span><span style="font:400 11.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">You or a teammate entered it. We never guess it.</span></div>
+                <div style="border:1px solid var(--border,#E9E2D6);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px"><span style="display:inline-flex;align-self:flex-start;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);font:600 10px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Unavailable</span><span style="font:400 11.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Etsy does not expose it. We show nothing, not a guess.</span></div>
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;flex:1;min-height:0">
+
+              <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+                  <span style="font:600 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Keyword demand</span>
+                  <span style="display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:#FFFBEB;border:1px solid #FDE68A;font:600 10px/1.5 Inter,sans-serif;color:var(--warning-strong,#B45309)">Estimated</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:9px">
+                  <div style="display:grid;grid-template-columns:88px 1fr;gap:10px"><span style="font:600 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Source</span><span style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Public autocomplete and listing-count signals, sampled weekly.</span></div>
+                  <div style="display:grid;grid-template-columns:88px 1fr;gap:10px"><span style="font:600 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Method</span><span style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Signals are normalised into a monthly band. We publish the band, never a midpoint.</span></div>
+                  <div style="display:grid;grid-template-columns:88px 1fr;gap:10px"><span style="font:600 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Freshness</span><span class="tnum" style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Updated weekly · last Aug 10, 2026</span></div>
+                  <div style="display:grid;grid-template-columns:88px 1fr;gap:10px"><span style="font:600 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Confidence</span><span style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Moderate for common terms, low below 100 listings.</span></div>
+                  <div style="display:grid;grid-template-columns:88px 1fr;gap:10px"><span style="font:600 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Coverage</span><span class="tnum" style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">US, UK, CA, AU · 4 locales</span></div>
+                </div>
+                <div style="padding:11px 13px;border:1px solid #FDE68A;background:#FFFBEB;border-radius:10px;font:400 11.5px/1.55 Inter,sans-serif;color:#92400E"><span style="font-weight:600;color:#78350F">Limitations.</span> Etsy publishes no search volume. This is not Etsy search data and does not represent Etsy's internal figures. Treat two terms with overlapping bands as equal.</div>
+              </div>
+
+              <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+                  <span style="font:600 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Net profit</span>
+                  <span style="display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:#ECFEFF;border:1px solid #A5F3FC;font:600 10px/1.5 Inter,sans-serif;color:#0E7490">Calculated</span>
+                </div>
+                <div class="tnum" style="padding:13px;border-radius:10px;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);font:500 12px/1.7 Inter,sans-serif;color:var(--ink-1,#241B12)">Gross revenue − Etsy fees − payment processing − Offsite Ads − shipping − COGS − labour − other costs = net profit</div>
+                <div style="display:flex;flex-direction:column;gap:9px">
+                  <div style="display:grid;grid-template-columns:88px 1fr;gap:10px"><span style="font:600 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Verified</span><span style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Revenue, Etsy fees, payment processing and Offsite Ads come from your receipts.</span></div>
+                  <div style="display:grid;grid-template-columns:88px 1fr;gap:10px"><span style="font:600 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Your input</span><span style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Shipping, COGS, labour and other costs come from your cost setup.</span></div>
+                  <div style="display:grid;grid-template-columns:88px 1fr;gap:10px"><span style="font:600 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Coverage</span><span class="tnum" style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">62% of order value has a confirmed cost</span></div>
+                </div>
+                <div style="padding:11px 13px;border:1px solid var(--border,#E9E2D6);background:var(--canvas-soft,#FBF8F3);border-radius:10px;font:400 11.5px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span style="font-weight:600;color:var(--ink-1,#241B12)">Exclusions.</span> Orders with no confirmed product cost are excluded rather than assigned an assumed cost, so net profit is a floor. Sales tax, VAT and refunds outside the period are not included.</div>
+              </div>
+
+              <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+                  <span style="font:600 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Shop Pulse baseline</span>
+                  <span style="display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:#ECFEFF;border:1px solid #A5F3FC;font:600 10px/1.5 Inter,sans-serif;color:#0E7490">Calculated</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:9px">
+                  <div style="display:grid;grid-template-columns:88px 1fr;gap:10px"><span style="font:600 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Method</span><span style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">A rolling 90-day expected range from your own order history, by weekday.</span></div>
+                  <div style="display:grid;grid-template-columns:88px 1fr;gap:10px"><span style="font:600 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Diagnosis</span><span style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Recorded events inside the window are tested against the outcome and labelled CORRELATED, RULED OUT or UNKNOWN.</span></div>
+                  <div style="display:grid;grid-template-columns:88px 1fr;gap:10px"><span style="font:600 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Coverage</span><span class="tnum" style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">88% · 11 listings too new to baseline</span></div>
+                </div>
+                <div style="padding:11px 13px;border:1px solid var(--border,#E9E2D6);background:var(--canvas-soft,#FBF8F3);border-radius:10px;font:400 11.5px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span style="font-weight:600;color:var(--ink-1,#241B12)">Limitations.</span> Correlation is not cause. Ninety days cannot separate seasonality from a change you made. Etsy does not release views or impressions, so diagnoses rest on orders alone.</div>
+              </div>
+
+              <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px">
+                <span style="font:600 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">What we never do</span>
+                <div style="display:flex;flex-direction:column;gap:9px">
+                  <span style="display:flex;gap:9px;align-items:flex-start"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--danger,#B91C1C)" stroke-width="2.4" stroke-linecap="round" style="flex:none;margin-top:2px"><path d="M6 6l12 12M18 6L6 18"></path></svg><span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Model or claim knowledge of Etsy's ranking algorithm.</span></span>
+                  <span style="display:flex;gap:9px;align-items:flex-start"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--danger,#B91C1C)" stroke-width="2.4" stroke-linecap="round" style="flex:none;margin-top:2px"><path d="M6 6l12 12M18 6L6 18"></path></svg><span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Publish an exact competitor revenue or sales figure.</span></span>
+                  <span style="display:flex;gap:9px;align-items:flex-start"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--danger,#B91C1C)" stroke-width="2.4" stroke-linecap="round" style="flex:none;margin-top:2px"><path d="M6 6l12 12M18 6L6 18"></path></svg><span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Fill a missing number with an assumption to make a chart look complete.</span></span>
+                  <span style="display:flex;gap:9px;align-items:flex-start"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--danger,#B91C1C)" stroke-width="2.4" stroke-linecap="round" style="flex:none;margin-top:2px"><path d="M6 6l12 12M18 6L6 18"></path></svg><span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Scrape Etsy pages, automate Etsy Messages, or hold your Etsy password.</span></span>
+                  <span style="display:flex;gap:9px;align-items:flex-start"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--danger,#B91C1C)" stroke-width="2.4" stroke-linecap="round" style="flex:none;margin-top:2px"><path d="M6 6l12 12M18 6L6 18"></path></svg><span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Build a profile of an individual buyer, or show a region with too few orders.</span></span>
+                </div>
+                <div style="margin-top:auto;padding-top:11px;border-top:1px solid var(--border,#E9E2D6);font:400 11px/1.55 Inter,sans-serif;color:var(--muted-1,#6B6152)">The term "Etsy" is a trademark of Etsy, Inc. This Application uses Etsy's API, but is not endorsed or certified by Etsy.</div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">94 · Data sources · 1440 × 1020</div>
+    <div data-screen-label="94 Data Sources" style="width:1440px;height:1020px;flex:none;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);border-radius:16px;overflow:hidden;display:flex;flex-direction:column">
+
+      <header style="height:64px;flex:none;background:var(--surface,#FFFFFF);border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:center;gap:14px;padding:0 26px">
+        <span style="width:28px;height:28px;border-radius:8px;background:var(--brand,#B4472A);color:#fff;display:flex;align-items:center;justify-content:center;font:700 11px/1 Inter,sans-serif">EP</span>
+        <span style="font:700 14px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">EtsyPilot</span>
+        <span style="display:flex;align-items:center;gap:9px;margin-left:8px;padding:8px 12px;border:1px solid var(--border,#E9E2D6);border-radius:9px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span style="width:7px;height:7px;border-radius:999px;background:var(--success,#15803D)"></span>Willow &amp; Fern</span>
+        <span style="margin-left:auto;padding:8px 12px;border:1px solid #CBD5E1;border-radius:9px;font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Manage permissions</span>
+        <span style="width:28px;height:28px;border-radius:8px;background:var(--ink-2,#4A4234);color:#fff;display:flex;align-items:center;justify-content:center;font:600 11px/1 Inter,sans-serif">SR</span>
+      </header>
+
+      <div style="padding:22px 26px 16px;background:var(--surface,#FFFFFF);border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:flex-start;justify-content:space-between;gap:20px">
+        <div style="display:flex;flex-direction:column;gap:7px;max-width:820px">
+          <div style="font:600 26px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.015em">Data sources</div>
+          <div style="font:400 13px/1.55 Inter,sans-serif;color:var(--muted-1,#6B6152)">Every input EtsyPilot reads, what class of number it produces, how often it refreshes, and what it cannot tell you.</div>
+        </div>
+        <span style="padding:9px 13px;border:1px solid #CBD5E1;border-radius:9px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);flex:none">Export this table</span>
+      </div>
+
+      <div style="flex:1;overflow:hidden;padding:20px 26px;display:flex;flex-direction:column;gap:14px">
+
+        <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;flex:1;min-height:0">
+          <div style="display:grid;grid-template-columns:1.15fr 1.5fr 116px 118px 1.35fr;gap:14px;padding:11px 18px;background:var(--canvas-soft,#FBF8F3);border-bottom:1px solid var(--border,#E9E2D6)">
+            <span style="font:600 11px/1.2 Inter,sans-serif;color:var(--muted-1,#6B6152)">Source</span>
+            <span style="font:600 11px/1.2 Inter,sans-serif;color:var(--muted-1,#6B6152)">What it provides</span>
+            <span style="font:600 11px/1.2 Inter,sans-serif;color:var(--muted-1,#6B6152)">Class</span>
+            <span style="font:600 11px/1.2 Inter,sans-serif;color:var(--muted-1,#6B6152)">Refresh</span>
+            <span style="font:600 11px/1.2 Inter,sans-serif;color:var(--muted-1,#6B6152)">Limitations</span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1.15fr 1.5fr 116px 118px 1.35fr;gap:14px;align-items:start;padding:15px 18px;border-bottom:1px solid var(--border,#E9E2D6)">
+            <span style="display:flex;flex-direction:column;gap:3px"><span style="font:600 13px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Etsy Open API v3</span><span style="font:400 11px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">OAuth 2.0 · your authorisation</span></span>
+            <span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Your shop, listings, inventory, order receipts, Etsy fees, payment processing and Offsite Ads charges.</span>
+            <span style="display:inline-flex;align-self:flex-start;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:#F0FDF4;border:1px solid #BBF7D0;font:600 10px/1.5 Inter,sans-serif;color:#166534">Verified</span>
+            <span class="tnum" style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Every 15 min</span>
+            <span style="font:400 12px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">No listing views, impressions, search terms or Etsy Ads performance. Rate limited by Etsy.</span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1.15fr 1.5fr 116px 118px 1.35fr;gap:14px;align-items:start;padding:15px 18px;border-bottom:1px solid var(--border,#E9E2D6)">
+            <span style="display:flex;flex-direction:column;gap:3px"><span style="font:600 13px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Your cost setup</span><span style="font:400 11px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">Entered in EtsyPilot</span></span>
+            <span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Product cost, shipping cost, labour rate, overhead and other costs, per shop, listing or variation.</span>
+            <span style="display:inline-flex;align-self:flex-start;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:var(--canvas-soft,#FBF8F3);border:1px solid #CBD5E1;font:600 10px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Seller input</span>
+            <span class="tnum" style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">On save</span>
+            <span style="font:400 12px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Only as accurate as what you enter. Gaps reduce profit coverage rather than being filled in.</span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1.15fr 1.5fr 116px 118px 1.35fr;gap:14px;align-items:start;padding:15px 18px;border-bottom:1px solid var(--border,#E9E2D6)">
+            <span style="display:flex;flex-direction:column;gap:3px"><span style="font:600 13px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Public marketplace signals</span><span style="font:400 11px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">Sampled, aggregated</span></span>
+            <span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Keyword demand bands, competition, category distribution, competitor sales ranges, trend direction.</span>
+            <span style="display:inline-flex;align-self:flex-start;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:#FFFBEB;border:1px solid #FDE68A;font:600 10px/1.5 Inter,sans-serif;color:var(--warning-strong,#B45309)">Estimated</span>
+            <span class="tnum" style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Weekly</span>
+            <span style="font:400 12px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Never official Etsy figures. Always shown as a range with confidence. Four locales only.</span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1.15fr 1.5fr 116px 118px 1.35fr;gap:14px;align-items:start;padding:15px 18px;border-bottom:1px solid var(--border,#E9E2D6)">
+            <span style="display:flex;flex-direction:column;gap:3px"><span style="font:600 13px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Etsy Stats import</span><span style="font:400 11px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">CSV you download from Etsy</span></span>
+            <span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Listing views, visits and traffic sources — the metrics the API does not expose.</span>
+            <span style="display:inline-flex;align-self:flex-start;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:var(--canvas-soft,#FBF8F3);border:1px solid #CBD5E1;font:600 10px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Seller input</span>
+            <span class="tnum" style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">On upload</span>
+            <span style="font:400 12px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Historic snapshot, not live. Goes stale between uploads and is labelled with its export date.</span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1.15fr 1.5fr 116px 118px 1.35fr;gap:14px;align-items:start;padding:15px 18px;border-bottom:1px solid var(--border,#E9E2D6)">
+            <span style="display:flex;flex-direction:column;gap:3px"><span style="font:600 13px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">EtsyPilot event log</span><span style="font:400 11px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">Immutable, generated here</span></span>
+            <span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Every change made through EtsyPilot — price, title, tags, state, bulk jobs, AI applications — with actor and operation ID.</span>
+            <span style="display:inline-flex;align-self:flex-start;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:#F0FDF4;border:1px solid #BBF7D0;font:600 10px/1.5 Inter,sans-serif;color:#166534">Verified</span>
+            <span class="tnum" style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Immediate</span>
+            <span style="font:400 12px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Records changes made here. Changes you make directly on Etsy appear only at the next sync.</span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1.15fr 1.5fr 116px 118px 1.35fr;gap:14px;align-items:start;padding:15px 18px;border-bottom:1px solid var(--border,#E9E2D6)">
+            <span style="display:flex;flex-direction:column;gap:3px"><span style="font:600 13px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Language model</span><span style="font:400 11px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">Drafting only</span></span>
+            <span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Title, tag and description drafts, issue explanations, recommended actions.</span>
+            <span style="display:inline-flex;align-self:flex-start;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:#F5F3FF;border:1px solid #DDD6FE;font:600 10px/1.5 Inter,sans-serif;color:#6D28D9">AI draft</span>
+            <span class="tnum" style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">On request</span>
+            <span style="font:400 12px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Never applied without your approval. Produces language, never data — no figure originates here.</span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1.15fr 1.5fr 116px 118px 1.35fr;gap:14px;align-items:start;padding:15px 18px">
+            <span style="display:flex;flex-direction:column;gap:3px"><span style="font:600 13px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Demo dataset</span><span style="font:400 11px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">Willow &amp; Fern, synthetic</span></span>
+            <span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">A complete fictional shop so every screen can be explored before connecting anything.</span>
+            <span style="display:inline-flex;align-self:flex-start;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);font:600 10px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Demo</span>
+            <span class="tnum" style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Static</span>
+            <span style="font:400 12px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Not a real shop and not benchmark data. Every screen in demo mode carries a persistent banner.</span>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:14px;flex:none">
+          <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px">
+            <span style="font:600 14px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">What Etsy does not release, and what to do instead</span>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px 18px">
+              <span style="display:flex;gap:8px;align-items:flex-start"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2.2" stroke-linecap="round" style="flex:none;margin-top:2px"><circle cx="12" cy="12" r="8.5"></circle><path d="M6 6l12 12"></path></svg><span style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Listing views and visits → import your Etsy Stats CSV</span></span>
+              <span style="display:flex;gap:8px;align-items:flex-start"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2.2" stroke-linecap="round" style="flex:none;margin-top:2px"><circle cx="12" cy="12" r="8.5"></circle><path d="M6 6l12 12"></path></svg><span style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Search terms buyers used → not available anywhere</span></span>
+              <span style="display:flex;gap:8px;align-items:flex-start"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2.2" stroke-linecap="round" style="flex:none;margin-top:2px"><circle cx="12" cy="12" r="8.5"></circle><path d="M6 6l12 12"></path></svg><span style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Etsy Ads performance → enter spend manually</span></span>
+              <span style="display:flex;gap:8px;align-items:flex-start"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2.2" stroke-linecap="round" style="flex:none;margin-top:2px"><circle cx="12" cy="12" r="8.5"></circle><path d="M6 6l12 12"></path></svg><span style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Another shop's real sales → estimated ranges only</span></span>
+            </div>
+          </div>
+          <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:11px">
+            <span style="font:600 14px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Your data</span>
+            <span style="font:400 12px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">Disconnect, export everything, or delete your shop data at any time. Customer locations are stored aggregated only — never individual buyers.</span>
+            <div style="margin-top:auto;display:flex;gap:8px">
+              <span style="flex:1;padding:10px;border:1px solid #CBD5E1;border-radius:9px;font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-align:center">Export</span>
+              <span style="flex:1;padding:10px;border:1px solid #CBD5E1;border-radius:9px;font:600 12px/1 Inter,sans-serif;color:var(--danger,#B91C1C);text-align:center">Delete data</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="font:400 11.5px/1.55 Inter,sans-serif;color:var(--muted-1,#6B6152);flex:none">The term "Etsy" is a trademark of Etsy, Inc. This Application uses Etsy's API, but is not endorsed or certified by Etsy.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

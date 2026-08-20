@@ -336,3 +336,371 @@ Team and Automations remain parked pending **O2**.
 | Growth listing cap | — | **500** |
 
 Free `$0`, Growth `$29`, Agency `$79` agree in both.
+
+---
+
+# Round 2 — artboards 93–108
+
+Sources (all archived under `docs/source/screens/`):
+`EtsyPilot Data & Methodology.dc.html` · `EtsyPilot Niche Research, Demo Mode & Digest.dc.html` ·
+`EtsyPilot PRD Gap Fixes.dc.html` · `EtsyPilot Tools.dc.html`
+
+All four carry the identical D1 token block. Verified.
+
+**Closes:** M6, M8, M9, M10, M11 (Niche Research), M12, M16, M17 (free tool hub), and O4.
+
+---
+
+## D9 — Data group: Methodology (93) & Data Sources (94)
+
+Closes **M16**. Both pages are **public** — readable before connecting a shop.
+Framing: *"Provenance badges promise an explanation. These are the pages that keep it."*
+
+### 93 · Methodology (1440 × 1120)
+Tabs: **Methodology · Data sources · Change log**. Header carries `Last reviewed <date>`
+and a `Download as PDF` action. Left rail is an on-page anchor nav ("On this page"):
+The five classes · Keyword demand · Competition · Opportunity score · Competitor sales ·
+Net profit · Shop Pulse baseline · Listing health score · What we never do.
+
+**The five classes** — one-line definitions, now canonical:
+| Class | Definition |
+|---|---|
+| Verified | Etsy returned it for your own shop. Exact. |
+| Calculated | A visible formula over visible inputs. Reproducible. |
+| Estimated | Modelled from observable signals. **Always a range.** |
+| Seller input | You or a teammate entered it. **We never guess it.** |
+| Unavailable | Etsy does not expose it. **We show nothing, not a guess.** |
+
+**Per-metric card shape** — every entry uses the same five rows plus a limitations
+callout: `Source` · `Method` · `Freshness` · `Confidence` · `Coverage`, then a
+tinted **Limitations** box (amber `#FFFBEB`/`#FDE68A`/`#92400E` for Estimated,
+neutral canvas-soft for Calculated).
+
+Net profit card states the formula literally:
+`Gross revenue − Etsy fees − payment processing − Offsite Ads − shipping − COGS − labour − other costs = net profit`
+with an **Exclusions** note: orders with no confirmed cost are excluded rather than
+assigned an assumed cost, *"so net profit is a floor."*
+
+**"What we never do"** — five commitments, each with a danger-coloured ✕:
+1. Model or claim knowledge of Etsy's ranking algorithm.
+2. Publish an exact competitor revenue or sales figure.
+3. Fill a missing number with an assumption to make a chart look complete.
+4. Scrape Etsy pages, automate Etsy Messages, or hold your Etsy password.
+5. Build a profile of an individual buyer, or show a region with too few orders.
+
+### 94 · Data sources (1440 × 1020)
+A seven-row table: `Source · What it provides · Class · Refresh · Limitations`.
+
+| Source | Class | Refresh |
+|---|---|---|
+| Etsy Open API v3 (OAuth 2.0) | Verified | Every 15 min |
+| Your cost setup | Seller input | On save |
+| Public marketplace signals | Estimated | Weekly |
+| Etsy Stats import (CSV) | Seller input | On upload |
+| EtsyPilot event log (immutable) | Verified | Immediate |
+| Language model (drafting only) | AI draft | On request |
+| Demo dataset (Willow & Fern, synthetic) | **Demo** | Static |
+
+Language-model row is decisive: *"Produces language, never data — no figure
+originates here."*
+
+Plus **"What Etsy does not release, and what to do instead"** (views → import Stats
+CSV; buyer search terms → not available anywhere; Ads performance → enter spend
+manually; competitor real sales → estimated ranges only) and a **Your data** card
+(Export / Delete data).
+
+---
+
+## D10 — Badge fills, completed set
+
+D1 fixed three. The Data Sources table and Action Center card supply the rest.
+All literal hex, **not tokenised**, so they hold in both themes.
+
+| Badge | Background | Border | Text |
+|---|---|---|---|
+| Verified | `#F0FDF4` | `#BBF7D0` | `#166534` |
+| Calculated | `#ECFEFF` | `#A5F3FC` | `#0E7490` |
+| Estimated | `#FFFBEB` | `#FDE68A` | `#B45309` |
+| **AI draft** | `#F5F3FF` | `#DDD6FE` | `#6D28D9` |
+| **Seller input** | `var(--canvas-soft)` | `#CBD5E1` | `var(--ink-2)` |
+| **Unavailable** | `var(--canvas-soft)` | `var(--border)` | `var(--muted-1)` |
+| **Demo** | `var(--canvas-soft)` | **`1px dashed var(--muted-2)`** | `var(--muted-1)` |
+| Critical (severity) | `#FEF2F2` | `#FECACA` | `var(--danger)` |
+| Attention (severity) | `#FFFBEB` | `#FDE68A` | `var(--warning-strong)` |
+| Completed / Paid | `#F0FDF4` | `#BBF7D0` | `#166534` |
+| Card declined | `#FEF2F2` | `#FECACA` | `var(--danger)` |
+
+---
+
+## D11 — Demo mode is a designed surface, not a hidden flag (103)
+
+PRD §4.8. Demo mode is **the default development path**, so it gets a real look.
+
+### 103a — Demo entry card (520px)
+`DEMO MODE` chip (dashed border, uppercase, `.07em`), heading *"Explore a complete
+shop first"*, and an honest capability list — three ✓ (run a bulk edit and roll it
+back; see Shop Pulse diagnose a drop; reconcile profit with incomplete coverage)
+and **one ✕: "Publish anything to Etsy — demo mode cannot write."**
+Actions: `Explore the demo shop` / `Connect my Etsy shop instead`.
+Footer: *"Demo data is synthetic. It is not benchmark data and not another seller's shop."*
+
+### 103b — Persistent banner
+A dark bar (`var(--ink-1)` background) above the top bar on **every** screen:
+`DEMO MODE` chip + *"You are exploring Willow & Fern, a fictional shop. Nothing here
+is connected to Etsy."* + `Connect my shop` + `Exit demo`.
+Shop chip becomes **dashed** with `Willow & Fern · demo` and `Static data · no sync`.
+
+**The load-bearing rule:**
+> The dashed border and the Demo chip **replace the provenance badge everywhere in
+> demo mode**, so a screenshot taken here can never be mistaken for a real shop's figures.
+
+So `ProvenanceBadge` must render its Demo variant whenever demo mode is active,
+regardless of the underlying provenance type. This is a global override, not a
+per-component choice.
+
+### 103c — Leaving demo mode (dialog, with overlay shadow)
+*"Your demo work is not carried over."* Saved keyword lists, cost rules and scenarios
+belong to the fictional shop and are discarded on connect.
+Actions: `Export demo work` · `Stay in demo` · `Connect Etsy shop`.
+
+---
+
+## D12 — Weekly Shop Pulse digest (104)
+
+Closes **M6**. Confirms **Q8 = both**, and adds the rule I did not have.
+
+### 104 — Email, 640px
+Subject-line equivalent as the H1: *"Orders were 14.5% below your baseline this week"*,
+then *"Three changes correlate with the drop and one is still unexplained.
+**Nothing has been changed in your shop.**"*
+
+Three metric tiles (Orders ▼14.5% · Revenue ▼9.2% · Net profit 62% coverage), then
+**What changed** — the same diagnosis badges as artboard 91, including the dashed
+UNKNOWN card: *"No event in your history explains this. We are not guessing at a cause."*
+Single CTA `Open Shop Pulse`.
+
+Footer states why it arrived and how to stop: *"Sent weekly on Thursdays because you
+have Shop Pulse alerts on. Change frequency or turn this off in notification settings
+— one click, no confirmation needed."*
+
+### 104b — Digest settings
+Toggle + email address · Day segmented control (Mon / **Thu** / Sun) · Include
+checkboxes (Shop Pulse changes and diagnoses ✓ · Profit and coverage summary ✓ ·
+Open Action Center items ☐ · Seasonal windows opening soon ☐).
+
+**Suppression rule (new, and important):**
+> "If nothing crossed your baseline that week, we do not send an email. A digest with
+> nothing in it trains you to ignore the next one."
+
+The digest job must therefore check for material change **before** sending, and
+no-op silently when there is none.
+
+---
+
+## D13 — Niche Research (102)
+
+Closes the Niche Research part of **M11**. Completes PRD §9's Research group.
+
+Query bar (`linen table linens` + locale + `Analyse`). Five KPI tiles:
+Demand `8k–13k` (Est.) · Listings `41,000 ±8% sampling error` (Est.) ·
+Crowding `High · 3.6 listings per search` (Calc.) · Price band `$28–$46, middle 50%`
+(Est.) · Concentration `31% top 10 shops' share` (Calc.).
+
+Twelve-month demand shape: amber band = estimate range, **dashed where sampling was
+thin**. Sub-niches table ranked by demand against crowding, with a
+`Too few samples` / `—` / `Unknown` row proving the empty case.
+
+**"What would have to be true"** — the differentiating panel, and the tone to copy:
+> "EtsyPilot will not tell you to enter a niche. These are the conditions the numbers imply."
+
+Four numbered conditions with concrete thresholds (sell above $34; cost under $14 for
+40% margin; list by early October; differentiate on something other than "linen").
+Actions: `Research these keywords` / `Check margin in Fee calculator`.
+
+Page-level amber notice: **every figure on this page is estimated.**
+
+---
+
+## D14 — Tools group, all six calculators + public hub (95–101)
+
+Closes **M9** and **M12**.
+
+Sidebar Tools group is confirmed: Simple Calculator · Fee Calculator · Ads ROI
+Calculator · Profit Calculator · Category Finder · Seasonal Calendar · Keyword Lists ·
+Trademark Screening. Sidebar carries a **"No shop needed — every tool works before you
+connect Etsy"** note.
+
+Global rule for the group:
+> Deterministic · no shop connection · prints its formula under the result · never
+> writes to a listing · where a tool depends on a rule Etsy can change, **the effective
+> date is shown beside the number**.
+
+### 95 · Fee calculator
+Inputs: item price, quantity, shipping charged, item cost, shipping cost, Offsite Ads
+fee %, target margin, country/currency.
+**Rules applied** line: `Listing $0.20 · transaction 6.5% · processing 3% + $0.25 · effective Jul 1, 2026`.
+Outputs: profit per sale with the formula spelled out, margin, break-even price, price
+for target margin, a stacked fee/cost/profit bar, an itemised fee breakdown, and an
+**"If you change the price"** three-row sensitivity table.
+Disclaimer names the real sources of variance: currency conversion, regulatory
+operating fees, Offsite Ads eligibility, local taxes.
+
+### 96 · Ads ROI calculator
+Seller-input badged. Spend scenario segmented control (×0.5 / ×1.0 / ×2.0 / ×3.0).
+Outputs each with its formula: ROAS, conversion, cost per order, profit after ads,
+break-even ROAS, max affordable CPA.
+Footer: *"Etsy does not expose Ads performance through the public API… EtsyPilot does
+not read your Etsy Ads account."*
+
+### 97 · Profit calculator
+*"One product, one month. For your whole shop use Profit Reality."* — the separation
+of concerns is enforced in the copy, and `Use in Profit Reality` is the hand-off.
+
+### 98 · Category finder
+Ranked category matches with listing counts, median price bands, confidence, and
+**required vs optional attributes** per match. Notes Etsy's taxonomy was
+`last read Aug 9, 2026` and can change without notice.
+
+### 99 · Seasonal calendar
+12-month grid with prepare-window / live-by / peak dates per opportunity, each badged
+Estimated or Low confidence, each stating the evidence
+(*"a 2.4× order lift in this window last year. Confidence moderate — based on one year
+of your own history"*). Actions: Research keywords · Prepare listings · Add task · Save.
+
+### 100 · Trademark screening
+Screens a phrase against USPTO / EUIPO / UKIPO, indexed with a date.
+EXACT MATCH and PARTIAL MATCH result cards with register, status, class, filing date.
+Two guardrails in the copy:
+> "A registration does not always prevent descriptive use, and an absence of results is not permission."
+> "Class 25 covers clothing, not home textiles. Your product may sit outside it — **that judgement is not one EtsyPilot can make for you.**"
+
+Prominent **"This is not legal advice"** panel: not exhaustive, does not cover
+unregistered or common-law marks, consult an attorney.
+
+### 101 · Free tool hub — public, logged out
+*"Free Etsy seller tools — no account, no shop connection, no email."*
+Six cards (Fee, Profit, Ads ROI, Simple, Category finder, Trademark screening).
+Conversion line is quiet and honest: *"These use numbers you type in — connect your
+shop and the same calculations run on your real orders and fees."*
+Carries the Etsy trademark disclaimer.
+
+---
+
+## D15 — Simple calculator, all eight modes (105)
+
+Closes the remaining PRD §11 gap. Modes as pills:
+Percentage · Discount · Profit · **Margin** · Markup · Fee · Net revenue · Break-even.
+
+Worked formulas, now canonical:
+| Mode | Example |
+|---|---|
+| Percentage | `20% of $29.00 = $5.80` |
+| Discount | `$29 × (1 − 20%) = $23.20` |
+| Profit | `$34.00 − $11.50 = $22.50` |
+| Margin | `($34.00 − $11.50) ÷ $34.00 = 66.2%` |
+| Markup | `($34.00 − $11.50) ÷ $11.50 = 195.7%` |
+| Fee | `6.5% of $40.00 = $2.60` |
+| Net revenue | `$40.00 − $4.25 = $35.75` |
+| Break-even | `$180 fixed ÷ ($34.00 − $11.50) = 8 units` |
+
+A margin/markup disambiguation hint sits under the result:
+*"Margin divides by price. Markup divides by cost — the same two numbers give 195.7% there."*
+
+**Validation rule:**
+> "Zero price in a margin calculation, negative cost, a percentage over 100 in a
+> discount — each returns a specific message and no result. **Never a silent NaN,
+> never a guessed correction.**"
+
+---
+
+## D16 — Extension, three missing states (106)
+
+Closes the PRD §10 state gaps. All three are 340px popups with overlay shadow.
+
+- **106a Logged out** — *"Sign in to see this listing's health."* Sign in / Create a
+  free account. Shield footer: *"The extension never sees your Etsy password and never
+  signs in to Etsy on your behalf."*
+- **106b No shop connected** — listing detected, **public data only**. Shows title
+  length and tags used; "Your margin" renders a `Needs a shop` chip instead of a number.
+  Connect Etsy shop / Explore the demo shop.
+- **106c Non-Etsy page** — *"No Etsy listing on this page… The extension only reads
+  pages you visit on etsy.com — it does nothing on any other site."* Offers four
+  jump-in shortcuts (Shop Pulse, Keywords, Action Center, Calculators).
+  Footer: *"Permissions are limited to etsy.com. The extension holds no credentials and
+  cannot change a listing."*
+
+---
+
+## D17 — Billing: history, trial and refund terms (107) — resolves O4
+
+Closes **M10** and the PRD §4.10 gap.
+
+### Pricing — SETTLED
+**Solo is $15/month.** The billing history shows `Solo · monthly · $15.00` charges and
+a `Refund · Solo, unused period · −$15.00`. The design brief's $12 is superseded.
+Free `$0` · Solo `$15` · Growth `$29` · Agency `$79`.
+
+### Trial terms
+- **14 days of Growth, no card required.**
+- **Nothing charges automatically at the end** — the account moves to Free and data stays.
+- One trial per account, **not per shop**.
+- Bulk jobs pause if you drop below the plan they need.
+
+Trial banner (cyan `#ECFEFF`/`#A5F3FC`) states days left and end date, and explicitly:
+*"No card on file. Nothing is charged when the trial ends."*
+
+### Refunds and cancellation
+- Cancel in one click from this page — *"no email, no retention call, no confirmation maze."*
+- Access continues to the end of the paid period.
+- **Full refund available from the page within 14 days of a charge.** After that,
+  cancelling stops the next renewal; the current period is not refunded.
+- Downgrading keeps data; exceeding a limit **pauses new bulk jobs and automation
+  rather than deleting anything**.
+
+### Billing history table
+`Date · Description · Amount · Status · Receipt`, with `Download all`.
+Status variants that must exist: **Paid**, **Refunded** (negative amount, success
+colour), **Card declined** (danger, no receipt).
+
+---
+
+## D18 — Action Center card: full PRD §4.1 field set, four states (108)
+
+Closes **M8**.
+
+Filter chips: `Open · 2` / `Done · 1` / `Dismissed · 1`.
+
+**Every field the PRD asks for is on the card:** priority (numbered rank chip),
+severity, title, explanation, evidence line, destination (primary CTA), status,
+created timestamp, completed timestamp, dismissed timestamp + reason.
+
+| State | Treatment |
+|---|---|
+| **Open** | `border-left: 3px var(--danger)` for Critical / `var(--warning)` for Attention. Numbered rank chip. Primary CTA + `Snooze` / `Dismiss`. |
+| **In progress** | Adds a brand-tinted `In progress · 12 of 38` chip and a `Last worked <date> by <user>` line. CTA becomes `Continue …`. |
+| **Completed** | `border-left: 3px var(--success)`, canvas-soft background, check icon replaces the rank chip, `Completed <date> by <user>` + operation ID. Actions become `View the change` / `Roll back`. |
+| **Dismissed** | Dashed border, `opacity: .72`, ✕ icon, `Dismissed <date> by <user>` + **`Reason · not this year`**, single `Restore` action. |
+
+Evidence lines are concrete and sourced, e.g.
+*"38 orders in the last 30 days across 4 listings · combined loss $184.20 · from your
+receipts and cost setup."*
+
+Closing rule for the whole surface:
+> "No dead-end alerts. Every card names its evidence and goes somewhere — dismissed
+> items keep their reason and can be restored, **so the list is a record rather than a
+> queue that empties into nothing.**"
+
+Note: the completed card claims measured outcome carefully — *"Orders on those listings
+are up 4% since — **measured, not claimed**."*
+
+---
+
+## Open items after round 2
+
+- **O1** — dark neutrals: D1 (cool slate, shipping) vs Q2 (warm). Still needs one word.
+- **O2** — agency / team / multi-shop / automations in MVP? Still the only schema blocker.
+- **O3** — still no home in PRD §9 IA for: Shop Analytics (51), Sales Map (57–58),
+  Experiments (59–60), Orders, Change History (44–45).
+  Standing proposal: add an **Analytics** group (Shop Analytics · Sales Map ·
+  Experiments · Orders); move **Change History** under Listings.
+- ~~**O4** — pricing~~ → **RESOLVED by D17.** Solo is $15.

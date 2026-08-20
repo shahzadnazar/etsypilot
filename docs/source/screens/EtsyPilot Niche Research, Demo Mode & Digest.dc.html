@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:var(--page-bg,#FBF8F3);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--brand,#B4472A)}a:hover{color:var(--brand-strong,#8C371F)}
+*{box-sizing:border-box}
+.tnum{font-variant-numeric:tabular-nums}
+</style>
+<script>
+(function(){
+  var DARK = {"--brand":"#E07A4A","--brand-strong":"#F3B08C","--brand-tint":"rgba(224,122,74,.16)","--ink-1":"#F1F5F9","--ink-2":"#CBD5E1","--muted-1":"#94A3B8","--muted-2":"#64748B","--border":"#2B3444","--canvas-soft":"#1E293B","--page-bg":"#0F172A","--success":"#34D399","--success-strong":"#34D399","--warning":"#FBBF24","--warning-strong":"#FBBF24","--danger":"#F87171","--danger-strong":"#FCA5A5","--accent-ai":"#C4B5FD","--accent-calc":"#67E8F9","--surface":"#1E293B"};
+  var LIGHT = {"--brand":"#B4472A","--brand-strong":"#8C371F","--brand-tint":"#FBEEE7","--ink-1":"#241B12","--ink-2":"#4A4234","--muted-1":"#6B6152","--muted-2":"#8C7F6C","--border":"#E9E2D6","--canvas-soft":"#FBF8F3","--page-bg":"#FBF8F3","--success":"#15803D","--success-strong":"#15803D","--warning":"#B45309","--warning-strong":"#B45309","--danger":"#B91C1C","--danger-strong":"#B91C1C","--accent-ai":"#7C3AED","--accent-calc":"#0891B2","--surface":"#FFFFFF"};
+  function apply(mode){
+    var resolved = mode === 'system' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : mode;
+    var tokens = resolved === 'dark' ? DARK : LIGHT;
+    var root = document.documentElement.style;
+    for (var k in tokens) root.setProperty(k, tokens[k]);
+    document.documentElement.setAttribute('data-rankkw-theme', resolved);
+    document.querySelectorAll('[data-rankkw-toggle]').forEach(function(el){
+      el.style.background = el.getAttribute('data-mode') === mode ? tokens['--brand'] : 'transparent';
+      el.style.color = el.getAttribute('data-mode') === mode ? '#fff' : tokens['--ink-2'];
+    });
+  }
+  window.rankkwSetTheme = function(mode){ localStorage.setItem('rankkw-theme', mode); apply(mode); };
+  apply(localStorage.getItem('rankkw-theme') || 'system');
+  document.addEventListener('click', function(e){ var t = e.target.closest && e.target.closest('[data-rankkw-toggle]'); if (t) { window.rankkwSetTheme(t.getAttribute('data-mode')); } });
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){ if((localStorage.getItem('rankkw-theme')||'system')==='system') apply('system'); });
+})();
+</script>
+</helmet>
+
+<div style="position:fixed;top:16px;right:16px;z-index:999;display:flex;gap:2px;padding:3px;border-radius:999px;background:var(--surface,#fff);border:1px solid var(--border,#E9E2D6);box-shadow:0 4px 16px rgba(0,0,0,.14)">
+  <button data-rankkw-toggle data-mode="light" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Light</button>
+  <button data-rankkw-toggle data-mode="dark" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Dark</button>
+  <button data-rankkw-toggle data-mode="system" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">System</button>
+</div>
+
+<div style="padding:48px 56px 96px;display:flex;flex-direction:column;gap:56px">
+
+  <div style="display:flex;flex-direction:column;gap:16px;max-width:940px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:34px;height:34px;border-radius:9px;background:var(--brand,#B4472A);display:flex;align-items:center;justify-content:center;color:#fff;font:700 15px/1 Inter,sans-serif">EP</div>
+      <div style="font:700 20px/1 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.01em">EtsyPilot</div>
+      <div style="padding:4px 8px;border-radius:6px;background:var(--border,#E9E2D6);color:var(--ink-2,#4A4234);font:600 11px/1 Inter,sans-serif">Niche Research · demo mode · weekly digest</div>
+    </div>
+    <div style="font:600 30px/1.15 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.02em;max-width:820px;text-wrap:pretty">Three surfaces the PRD asks for and the screens never covered</div>
+    <div style="font:400 14px/1.65 Inter,sans-serif;color:var(--ink-2,#4A4234);max-width:840px">Niche Research completes the PRD's Research group. Demo mode (PRD 4.8) is the default development path, so it needs a designed look rather than a hidden flag. The Weekly Shop Pulse Digest is the retention loop: it brings a seller back to a diagnosis they have not read.</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">102 · Niche research · 1440 × 1000</div>
+    <div data-screen-label="102 Niche Research" style="width:1440px;height:1000px;flex:none;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);border-radius:16px;overflow:hidden;display:flex">
+
+      <aside style="width:72px;flex:none;background:var(--surface,#FFFFFF);border-right:1px solid var(--border,#E9E2D6);display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:9px">
+        <span style="width:30px;height:30px;border-radius:8px;background:var(--brand,#B4472A);color:#fff;display:flex;align-items:center;justify-content:center;font:700 12px/1 Inter,sans-serif">EP</span>
+        <span style="width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"></path><path d="M5 10v9h14v-9"></path></svg></span>
+        <span style="width:36px;height:36px;border-radius:9px;background:var(--brand-tint,#FBEEE7);display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--brand-strong,#8C371F)" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M16.5 16.5L21 21"></path></svg></span>
+        <span style="width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M4 10h16M10 10v10"></path></svg></span>
+        <span style="width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V6M9 19v-8M14 19v-5M19 19V9"></path></svg></span>
+      </aside>
+
+      <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+        <header style="height:64px;flex:none;background:var(--surface,#FFFFFF);border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:center;gap:14px;padding:0 26px">
+          <span style="display:flex;align-items:center;gap:9px;padding:8px 12px;border:1px solid var(--border,#E9E2D6);border-radius:9px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span style="width:7px;height:7px;border-radius:999px;background:var(--success,#15803D)"></span>Willow &amp; Fern</span>
+          <span style="margin-left:auto;padding:8px 12px;border:1px solid #CBD5E1;border-radius:9px;font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Save niche</span>
+          <span style="width:28px;height:28px;border-radius:8px;background:var(--ink-2,#4A4234);color:#fff;display:flex;align-items:center;justify-content:center;font:600 11px/1 Inter,sans-serif">SR</span>
+        </header>
+
+        <div style="padding:20px 26px 16px;background:var(--surface,#FFFFFF);border-bottom:1px solid var(--border,#E9E2D6);display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px">
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <div style="font:600 26px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.015em">Niche research</div>
+              <div style="font:400 13px/1.55 Inter,sans-serif;color:var(--muted-1,#6B6152)">Whether a niche is worth entering — demand, crowding, price ceiling and what would have to be true for you.</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:9px">
+            <span style="flex:1;max-width:520px;height:42px;border:1.5px solid var(--brand,#B4472A);border-radius:10px;display:flex;align-items:center;padding:0 13px;font:500 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">linen table linens</span>
+            <span style="height:42px;padding:0 13px;border:1px solid #CBD5E1;border-radius:10px;display:flex;align-items:center;gap:8px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">United States<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg></span>
+            <span style="height:42px;padding:0 18px;border-radius:10px;background:var(--brand,#B4472A);color:#fff;font:600 12.5px/1 Inter,sans-serif;display:flex;align-items:center">Analyse</span>
+          </div>
+        </div>
+
+        <div style="flex:1;overflow:hidden;padding:18px 26px;display:flex;flex-direction:column;gap:14px">
+
+          <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;flex:none">
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:7px"><span style="display:flex;align-items:center;justify-content:space-between;gap:6px"><span style="font:600 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Demand</span><span style="padding:2px 7px;border-radius:999px;background:#FFFBEB;border:1px solid #FDE68A;font:600 10px/1.5 Inter,sans-serif;color:var(--warning-strong,#B45309)">Est.</span></span><span class="tnum" style="font:600 21px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">8k–13k</span><span style="font:400 11px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">monthly searches, band</span></div>
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:7px"><span style="display:flex;align-items:center;justify-content:space-between;gap:6px"><span style="font:600 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Listings</span><span style="padding:2px 7px;border-radius:999px;background:#FFFBEB;border:1px solid #FDE68A;font:600 10px/1.5 Inter,sans-serif;color:var(--warning-strong,#B45309)">Est.</span></span><span class="tnum" style="font:600 21px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">41,000</span><span style="font:400 11px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">±8% sampling error</span></div>
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:7px"><span style="display:flex;align-items:center;justify-content:space-between;gap:6px"><span style="font:600 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Crowding</span><span style="padding:2px 7px;border-radius:999px;background:#ECFEFF;border:1px solid #A5F3FC;font:600 10px/1.5 Inter,sans-serif;color:#0E7490">Calc.</span></span><span style="font:600 21px/1 Inter,sans-serif;color:var(--warning-strong,#B45309)">High</span><span class="tnum" style="font:400 11px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">3.6 listings per search</span></div>
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:7px"><span style="display:flex;align-items:center;justify-content:space-between;gap:6px"><span style="font:600 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Price band</span><span style="padding:2px 7px;border-radius:999px;background:#FFFBEB;border:1px solid #FDE68A;font:600 10px/1.5 Inter,sans-serif;color:var(--warning-strong,#B45309)">Est.</span></span><span class="tnum" style="font:600 21px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$28–$46</span><span style="font:400 11px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">middle 50% of listings</span></div>
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:7px"><span style="display:flex;align-items:center;justify-content:space-between;gap:6px"><span style="font:600 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Concentration</span><span style="padding:2px 7px;border-radius:999px;background:#ECFEFF;border:1px solid #A5F3FC;font:600 10px/1.5 Inter,sans-serif;color:#0E7490">Calc.</span></span><span class="tnum" style="font:600 21px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">31%</span><span style="font:400 11px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">top 10 shops' share</span></div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1.45fr 1fr;gap:14px;flex:1;min-height:0">
+
+            <div style="display:flex;flex-direction:column;gap:14px;min-height:0">
+              <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:11px;flex:none">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+                  <span style="font:600 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Twelve-month demand shape</span>
+                  <span style="font:400 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Amber band is the estimate range · dashed where sampling was thin</span>
+                </div>
+                <svg viewBox="0 0 800 170" style="width:100%;height:170px" role="img" aria-label="Estimated twelve-month demand band for linen table linens, peaking October to December">
+                  <line x1="0" y1="140" x2="800" y2="140" stroke="var(--border,#E9E2D6)"></line>
+                  <path d="M20 96 L85 92 L150 98 L215 88 L280 92 L345 86 L410 78 L475 64 L540 46 L605 30 L670 34 L735 62 L735 100 L670 74 L605 66 L540 84 L475 100 L410 112 L345 118 L280 124 L215 120 L150 128 L85 124 L20 128 Z" fill="var(--warning,#B45309)" opacity=".16"></path>
+                  <path d="M20 112 L85 108 L150 113 L215 104 L280 108 L345 102 L410 95 L475 82 L540 65 L605 48 L670 54 L735 81" stroke="var(--warning-strong,#B45309)" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+                  <path d="M605 48 L670 54 L735 81" stroke="var(--warning-strong,#B45309)" stroke-width="2.4" stroke-dasharray="5 4" fill="none"></path>
+                  <text x="20" y="160" style="font:500 10px Inter,sans-serif;fill:var(--muted-2,#8C7F6C)">Sep</text>
+                  <text x="400" y="160" text-anchor="middle" style="font:500 10px Inter,sans-serif;fill:var(--muted-2,#8C7F6C)">Mar</text>
+                  <text x="735" y="160" text-anchor="end" style="font:500 10px Inter,sans-serif;fill:var(--muted-2,#8C7F6C)">Aug</text>
+                </svg>
+              </div>
+
+              <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;flex:1;min-height:0">
+                <div style="padding:13px 18px;border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:center;justify-content:space-between;gap:12px">
+                  <span style="font:600 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Sub-niches</span>
+                  <span style="font:400 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Ranked by demand against crowding</span>
+                </div>
+                <div style="display:grid;grid-template-columns:1.7fr 1fr 1fr 1fr 96px;gap:12px;padding:9px 18px;background:var(--canvas-soft,#FBF8F3);border-bottom:1px solid var(--border,#E9E2D6)">
+                  <span style="font:600 11px/1.2 Inter,sans-serif;color:var(--muted-1,#6B6152)">Sub-niche</span>
+                  <span style="font:600 11px/1.2 Inter,sans-serif;color:var(--muted-1,#6B6152)">Demand</span>
+                  <span style="font:600 11px/1.2 Inter,sans-serif;color:var(--muted-1,#6B6152)">Listings</span>
+                  <span style="font:600 11px/1.2 Inter,sans-serif;color:var(--muted-1,#6B6152)">Price band</span>
+                  <span style="font:600 11px/1.2 Inter,sans-serif;color:var(--muted-1,#6B6152)">Crowding</span>
+                </div>
+                <div style="display:grid;grid-template-columns:1.7fr 1fr 1fr 1fr 96px;gap:12px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--border,#E9E2D6);background:var(--brand-tint,#FBEEE7)">
+                  <span style="font:600 12.5px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Stonewashed linen runners</span>
+                  <span class="tnum" style="font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">1.4k–2.2k</span>
+                  <span class="tnum" style="font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">3,900</span>
+                  <span class="tnum" style="font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">$34–$58</span>
+                  <span style="font:600 11.5px/1 Inter,sans-serif;color:var(--success,#15803D)">Moderate</span>
+                </div>
+                <div style="display:grid;grid-template-columns:1.7fr 1fr 1fr 1fr 96px;gap:12px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--border,#E9E2D6)">
+                  <span style="font:600 12.5px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Personalised name runners</span>
+                  <span class="tnum" style="font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">900–1.6k</span>
+                  <span class="tnum" style="font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">2,100</span>
+                  <span class="tnum" style="font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">$42–$74</span>
+                  <span style="font:600 11.5px/1 Inter,sans-serif;color:var(--success,#15803D)">Moderate</span>
+                </div>
+                <div style="display:grid;grid-template-columns:1.7fr 1fr 1fr 1fr 96px;gap:12px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--border,#E9E2D6)">
+                  <span style="font:600 12.5px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Christmas table linens</span>
+                  <span class="tnum" style="font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">2.8k–4.4k</span>
+                  <span class="tnum" style="font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">14,600</span>
+                  <span class="tnum" style="font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">$24–$40</span>
+                  <span style="font:600 11.5px/1 Inter,sans-serif;color:var(--warning-strong,#B45309)">High</span>
+                </div>
+                <div style="display:grid;grid-template-columns:1.7fr 1fr 1fr 1fr 96px;gap:12px;align-items:center;padding:12px 18px">
+                  <span style="font:600 12.5px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Waffle-weave napkins</span>
+                  <span class="tnum" style="font:500 12px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Too few samples</span>
+                  <span class="tnum" style="font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">480</span>
+                  <span class="tnum" style="font:500 12px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">—</span>
+                  <span style="font:600 11.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Unknown</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:14px;min-height:0">
+              <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px;flex:1">
+                <span style="font:600 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">What would have to be true</span>
+                <span style="font:400 12px/1.55 Inter,sans-serif;color:var(--muted-1,#6B6152)">EtsyPilot will not tell you to enter a niche. These are the conditions the numbers imply.</span>
+                <div style="display:flex;flex-direction:column;gap:11px">
+                  <span style="display:flex;gap:9px;align-items:flex-start"><span class="tnum" style="width:19px;height:19px;border-radius:999px;background:var(--brand-tint,#FBEEE7);color:var(--brand-strong,#8C371F);display:flex;align-items:center;justify-content:center;font:600 10.5px/1 Inter,sans-serif;flex:none;margin-top:1px">1</span><span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">You can sell above <span class="tnum" style="font-weight:600">$34</span> — below the band's midpoint, 41,000 listings compete on price alone.</span></span>
+                  <span style="display:flex;gap:9px;align-items:flex-start"><span class="tnum" style="width:19px;height:19px;border-radius:999px;background:var(--brand-tint,#FBEEE7);color:var(--brand-strong,#8C371F);display:flex;align-items:center;justify-content:center;font:600 10.5px/1 Inter,sans-serif;flex:none;margin-top:1px">2</span><span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Your product cost stays under <span class="tnum" style="font-weight:600">$14</span> to clear 40% margin after fees at that price.</span></span>
+                  <span style="display:flex;gap:9px;align-items:flex-start"><span class="tnum" style="width:19px;height:19px;border-radius:999px;background:var(--brand-tint,#FBEEE7);color:var(--brand-strong,#8C371F);display:flex;align-items:center;justify-content:center;font:600 10.5px/1 Inter,sans-serif;flex:none;margin-top:1px">3</span><span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">You are listing by early October — demand roughly doubles Oct to Dec and the prep window closes before it.</span></span>
+                  <span style="display:flex;gap:9px;align-items:flex-start"><span class="tnum" style="width:19px;height:19px;border-radius:999px;background:var(--brand-tint,#FBEEE7);color:var(--brand-strong,#8C371F);display:flex;align-items:center;justify-content:center;font:600 10.5px/1 Inter,sans-serif;flex:none;margin-top:1px">4</span><span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">You differentiate on something other than the word "linen" — the top 10 shops hold 31% and all use it.</span></span>
+                </div>
+                <div style="margin-top:auto;padding-top:12px;border-top:1px solid var(--border,#E9E2D6);display:flex;flex-direction:column;gap:8px">
+                  <span style="padding:11px;border-radius:9px;background:var(--brand,#B4472A);color:#fff;font:600 12.5px/1 Inter,sans-serif;text-align:center">Research these keywords</span>
+                  <span style="padding:10px;border:1px solid #CBD5E1;border-radius:9px;font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-align:center">Check margin in Fee calculator</span>
+                </div>
+              </div>
+              <div style="padding:13px 15px;border:1px solid #FDE68A;background:#FFFBEB;border-radius:12px;font:400 11.5px/1.55 Inter,sans-serif;color:#92400E;flex:none"><span style="font-weight:600;color:#78350F">Every figure on this page is estimated.</span> Etsy publishes no search volume and no competitor sales. These are modelled from public listing and autocomplete signals sampled weekly, shown as ranges, and are not Etsy data.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">103 · Demo mode — entry, persistent banner, leaving</div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
+
+      <div data-screen-label="103a Demo entry" style="width:520px;flex:none;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:26px;display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="display:inline-flex;align-self:flex-start;align-items:center;gap:6px;padding:5px 10px;border-radius:6px;background:var(--canvas-soft,#FBF8F3);border:1px dashed var(--muted-2,#8C7F6C);font:600 10px/1 Inter,sans-serif;letter-spacing:.07em;color:var(--muted-1,#6B6152)">DEMO MODE</span>
+          <span style="font:600 21px/1.25 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.01em">Explore a complete shop first</span>
+          <span style="font:400 13px/1.6 Inter,sans-serif;color:var(--ink-2,#4A4234)">Willow &amp; Fern is a fictional shop with 412 listings, 438 orders and a full cost history. Every screen works. Nothing you do in demo mode touches a real Etsy shop.</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px;padding:15px;border:1px solid var(--border,#E9E2D6);border-radius:12px;background:var(--canvas-soft,#FBF8F3)">
+          <span style="display:flex;gap:9px;align-items:flex-start"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--success,#15803D)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M5 12l5 5L19 7"></path></svg><span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Run a bulk edit, roll it back, read the audit trail</span></span>
+          <span style="display:flex;gap:9px;align-items:flex-start"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--success,#15803D)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M5 12l5 5L19 7"></path></svg><span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">See Shop Pulse diagnose a real-looking sales drop</span></span>
+          <span style="display:flex;gap:9px;align-items:flex-start"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--success,#15803D)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M5 12l5 5L19 7"></path></svg><span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Reconcile profit with incomplete cost coverage</span></span>
+          <span style="display:flex;gap:9px;align-items:flex-start"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted-2,#8C7F6C)" stroke-width="2.4" stroke-linecap="round" style="flex:none;margin-top:2px"><circle cx="12" cy="12" r="8"></circle><path d="M6.5 6.5l11 11"></path></svg><span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Publish anything to Etsy — demo mode cannot write</span></span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <span style="padding:12px;border-radius:9px;background:var(--brand,#B4472A);color:#fff;font:600 13px/1 Inter,sans-serif;text-align:center">Explore the demo shop</span>
+          <span style="padding:12px;border:1px solid #CBD5E1;border-radius:9px;font:600 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-align:center">Connect my Etsy shop instead</span>
+        </div>
+        <span style="font:400 11px/1.55 Inter,sans-serif;color:var(--muted-1,#6B6152);text-align:center">Demo data is synthetic. It is not benchmark data and not another seller's shop.</span>
+      </div>
+
+      <div style="width:820px;flex:none;display:flex;flex-direction:column;gap:14px">
+        <div data-screen-label="103b Demo banner" style="background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);border-radius:14px;overflow:hidden;display:flex;flex-direction:column">
+          <div style="padding:10px 18px;background:var(--ink-1,#241B12);display:flex;align-items:center;gap:11px">
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:5px;background:rgba(255,255,255,.14);font:600 9.5px/1.4 Inter,sans-serif;letter-spacing:.07em;color:#fff">DEMO MODE</span>
+            <span style="font:400 12px/1.4 Inter,sans-serif;color:#F1F5F9;flex:1">You are exploring Willow &amp; Fern, a fictional shop. Nothing here is connected to Etsy.</span>
+            <span style="padding:6px 11px;border-radius:7px;background:#fff;color:var(--ink-1,#241B12);font:600 11px/1 Inter,sans-serif;flex:none">Connect my shop</span>
+            <span style="font:500 11px/1 Inter,sans-serif;color:#CBD5E1;flex:none">Exit demo</span>
+          </div>
+          <div style="height:52px;flex:none;background:var(--surface,#FFFFFF);border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:center;gap:12px;padding:0 18px">
+            <span style="display:flex;align-items:center;gap:8px;padding:7px 11px;border:1px dashed var(--muted-2,#8C7F6C);border-radius:8px;font:600 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span style="width:6px;height:6px;border-radius:999px;background:var(--muted-2,#8C7F6C)"></span>Willow &amp; Fern · demo</span>
+            <span class="tnum" style="font:400 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Static data · no sync</span>
+          </div>
+          <div style="padding:18px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px">
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:11px;padding:13px;display:flex;flex-direction:column;gap:6px"><span style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Gross sales</span><span style="padding:2px 6px;border-radius:999px;background:var(--canvas-soft,#FBF8F3);border:1px dashed var(--muted-2,#8C7F6C);font:600 9px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Demo</span></span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$18,421</span></div>
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:11px;padding:13px;display:flex;flex-direction:column;gap:6px"><span style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Orders</span><span style="padding:2px 6px;border-radius:999px;background:var(--canvas-soft,#FBF8F3);border:1px dashed var(--muted-2,#8C7F6C);font:600 9px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Demo</span></span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">438</span></div>
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:11px;padding:13px;display:flex;flex-direction:column;gap:6px"><span style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Net profit</span><span style="padding:2px 6px;border-radius:999px;background:var(--canvas-soft,#FBF8F3);border:1px dashed var(--muted-2,#8C7F6C);font:600 9px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Demo</span></span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$4,938</span></div>
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:11px;padding:13px;display:flex;flex-direction:column;gap:6px"><span style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Active listings</span><span style="padding:2px 6px;border-radius:999px;background:var(--canvas-soft,#FBF8F3);border:1px dashed var(--muted-2,#8C7F6C);font:600 9px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Demo</span></span><span class="tnum" style="font:600 18px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">412</span></div>
+          </div>
+          <div style="padding:0 18px 18px;font:400 11.5px/1.55 Inter,sans-serif;color:var(--muted-1,#6B6152)">The dashed border and the Demo chip replace the provenance badge everywhere in demo mode, so a screenshot taken here can never be mistaken for a real shop's figures.</div>
+        </div>
+
+        <div data-screen-label="103c Leaving demo" style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:13px;box-shadow:0 12px 32px rgba(15,23,42,.12)">
+          <span style="font:600 17px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Leaving demo mode</span>
+          <span style="font:400 12.5px/1.6 Inter,sans-serif;color:var(--ink-2,#4A4234)">Your demo work is not carried over. Saved keyword lists, cost rules and scenarios belong to the fictional shop and will be discarded when you connect a real one. Export anything you want to keep first.</span>
+          <div style="display:flex;gap:9px;justify-content:flex-end">
+            <span style="padding:10px 14px;border:1px solid #CBD5E1;border-radius:9px;font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Export demo work</span>
+            <span style="padding:10px 14px;border:1px solid #CBD5E1;border-radius:9px;font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Stay in demo</span>
+            <span style="padding:10px 14px;border-radius:9px;background:var(--brand,#B4472A);color:#fff;font:600 12px/1 Inter,sans-serif">Connect Etsy shop</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">104 · Weekly Shop Pulse digest · email 640px + notification settings</div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
+
+      <div data-screen-label="104 Weekly digest" style="width:640px;flex:none;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;overflow:hidden;display:flex;flex-direction:column">
+        <div style="padding:18px 22px;border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:center;gap:10px">
+          <span style="width:26px;height:26px;border-radius:7px;background:var(--brand,#B4472A);color:#fff;display:flex;align-items:center;justify-content:center;font:700 11px/1 Inter,sans-serif">EP</span>
+          <span style="font:700 14px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">EtsyPilot</span>
+          <span class="tnum" style="margin-left:auto;font:400 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Aug 13, 2026 · Willow &amp; Fern</span>
+        </div>
+        <div style="padding:24px 22px;display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font:600 22px/1.25 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.01em">Orders were 14.5% below your baseline this week</span>
+            <span style="font:400 13px/1.6 Inter,sans-serif;color:var(--ink-2,#4A4234)">Three changes correlate with the drop and one is still unexplained. Nothing has been changed in your shop.</span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px">
+            <div style="border:1px solid var(--border,#E9E2D6);border-radius:11px;padding:12px;display:flex;flex-direction:column;gap:5px"><span style="font:600 10.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Orders</span><span class="tnum" style="font:600 17px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">438</span><span class="tnum" style="font:600 10.5px/1.3 Inter,sans-serif;color:var(--danger,#B91C1C)">▼ 14.5%</span></div>
+            <div style="border:1px solid var(--border,#E9E2D6);border-radius:11px;padding:12px;display:flex;flex-direction:column;gap:5px"><span style="font:600 10.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Revenue</span><span class="tnum" style="font:600 17px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$18,421</span><span class="tnum" style="font:600 10.5px/1.3 Inter,sans-serif;color:var(--danger,#B91C1C)">▼ 9.2%</span></div>
+            <div style="border:1px solid var(--border,#E9E2D6);border-radius:11px;padding:12px;display:flex;flex-direction:column;gap:5px"><span style="font:600 10.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Net profit</span><span class="tnum" style="font:600 17px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$4,938</span><span class="tnum" style="font:600 10.5px/1.3 Inter,sans-serif;color:var(--warning-strong,#B45309)">62% coverage</span></div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font:600 11px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--muted-1,#6B6152)">What changed</span>
+            <div style="border:1px solid var(--border,#E9E2D6);border-radius:11px;padding:13px;display:flex;flex-direction:column;gap:7px">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+                <span style="font:600 12.5px/1.35 Inter,sans-serif;color:var(--ink-1,#241B12)">Price raised on 3 listings · Jul 24</span>
+                <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 8px 4px 6px;border-radius:6px;background:var(--brand-tint,#FBEEE7);border:1px solid var(--brand,#B4472A);border-left-width:3px;font:600 9px/1 Inter,sans-serif;letter-spacing:.06em;color:var(--brand-strong,#8C371F);flex:none">CORRELATED</span>
+              </div>
+              <span class="tnum" style="font:400 11.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Orders on those listings fell 31%; revenue on them fell only 6%.</span>
+            </div>
+            <div style="border:1px solid var(--border,#E9E2D6);border-radius:11px;padding:13px;display:flex;flex-direction:column;gap:7px">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+                <span style="font:600 12.5px/1.35 Inter,sans-serif;color:var(--ink-1,#241B12)">Out of stock 6 days · Aug 4</span>
+                <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 8px 4px 6px;border-radius:6px;background:var(--brand-tint,#FBEEE7);border:1px solid var(--brand,#B4472A);border-left-width:3px;font:600 9px/1 Inter,sans-serif;letter-spacing:.06em;color:var(--brand-strong,#8C371F);flex:none">CORRELATED</span>
+              </div>
+              <span style="font:400 11.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Ceramic mug set, restocked Aug 10.</span>
+            </div>
+            <div style="border:1px dashed var(--muted-2,#8C7F6C);border-radius:11px;padding:13px;display:flex;flex-direction:column;gap:7px">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+                <span style="font:600 12.5px/1.35 Inter,sans-serif;color:var(--ink-1,#241B12)">Shop-wide dip with no recorded change · Aug 8–12</span>
+                <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 8px 4px 6px;border-radius:6px;background:transparent;border:1px dashed var(--muted-2,#8C7F6C);border-left:3px solid var(--muted-2,#8C7F6C);font:600 9px/1 Inter,sans-serif;letter-spacing:.06em;color:var(--muted-1,#6B6152);flex:none">UNKNOWN</span>
+              </div>
+              <span style="font:400 11.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">No event in your history explains this. We are not guessing at a cause.</span>
+            </div>
+          </div>
+
+          <span style="padding:13px;border-radius:9px;background:var(--brand,#B4472A);color:#fff;font:600 13px/1 Inter,sans-serif;text-align:center">Open Shop Pulse</span>
+
+          <div style="padding-top:16px;border-top:1px solid var(--border,#E9E2D6);display:flex;flex-direction:column;gap:7px">
+            <span style="font:400 11px/1.55 Inter,sans-serif;color:var(--muted-1,#6B6152)">Sent weekly on Thursdays because you have Shop Pulse alerts on. Change frequency or turn this off in notification settings — one click, no confirmation needed.</span>
+            <span style="font:400 11px/1.55 Inter,sans-serif;color:var(--muted-1,#6B6152)">The term "Etsy" is a trademark of Etsy, Inc. This Application uses Etsy's API, but is not endorsed or certified by Etsy.</span>
+          </div>
+        </div>
+      </div>
+
+      <div data-screen-label="104b Digest settings" style="width:520px;flex:none;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:15px">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <span style="font:600 17px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Weekly digest</span>
+          <span style="font:400 12.5px/1.55 Inter,sans-serif;color:var(--muted-1,#6B6152)">One email a week summarising Shop Pulse. Never marketing.</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--border,#E9E2D6)">
+          <span style="display:flex;flex-direction:column;gap:3px"><span style="font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Send the digest</span><span style="font:400 11.5px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">salman@willowandfern.com</span></span>
+          <span style="width:40px;height:23px;border-radius:999px;background:var(--brand,#B4472A);display:flex;align-items:center;justify-content:flex-end;padding:2px"><span style="width:19px;height:19px;border-radius:999px;background:#fff"></span></span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Day</span>
+          <div style="display:flex;gap:2px;padding:3px;border-radius:9px;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6)">
+            <span style="flex:1;padding:7px;border-radius:7px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-align:center">Mon</span>
+            <span style="flex:1;padding:7px;border-radius:7px;background:var(--brand,#B4472A);color:#fff;font:600 11px/1 Inter,sans-serif;text-align:center">Thu</span>
+            <span style="flex:1;padding:7px;border-radius:7px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-align:center">Sun</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <span style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Include</span>
+          <span style="display:flex;align-items:center;gap:9px"><span style="width:17px;height:17px;border-radius:5px;background:var(--brand,#B4472A);display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"></path></svg></span><span style="font:400 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Shop Pulse changes and diagnoses</span></span>
+          <span style="display:flex;align-items:center;gap:9px"><span style="width:17px;height:17px;border-radius:5px;background:var(--brand,#B4472A);display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"></path></svg></span><span style="font:400 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Profit and coverage summary</span></span>
+          <span style="display:flex;align-items:center;gap:9px"><span style="width:17px;height:17px;border-radius:5px;border:1px solid #CBD5E1"></span><span style="font:400 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Open Action Center items</span></span>
+          <span style="display:flex;align-items:center;gap:9px"><span style="width:17px;height:17px;border-radius:5px;border:1px solid #CBD5E1"></span><span style="font:400 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Seasonal windows opening soon</span></span>
+        </div>
+        <div style="margin-top:auto;padding:13px;border:1px solid var(--border,#E9E2D6);background:var(--canvas-soft,#FBF8F3);border-radius:11px;font:400 11.5px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">If nothing crossed your baseline that week, we do not send an email. A digest with nothing in it trains you to ignore the next one.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

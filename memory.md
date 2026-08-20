@@ -9,7 +9,7 @@
 **Current task:** Awaiting go-ahead to begin Phase 1 — Foundation
 **Current file being worked on:** None
 **Last completed task:** Recorded confirmed decisions → docs/DECISIONS.md
-**Blockers:** O2 (agency/team MVP scope) blocks final schema only. O1 (dark neutrals: D1 vs Q2 contradict), O3 (home for orphaned designed surfaces), O4 (pricing) are non-blocking.
+**Blockers:** O2 (agency/team MVP scope) blocks final schema only. O1 (dark neutrals: D1 vs Q2 contradict) and O3 (home for orphaned designed surfaces) are non-blocking. O4 resolved (Solo = $15).
 
 ## 2. Current Objective
 
@@ -49,6 +49,9 @@ Keep the latest 5–10 meaningful items.
 - Received EtsyPilot Shop Pulse & Profit Reality.dc.html — closes M1/M2/M3/M4/M5 and C4/C5/C6.
 - Owner confirmed C1 (Warm Editorial tokens), C2 (terracotta signed off), C3 (one-word "EtsyPilot").
 - Wrote docs/DECISIONS.md with D1-D8 locked and O1-O4 open.
+- Round 2 designs received (artboards 93-108): Data & Methodology, Niche Research +
+  Demo Mode + Digest, PRD Gap Fixes, Tools. Closes M6, M8, M9, M10, M11, M12, M16, M17
+  and O4. Recorded as D9-D18.
 
 ## 6. Files Currently Being Modified
 
@@ -63,7 +66,7 @@ None
 ```text
 docs/PHASE-0-AUDIT.md
 docs/DECISIONS.md
-docs/source/**   (archived spec docs + screens, incl. Shop Pulse & Profit Reality)
+docs/source/**   (archived spec docs + 17 screen files)
 memory.md
 ```
 
@@ -134,6 +137,23 @@ Decision: Dashboard / Research / Listings / Profit / Tools / Data / Billing / Se
 Reason: Stated explicitly in the Shop Pulse file as the answer to the three-nav-tree conflict.
 Impact: Route map rewritten. Orphaned designed surfaces (Shop Analytics, Sales Map,
 Experiments, Orders, Change History) need placement — open item O3.
+
+### 2026-08-19 — Demo mode overrides provenance badges globally
+Decision: In demo mode the dashed border + "Demo" chip REPLACE the provenance badge everywhere.
+Reason: Artboard 103b - so a screenshot taken in demo mode can never be mistaken for real figures.
+Impact: ProvenanceBadge renders its Demo variant whenever demo mode is active, regardless
+of underlying provenance type. A global override, not a per-component choice.
+
+### 2026-08-19 — Weekly digest suppresses itself when nothing changed
+Decision: If nothing crossed the baseline that week, no email is sent.
+Reason: Artboard 104b - "A digest with nothing in it trains you to ignore the next one."
+Impact: The Inngest digest job checks for material change before sending and no-ops silently.
+
+### 2026-08-19 — Pricing settled: Solo is $15/month
+Decision: Free $0 / Solo $15 / Growth $29 / Agency $79. Trial 14 days Growth, no card.
+Refund window 14 days from charge.
+Reason: Billing history (artboard 107) shows $15.00 Solo charges. Brief's $12 superseded.
+Impact: Closes O4.
 
 ### 2026-08-19 — Product name is "EtsyPilot", one word
 Decision: One word everywhere; EP monogram lockup unchanged; no two-word variant.

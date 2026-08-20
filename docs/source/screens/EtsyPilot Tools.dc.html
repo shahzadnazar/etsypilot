@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:var(--page-bg,#FBF8F3);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--brand,#B4472A)}a:hover{color:var(--brand-strong,#8C371F)}
+*{box-sizing:border-box}
+.tnum{font-variant-numeric:tabular-nums}
+</style>
+<script>
+(function(){
+  var DARK = {"--brand":"#E07A4A","--brand-strong":"#F3B08C","--brand-tint":"rgba(224,122,74,.16)","--ink-1":"#F1F5F9","--ink-2":"#CBD5E1","--muted-1":"#94A3B8","--muted-2":"#64748B","--border":"#2B3444","--canvas-soft":"#1E293B","--page-bg":"#0F172A","--success":"#34D399","--success-strong":"#34D399","--warning":"#FBBF24","--warning-strong":"#FBBF24","--danger":"#F87171","--danger-strong":"#FCA5A5","--accent-ai":"#C4B5FD","--accent-calc":"#67E8F9","--surface":"#1E293B"};
+  var LIGHT = {"--brand":"#B4472A","--brand-strong":"#8C371F","--brand-tint":"#FBEEE7","--ink-1":"#241B12","--ink-2":"#4A4234","--muted-1":"#6B6152","--muted-2":"#8C7F6C","--border":"#E9E2D6","--canvas-soft":"#FBF8F3","--page-bg":"#FBF8F3","--success":"#15803D","--success-strong":"#15803D","--warning":"#B45309","--warning-strong":"#B45309","--danger":"#B91C1C","--danger-strong":"#B91C1C","--accent-ai":"#7C3AED","--accent-calc":"#0891B2","--surface":"#FFFFFF"};
+  function apply(mode){
+    var resolved = mode === 'system' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : mode;
+    var tokens = resolved === 'dark' ? DARK : LIGHT;
+    var root = document.documentElement.style;
+    for (var k in tokens) root.setProperty(k, tokens[k]);
+    document.documentElement.setAttribute('data-rankkw-theme', resolved);
+    document.querySelectorAll('[data-rankkw-toggle]').forEach(function(el){
+      el.style.background = el.getAttribute('data-mode') === mode ? tokens['--brand'] : 'transparent';
+      el.style.color = el.getAttribute('data-mode') === mode ? '#fff' : tokens['--ink-2'];
+    });
+  }
+  window.rankkwSetTheme = function(mode){ localStorage.setItem('rankkw-theme', mode); apply(mode); };
+  apply(localStorage.getItem('rankkw-theme') || 'system');
+  document.addEventListener('click', function(e){ var t = e.target.closest && e.target.closest('[data-rankkw-toggle]'); if (t) { window.rankkwSetTheme(t.getAttribute('data-mode')); } });
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){ if((localStorage.getItem('rankkw-theme')||'system')==='system') apply('system'); });
+})();
+</script>
+</helmet>
+
+<div style="position:fixed;top:16px;right:16px;z-index:999;display:flex;gap:2px;padding:3px;border-radius:999px;background:var(--surface,#fff);border:1px solid var(--border,#E9E2D6);box-shadow:0 4px 16px rgba(0,0,0,.14)">
+  <button data-rankkw-toggle data-mode="light" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Light</button>
+  <button data-rankkw-toggle data-mode="dark" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Dark</button>
+  <button data-rankkw-toggle data-mode="system" style="all:unset;cursor:pointer;padding:6px 10px;border-radius:999px;font:600 11px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">System</button>
+</div>
+
+<div style="padding:48px 56px 96px;display:flex;flex-direction:column;gap:56px">
+
+  <div style="display:flex;flex-direction:column;gap:16px;max-width:940px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:34px;height:34px;border-radius:9px;background:var(--brand,#B4472A);display:flex;align-items:center;justify-content:center;color:#fff;font:700 15px/1 Inter,sans-serif">EP</div>
+      <div style="font:700 20px/1 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.01em">EtsyPilot</div>
+      <div style="padding:4px 8px;border-radius:6px;background:var(--border,#E9E2D6);color:var(--ink-2,#4A4234);font:600 11px/1 Inter,sans-serif">PRD §9 · Tools group</div>
+    </div>
+    <div style="font:600 30px/1.15 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.02em;max-width:820px;text-wrap:pretty">Six calculators and the hub that makes them public</div>
+    <div style="font:400 14px/1.65 Inter,sans-serif;color:var(--ink-2,#4A4234);max-width:840px">Every tool here is deterministic, needs no shop connection, and prints its formula under the result. None of them writes to a listing. Where a tool depends on a rule that Etsy can change — fee percentages, category attributes — the effective date is shown beside the number.</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">95 · Fee calculator · 1440 × 940</div>
+    <div data-screen-label="95 Fee Calculator" style="width:1440px;height:940px;flex:none;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);border-radius:16px;overflow:hidden;display:flex">
+
+      <aside style="width:264px;flex:none;background:var(--surface,#FFFFFF);border-right:1px solid var(--border,#E9E2D6);display:flex;flex-direction:column">
+        <div style="height:64px;flex:none;display:flex;align-items:center;gap:10px;padding:0 18px;border-bottom:1px solid var(--border,#E9E2D6)">
+          <span style="width:28px;height:28px;border-radius:8px;background:var(--brand,#B4472A);color:#fff;display:flex;align-items:center;justify-content:center;font:700 12px/1 Inter,sans-serif">EP</span>
+          <span style="font:700 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">EtsyPilot</span>
+        </div>
+        <div style="flex:1;padding:12px 12px 0;display:flex;flex-direction:column;gap:2px;overflow:hidden">
+          <div style="padding:8px 10px 4px;font:600 10.5px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--muted-2,#8C7F6C)">Tools</div>
+          <div style="padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Simple Calculator</div>
+          <div style="padding:9px 10px;border-radius:9px;background:var(--brand-tint,#FBEEE7);font:600 13px/1 Inter,sans-serif;color:var(--brand-strong,#8C371F)">Fee Calculator</div>
+          <div style="padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Ads ROI Calculator</div>
+          <div style="padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Profit Calculator</div>
+          <div style="padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Category Finder</div>
+          <div style="padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Seasonal Calendar</div>
+          <div style="padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Keyword Lists</div>
+          <div style="padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Trademark Screening</div>
+          <div style="padding:14px 10px 4px;font:600 10.5px/1 Inter,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--muted-2,#8C7F6C)">Data</div>
+          <div style="padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Methodology</div>
+          <div style="padding:9px 10px;border-radius:9px;font:500 13px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Data Sources</div>
+        </div>
+        <div style="flex:none;padding:12px;border-top:1px solid var(--border,#E9E2D6);display:flex;flex-direction:column;gap:6px">
+          <span style="font:600 11.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">No shop needed</span>
+          <span style="font:400 11px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Every tool works before you connect Etsy.</span>
+        </div>
+      </aside>
+
+      <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+        <header style="height:64px;flex:none;background:var(--surface,#FFFFFF);border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:center;gap:14px;padding:0 26px">
+          <span style="display:flex;align-items:center;gap:9px;padding:8px 12px;border:1px solid var(--border,#E9E2D6);border-radius:9px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)"><span style="width:7px;height:7px;border-radius:999px;background:var(--success,#15803D)"></span>Willow &amp; Fern</span>
+          <span style="margin-left:auto;padding:8px 12px;border:1px solid #CBD5E1;border-radius:9px;font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Copy result</span>
+          <span style="padding:8px 12px;border:1px solid #CBD5E1;border-radius:9px;font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Share</span>
+          <span style="width:28px;height:28px;border-radius:8px;background:var(--ink-2,#4A4234);color:#fff;display:flex;align-items:center;justify-content:center;font:600 11px/1 Inter,sans-serif">SR</span>
+        </header>
+
+        <div style="padding:22px 26px 16px;background:var(--surface,#FFFFFF);border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:flex-start;justify-content:space-between;gap:20px">
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <div style="font:600 26px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.015em">Fee calculator</div>
+            <div class="tnum" style="font:400 13px/1.55 Inter,sans-serif;color:var(--muted-1,#6B6152)">United States · USD · fee rules effective Jul 1, 2026</div>
+          </div>
+          <span style="padding:9px 13px;border:1px solid #CBD5E1;border-radius:9px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);flex:none">Reset</span>
+        </div>
+
+        <div style="flex:1;overflow:hidden;padding:20px 26px;display:grid;grid-template-columns:352px 1fr;gap:16px;min-height:0">
+
+          <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+            <span style="font:600 15px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Inputs</span>
+            <div style="display:flex;flex-direction:column;gap:5px"><label style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Item price</label><span class="tnum" style="height:40px;border:1.5px solid var(--brand,#B4472A);border-radius:10px;display:flex;align-items:center;padding:0 12px;font:600 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$34.00</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div style="display:flex;flex-direction:column;gap:5px"><label style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Quantity</label><span class="tnum" style="height:40px;border:1px solid #CBD5E1;border-radius:10px;display:flex;align-items:center;padding:0 12px;font:500 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">1</span></div>
+              <div style="display:flex;flex-direction:column;gap:5px"><label style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Shipping charged</label><span class="tnum" style="height:40px;border:1px solid #CBD5E1;border-radius:10px;display:flex;align-items:center;padding:0 12px;font:500 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$6.00</span></div>
+            </div>
+            <div style="height:1px;background:var(--border,#E9E2D6);margin:2px 0"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div style="display:flex;flex-direction:column;gap:5px"><label style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Item cost</label><span class="tnum" style="height:40px;border:1px solid #CBD5E1;border-radius:10px;display:flex;align-items:center;padding:0 12px;font:500 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$11.50</span></div>
+              <div style="display:flex;flex-direction:column;gap:5px"><label style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Shipping cost</label><span class="tnum" style="height:40px;border:1px solid #CBD5E1;border-radius:10px;display:flex;align-items:center;padding:0 12px;font:500 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$4.80</span></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div style="display:flex;flex-direction:column;gap:5px"><label style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Offsite Ads fee</label><span class="tnum" style="height:40px;border:1px solid #CBD5E1;border-radius:10px;display:flex;align-items:center;padding:0 12px;font:500 13px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">0%</span></div>
+              <div style="display:flex;flex-direction:column;gap:5px"><label style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Target margin</label><span class="tnum" style="height:40px;border:1px solid #CBD5E1;border-radius:10px;display:flex;align-items:center;padding:0 12px;font:500 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">30%</span></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px"><label style="font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Country and currency</label><span style="height:40px;border:1px solid #CBD5E1;border-radius:10px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font:500 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">United States · USD<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted-1,#6B6152)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg></span></div>
+            <div style="margin-top:auto;padding:12px;border:1px solid var(--border,#E9E2D6);background:var(--canvas-soft,#FBF8F3);border-radius:11px;display:flex;flex-direction:column;gap:6px">
+              <span style="font:600 11px/1 Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-1,#6B6152)">Rules applied</span>
+              <span class="tnum" style="font:400 11.5px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">Listing $0.20 · transaction 6.5% · processing 3% + $0.25 · effective Jul 1, 2026</span>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:14px;min-height:0">
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:16px;flex:none">
+              <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px">
+                <div style="display:flex;flex-direction:column;gap:7px">
+                  <span style="font:600 11px/1 Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-1,#6B6152)">Profit per sale</span>
+                  <span class="tnum" style="font:600 40px/1 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.02em">$19.45</span>
+                  <span class="tnum" style="font:400 12px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">$40.00 revenue − $4.25 fees − $16.30 costs = $19.45</span>
+                </div>
+                <div style="display:flex;gap:22px;flex:none">
+                  <div style="display:flex;flex-direction:column;gap:6px"><span style="font:600 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Margin</span><span class="tnum" style="font:600 22px/1 Inter,sans-serif;color:var(--success,#15803D)">48.6%</span></div>
+                  <div style="display:flex;flex-direction:column;gap:6px"><span style="font:600 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Break-even price</span><span class="tnum" style="font:600 22px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$12.51</span></div>
+                  <div style="display:flex;flex-direction:column;gap:6px"><span style="font:600 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Price for 30%</span><span class="tnum" style="font:600 22px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$21.69</span></div>
+                </div>
+              </div>
+              <div style="display:flex;height:34px;border-radius:8px;overflow:hidden;border:1px solid var(--border,#E9E2D6)">
+                <span class="tnum" style="width:40.75%;background:var(--brand,#B4472A);color:#fff;display:flex;align-items:center;justify-content:center;font:600 11px/1 Inter,sans-serif">COGS $16.30</span>
+                <span class="tnum" style="width:10.63%;background:var(--danger,#B91C1C);color:#fff;display:flex;align-items:center;justify-content:center;font:600 11px/1 Inter,sans-serif">$4.25</span>
+                <span class="tnum" style="flex:1;background:#F0FDF4;color:#166534;display:flex;align-items:center;justify-content:center;font:600 11px/1 Inter,sans-serif">Profit $19.45</span>
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;flex:1;min-height:0">
+              <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:11px">
+                <span style="font:600 14px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">Fee breakdown</span>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:9px;border-bottom:1px solid var(--border,#E9E2D6)"><span class="tnum" style="font:400 12.5px/1.4 Inter,sans-serif;color:var(--ink-2,#4A4234)">Revenue · $34.00 + $6.00</span><span class="tnum" style="font:600 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$40.00</span></div>
+                <div style="display:flex;align-items:center;justify-content:space-between"><span class="tnum" style="font:400 12.5px/1.4 Inter,sans-serif;color:var(--ink-2,#4A4234)">Listing fee</span><span class="tnum" style="font:500 13px/1 Inter,sans-serif;color:var(--danger,#B91C1C)">−$0.20</span></div>
+                <div style="display:flex;align-items:center;justify-content:space-between"><span class="tnum" style="font:400 12.5px/1.4 Inter,sans-serif;color:var(--ink-2,#4A4234)">Transaction · 6.5% of $40.00</span><span class="tnum" style="font:500 13px/1 Inter,sans-serif;color:var(--danger,#B91C1C)">−$2.60</span></div>
+                <div style="display:flex;align-items:center;justify-content:space-between"><span class="tnum" style="font:400 12.5px/1.4 Inter,sans-serif;color:var(--ink-2,#4A4234)">Payment processing · 3% + $0.25</span><span class="tnum" style="font:500 13px/1 Inter,sans-serif;color:var(--danger,#B91C1C)">−$1.45</span></div>
+                <div style="display:flex;align-items:center;justify-content:space-between"><span class="tnum" style="font:400 12.5px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">Offsite Ads · not applied</span><span class="tnum" style="font:500 13px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">$0.00</span></div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding-top:9px;border-top:1px solid var(--border,#E9E2D6)"><span class="tnum" style="font:600 12.5px/1.4 Inter,sans-serif;color:var(--ink-1,#241B12)">Total fees · 10.6% of revenue</span><span class="tnum" style="font:600 13px/1 Inter,sans-serif;color:var(--danger,#B91C1C)">−$4.25</span></div>
+                <div style="display:flex;align-items:center;justify-content:space-between"><span class="tnum" style="font:400 12.5px/1.4 Inter,sans-serif;color:var(--ink-2,#4A4234)">Your costs · $11.50 + $4.80</span><span class="tnum" style="font:500 13px/1 Inter,sans-serif;color:var(--danger,#B91C1C)">−$16.30</span></div>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:14px;min-height:0">
+                <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px;flex:1">
+                  <span style="font:600 14px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">If you change the price</span>
+                  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px">
+                    <div style="border:1px solid var(--border,#E9E2D6);border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:5px"><span class="tnum" style="font:600 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$29.00</span><span class="tnum" style="font:400 11px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">$14.92 · 42.6%</span></div>
+                    <div style="border:1.5px solid var(--brand,#B4472A);border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:5px"><span class="tnum" style="font:600 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$34.00</span><span class="tnum" style="font:400 11px/1.4 Inter,sans-serif;color:var(--brand-strong,#8C371F)">$19.45 · 48.6%</span></div>
+                    <div style="border:1px solid var(--border,#E9E2D6);border-radius:10px;padding:11px;display:flex;flex-direction:column;gap:5px"><span class="tnum" style="font:600 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$39.00</span><span class="tnum" style="font:400 11px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">$23.98 · 53.3%</span></div>
+                  </div>
+                  <span style="font:400 11.5px/1.55 Inter,sans-serif;color:var(--muted-1,#6B6152)">Shipping charged, costs and fee rules held constant.</span>
+                </div>
+                <div style="padding:14px 15px;border:1px solid #FDE68A;background:#FFFBEB;border-radius:12px;display:flex;gap:10px;align-items:flex-start;flex:none">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--warning,#B45309)" stroke-width="2.2" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16v.01"></path></svg>
+                  <span style="font:400 11.5px/1.55 Inter,sans-serif;color:#92400E">An estimate using published fee rules. Your actual charges can differ with currency conversion, regulatory operating fees, Offsite Ads eligibility and local taxes. Check your Etsy payment account for exact figures.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">96–97 · Ads ROI calculator · profit calculator</div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
+
+      <div data-screen-label="96 Ads ROI" style="width:720px;flex:none;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <span style="font:600 19px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12)">Ads ROI calculator</span>
+            <span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Last 30 days · figures you entered or imported</span>
+          </div>
+          <span style="display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:var(--canvas-soft,#FBF8F3);border:1px solid #CBD5E1;font:600 10px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234);flex:none">Seller input</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">
+          <div style="display:flex;flex-direction:column;gap:5px"><label style="font:600 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Ad spend</label><span class="tnum" style="height:38px;border:1px solid #CBD5E1;border-radius:10px;display:flex;align-items:center;padding:0 11px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$420</span></div>
+          <div style="display:flex;flex-direction:column;gap:5px"><label style="font:600 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Clicks</label><span class="tnum" style="height:38px;border:1px solid #CBD5E1;border-radius:10px;display:flex;align-items:center;padding:0 11px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">3,150</span></div>
+          <div style="display:flex;flex-direction:column;gap:5px"><label style="font:600 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Orders</label><span class="tnum" style="height:38px;border:1px solid #CBD5E1;border-radius:10px;display:flex;align-items:center;padding:0 11px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">78</span></div>
+          <div style="display:flex;flex-direction:column;gap:5px"><label style="font:600 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Attributed revenue</label><span class="tnum" style="height:38px;border:1.5px solid var(--brand,#B4472A);border-radius:10px;display:flex;align-items:center;padding:0 11px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$2,940</span></div>
+          <div style="display:flex;flex-direction:column;gap:5px"><label style="font:600 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">COGS</label><span class="tnum" style="height:38px;border:1px solid #CBD5E1;border-radius:10px;display:flex;align-items:center;padding:0 11px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$1,117</span></div>
+          <div style="display:flex;flex-direction:column;gap:5px"><label style="font:600 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Etsy fees</label><span class="tnum" style="height:38px;border:1px solid #CBD5E1;border-radius:10px;display:flex;align-items:center;padding:0 11px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$476</span></div>
+          <div style="display:flex;flex-direction:column;gap:5px"><label style="font:600 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Returns</label><span class="tnum" style="height:38px;border:1px solid #CBD5E1;border-radius:10px;display:flex;align-items:center;padding:0 11px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$88</span></div>
+          <div style="display:flex;flex-direction:column;gap:5px"><label style="font:600 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Spend scenario</label><span class="tnum" style="height:38px;border:1px solid #CBD5E1;border-radius:10px;display:flex;align-items:center;padding:0 11px;font:500 12.5px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">×1.0</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <span style="font:600 11px/1 Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-1,#6B6152)">Spend scenario</span>
+          <span style="height:6px;border-radius:3px;background:var(--border,#E9E2D6);position:relative;display:block"><span style="position:absolute;left:0;top:0;bottom:0;width:38%;border-radius:3px;background:var(--brand,#B4472A)"></span><span style="position:absolute;left:38%;top:-5px;width:16px;height:16px;border-radius:999px;background:var(--surface,#FFFFFF);border:2px solid var(--brand,#B4472A)"></span></span>
+          <div class="tnum" style="display:flex;justify-content:space-between;font:500 10.5px/1 Inter,sans-serif;color:var(--muted-2,#8C7F6C)"><span>×0.5</span><span>×1.0</span><span>×2.0</span><span>×3.0</span></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px">
+          <div style="border:1px solid var(--border,#E9E2D6);border-radius:11px;padding:13px;display:flex;flex-direction:column;gap:6px"><span style="font:600 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">ROAS</span><span class="tnum" style="font:600 22px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">7.00×</span><span class="tnum" style="font:400 10.5px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">$2,940 ÷ $420</span></div>
+          <div style="border:1px solid var(--border,#E9E2D6);border-radius:11px;padding:13px;display:flex;flex-direction:column;gap:6px"><span style="font:600 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Conversion</span><span class="tnum" style="font:600 22px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">2.48%</span><span class="tnum" style="font:400 10.5px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">78 ÷ 3,150</span></div>
+          <div style="border:1px solid var(--border,#E9E2D6);border-radius:11px;padding:13px;display:flex;flex-direction:column;gap:6px"><span style="font:600 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Cost per order</span><span class="tnum" style="font:600 22px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$5.38</span><span class="tnum" style="font:400 10.5px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">$420 ÷ 78</span></div>
+          <div style="border:1.5px solid var(--brand,#B4472A);border-radius:11px;padding:13px;display:flex;flex-direction:column;gap:6px"><span style="font:600 11px/1 Inter,sans-serif;color:var(--brand-strong,#8C371F)">Profit after ads</span><span class="tnum" style="font:600 22px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$839</span><span class="tnum" style="font:400 10.5px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">$1,259 − $420</span></div>
+          <div style="border:1px solid var(--border,#E9E2D6);border-radius:11px;padding:13px;display:flex;flex-direction:column;gap:6px"><span style="font:600 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Break-even ROAS</span><span class="tnum" style="font:600 22px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">2.34×</span><span class="tnum" style="font:400 10.5px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">1 ÷ 42.8% margin</span></div>
+          <div style="border:1px solid var(--border,#E9E2D6);border-radius:11px;padding:13px;display:flex;flex-direction:column;gap:6px"><span style="font:600 11px/1 Inter,sans-serif;color:var(--muted-1,#6B6152)">Max affordable CPA</span><span class="tnum" style="font:600 22px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$16.14</span><span class="tnum" style="font:400 10.5px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">$1,259 ÷ 78</span></div>
+        </div>
+        <div style="padding:12px 14px;border:1px solid var(--border,#E9E2D6);background:var(--canvas-soft,#FBF8F3);border-radius:11px;font:400 11.5px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">Etsy does not expose Ads performance through the public API, so every figure above is what you entered or imported. EtsyPilot does not read your Etsy Ads account.</div>
+      </div>
+
+      <div data-screen-label="97 Profit Calculator" style="width:600px;flex:none;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <span style="font:600 19px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12)">Profit calculator</span>
+          <span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">One product, one month. For your whole shop use Profit Reality.</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div style="display:flex;flex-direction:column;gap:5px"><label style="font:600 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Units sold</label><span class="tnum" style="height:38px;border:1px solid #CBD5E1;border-radius:10px;display:flex;align-items:center;padding:0 11px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">120</span></div>
+          <div style="display:flex;flex-direction:column;gap:5px"><label style="font:600 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Price each</label><span class="tnum" style="height:38px;border:1.5px solid var(--brand,#B4472A);border-radius:10px;display:flex;align-items:center;padding:0 11px;font:600 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$34.00</span></div>
+          <div style="display:flex;flex-direction:column;gap:5px"><label style="font:600 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Cost each</label><span class="tnum" style="height:38px;border:1px solid #CBD5E1;border-radius:10px;display:flex;align-items:center;padding:0 11px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$11.50</span></div>
+          <div style="display:flex;flex-direction:column;gap:5px"><label style="font:600 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Fees</label><span class="tnum" style="height:38px;border:1px solid #CBD5E1;border-radius:10px;display:flex;align-items:center;padding:0 11px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">10.6%</span></div>
+          <div style="display:flex;flex-direction:column;gap:5px"><label style="font:600 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Labour per unit</label><span class="tnum" style="height:38px;border:1px solid #CBD5E1;border-radius:10px;display:flex;align-items:center;padding:0 11px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$2.40</span></div>
+          <div style="display:flex;flex-direction:column;gap:5px"><label style="font:600 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Fixed costs</label><span class="tnum" style="height:38px;border:1px solid #CBD5E1;border-radius:10px;display:flex;align-items:center;padding:0 11px;font:500 12.5px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$180</span></div>
+        </div>
+        <div style="padding:18px;border:1px solid var(--border,#E9E2D6);background:var(--canvas-soft,#FBF8F3);border-radius:12px;display:flex;flex-direction:column;gap:9px">
+          <span style="font:600 11px/1 Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-1,#6B6152)">Net profit</span>
+          <div style="display:flex;align-items:baseline;gap:14px">
+            <span class="tnum" style="font:600 34px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$1,825.20</span>
+            <span class="tnum" style="font:600 14px/1 Inter,sans-serif;color:var(--success,#15803D)">44.7% margin</span>
+          </div>
+          <span class="tnum" style="font:400 11.5px/1.55 Inter,sans-serif;color:var(--muted-1,#6B6152)">(120 × $34.00) − 10.6% fees − (120 × $11.50) − (120 × $2.40) − $180 = $1,825.20</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--border,#E9E2D6)"><span class="tnum" style="font:400 12.5px/1.4 Inter,sans-serif;color:var(--ink-2,#4A4234)">Revenue</span><span class="tnum" style="font:600 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">$4,080.00</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between"><span class="tnum" style="font:400 12.5px/1.4 Inter,sans-serif;color:var(--ink-2,#4A4234)">Fees · 10.6%</span><span class="tnum" style="font:500 13px/1 Inter,sans-serif;color:var(--danger,#B91C1C)">−$432.48</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between"><span class="tnum" style="font:400 12.5px/1.4 Inter,sans-serif;color:var(--ink-2,#4A4234)">Product cost</span><span class="tnum" style="font:500 13px/1 Inter,sans-serif;color:var(--danger,#B91C1C)">−$1,380.00</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between"><span class="tnum" style="font:400 12.5px/1.4 Inter,sans-serif;color:var(--ink-2,#4A4234)">Labour</span><span class="tnum" style="font:500 13px/1 Inter,sans-serif;color:var(--danger,#B91C1C)">−$288.00</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between"><span class="tnum" style="font:400 12.5px/1.4 Inter,sans-serif;color:var(--ink-2,#4A4234)">Fixed costs</span><span class="tnum" style="font:500 13px/1 Inter,sans-serif;color:var(--danger,#B91C1C)">−$180.00</span></div>
+        </div>
+        <div style="margin-top:auto;display:flex;gap:8px">
+          <span style="flex:1;padding:10px;border:1px solid #CBD5E1;border-radius:9px;font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);text-align:center">Copy result</span>
+          <span style="flex:1;padding:10px;border-radius:9px;background:var(--brand,#B4472A);color:#fff;font:600 12px/1 Inter,sans-serif;text-align:center">Use in Profit Reality</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">98–99 · Category finder · seasonal calendar</div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
+
+      <div data-screen-label="98 Category Finder" style="width:640px;flex:none;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:15px">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <span style="font:600 19px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12)">Category finder</span>
+          <span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Describe the product. EtsyPilot suggests categories and shows what each one requires.</span>
+        </div>
+        <div style="display:flex;gap:9px">
+          <span style="flex:1;height:42px;border:1.5px solid var(--brand,#B4472A);border-radius:10px;display:flex;align-items:center;padding:0 13px;font:500 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">hand-woven linen table runner</span>
+          <span style="padding:0 16px;border-radius:10px;background:var(--brand,#B4472A);color:#fff;font:600 12.5px/1 Inter,sans-serif;display:flex;align-items:center">Find</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="border:1.5px solid var(--brand,#B4472A);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:9px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <span style="font:600 13px/1.4 Inter,sans-serif;color:var(--ink-1,#241B12)">Home &amp; Living › Kitchen &amp; Dining › Linens › Table Runners</span>
+              <span style="display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:#ECFEFF;border:1px solid #A5F3FC;font:600 10px/1.5 Inter,sans-serif;color:#0E7490;flex:none">Best match</span>
+            </div>
+            <div class="tnum" style="display:flex;gap:16px;font:400 11.5px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)"><span>≈ 41,000 listings</span><span>Median $28–$46</span><span>Confidence high</span></div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              <span style="padding:4px 8px;border-radius:6px;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);font:500 10.5px/1.4 Inter,sans-serif;color:var(--ink-2,#4A4234)">Required · Material</span>
+              <span style="padding:4px 8px;border-radius:6px;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);font:500 10.5px/1.4 Inter,sans-serif;color:var(--ink-2,#4A4234)">Required · Room</span>
+              <span style="padding:4px 8px;border-radius:6px;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);font:500 10.5px/1.4 Inter,sans-serif;color:var(--ink-2,#4A4234)">Optional · Length</span>
+              <span style="padding:4px 8px;border-radius:6px;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);font:500 10.5px/1.4 Inter,sans-serif;color:var(--ink-2,#4A4234)">Optional · Colour</span>
+            </div>
+          </div>
+          <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px">
+            <span style="font:600 13px/1.4 Inter,sans-serif;color:var(--ink-1,#241B12)">Home &amp; Living › Home Décor › Tapestries</span>
+            <div class="tnum" style="display:flex;gap:16px;font:400 11.5px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)"><span>≈ 88,000 listings</span><span>Median $22–$60</span><span>Confidence low</span></div>
+          </div>
+          <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px">
+            <span style="font:600 13px/1.4 Inter,sans-serif;color:var(--ink-1,#241B12)">Home &amp; Living › Kitchen &amp; Dining › Linens › Placemats</span>
+            <div class="tnum" style="display:flex;gap:16px;font:400 11.5px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)"><span>≈ 26,000 listings</span><span>Median $18–$34</span><span>Confidence moderate</span></div>
+          </div>
+        </div>
+        <div style="padding:12px 14px;border:1px solid #FDE68A;background:#FFFBEB;border-radius:11px;font:400 11.5px/1.55 Inter,sans-serif;color:#92400E">Listing counts and price bands are estimated from public category pages, sampled weekly. Category structure and required attributes come from Etsy's taxonomy, last read Aug 9, 2026 — Etsy can change it without notice.</div>
+      </div>
+
+      <div data-screen-label="99 Seasonal Calendar" style="width:760px;flex:none;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:15px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <span style="font:600 19px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12)">Seasonal calendar</span>
+            <span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">United States · Home &amp; Living · 2026</span>
+          </div>
+          <div style="display:flex;gap:7px;flex:none">
+            <span style="padding:7px 11px;border:1px solid #CBD5E1;border-radius:8px;font:600 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Market</span>
+            <span style="padding:7px 11px;border:1px solid #CBD5E1;border-radius:8px;font:600 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Category</span>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:3px">
+          <span style="font:600 10px/1 Inter,sans-serif;color:var(--muted-1,#6B6152);text-align:center">J</span><span style="font:600 10px/1 Inter,sans-serif;color:var(--muted-1,#6B6152);text-align:center">F</span><span style="font:600 10px/1 Inter,sans-serif;color:var(--muted-1,#6B6152);text-align:center">M</span><span style="font:600 10px/1 Inter,sans-serif;color:var(--muted-1,#6B6152);text-align:center">A</span><span style="font:600 10px/1 Inter,sans-serif;color:var(--muted-1,#6B6152);text-align:center">M</span><span style="font:600 10px/1 Inter,sans-serif;color:var(--muted-1,#6B6152);text-align:center">J</span><span style="font:600 10px/1 Inter,sans-serif;color:var(--muted-1,#6B6152);text-align:center">J</span><span style="font:600 10px/1 Inter,sans-serif;color:var(--brand-strong,#8C371F);text-align:center">A</span><span style="font:600 10px/1 Inter,sans-serif;color:var(--muted-1,#6B6152);text-align:center">S</span><span style="font:600 10px/1 Inter,sans-serif;color:var(--muted-1,#6B6152);text-align:center">O</span><span style="font:600 10px/1 Inter,sans-serif;color:var(--muted-1,#6B6152);text-align:center">N</span><span style="font:600 10px/1 Inter,sans-serif;color:var(--muted-1,#6B6152);text-align:center">D</span>
+          <span style="height:22px;border-radius:4px;background:var(--border,#E9E2D6)"></span><span style="height:22px;border-radius:4px;background:var(--border,#E9E2D6)"></span><span style="height:22px;border-radius:4px;background:var(--brand-tint,#FBEEE7)"></span><span style="height:22px;border-radius:4px;background:var(--brand-tint,#FBEEE7)"></span><span style="height:22px;border-radius:4px;background:var(--border,#E9E2D6)"></span><span style="height:22px;border-radius:4px;background:var(--border,#E9E2D6)"></span><span style="height:22px;border-radius:4px;background:var(--brand-tint,#FBEEE7)"></span><span style="height:22px;border-radius:4px;background:var(--brand,#B4472A)"></span><span style="height:22px;border-radius:4px;background:var(--brand,#B4472A)"></span><span style="height:22px;border-radius:4px;background:var(--brand,#B4472A)"></span><span style="height:22px;border-radius:4px;background:var(--brand,#B4472A)"></span><span style="height:22px;border-radius:4px;background:var(--brand-tint,#FBEEE7)"></span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="border:1.5px solid var(--brand,#B4472A);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:9px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <span style="display:flex;flex-direction:column;gap:3px"><span style="font:600 13.5px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Holiday table linens</span><span class="tnum" style="font:400 11.5px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">Prepare Aug 18 – Sep 22 · listings live by Oct 6 · peak Nov 10 – Dec 18</span></span>
+              <span style="display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:#FFFBEB;border:1px solid #FDE68A;font:600 10px/1.5 Inter,sans-serif;color:var(--warning-strong,#B45309);flex:none">Estimated</span>
+            </div>
+            <span style="font:400 12px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">Your linen category showed a 2.4× order lift in this window last year. Confidence moderate — based on one year of your own history.</span>
+            <div style="display:flex;gap:7px;flex-wrap:wrap">
+              <span style="padding:7px 11px;border-radius:8px;background:var(--brand,#B4472A);color:#fff;font:600 11.5px/1 Inter,sans-serif">Research keywords</span>
+              <span style="padding:7px 11px;border:1px solid #CBD5E1;border-radius:8px;font:600 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Prepare listings</span>
+              <span style="padding:7px 11px;border:1px solid #CBD5E1;border-radius:8px;font:600 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Add task</span>
+              <span style="padding:7px 11px;border:1px solid #CBD5E1;border-radius:8px;font:600 11.5px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Save</span>
+            </div>
+          </div>
+          <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+            <span style="display:flex;flex-direction:column;gap:3px"><span style="font:600 13.5px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Thanksgiving hosting</span><span class="tnum" style="font:400 11.5px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">Prepare Sep 1 – Oct 5 · peak Nov 3 – Nov 24</span></span>
+            <span style="display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:#FFFBEB;border:1px solid #FDE68A;font:600 10px/1.5 Inter,sans-serif;color:var(--warning-strong,#B45309);flex:none">Estimated</span>
+          </div>
+          <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+            <span style="display:flex;flex-direction:column;gap:3px"><span style="font:600 13.5px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Spring entertaining</span><span class="tnum" style="font:400 11.5px/1.4 Inter,sans-serif;color:var(--muted-1,#6B6152)">Prepare Jan 12 – Feb 16 · peak Mar 2 – Apr 20</span></span>
+            <span style="display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);font:600 10px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152);flex:none">Low confidence</span>
+          </div>
+        </div>
+        <div style="padding:12px 14px;border:1px solid var(--border,#E9E2D6);background:var(--canvas-soft,#FBF8F3);border-radius:11px;font:400 11.5px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">Windows are drawn from your own order history plus public category seasonality. They are planning guidance, not a forecast, and are labelled with the confidence the underlying history supports.</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-1,#6B6152)">100–101 · Trademark screening · free tool hub</div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
+
+      <div data-screen-label="100 Trademark Screening" style="width:660px;flex:none;background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:15px">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <span style="font:600 19px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12)">Trademark screening</span>
+          <span style="font:400 12.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Check a phrase against public trademark registers before you put it in a title or tag.</span>
+        </div>
+        <div style="display:flex;gap:9px">
+          <span style="flex:1;height:42px;border:1.5px solid var(--brand,#B4472A);border-radius:10px;display:flex;align-items:center;padding:0 13px;font:500 13px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">cottage core</span>
+          <span style="padding:0 16px;border-radius:10px;background:var(--brand,#B4472A);color:#fff;font:600 12.5px/1 Inter,sans-serif;display:flex;align-items:center">Screen</span>
+        </div>
+        <div style="display:flex;gap:12px;padding:14px;border:1px solid #FDE68A;background:#FFFBEB;border-radius:12px;align-items:flex-start">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--warning,#B45309)" stroke-width="2.2" stroke-linecap="round" style="flex:none;margin-top:1px"><path d="M12 3l9 16H3z"></path><path d="M12 9v4M12 16v.01"></path></svg>
+          <span style="display:flex;flex-direction:column;gap:3px"><span style="font:600 12.5px/1.4 Inter,sans-serif;color:#78350F">2 live registrations contain this phrase</span><span style="font:400 11.5px/1.5 Inter,sans-serif;color:#92400E">A registration does not always prevent descriptive use, and an absence of results is not permission. Read each entry before deciding.</span></span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <span style="font:600 13px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">COTTAGE CORE</span>
+              <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 9px 5px 7px;border-radius:6px;background:var(--surface,#FFFFFF);border:1px solid var(--danger,#B91C1C);border-left-width:3px;flex:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--danger,#B91C1C)" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg><span style="font:600 9.5px/1 Inter,sans-serif;letter-spacing:.06em;color:var(--danger,#B91C1C)">EXACT MATCH</span></span>
+            </div>
+            <div class="tnum" style="display:grid;grid-template-columns:1fr 1fr;gap:5px 16px;font:400 11.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">
+              <span>Register · USPTO</span><span>Status · Live, registered</span>
+              <span>Class · 25 — clothing</span><span>Filed · Mar 2021</span>
+            </div>
+            <span style="font:400 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Class 25 covers clothing, not home textiles. Your product may sit outside it — that judgement is not one EtsyPilot can make for you.</span>
+          </div>
+          <div style="border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <span style="font:600 13px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">COTTAGECORE LIVING</span>
+              <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 9px 5px 7px;border-radius:6px;background:var(--canvas-soft,#FBF8F3);border:1px solid #CBD5E1;border-left:3px solid var(--warning,#B45309);flex:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--warning-strong,#B45309)" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16v.01"></path></svg><span style="font:600 9.5px/1 Inter,sans-serif;letter-spacing:.06em;color:var(--warning-strong,#B45309)">PARTIAL MATCH</span></span>
+            </div>
+            <div class="tnum" style="display:grid;grid-template-columns:1fr 1fr;gap:5px 16px;font:400 11.5px/1.5 Inter,sans-serif;color:var(--ink-2,#4A4234)">
+              <span>Register · EUIPO</span><span>Status · Live, opposition period</span>
+              <span>Class · 24 — textiles</span><span>Filed · Jan 2026</span>
+            </div>
+          </div>
+        </div>
+        <div style="padding:13px 15px;border:1px solid var(--border,#E9E2D6);background:var(--canvas-soft,#FBF8F3);border-radius:11px;display:flex;flex-direction:column;gap:5px">
+          <span style="font:600 11.5px/1.4 Inter,sans-serif;color:var(--ink-1,#241B12)">This is not legal advice</span>
+          <span class="tnum" style="font:400 11.5px/1.55 Inter,sans-serif;color:var(--ink-2,#4A4234)">A screening search of public registers — USPTO, EUIPO and UKIPO, indexed Aug 11, 2026. It is not exhaustive, does not cover unregistered rights or common-law marks, and cannot tell you whether your use infringes. Consult a trademark attorney before relying on it.</span>
+        </div>
+      </div>
+
+      <div data-screen-label="101 Free Tool Hub" style="width:720px;flex:none;background:var(--canvas-soft,#FBF8F3);border:1px solid var(--border,#E9E2D6);border-radius:16px;overflow:hidden;display:flex;flex-direction:column">
+        <div style="height:60px;flex:none;background:var(--surface,#FFFFFF);border-bottom:1px solid var(--border,#E9E2D6);display:flex;align-items:center;gap:10px;padding:0 22px">
+          <span style="width:26px;height:26px;border-radius:7px;background:var(--brand,#B4472A);color:#fff;display:flex;align-items:center;justify-content:center;font:700 11px/1 Inter,sans-serif">EP</span>
+          <span style="font:700 14px/1 Inter,sans-serif;color:var(--ink-1,#241B12)">EtsyPilot</span>
+          <span style="margin-left:auto;font:500 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234)">Sign in</span>
+          <span style="padding:8px 12px;border-radius:9px;background:var(--brand,#B4472A);color:#fff;font:600 12px/1 Inter,sans-serif">Create free account</span>
+        </div>
+        <div style="padding:26px 22px;display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;flex-direction:column;gap:9px;max-width:520px">
+            <span style="font:600 25px/1.2 Inter,sans-serif;color:var(--ink-1,#241B12);letter-spacing:-.015em">Free Etsy seller tools</span>
+            <span style="font:400 13.5px/1.6 Inter,sans-serif;color:var(--ink-2,#4A4234)">No account, no shop connection, no email. Each tool shows its formula and the date of the fee rules it used.</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px">
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:15px;display:flex;flex-direction:column;gap:7px"><span style="font:600 13.5px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Fee calculator</span><span style="font:400 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Listing, transaction and processing fees, profit, margin and break-even price.</span><span style="margin-top:auto;font:600 11.5px/1 Inter,sans-serif;color:var(--brand-strong,#8C371F);padding-top:5px">Open →</span></div>
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:15px;display:flex;flex-direction:column;gap:7px"><span style="font:600 13.5px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Profit calculator</span><span style="font:400 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">One product, one month, including labour and fixed costs.</span><span style="margin-top:auto;font:600 11.5px/1 Inter,sans-serif;color:var(--brand-strong,#8C371F);padding-top:5px">Open →</span></div>
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:15px;display:flex;flex-direction:column;gap:7px"><span style="font:600 13.5px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Ads ROI calculator</span><span style="font:400 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">ROAS, cost per order, break-even ROAS and max affordable CPA.</span><span style="margin-top:auto;font:600 11.5px/1 Inter,sans-serif;color:var(--brand-strong,#8C371F);padding-top:5px">Open →</span></div>
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:15px;display:flex;flex-direction:column;gap:7px"><span style="font:600 13.5px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Simple calculator</span><span style="font:400 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Percentage, discount, margin, markup, fee, net revenue, break-even.</span><span style="margin-top:auto;font:600 11.5px/1 Inter,sans-serif;color:var(--brand-strong,#8C371F);padding-top:5px">Open →</span></div>
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:15px;display:flex;flex-direction:column;gap:7px"><span style="font:600 13.5px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Category finder</span><span style="font:400 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Suggested categories with their required attributes.</span><span style="margin-top:auto;font:600 11.5px/1 Inter,sans-serif;color:var(--brand-strong,#8C371F);padding-top:5px">Open →</span></div>
+            <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:15px;display:flex;flex-direction:column;gap:7px"><span style="font:600 13.5px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">Trademark screening</span><span style="font:400 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Check a phrase against public registers. Not legal advice.</span><span style="margin-top:auto;font:600 11.5px/1 Inter,sans-serif;color:var(--brand-strong,#8C371F);padding-top:5px">Open →</span></div>
+          </div>
+          <div style="background:var(--surface,#FFFFFF);border:1px solid var(--border,#E9E2D6);border-radius:12px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+            <span style="display:flex;flex-direction:column;gap:4px"><span style="font:600 13.5px/1.3 Inter,sans-serif;color:var(--ink-1,#241B12)">These use numbers you type in</span><span style="font:400 11.5px/1.5 Inter,sans-serif;color:var(--muted-1,#6B6152)">Connect your shop and the same calculations run on your real orders and fees.</span></span>
+            <span style="padding:10px 14px;border:1px solid #CBD5E1;border-radius:9px;font:600 12px/1 Inter,sans-serif;color:var(--ink-2,#4A4234);flex:none">See how it works</span>
+          </div>
+          <span style="font:400 11px/1.55 Inter,sans-serif;color:var(--muted-1,#6B6152)">The term "Etsy" is a trademark of Etsy, Inc. This Application uses Etsy's API, but is not endorsed or certified by Etsy.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>
