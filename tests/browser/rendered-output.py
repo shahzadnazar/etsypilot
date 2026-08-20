@@ -367,6 +367,71 @@ with sync_playwright() as p:
     check("fails and is never produced" in ext,
           "The page says the limits are enforced by the build, not by policy")
 
+    # Simple Calculator: the formula is shown with the number, and the tool
+    # never claims a basis it does not have.
+    pg.goto(f"{BASE}/tools/simple-calculator", wait_until="domcontentloaded")
+    pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(400)
+
+    check("Enter amount and discount" in pg.locator("main").inner_text(),
+          "With nothing typed the calculator prompts rather than showing a zero")
+
+    pg.fill("#calc-a", "29")
+    pg.fill("#calc-b", "20")
+    pg.wait_for_timeout(300)
+    calc = pg.locator("main").inner_text()
+
+    check("$23.20" in calc, "The worked example from the design computes on screen")
+    check("$29.00 × (1 − 20%) = $23.20" in calc, "The formula is shown with the values substituted")
+    check("Savings $5.80" in calc, "The secondary figure is shown")
+    check("Not connected to your Etsy account" in calc,
+          "The result states what it is based on")
+    # Scoped to the result card, not the page. The page's own promise — "a rate
+    # you type is never labelled an official Etsy fee" — contains the phrase,
+    # and a page-wide check fails on the disclaimer. Third time this exact
+    # shape has bitten: assert on the region under test, never on the prose
+    # that describes it.
+    result_card = calc[calc.find("Result") : calc.find("Copy result")]
+    check("official Etsy fee" not in result_card,
+          "The result itself is never labelled an official Etsy fee")
+    check("never labelled an official Etsy fee" in calc,
+          "The page states the promise it is keeping")
+    check(pg.get_by_role("button", name="Copy result").is_enabled(),
+          "Copy is enabled once there is something to copy")
+
+    # A refusal, not a coerced zero.
+    pg.fill("#calc-a", "0")
+    pg.select_option("#calc-kind", "MARGIN")
+    pg.wait_for_timeout(300)
+    refused = pg.locator("main").inner_text()
+    check("revenue above 0" in refused, "A divide-by-zero is refused in words")
+    check("Infinity" not in refused and "NaN" not in refused,
+          "A refused calculation shows no non-finite number")
+
+    # Reset clears, and the prompt comes back.
+    pg.get_by_role("button", name="Reset").click()
+    pg.wait_for_timeout(300)
+    check("Enter revenue and profit" in pg.locator("main").inner_text(),
+          "Reset returns the calculator to its starting state")
+
+    # The public variant: same component, no login, and no ask before a result.
+    pg.goto(f"{BASE}/tools/etsy-seller-calculator", wait_until="domcontentloaded")
+    pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(400)
+    before = pg.locator("body").inner_text()
+    check("Etsy seller calculator" in before, "The public calculator renders without a session")
+    check("Create a free account" not in before,
+          "No sign-up ask before the tool has given anything")
+    check("Connect Etsy" not in before and "Connect your Etsy" not in before,
+          "No Etsy connection prompt anywhere on the public page")
+    check("Sidebar" not in before and "Action Center" not in before,
+          "The public page does not render the app shell")
+
+    pg.fill("#calc-a", "29")
+    pg.fill("#calc-b", "20")
+    pg.wait_for_timeout(400)
+    after = pg.locator("body").inner_text()
+    check("$23.20" in after, "The public page gives the same answer as the in-app one")
+    check("Create a free account" in after, "The sign-up line appears only after a result")
+
     # --- Shop Pulse: baseline is described as calculated ---
     pg.set_viewport_size({"width": 1440, "height": 1000})
     pg.goto(f"{BASE}/shop-pulse", wait_until="domcontentloaded"); pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)

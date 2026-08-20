@@ -18,9 +18,10 @@ export const metadata: Metadata = { title: 'Tools' }
  */
 const TOOL_DETAIL: Record<string, { detail: string; needs: string; ready: boolean }> = {
   'Simple Calculator': {
-    detail: 'Percentage, discount, margin, markup, break-even — with the formula shown.',
+    detail:
+      'Percentage, discount, profit, margin, markup, fee, net revenue and break-even — with the formula shown every time.',
     needs: 'No shop needed',
-    ready: false,
+    ready: true,
   },
   'Fee Calculator': {
     detail: 'Listing, transaction and processing fees against published rates, with the rule set and effective date stated.',
@@ -89,7 +90,7 @@ export default function ToolsPage() {
                    * navigation, reintroduced one card at a time.
                    */
                   <span className="text-caption text-muted-1">
-                    Not built yet — the calculator engines land in Phase 10.
+                    Not built yet. Phase 10 shipped the Simple Calculator; the rest follow.
                   </span>
                 )}
               </div>
@@ -99,6 +100,17 @@ export default function ToolsPage() {
       </div>
 
       <p className="mt-4 max-w-[80ch] text-caption leading-relaxed text-muted-1">
+        The Simple Calculator is also published without a login at{' '}
+        <Link
+          href="/tools/etsy-seller-calculator"
+          className="font-semibold text-brand-strong underline underline-offset-2"
+        >
+          /tools/etsy-seller-calculator
+        </Link>{' '}
+        — the same component, so the two cannot give different answers.
+      </p>
+
+      <p className="mt-3 max-w-[80ch] text-caption leading-relaxed text-muted-1">
         Every calculator shows its formula and the rule set it applied, with an effective date.
         Fee results are estimates against published rates: your actual charges can differ with
         currency conversion, regulatory operating fees, Offsite Ads eligibility and local taxes.

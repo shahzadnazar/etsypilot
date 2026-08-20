@@ -5,8 +5,8 @@
 
 ## 1. Current Status
 
-**Phase:** 9 — Browser Extension (COMPLETE)
-**Current task:** Awaiting go-ahead for Phase 10 — Simple Calculator & Free Tools
+**Phase:** 10 — Simple Calculator & Free Tools (COMPLETE)
+**Current task:** Awaiting go-ahead for Phase 11 — Live Etsy Integration
 **Current file being worked on:** None
 **Last completed task:** Structured AI input, provenance-aware prompts, output validation,
 issue explanations, action recommendations, audit trail for applied AI changes
@@ -105,6 +105,13 @@ Keep the latest 5–10 meaningful items.
 - Refreshed design bundle archived: artboard 92 now gives every locked row its own badge,
   the intro copy is corrected, and the three stale items (America/New_York, $4,938, -12%)
   are gone from the source.
+- Phase 10 built: pure calculator engine (8 calculations), formula returned WITH the
+  number rather than captioned beside it, refusals instead of coercion, one component
+  shared by the in-app page and the public free-tool page at /tools/etsy-seller-calculator
+  (no login, no Etsy prompt, sign-up line only after a result). 323 tests, 109 checks.
+- D49: the fast/separate acceptance is measured, not asserted. The perf check found a real
+  one immediately — Intl.NumberFormat per call made 20k calculations take 3.8s; memoised
+  per currency it is 68ms.
 - Phase 9 built: MV3 extension for Chrome and Firefox — one UI, one client, one auth
   flow, only the manifest differs. Shared contract in lib/extension/contract.ts with no
   token field and no write message; auth is the existing EtsyPilot session cookie. The
@@ -401,6 +408,15 @@ output permanently. This is not a Phase 5 note — it applies to every phase aft
 
 These assertions are kept in `tests/browser/rendered-output.py` and run against a
 production build at the end of each phase.
+
+### A "never says X" check keeps failing on the promise never to say X
+Three times now: "at risk" on the audit, "no dark patterns" copy on billing,
+"official Etsy fee" on the calculator. Each time the page-wide check tripped on
+the sentence that promises the product will not make the claim. The fix is
+always the same — assert on the REGION under test (the result card, the totals
+row, the column header), never on the prose that describes it. Related to the
+RSC false positive: the failure mode is matching text that is near the thing
+under test rather than the thing itself.
 
 ### Check the artefact, not the source
 The source is what a reviewer reads; the package is what a seller installs, and

@@ -1937,3 +1937,66 @@ adding an http origin to that allow-list, because weakening the boundary to make
 pass is not testing the boundary. The browser's insistence on a credentialed CORS reply —
 a wildcard origin is rejected when the client sends `credentials: 'include'` — showed up
 during that work as a protection doing its job.
+
+
+---
+
+## D49 — The Simple Calculator stays separate, and says what it is not
+
+Phase 10's acceptance criterion is "Simple Calculator remains fast and separate from
+Profit Reality". Both halves are checked rather than intended.
+
+**Separate, as a property of the module graph.** `domain/calculator/engine.ts` has exactly
+one import — `@/lib/provenance/types`, a type — and a test asserts that list is exactly
+that. No Etsy adapter, no session, no database, no clock, no randomness. The two tools
+answer different questions and the difference is the whole point: Profit Reality is a model
+over verified receipts, this is arithmetic over numbers a seller typed. Merging them would
+let a typed figure sit in the same frame as a receipt.
+
+**Fast, as a measured property.** 20,000 calculations under a second. The check earned its
+place immediately: the first implementation took **3.8 seconds**, because `money()`
+constructed a fresh `Intl.NumberFormat` on every call — the standard way to make a
+calculator slow, and invisible to every correctness test. Memoised per currency: **68ms**.
+
+**Every result is CALCULATED.** The return type is `Extract<ProvenanceType, 'CALCULATED'>`,
+so there is no branch that could return VERIFIED. Nothing here came from Etsy, and a fee
+rate a seller types is not an Etsy fee — the page says so, and the result card never
+carries the phrase.
+
+### D49a — The formula is the return value, not a caption
+
+`calculate()` returns `{ value, display, formula }`, all produced in one pass from the same
+inputs. A component cannot render a formula that disagrees with the number beside it,
+because it is not assembling one. D25 in miniature: never author the explanation separately
+from the figure. A test asserts, for every calculation at several inputs, that the formula
+string ends in the displayed result.
+
+### D49b — It refuses rather than coerces
+
+An empty box is not zero, `"abc"` is not zero, and a calculator that treats them as zero
+gives a confident wrong answer. Every refusal names the field and what to change:
+
+| Input | Refusal |
+|---|---|
+| Margin with revenue 0 | "Margin needs revenue above 0 — there is nothing to be a share of." |
+| Break-even at 100% margin | "…has no break-even price — the price would never be enough." |
+| Discount over 100% | "A discount over 100% would mean paying the buyer." |
+
+A sweep over every calculation × a grid of inputs asserts no accepted input ever produces
+`NaN` or `Infinity`. Removing one guard failed that sweep as well as its own test.
+
+### D49c — The free variant is the same component, and asks nothing first
+
+The public page at `/tools/etsy-seller-calculator` renders the same `SimpleCalculator` as
+the in-app page. Not a copy with a shared look: an acquisition surface is the one most
+likely to drift, and a calculator that gives different answers at two URLs is worse than
+not having the second URL.
+
+It has no login wall and no Etsy connection prompt anywhere, and the sign-up invitation
+appears **only after a result exists** — before that the page has given the seller nothing,
+and asking first is the pattern this product does not use. Verified by making the banner
+unconditional: the check fails.
+
+It also sits outside the `(dashboard)` group, so it reads no session and is prerendered —
+the same rule as D47, in the direction that says a page which does NOT depend on who is
+asking may be static.
