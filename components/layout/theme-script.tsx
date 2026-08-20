@@ -22,6 +22,15 @@ const SCRIPT = `
 })();
 `
 
-export function ThemeScript() {
-  return <script dangerouslySetInnerHTML={{ __html: SCRIPT }} />
+/*
+ * The nonce is required, not optional.
+ *
+ * Typing it as a required prop is the point: under the CSP in middleware.ts an
+ * un-nonced inline script is silently refused, and the failure is a flash of
+ * the wrong theme on every load — the exact thing this component exists to
+ * prevent, reappearing with no error anywhere. A required prop turns that into
+ * a compile error instead.
+ */
+export function ThemeScript({ nonce }: { nonce: string }) {
+  return <script nonce={nonce} dangerouslySetInnerHTML={{ __html: SCRIPT }} />
 }

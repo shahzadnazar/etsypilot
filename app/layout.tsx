@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { headers } from 'next/headers'
 import { Inter } from 'next/font/google'
 import { ThemeScript } from '@/components/layout/theme-script'
 import '@/styles/globals.css'
@@ -41,11 +42,19 @@ export const metadata: Metadata = {
     'Make smarter Etsy decisions with data you can trust. EtsyPilot is an Etsy seller decision and operations intelligence platform.',
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  /*
+   * Set by middleware.ts, per request. Reading it makes every page render on
+   * demand rather than at build time — which is the cost of a nonce-based CSP
+   * and is worth naming rather than discovering later. Every page that reads a
+   * session was already per-request (D47); this extends it to the public ones.
+   */
+  const nonce = (await headers()).get('x-nonce') ?? ''
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <ThemeScript />
+        <ThemeScript nonce={nonce} />
       </head>
       <body className={inter.variable}>{children}</body>
     </html>

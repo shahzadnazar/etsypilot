@@ -2200,3 +2200,55 @@ deliberate break it **passed**, because the third-party stylesheet never loaded,
 declared no font preloads at all, and `all()` of an empty list is true. It now requires that
 a font is preloaded *and* that it is local. A check that passes when the thing it measures
 is absent is not a check.
+
+### D52 — The CSP was measured, not copied
+
+A strict `script-src 'self'; style-src 'self'` was served in **Report-Only** mode first and
+the pages loaded with the browser console captured. Two things violated it, and both
+changed the policy that shipped:
+
+| Count | Directive | What it was |
+| --- | --- | --- |
+| 31 | `script-src` | Next's inline hydration scripts and the theme bootstrap. Their content differs per page, so a hash list cannot work. A nonce is the only mechanism that does. |
+| 173 | `style-src` | Inline `style="..."` **attributes**, which React sets for anything computed — a bar's width, a chart's offset. |
+
+The second is the one a copied policy gets wrong. Chromium states it plainly: *"hashes do
+not apply to event handlers, style attributes and javascript: navigations"*. No nonce and
+no hash can permit a style attribute — only `'unsafe-inline'` can. So the policy carries
+`style-src-attr 'unsafe-inline'`, which is the **narrow** form: style attributes only.
+`style-src 'self'` still refuses a `<style>` block and any external sheet. One broad
+`style-src 'self' 'unsafe-inline'` would have permitted both for the same one requirement.
+
+There is no third-party origin anywhere in the policy. That is only possible because the
+font is self-hosted (D51) — a CSP that has to name `fonts.googleapis.com` is a CSP with a
+hole in it.
+
+The nonce is read from a request header in the root layout, so every page now renders on
+demand. Measured rather than assumed: TTFB on the public calculator is 19–29 ms, and D49's
+speed guarantee is about client-side arithmetic, which is untouched.
+
+### D52a — `strict-dynamic` is off because of a measured framework bug
+
+`'strict-dynamic'` **ignores `'self'` by design**: under it a `<script src>` is allowed only
+if it carries the nonce or was loaded by a script that did. Next 16.3.1 nonces every script
+tag it emits *except* one class of page-level client chunk — nine tags in the served HTML
+carry `nonce=`, exactly one does not.
+
+The result was a page silently missing a piece of its JavaScript on `/billing` and
+`/shop-pulse`. No server error, no hydration warning, no missing markup. **Only the browser
+console knew.**
+
+What is kept without it is most of the value: inline script still requires the nonce, so an
+injected `<script>` or `onclick` payload is refused — the actual XSS vector — and external
+script is still confined to this origin. What is given up is protection against an attacker
+who can already place a file on our own origin, and this app serves no user-supplied file as
+script.
+
+Two related traps, both worth stating:
+
+- The nonce must go on the **request** headers as well as the response, under the
+  `Content-Security-Policy` key. That is how Next finds it to nonce its own script tags.
+  Setting only `x-nonce` compiles, serves a valid-looking policy, and breaks two pages.
+- **A policy becoming less strict never fails a check.** The browser check catches a policy
+  the app violates; it cannot catch a policy that permits too much. Widening one is a
+  decision that has to be made deliberately, which is why the reasoning is in the file.

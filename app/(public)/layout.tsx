@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { ThemeScript } from '@/components/layout/theme-script'
 
 /*
  * The public shell.
@@ -8,13 +7,26 @@ import { ThemeScript } from '@/components/layout/theme-script'
  * session read. A free tool that asks who you are before it will divide two
  * numbers is not a free tool.
  *
- * It also means these pages can be prerendered — unlike everything under
- * (dashboard), which reads a session and therefore cannot be (D47).
+ * These pages read no session, so nothing HERE forces them to render per
+ * request. The root layout does, because it reads the CSP nonce out of a
+ * request header (D52) — measured at ~20ms TTFB, and the calculator's speed
+ * guarantee (D49) is about client-side arithmetic, which is untouched.
+ *
+ * (This comment used to say these pages were prerendered. That stopped being
+ * true the moment the root layout read a header, and a file that misdescribes
+ * itself is the same defect as a figure that misdescribes its source.)
  */
 export default function PublicLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-canvas">
-      <ThemeScript />
+      {/*
+        * No ThemeScript here. The ROOT layout renders it, in <head>, where it
+        * runs before paint — which is the whole point of it. A second copy in
+        * the body ran after first paint and could only ever re-apply what had
+        * already been applied. It was found by making the nonce a required
+        * prop: the compile error pointed at a call site that should not have
+        * existed at all.
+        */}
       <header className="border-b border-line bg-surface">
         <div className="mx-auto flex w-full max-w-content items-center gap-2.5 px-4 py-3 md:px-6">
           <span

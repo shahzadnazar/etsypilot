@@ -151,6 +151,51 @@ with sync_playwright() as p:
     check(bool(fonts) and all(f.startswith(BASE) for f in fonts),
           "The font is preloaded, and served from this origin")
 
+    # --- Security headers, and a policy the app actually obeys --------------
+    #
+    # A CSP is worth exactly what the browser does with it, so this asserts on
+    # both halves: the header is served, AND loading real pages produces no
+    # violation.
+    #
+    # The second half is the one that earns its place. The first policy written
+    # here used 'strict-dynamic', which by design IGNORES 'self' — so a script
+    # tag Next emitted without a nonce was refused on /billing and /shop-pulse.
+    # Nothing said so: no server error, no hydration warning, no missing markup.
+    # The page simply lost a chunk of its JavaScript. Only the browser console
+    # knew, which is the whole argument for checking it here.
+    resp = pg.goto(f"{BASE}/dashboard", wait_until="load")
+    h = {k.lower(): v for k, v in (resp.headers if resp else {}).items()}
+    for name, expected in (
+        ("x-frame-options", "DENY"),
+        ("x-content-type-options", "nosniff"),
+        ("referrer-policy", "strict-origin-when-cross-origin"),
+    ):
+        check(h.get(name) == expected, f"{name} is {expected}")
+    check("max-age=" in h.get("strict-transport-security", ""), "HSTS is set")
+    check("camera=()" in h.get("permissions-policy", ""), "Permissions-Policy refuses camera")
+
+    csp = h.get("content-security-policy", "")
+    check("nonce-" in csp, "The CSP carries a per-request nonce")
+    check("'unsafe-inline'" not in csp.split("style-src-attr")[0],
+          "Nothing but style ATTRIBUTES may be inline")
+    check("frame-ancestors 'none'" in csp, "Nothing may frame this app")
+    check("base-uri 'none'" in csp, "A <base> rewrite is refused")
+    # The same promise as the off-origin request check, stated as policy: if a
+    # host ever appears here, something off-origin was needed.
+    check("http://" not in csp.replace("upgrade-insecure-requests", "")
+          and "https://" not in csp,
+          "The CSP names no third-party origin")
+
+    violations = []
+    pg.on("console", lambda m: violations.append(m.text[:120])
+          if "Content Security Policy" in m.text else None)
+    for route in ("/dashboard", "/billing", "/profit", "/shop-pulse",
+                  "/listings/bulk-editor", "/tools/etsy-seller-calculator"):
+        pg.goto(f"{BASE}{route}", wait_until="load"); pg.wait_for_timeout(500)
+    check(violations == [],
+          "No page violates its own CSP"
+          + ("" if violations == [] else f" — {violations[:2]}"))
+
     # --- Profit Reality: inputs panel ---
     pg.goto(f"{BASE}/profit", wait_until="domcontentloaded"); pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)
     check(open_tab(pg, "Scenarios", "Inputs"), "Scenarios tab opens")
