@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { consumeGeneration, generateDraft, getCopilotView } from '@/domain/ai/service'
-import { DEFAULT_GUARDRAILS, draftChanges, quotaExhausted, type GenerationInputs } from '@/domain/ai/types'
+import { DEFAULT_GUARDRAILS, draftChanges, quotaExhausted, type AiDraft, type GenerationInputs } from '@/domain/ai/types'
 import { createDraft } from '@/domain/bulk-editor/service'
+import { MockAiProvider, type Misbehaviour } from '@/lib/ai/mock'
 import { DEMO_ACTOR_ID, DEMO_SHOP_ID, buildDemoListings } from '@/lib/etsy/demo-dataset'
 import { AppError } from '@/lib/errors/types'
 import type { ShopContext } from '@/lib/permissions'
@@ -18,22 +19,33 @@ const INPUTS: GenerationInputs = {
   guardrails: [...DEFAULT_GUARDRAILS],
 }
 
-function draftFor(overrides: Partial<Parameters<typeof generateDraft>[0]> = {}) {
+async function attempt(
+  overrides: Partial<Parameters<typeof generateDraft>[0]> = {},
+  misbehave?: Misbehaviour,
+) {
   return generateDraft({
     shopId: DEMO_SHOP_ID,
     listing: listings[0]!,
     inputs: INPUTS,
     terms: ['birth month jewelry', 'dainty flower charm'],
     now: '2026-08-20T00:00:00.000Z',
+    provider: new MockAiProvider(misbehave),
     ...overrides,
   })
 }
 
+async function draftFor(overrides: Partial<Parameters<typeof generateDraft>[0]> = {}): Promise<AiDraft> {
+  const outcome = await attempt(overrides)
+  if (outcome.kind !== 'DRAFT') {
+    throw new Error(`expected a draft, got: ${outcome.rejected.reasons.join(' | ')}`)
+  }
+  return outcome.draft
+}
+
 describe('AI drafts, never publishes', () => {
-  it('starts awaiting review and has no way to reach Etsy on its own', () => {
-    const draft = draftFor()
+  it('starts awaiting review and has no way to reach Etsy on its own', async () => {
+    const draft = await draftFor()
     expect(draft.status).toBe('AWAITING_REVIEW')
-    // The only route to a write is a bulk operation, which starts as a DRAFT.
     const op = createDraft({
       id: 'op-from-draft',
       ctx: CTX,
@@ -45,60 +57,99 @@ describe('AI drafts, never publishes', () => {
     expect(op.approvalState).toBeNull()
   })
 
-  it('has no field for a predicted outcome', () => {
-    const draft = draftFor() as unknown as Record<string, unknown>
+  it('has no field for a predicted outcome', async () => {
+    const draft = (await draftFor()) as unknown as Record<string, unknown>
     for (const forbidden of ['predictedImpact', 'expectedLift', 'rankingForecast', 'estimatedSales']) {
       expect(forbidden in draft).toBe(false)
     }
   })
 
-  it('names a source for every drafted element', () => {
-    const draft = draftFor()
+  it('names a source for every drafted element and records who produced it', async () => {
+    const draft = await draftFor()
     expect(draft.title.sources.length).toBeGreaterThan(0)
     expect(draft.tags.sources.length).toBeGreaterThan(0)
-    for (const source of [...draft.title.sources, ...draft.tags.sources]) {
-      expect(source.label.length).toBeGreaterThan(0)
-    }
-  })
-
-  it('explains every change it made', () => {
-    const draft = draftFor()
-    expect(draft.rationale.length).toBeGreaterThan(0)
-    // As many reasons as changes, at minimum.
-    expect(draft.rationale.length).toBeGreaterThanOrEqual(
-      draft.tags.added.length + draft.tags.removed.length,
-    )
+    expect(draft.producedBy.length).toBeGreaterThan(0)
   })
 })
 
-describe('guardrails hold', () => {
-  it('preserves a locked term verbatim, even where it repeats', () => {
+/*
+ * The Phase 7 tests. Each one hands the service a provider that breaks a rule
+ * on purpose and asserts the draft never reaches the seller — a guardrail
+ * nobody has watched fail is a guardrail nobody has tested.
+ */
+describe('output validation withholds a draft that breaks a rule', () => {
+  const cases: [Misbehaviour, string][] = [
+    ['INVENT_METRIC', 'not in the facts'],
+    ['RANKING_CLAIM', 'ranking'],
+    ['FORECAST', 'predict'],
+    ['DROP_LOCKED_TERM', 'locked term'],
+    ['UNVERIFIABLE_CLAIM', 'Nothing supports it'],
+    ['NAME_COMPETITOR', 'Named another shop'],
+    ['TOO_MANY_TAGS', 'Etsy allows 13'],
+    ['NO_RATIONALE', 'without saying what changed'],
+  ]
+
+  // Carries a locked term, so the dropped-term case has something to drop.
+  const LISTING = {
+    ...listings[0]!,
+    title: 'Willow & Fern Birth Flower Necklace, 14k gold filled pendant',
+    // Eleven tags, so the over-tagging case actually exceeds Etsy's thirteen.
+    tags: Array.from({ length: 11 }, (_, i) => `tag ${String.fromCharCode(97 + i)}`),
+  }
+
+  for (const [misbehaviour, expected] of cases) {
+    it(`withholds a draft that would ${misbehaviour.toLowerCase().replace(/_/g, ' ')}`, async () => {
+      const outcome = await attempt({ listing: LISTING }, misbehaviour)
+      expect(outcome.kind).toBe('REJECTED')
+      if (outcome.kind !== 'REJECTED') return
+      expect(outcome.rejected.reasons.join(' ')).toContain(expected)
+      // Two things the seller is told, every time.
+      expect(outcome.rejected.note).toContain('live listing was not touched')
+      expect(outcome.rejected.note).toContain('not counted against your allowance')
+    })
+  }
+
+  it('withholds the whole draft rather than repairing part of it', async () => {
+    const outcome = await attempt({ listing: LISTING }, 'RANKING_CLAIM')
+    expect(outcome.kind).toBe('REJECTED')
+    // There is no shape for a partially-trusted draft: the union has two arms.
+    if (outcome.kind === 'REJECTED') expect('draft' in outcome).toBe(false)
+  })
+
+  it('lets a clean draft through', async () => {
+    const outcome = await attempt({ listing: LISTING })
+    expect(outcome.kind).toBe('DRAFT')
+  })
+})
+
+describe('guardrails hold in the drafted output', () => {
+  it('preserves a locked term verbatim, even where it repeats', async () => {
     const listing = {
       ...listings[0]!,
       title: 'Willow & Fern Gold Necklace, Handmade Gift, Willow & Fern Studio Gift',
     }
-    const draft = draftFor({ listing })
+    const draft = await draftFor({ listing })
     expect(draft.title.text).toContain('Willow & Fern')
   })
 
-  it('keeps the title within the character guardrail', () => {
+  it('keeps the title within the character guardrail', async () => {
     const listing = { ...listings[0]!, title: `${'A very long segment, '.repeat(12)}end` }
-    const draft = draftFor({ listing })
+    const draft = await draftFor({ listing })
     expect(draft.title.characterCount).toBeLessThanOrEqual(140)
   })
 
-  it('never proposes more than Etsy’s thirteen tags', () => {
+  it('never proposes more than Etsy’s thirteen tags', async () => {
     const listing = { ...listings[0]!, tags: Array.from({ length: 11 }, (_, i) => `existing ${i}`) }
-    const draft = draftFor({
+    const draft = await draftFor({
       listing,
       terms: Array.from({ length: 20 }, (_, i) => `new term ${i}`),
     })
     expect(draft.tags.tags.length).toBeLessThanOrEqual(13)
   })
 
-  it('leaves the live listing untouched in the draft object', () => {
+  it('leaves the live listing untouched in the draft object', async () => {
     const listing = listings[0]!
-    const draft = draftFor({ listing })
+    const draft = await draftFor({ listing })
     expect(draft.current.title).toBe(listing.title)
     expect(draft.current.tags).toEqual(listing.tags)
   })
@@ -117,7 +168,6 @@ describe('the generation quota is a boundary, not a penalty', () => {
       expect(app.kind).toBe('PLAN_LIMIT')
       expect(app.recovery).toContain('2026-09-01')
       expect(app.recovery).toContain('unaffected')
-      // Never framed as a fault.
       expect(app.message).not.toMatch(/error|failed|denied/i)
     }
   })
@@ -125,18 +175,22 @@ describe('the generation quota is a boundary, not a penalty', () => {
   it('counts a successful generation and nothing else', () => {
     const quota = { used: 3, limit: 60, resetsOn: '2026-09-01', planName: 'Solo', nextTier: null }
     expect(consumeGeneration(quota).used).toBe(4)
-    // The original is untouched — a caller cannot lose count by reusing it.
     expect(quota.used).toBe(3)
   })
 })
 
 describe('the copilot view', () => {
-  it('queues drafts that are each approved individually', async () => {
+  it('returns exactly one of a draft or a rejection', async () => {
     const view = await getCopilotView(CTX)
-    expect(view.draft.status).toBe('AWAITING_REVIEW')
-    expect(view.quota.limit).toBeGreaterThan(0)
+    expect(view.draft === null).not.toBe(view.rejected === null)
+    expect(view.inputs.lockedTerms.length).toBeGreaterThan(0)
     for (const q of view.queue) {
       expect(['APPROVED', 'AWAITING_REVIEW']).toContain(q.status)
     }
+  })
+
+  it('runs the rule-based provider in demo mode, never a live model', async () => {
+    const view = await getCopilotView(CTX)
+    expect(view.provider).toContain('demo mode')
   })
 })

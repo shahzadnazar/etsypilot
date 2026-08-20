@@ -5,11 +5,11 @@
 
 ## 1. Current Status
 
-**Phase:** 6 — Existing Product Integration (COMPLETE)
-**Current task:** Awaiting go-ahead for Phase 7 — AI Copilot Hardening
+**Phase:** 7 — AI Copilot Hardening (COMPLETE)
+**Current task:** Awaiting go-ahead for Phase 8 — Billing & Usage
 **Current file being worked on:** None
-**Last completed task:** Etsy Connect, Listing Audit, AI Copilot, Keyword Explorer,
-Keyword Lists, Tool Hub, CSV Export, Onboarding, Billing
+**Last completed task:** Structured AI input, provenance-aware prompts, output validation,
+issue explanations, action recommendations, audit trail for applied AI changes
 **Blockers:** NONE. D22 7a is closed by D35 (Audit log under Shops & data).
 
 ## 2. Current Objective
@@ -21,11 +21,12 @@ Build Etsy Pilot as an Etsy Seller Decision & Operations Intelligence platform u
 Update this section whenever the phase changes.
 
 ```text
-Phase 6 — Existing Product Integration
-Status: COMPLETE — nine surfaces, connected to the loop. Modelled research data
-lives behind its own adapter so it can never look like Etsy data; AI drafts reach
-Etsy only through the bulk editor's confirmation gate; the audit weighs money
-rather than listings; every export carries provenance per column.
+Phase 7 — AI Copilot Hardening
+Status: COMPLETE — every prohibition is stated twice: once in the prompt and once
+as a check on what came back. A draft that breaks a rule is withheld entirely, not
+repaired. Facts are the only channel into a prompt, live AI needs two conditions
+plus a non-demo shop, and an approved draft is recorded per field with the
+approver named.
 ```
 
 ## 4. Current Work
@@ -104,6 +105,16 @@ Keep the latest 5–10 meaningful items.
 - Refreshed design bundle archived: artboard 92 now gives every locked row its own badge,
   the intro copy is corrected, and the three stale items (America/New_York, $4,938, -12%)
   are gone from the source.
+- Phase 7 built: AiProvider seam (mock + Claude, server-only, lazily keyed); frozen
+  system prompt stating the rules as facts about the world; PromptFact as the only
+  channel into a prompt; output validation that blocks invented metrics, ranking claims,
+  forecasts, unverifiable claims, named competitors, dropped locked terms and Etsy's
+  limits; a two-armed DRAFT | REJECTED union so a partially-trusted draft has no shape;
+  explanations that fall back to the product's own words; per-field audit events naming
+  the approver. D39-D43. 239 tests, 63 browser checks.
+- The mock AI provider has a `misbehave` mode so the validator can be tested against
+  outputs that break each rule ON PURPOSE. A guardrail nobody has watched fail is a
+  guardrail nobody has tested.
 - Phase 6 built: MarketSignalsService as a SEPARATE adapter (D36); Keyword Explorer with
   ranges, sparse handling and a computed opportunity score; Keyword Lists that hand off to
   the bulk editor rather than writing; 14-rule Listing Audit with a revenue-weighted health
@@ -157,6 +168,10 @@ app/  layout · page · not-found · error
 tests/unit/{waterfall,provenance,action-center,methodology,shop-pulse,
             narrative,digest,bulk-editor,profit-scenarios}.test.ts
 tests/browser/rendered-output.py   (kept assertions on painted text, see 13b)
+tests/unit/{ai-copilot,ai-hardening}.test.ts
+lib/ai/{interface,prompt,mock,claude,index}.ts
+domain/ai/{types,service,facts,validate,explain,audit-trail}.ts
+components/ai/{draft-review,assisted-note}.tsx
 tests/unit/{research,audit,ai-copilot,integration}.test.ts
 lib/signals/{interface,mock,index}.ts
 domain/{research/{types,service},audit/{rules,service},ai/{types,service},
@@ -190,7 +205,9 @@ None
 
 ```text
 Etsy: Mock mode (MockEtsyService, read-only, no credentials)
-Claude AI: Not configured
+Claude AI: Adapter built (lib/ai). Mock provider by default; live needs AI_MODE=live
+           AND ANTHROPIC_API_KEY AND a non-demo shop. Model claude-opus-5, structured
+           output, adaptive thinking, cached system prompt.
 Stripe: Not configured
 Supabase: Not configured
 Inngest: Not configured
@@ -211,6 +228,12 @@ PostHog: Not configured
   changed - a per-unit labour model is a Phase 7+ change, not a caption fix.
 - Google Fonts is loaded over the network; in a sandbox with no egress the font
   falls back to system sans. Consider self-hosting Inter in Phase 12.
+- npm audit reports 4 moderate advisories, all one chain: drizzle-kit 0.31.10 (latest)
+  depends on the deprecated @esbuild-kit/esm-loader, which pins esbuild 0.18. The
+  advisory is the esbuild DEV SERVER accepting cross-origin requests. drizzle-kit is a
+  CLI dev dependency, we never run an esbuild dev server, and none of it is in the app
+  bundle. An npm override does not take (the pin is hard) and audit fix --force would
+  break drizzle-kit. Revisit when drizzle-kit drops @esbuild-kit.
 - Mobile top bar is functional but not yet the designed compact bar (logo, shop,
   notifications, menu). Phase 2.
 ```
@@ -385,6 +408,9 @@ the string was in the wire format, not on the screen.
 - Bulk changes require validation, diff, confirmation, audit, and rollback where supported.
 - Profit Reality must show coverage/confidence.
 - Every important screen needs loading/empty/error/success/partial/unavailable states.
+- A prompt is an instruction; validation is a check (D39). Every AI prohibition is
+  stated twice, and a draft that breaks one is withheld entirely, never repaired.
+- Facts are the only channel into a prompt (D40). No helper accepts a bare number.
 - Locked is not the same as verified (D33). Read-only styling and provenance are
   orthogonal; a greyed field reads as authoritative, so any disabled or derived
   field anywhere needs its badge.
@@ -404,10 +430,10 @@ Always keep exactly one clear next step.
 
 ```text
 Next:
-Await go-ahead for Phase 7 — AI Copilot Hardening: structured AI input,
-provenance-aware prompts, and the audit trail for applied AI changes. The seams
-are built — generateDraft() is the single function Phase 7 replaces, and the
-write path already runs through the bulk editor's confirmation gate.
+Await go-ahead for Phase 8 — Billing & Usage: the Stripe abstraction, real usage
+metering, renewal/upgrade/downgrade/cancellation and webhook handling. The plan
+model, meters, limit policy and upgrade-required state are already built and
+honest (D22); Phase 8 is the money plumbing behind them.
 ```
 
 ## 16. Memory Update Rule

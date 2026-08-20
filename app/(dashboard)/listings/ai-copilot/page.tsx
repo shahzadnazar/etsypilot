@@ -33,24 +33,53 @@ export default async function AiCopilotPage({
   const view = await getCopilotView(ctx, listing)
   const demo = session.isDemo
   const exhausted = quotaExhausted(view.quota)
+  const { draft, rejected, inputs } = view
 
   return (
     <>
       <PageHeader
         title="AI listing helper"
-        subtitle={`${view.draft.listingTitle} · AI draft — nothing publishes without your approval`}
+        subtitle={`${draft?.listingTitle ?? rejected?.listingTitle ?? ''} · AI draft — nothing publishes without your approval · ${view.provider}`}
         actions={
           <>
             <Button variant="secondary">Discard draft</Button>
             <Link
-              href={`/listings/bulk-editor?draft=${view.draft.id}`}
+              href={draft ? `/listings/bulk-editor?draft=${draft.id}` : '/listings/audit'}
               className="inline-flex h-11 items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-white hover:bg-brand-strong md:h-[38px]"
+              aria-disabled={draft === null}
             >
-              Send to review
+              {draft ? 'Send to review' : 'No draft to review'}
             </Link>
           </>
         }
       />
+
+      {/*
+        A withheld draft is a designed state, not an error page. It names what
+        the model did wrong, in the seller's terms, and says twice what did not
+        happen: the listing was not touched and the generation was not counted.
+      */}
+      {rejected ? (
+        <Card className="mb-4 p-[18px]">
+          <h2 className="text-section text-ink-1">This draft was withheld</h2>
+          <p className="mt-1 text-small leading-relaxed text-ink-2">
+            EtsyPilot checks every draft before showing it. This one broke a rule, so you are not
+            seeing it — a rewrite that gets one thing wrong is not trustworthy about the rest.
+          </p>
+          <ul className="mt-3 flex flex-col gap-1.5">
+            {rejected.reasons.map((r) => (
+              <li key={r} className="text-small leading-relaxed text-ink-2">
+                · {r}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-caption leading-relaxed text-muted-1">{rejected.note}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button variant="primary">Try again</Button>
+            <Button variant="secondary">Edit manually</Button>
+          </div>
+        </Card>
+      ) : null}
 
       {exhausted ? (
         <Card className="mb-4 p-4 text-small leading-relaxed text-ink-2">
@@ -80,23 +109,21 @@ export default async function AiCopilotPage({
             <div className="flex flex-col gap-1">
               <span className="text-label text-muted-1">Keyword source</span>
               <span className="text-small text-ink-1">
-                {view.draft.inputs.keywordListName
-                  ? `List: ${view.draft.inputs.keywordListName}`
-                  : 'Your current listing only'}
+                {inputs.keywordListName ? `List: ${inputs.keywordListName}` : 'Your current listing only'}
               </span>
             </div>
 
             <div className="flex flex-col gap-1">
               <span className="text-label text-muted-1">Tone</span>
               <span className="text-small text-ink-1">
-                {view.draft.inputs.tone.charAt(0) + view.draft.inputs.tone.slice(1).toLowerCase()}
+                {inputs.tone.charAt(0) + inputs.tone.slice(1).toLowerCase()}
               </span>
             </div>
 
             <div className="flex flex-col gap-1">
               <span className="text-label text-muted-1">Locked terms</span>
               <ul className="flex flex-wrap gap-1.5">
-                {view.draft.inputs.lockedTerms.map((t) => (
+                {inputs.lockedTerms.map((t) => (
                   <li
                     key={t}
                     className="rounded-control border border-line px-2 py-1 text-caption text-ink-2"
@@ -113,7 +140,7 @@ export default async function AiCopilotPage({
             <div className="flex flex-col gap-1">
               <span className="text-label text-muted-1">Guardrails</span>
               <ul className="flex flex-col gap-1 text-caption text-ink-2">
-                {view.draft.inputs.guardrails.map((g) => (
+                {inputs.guardrails.map((g) => (
                   <li key={g}>· {g}</li>
                 ))}
               </ul>
@@ -149,7 +176,7 @@ export default async function AiCopilotPage({
         </div>
 
         <div className="flex flex-col gap-4">
-          <DraftReview draft={view.draft} demo={demo} />
+          {draft ? <DraftReview draft={draft} demo={demo} /> : null}
 
           {view.queue.length > 0 ? (
             <Card className="p-[18px]">

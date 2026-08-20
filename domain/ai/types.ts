@@ -70,6 +70,16 @@ export const DEFAULT_GUARDRAILS = [
   'No unverifiable claims (“best”, “#1”)',
 ] as const
 
+/** Why a generated draft was withheld. Never a bare failure. */
+export interface RejectedDraft {
+  listingId: string
+  listingTitle: string
+  /** The blocking findings, in the seller's words. */
+  reasons: string[]
+  /** Stated on the screen: the live listing was not touched. */
+  note: string
+}
+
 export interface AiDraft {
   id: string
   shopId: string
@@ -84,6 +94,14 @@ export interface AiDraft {
   description: DraftedDescription | null
   /** Plain-language account of every change and the reason for it. */
   rationale: string[]
+  /**
+   * Advisory findings from output validation — matters of judgement rather
+   * than rule breaks. Blocking findings never reach here: a draft that broke a
+   * rule is withheld entirely, so there is no shape for a "mostly fine" draft.
+   */
+  advisories: string[]
+  /** Which provider produced it, recorded for the audit trail. */
+  producedBy: string
   createdAt: string
   /*
    * Deliberately absent: predictedImpact, expectedLift, rankingForecast.

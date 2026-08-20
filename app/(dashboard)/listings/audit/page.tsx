@@ -7,7 +7,9 @@ import { RuleGroup } from '@/components/audit/rule-group'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Money, Numeric } from '@/components/ui/numeric'
+import { AssistedNote } from '@/components/ai/assisted-note'
 import { getAuditView } from '@/domain/audit/service'
+import { explainRule } from '@/domain/ai/explain'
 import { getSession } from '@/lib/auth'
 import { getEtsyService } from '@/lib/etsy'
 import { shopContext } from '@/lib/permissions'
@@ -30,6 +32,17 @@ export default async function ListingAuditPage() {
   const ctx = shopContext(session, session.shopId)
   const [view, shop] = await Promise.all([getAuditView(ctx), getEtsyService().getShop(ctx.shopId)])
   const demo = session.isDemo
+
+  /*
+   * One explanation, for the worst rule — not one per rule.
+   *
+   * With a live provider, explaining every rule would be a dozen API calls on
+   * every page load, spending the seller's allowance on text they may not read.
+   * The rules explain themselves already; this adds a sentence where it is worth
+   * the most.
+   */
+  const worst = view.results[0]
+  const explanation = worst ? await explainRule(worst) : null
 
   return (
     <>
@@ -120,6 +133,16 @@ export default async function ListingAuditPage() {
         </div>
 
         <div className="flex flex-col gap-4">
+          {explanation && worst ? (
+            <Card className="p-[18px]">
+              <AssistedNote
+                explanation={explanation}
+                demo={demo}
+                label={`Where to start · ${worst.rule.label}`}
+              />
+            </Card>
+          ) : null}
+
           {view.results.map((r) => (
             <div key={r.rule.code} id={r.rule.code}>
               <RuleGroup result={r} currency={shop.currency} demo={demo} />

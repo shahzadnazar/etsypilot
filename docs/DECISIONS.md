@@ -1541,3 +1541,123 @@ Consequences, all stated on the screen rather than in a help article:
 
 No rule claims a ranking effect. Rules describe what a listing can or cannot do, which is
 knowable; never what Etsy will do with it, which is not.
+
+
+---
+
+## D39 — A prompt is an instruction; validation is a check
+
+Phase 7's acceptance is that AI **cannot** invent metrics, claim private algorithm
+knowledge, or bypass confirmation. "Cannot" is not something a prompt can deliver. A model
+that follows the rules ninety-nine times in a hundred will break one in front of a seller
+eventually, and the rule that matters is the one that holds on the bad day.
+
+So every prohibition is stated twice: once in the system prompt, and once as a check
+against what actually came back.
+
+| Rule | Prompt | Check |
+|---|---|---|
+| No invented metrics | "Every number you write must appear in the FACTS list" | Numerals in the output diffed against the numerals in the facts |
+| No ranking claims | "Etsy does not publish its ranking algorithm" | Seven patterns — rank/visibility/algorithm/SEO/more views/will perform/favoured by Etsy |
+| No predictions | "Never predict an outcome" | Four patterns, including hedged forms ("should see", "can expect") |
+| No unverifiable claims | "best, #1, guaranteed…" | Word list, in listing text only — the rationale may *discuss* removing one |
+| Locked terms preserved | "character for character" | Present-before-and-missing-after comparison |
+| Etsy's limits | stated in the constraints | 140 chars, 13 tags, 20 chars per tag, no duplicates |
+
+**A blocked draft is withheld, never repaired.** A rewrite that invented a metric is not
+trustworthy about the parts that look fine, and repairing it would mean deciding on the
+seller's behalf which of its claims to believe. `generateDraft` returns a two-armed union —
+`{kind:'DRAFT'}` or `{kind:'REJECTED'}` — so there is no shape for a partially-trusted
+draft to occupy.
+
+**Advisory findings exist and are shown**, for judgement calls rather than rule breaks: a
+tag that came from neither the saved list nor the listing text, or an over-length tag the
+seller already had. That last one blocks only when the *draft* introduced it — blocking on
+a pre-existing tag would mean a shop with one legacy long tag could never get a draft,
+which punishes the seller for the state of their own catalogue.
+
+**Verdict derived, never assigned.** `ok` is one expression over the completed findings
+list. The Phase 4 lesson: a rule added later must be able to block, and it cannot if some
+earlier line already decided.
+
+**The prompt states rules as facts about the world, not preferences about style.** "Etsy
+does not publish its ranking algorithm; nobody outside Etsy knows it" is checkable and
+stable. "Please avoid ranking claims" is a request, and requests are the first thing a long
+context erodes.
+
+---
+
+## D40 — Facts are the only channel into a prompt
+
+`AiRequest` carries `PromptFact[]`, each with its provenance class. There is **no free-text
+field** through which a caller could pass an unlabelled claim, and no helper that accepts a
+bare number: `domain/ai/facts.ts` takes `Provenanced<T>` and returns a labelled fact, so a
+figure cannot lose its class on the way in.
+
+Three consequences worth keeping:
+
+- **An UNAVAILABLE value is rendered, not omitted.** "Views for this listing: not available
+  — Etsy does not provide listing views through the public API." A model that notices a
+  missing field will reason about why it is missing; one that is told plainly does not.
+- **An ESTIMATED value arrives as a range with its caveat on the same line**, so the range
+  and the reason it is a range cannot be separated by whatever the model does next.
+- **The allowed-number set is built from the same facts as the prompt**, in the same
+  function. The permission list and the prompt cannot drift apart.
+
+The request type also has no `temperature`, no `systemPrompt` and no
+`predictImpact` — a caller cannot loosen the guardrails from outside, and there is nowhere
+to put a request for a forecast.
+
+---
+
+## D41 — Two conditions for live AI, and a build error if it leaks
+
+`getAiProvider()` returns the live provider only when **`AI_MODE=live` AND
+`ANTHROPIC_API_KEY` is set AND the shop is not in demo mode**. Any one of the three missing
+means the deterministic rule-based provider runs. An environment that claims to be live
+with no key would otherwise fail at the moment a seller clicks the button rather than at
+the moment someone misconfigured it — and demo mode reaching a live model is the same class
+of mistake as demo mode reaching Etsy, which already has two guards.
+
+`lib/ai/claude.ts` starts with `import 'server-only'`. Importing it from a client component
+is a build error, not a review comment. The key is read inside a lazy getter, never at
+module load, so demo mode boots with no credentials of any kind.
+
+**Nothing from the provider reaches the seller unfiltered.** Rate limits, auth failures and
+transport errors are all mapped to one `AI_UNAVAILABLE` AppError with our own wording — the
+provider's message can carry request ids, model names and header hints, and none of that is
+the seller's business. A model refusal is a legitimate outcome, reported as one, and like
+every other failure it is **not counted against the allowance**.
+
+---
+
+## D42 — AI is decoration on an explanation that already exists
+
+`explainRule` and `recommendForAction` are given the finding the domain computed and the
+evidence already on screen, and they may say nothing that is not traceable to one of them.
+A recommendation citing evidence it was never given is blocked.
+
+When the assistant's version is withheld — or the service is unreachable — the seller reads
+**the product's own words**, unbadged, plus a line saying a version was withheld and why.
+The information is identical in all three states. That is the design constraint: AI
+decorates an explanation the domain already produced, and never *is* the explanation, so
+"the AI is down" costs a badge rather than a paragraph.
+
+Cost follows from the same principle: **one explanation per page, for the worst rule or the
+top action**. Explaining every rule would be a dozen API calls per page load, spending the
+seller's allowance on text they may not read, and the rules already explain themselves.
+
+---
+
+## D43 — The audit trail records the person, not just the change
+
+An approved draft becomes ordinary events in the append-only log, **one per changed field**
+— because Change History shows fields, rollback reverses fields, and Shop Pulse correlates
+fields; a single "AI draft applied" row would be invisible to all three.
+
+Each event carries `source: 'AI_ASSISTED'`, the **approver's actor id** (a required
+parameter with no default), the operation that carried it to Etsy, the provider that
+drafted it, and the rationale **the seller actually read at approval time** — not a
+regenerated summary. Six months from now "why does this listing say that?" has to be
+answerable, and "a model wrote it and nobody remembers approving it" is the answer this
+product exists to prevent.

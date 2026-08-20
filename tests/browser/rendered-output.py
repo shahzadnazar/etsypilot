@@ -192,6 +192,36 @@ with sync_playwright() as p:
     check("listings_r" in conn, "Etsy's own scope strings are printed so the grant is inspectable")
     check(pg.locator("input[type=password]").count() == 0, "No password field exists on the page")
 
+    # --- Phase 7: AI hardening -------------------------------------------
+
+    pg.goto(f"{BASE}/listings/ai-copilot", wait_until="domcontentloaded")
+    pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)
+    ai = pg.locator("main").inner_text()
+    check("checked against the guardrails" in ai.lower() or "Checked against the guardrails" in ai,
+          "The copilot says the draft was checked before display")
+    check("no invented figures, no ranking claims, no forecasts" in ai,
+          "The copilot names the three checks by what they prevent")
+    check("rule-based draft (demo mode)" in ai,
+          "The copilot names which provider produced the draft")
+    # The guardrails themselves must not appear as claims about ranking.
+    for banned in ["rank higher", "improve your visibility", "Etsy’s algorithm favours",
+                   "expected lift", "you should see more"]:
+        check(banned.lower() not in ai.lower(), f"Copilot page contains no “{banned}”")
+
+    # Assisted prose is badged and traceable.
+    pg.goto(f"{BASE}/action-center", wait_until="domcontentloaded")
+    pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)
+    ac = pg.locator("main").inner_text()
+    check("Where to start" in ac, "The Action Center carries an assistant recommendation")
+    check("Advice, not instruction" in ac, "The recommendation is framed as advice")
+    check("given your screen and nothing else" in ac,
+          "The page says what the assistant was allowed to see")
+
+    pg.goto(f"{BASE}/listings/audit", wait_until="domcontentloaded")
+    pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)
+    au = pg.locator("main").inner_text()
+    check("Where to start ·" in au, "The audit carries an assistant explanation for the worst rule")
+
     # --- Shop Pulse: baseline is described as calculated ---
     pg.set_viewport_size({"width": 1440, "height": 1000})
     pg.goto(f"{BASE}/shop-pulse", wait_until="domcontentloaded"); pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)

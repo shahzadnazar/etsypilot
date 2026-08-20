@@ -1,41 +1,51 @@
 /*
  * AI copilot service.
  *
- * The generator here is deterministic and rule-based, not a model call. That is
- * the right shape for Phase 6: the surfaces, the diff, the approval gate and
- * the quota are what the phase is for, and Phase 7 swaps the body of
- * `generateDraft` for a real prompt without changing a single call site.
+ * The order of operations here IS the hardening:
  *
- * Two invariants hold whichever generator runs, and both are tested:
+ *   assemble facts  ->  provider  ->  validate output  ->  draft or refusal
  *
- *   - Locked terms survive verbatim. A draft that dropped the shop's own brand
- *     name from a title would be a rewrite the seller never asked for.
- *   - No drafted field carries a number the model invented. The only figures on
- *     this screen are character counts, which are counted, and keyword demand,
- *     which comes from the signals service with its own ESTIMATED badge.
+ * There is no path that skips the middle two. `generateDraft` returns either a
+ * clean draft or a RejectedDraft explaining what the model did wrong — never a
+ * partially-trusted one. A rewrite that invented a metric is not trustworthy
+ * about the parts that happen to look fine, and repairing it would mean
+ * deciding, on the seller's behalf, which of its claims to believe.
+ *
+ * Phase 6 built the seam; Phase 7 fills it. The provider is injected, so a test
+ * can supply one that misbehaves on purpose and assert the validator catches it
+ * — the same reasoning as injecting the Etsy adapter in Phase 4: when a safety
+ * property makes something hard to test, change the architecture, never the
+ * property.
  */
 
+import { getAiProvider } from '@/lib/ai'
+import type { AiProvider, DraftListingRequest } from '@/lib/ai/interface'
 import { getEtsyService } from '@/lib/etsy'
 import { DEMO_NOW } from '@/lib/etsy/demo-dataset'
 import type { EtsyListing } from '@/lib/etsy/interface'
 import { Errors } from '@/lib/errors/types'
 import type { ShopContext } from '@/lib/permissions'
 import { demoLists } from '@/domain/research/service'
+import { listingFacts } from './facts'
+import { validateDraft } from './validate'
 import {
   DEFAULT_GUARDRAILS,
   type AiDraft,
   type DraftSource,
   type GenerationInputs,
   type GenerationQuota,
+  type RejectedDraft,
   quotaExhausted,
 } from './types'
 
-const MAX_TITLE = 140
-
 export interface CopilotView {
-  draft: AiDraft
+  /** The inputs that produced the attempt — shown whether or not it survived. */
+  inputs: GenerationInputs
+  draft: AiDraft | null
+  /** Set when validation withheld the draft. Exactly one of these is non-null. */
+  rejected: RejectedDraft | null
   quota: GenerationQuota
-  /** Drafts queued behind this one. Each is approved individually. */
+  provider: string
   queue: { listingId: string; title: string; status: AiDraft['status'] }[]
 }
 
@@ -58,6 +68,16 @@ export async function getCopilotView(ctx: ShopContext, listingId?: string): Prom
     guardrails: [...DEFAULT_GUARDRAILS],
   }
 
+  const provider = getAiProvider()
+  const outcome = await generateDraft({
+    shopId: ctx.shopId,
+    listing: target,
+    inputs,
+    terms: list?.terms ?? [],
+    now: DEMO_NOW,
+    provider,
+  })
+
   const queue = listings
     .filter((l) => l.tags.length < 13 && l.etsyListingId !== target.etsyListingId)
     .slice(0, 6)
@@ -68,27 +88,64 @@ export async function getCopilotView(ctx: ShopContext, listingId?: string): Prom
     }))
 
   return {
-    draft: generateDraft({ shopId: ctx.shopId, listing: target, inputs, terms: list?.terms ?? [], now: DEMO_NOW }),
+    inputs,
+    draft: outcome.kind === 'DRAFT' ? outcome.draft : null,
+    rejected: outcome.kind === 'REJECTED' ? outcome.rejected : null,
     quota: demoQuota(),
+    provider: provider.mode === 'LIVE' ? provider.model : 'rule-based draft (demo mode)',
     queue,
   }
 }
 
+export type DraftOutcome =
+  | { kind: 'DRAFT'; draft: AiDraft }
+  | { kind: 'REJECTED'; rejected: RejectedDraft }
+
 /**
- * Produce a draft.
+ * Produce a draft, or refuse to.
  *
- * Phase 7 replaces the body. The signature is the contract: listing text and
- * the seller's own saved terms in, a fully-sourced draft out, and no parameter
- * anywhere through which a metric could be supplied or requested.
+ * The provider is a parameter. Nothing here knows or cares whether a model or a
+ * rule set produced the text — the validation is identical either way, which is
+ * the point: the guarantee cannot weaken when the provider gets better.
  */
-export function generateDraft(args: {
+export async function generateDraft(args: {
   shopId: string
   listing: EtsyListing
   inputs: GenerationInputs
   terms: string[]
   now: string
-}): AiDraft {
+  provider?: AiProvider
+}): Promise<DraftOutcome> {
   const { listing, inputs, terms } = args
+  const provider = args.provider ?? getAiProvider()
+
+  const request: DraftListingRequest = {
+    kind: 'DRAFT_LISTING',
+    current: { title: listing.title, tags: listing.tags, description: listing.description },
+    candidateTerms: terms,
+    lockedTerms: inputs.lockedTerms,
+    tone: inputs.tone,
+    rewriteDescription: inputs.rewriteDescription,
+    guardrails: inputs.guardrails,
+    facts: listingFacts(listing),
+  }
+
+  const response = await provider.draftListing(request)
+  const validation = validateDraft(request, response)
+
+  if (!validation.ok) {
+    return {
+      kind: 'REJECTED',
+      rejected: {
+        listingId: listing.etsyListingId,
+        listingTitle: listing.title,
+        reasons: validation.findings
+          .filter((f) => f.severity === 'BLOCKING')
+          .map((f) => f.detail),
+        note: 'The draft was withheld. Your live listing was not touched, and this generation was not counted against your allowance.',
+      },
+    }
+  }
 
   const listSource: DraftSource = {
     label: inputs.keywordListName ? `keyword list “${inputs.keywordListName}”` : 'your saved terms',
@@ -97,57 +154,42 @@ export function generateDraft(args: {
   const currentSource: DraftSource = { label: 'your current title', kind: 'CURRENT_LISTING' }
   const lockedSource: DraftSource = { label: 'locked terms preserved', kind: 'LOCKED_TERM' }
 
-  const title = rewriteTitle(listing.title, inputs.lockedTerms)
-  const tags = retag(listing.tags, terms, listing.title)
-
-  const rationale: string[] = []
-  if (title.removedDuplicate) {
-    rationale.push(
-      `Removed the duplicated “${title.removedDuplicate}” so the title reads once and stays under ${MAX_TITLE} characters.`,
-    )
-  }
-  for (const added of tags.added) {
-    rationale.push(`Added “${added}” — a term from your saved list that the listing does not already use.`)
-  }
-  for (const removed of tags.removed) {
-    rationale.push(`Dropped “${removed}” from tags because it already appears in the title.`)
-  }
-  if (rationale.length === 0) rationale.push('No change was needed — the listing already satisfies every guardrail.')
+  const added = response.tags.filter((t) => !listing.tags.includes(t))
+  const removed = listing.tags.filter((t) => !response.tags.includes(t))
 
   return {
-    id: `draft-${listing.etsyListingId}`,
-    shopId: args.shopId,
-    listingId: listing.etsyListingId,
-    listingTitle: listing.title,
-    status: 'AWAITING_REVIEW',
-    inputs,
-    current: { title: listing.title, tags: listing.tags, description: listing.description },
-    title: {
-      text: title.text,
-      characterCount: title.text.length,
-      sources: [currentSource, ...(inputs.lockedTerms.length > 0 ? [lockedSource] : [])],
+    kind: 'DRAFT',
+    draft: {
+      id: `draft-${listing.etsyListingId}`,
+      shopId: args.shopId,
+      listingId: listing.etsyListingId,
+      listingTitle: listing.title,
+      status: 'AWAITING_REVIEW',
+      inputs,
+      current: { title: listing.title, tags: listing.tags, description: listing.description },
+      title: {
+        text: response.title,
+        characterCount: response.title.length,
+        sources: [currentSource, ...(inputs.lockedTerms.length > 0 ? [lockedSource] : [])],
+      },
+      tags: { tags: response.tags, added, removed, sources: [listSource] },
+      description: response.description
+        ? { text: response.description, sources: [currentSource] }
+        : null,
+      rationale: response.rationale,
+      advisories: validation.findings.filter((f) => f.severity === 'ADVISORY').map((f) => f.detail),
+      producedBy: provider.mode === 'LIVE' ? provider.model : provider.mode.toLowerCase(),
+      createdAt: args.now,
     },
-    tags: {
-      tags: tags.result,
-      added: tags.added,
-      removed: tags.removed,
-      sources: [listSource],
-    },
-    description: inputs.rewriteDescription
-      ? { text: listing.description, sources: [currentSource] }
-      : null,
-    rationale,
-    createdAt: args.now,
   }
 }
 
 /**
  * Consume one generation.
  *
- * Throws when the allowance is spent, and the caller is expected to show the
- * limit state rather than degrade quietly. A failed generation must NOT be
- * counted — the design says so explicitly, and it is the difference between a
- * limit and a penalty.
+ * Called only after a draft has passed validation. A failed generation, a
+ * refusal and a withheld draft are all free — the design says so, and it is the
+ * difference between a limit and a fine.
  */
 export function consumeGeneration(quota: GenerationQuota): GenerationQuota {
   if (quotaExhausted(quota)) {
@@ -161,55 +203,12 @@ export function consumeGeneration(quota: GenerationQuota): GenerationQuota {
   return { ...quota, used: quota.used + 1 }
 }
 
-function rewriteTitle(title: string, lockedTerms: string[]): { text: string; removedDuplicate: string | null } {
-  const parts = title.split(',').map((p) => p.trim()).filter(Boolean)
-  const seen = new Set<string>()
-  let removedDuplicate: string | null = null
-
-  const kept = parts.filter((part) => {
-    const key = part.toLowerCase()
-    // A locked term is preserved even where it repeats. The seller decided.
-    if (lockedTerms.some((t) => key.includes(t.toLowerCase()))) return true
-    const word = key.split(/\s+/).at(-1) ?? key
-    if (seen.has(word)) {
-      removedDuplicate ??= part
-      return false
-    }
-    seen.add(word)
-    return true
-  })
-
-  let text = kept.join(', ')
-  if (text.length > MAX_TITLE) text = text.slice(0, text.lastIndexOf(',', MAX_TITLE))
-  return { text, removedDuplicate }
-}
-
-function retag(
-  current: string[],
-  savedTerms: string[],
-  title: string,
-): { result: string[]; added: string[]; removed: string[] } {
-  const titleText = title.toLowerCase()
-  const removed = current.filter((t) => t.length > 6 && titleText.includes(t.toLowerCase()))
-  const kept = current.filter((t) => !removed.includes(t))
-
-  const added: string[] = []
-  for (const term of savedTerms) {
-    if (kept.length + added.length >= 13) break
-    if (kept.includes(term) || added.includes(term)) continue
-    if (term.length > 20) continue // Etsy caps a tag at 20 characters.
-    added.push(term)
-  }
-
-  return { result: [...kept, ...added], added, removed }
-}
-
 function demoQuota(): GenerationQuota {
   return {
     used: 42,
     limit: 60,
     resetsOn: '2026-09-01',
-    planName: 'Solo',
-    nextTier: { name: 'Growth', limit: 500 },
+    planName: 'Growth',
+    nextTier: null,
   }
 }

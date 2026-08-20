@@ -108,9 +108,27 @@ export function DraftReview({ draft, demo }: { draft: AiDraft; demo: boolean }) 
             </li>
           ))}
         </ul>
+        {draft.advisories.length > 0 ? (
+          <div className="mt-3 rounded-card border border-line p-3">
+            <span className="text-label text-muted-1">Worth a look before you approve</span>
+            <ul className="mt-1.5 flex flex-col gap-1">
+              {draft.advisories.map((a) => (
+                <li key={a} className="text-caption leading-relaxed text-ink-2">
+                  · {a}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-1.5 text-caption leading-snug text-muted-1">
+              These are judgement calls, not rule breaks — a draft that broke a rule would have
+              been withheld rather than shown with a warning.
+            </p>
+          </div>
+        ) : null}
+
         <p className="mt-3 text-caption leading-relaxed text-muted-1">
           Impact is not predicted. After publishing, track the result in the experiment tracker —
-          EtsyPilot measures what happened rather than forecasting what will.
+          EtsyPilot measures what happened rather than forecasting what will. Checked against the
+          guardrails before you saw it: no invented figures, no ranking claims, no forecasts.
         </p>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
