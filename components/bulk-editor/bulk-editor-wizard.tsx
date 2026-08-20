@@ -3,12 +3,18 @@
 import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+/*
+ * From ./plan, not ./service. The planning half is pure; the service half
+ * reaches for the Etsy adapter, which is server-only, and importing it here put
+ * that module — and the token store behind it — in the browser bundle's graph.
+ * The build refused, correctly.
+ */
 import {
   applicableItems,
   createDraft,
+  ROLLBACK_WINDOW_DAYS,
   validateOperation,
-} from '@/domain/bulk-editor/service'
-import { ROLLBACK_WINDOW_DAYS } from '@/domain/bulk-editor/service'
+} from '@/domain/bulk-editor/plan'
 import type { FieldChange } from '@/domain/bulk-editor/types'
 import type { EtsyListing } from '@/lib/etsy/interface'
 import { cn } from '@/lib/utils/cn'

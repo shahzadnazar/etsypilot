@@ -2000,3 +2000,150 @@ unconditional: the check fails.
 It also sits outside the `(dashboard)` group, so it reads no session and is prerendered —
 the same rule as D47, in the direction that says a page which does NOT depend on who is
 asking may be static.
+
+---
+
+## D50 — Live Etsy access is a one-file swap, and the credentials have nowhere to leak
+
+Phase 11's acceptance criterion is "live mode can replace mock mode without rewriting the
+product". It is checked, not asserted: a test walks every `.ts`/`.tsx` file under `app/`,
+`components/`, `domain/` and `lib/`, and the list of files importing `lib/etsy/live.ts` must
+be exactly `['lib/etsy/index.ts']`. The same test in the other direction says nothing but
+the selector imports `mock.ts`. Swapping adapters is `ETSY_MODE=live` and nothing else.
+
+The whole integration is testable with **no Etsy API key, no network and no Etsy account**,
+because the transport, the clock and the randomness are injected (D28). That is not a
+convenience. An integration whose security properties can only be checked against a live
+provider is an integration whose security properties are never checked — and the security
+properties here are the ones the brief is most explicit about.
+
+What that buys, each with a test that fails when the property is removed:
+
+| Property | How it is held |
+|---|---|
+| No credential in the repository | Every value comes from `process.env`; `.env.example` ships placeholders and a test asserts each is empty |
+| No Etsy secret in the browser | Nothing Etsy-related may carry `NEXT_PUBLIC_`; asserted over the source AND the env template |
+| No secret in an API response | `TokenSet` is returned by nothing; the access token reaches the HTTP client inside a closure |
+| No Etsy password, ever | There is no password field in the codebase to receive one — the browser check counts `input[type=password]` on the connect screen |
+| No credential in a log or an error | `redact()` strips bearer tokens, keys, verifiers and refresh tokens; `EtsyHttpError` carries status, method and PATH — never the query string, never headers |
+| No stack trace to a user | Both routes redirect with one of our own outcome codes; a browser check greps the callback's response body for `verifier`, `Error` and a stack frame |
+| Nothing auto-published | `applyListingChanges` is reachable only through the bulk editor's `ConfirmedOperation` gate |
+
+PKCE is used even though the server could hold a secret. The verifier binds the
+authorization code to the browser that started the flow: a code leaked through a referrer
+header, a shared screen or a proxy log is useless without it, and it never leaves the
+server. `statesMatch` compares in constant time and length-checks first, because
+`timingSafeEqual` throws on a length mismatch and a CSRF attempt must be refused, not turned
+into a 500.
+
+Tokens are sealed with AES-256-GCM before storage. GCM rather than CBC so a row edited in
+the database fails to decrypt instead of decrypting to something else. "The database is
+private" is a claim about infrastructure, not about the data.
+
+### D50a — `server-only` is a design input, not an obstacle
+
+Adding `import 'server-only'` to the Etsy adapter turned twelve green test files red and
+then failed the build. Both were right, and both were about the same thing: modules that
+merely *mention* the adapter drag it into a bundle.
+
+Two answers, and neither was to delete the marker:
+
+**The test runner gets an alias.** `vitest.config.ts` points `server-only` at a no-op stub.
+Vitest is not a client bundle; Next's bundler is where the marker matters and it still
+applies there. So that the alias cannot quietly become a way to *drop* the marker, a test
+asserts that `lib/etsy/tokens.ts`, `lib/etsy/live.ts`, `lib/ai/claude.ts` and
+`lib/billing/stripe.ts` each still carry it.
+
+**The bulk editor gets split.** The wizard is a client component and needs `createDraft`,
+`validateOperation` and `applicableItems`. Importing them from `domain/bulk-editor/service.ts`
+pulled `getEtsyService` — and through it the adapter and its token store — into the browser
+graph. So the pure planning half moved to `domain/bulk-editor/plan.ts` and `service.ts` kept
+everything that talks to Etsy, re-exporting the rest so no server caller changed.
+
+**The confirm gate is unaffected by the split, and that is the point of it being a type.**
+`confirm` is still the only function returning a `ConfirmedOperation`, and `applyOperation`
+still accepts nothing else. The gate survived a file move because it was never enforced by
+adjacency.
+
+D28 again, in its sharpest form yet: change the architecture, never the property. The
+boundary the build forced — *planning is pure, applying touches Etsy* — is a better boundary
+than the one that was there before, which is usually how this goes.
+
+### D50b — A live connection does not conjure data Etsy withholds
+
+`getListingViews` and `getAdsPerformance` return `UNAVAILABLE` in live mode, with a valid
+key and a connected shop, exactly as they do in demo. They exist as methods rather than
+omissions precisely so the answer to "surely we can get this now that we're connected?" is
+written down in the adapter, where someone looking for the endpoint will find it. When Etsy
+publishes an endpoint, that is the moment to change them — not before.
+
+Two quieter refusals in the same spirit, both in the mappers:
+
+- **Attributes are left empty on both sides.** Fetching per-listing attributes for a whole
+  catalog would spend the rate budget on a page nobody opened, so `toListing` leaves
+  `attributes` empty — and `requiredAttributes` empty too, so no audit rule fires on data
+  that was never loaded. Empty means "not fetched", not "none", and the code says so.
+- **Fees are left at zero, and zero is not fee-free.** Fees come from the payment-account
+  ledger, not the receipt. The profit domain treats a period with no fee data as incomplete;
+  a shop whose fees read `$0` would show a wildly optimistic net profit.
+
+`getSyncProgress` reports `overallPercent: 0` and `etaSeconds: null` when no sync is
+running. Not `0` seconds — `0` reads as "arriving now", and `null` is how this product says
+unknown. A sync screen that invents a percentage is the same defect as a metric that invents
+a figure.
+
+### D50c — Every OAuth outcome is written once, and a route cannot emit one without copy
+
+`CONNECT_OUTCOMES` in `domain/connect/types.ts` holds the six ways an attempt can end and
+the sentence a seller reads for each. The routes' outcome type is
+`keyof typeof CONNECT_OUTCOMES`, so an outcome with no copy does not compile and copy with
+no outcome has nowhere to be shown (D46). A test greps both route files and asserts every
+emitted string is a key.
+
+Every failure says the same two things, because both are true and both are what a seller
+wants to know first: **nothing was connected, and nothing was changed on Etsy.** A test
+asserts that phrase is in every failure's copy, and the browser checks it on the rendered
+page for each `?connect=` value.
+
+Nothing from Etsy is passed through into that URL. Its `error_description` is provider text
+of unknown content heading for a URL bar, a browser history and a referrer header. The
+outcome codes are ours.
+
+The flow itself is one httpOnly cookie holding state, verifier, user id and scopes, because
+those four are only meaningful together — a callback with a verifier but no state is not a
+partially valid flow, it is an invalid one. `readFlowCookie` never throws: a malformed
+cookie is an invalid flow like any other, and a JSON parse trace is exactly the stack trace
+a user must never see. The cookie is deleted on **every** path including the failures, since
+a verifier that survives a failed attempt is a verifier available for a second one.
+
+### D50d — A write sends only what was confirmed to change
+
+`applyListingChanges` builds its request body from `request.changes`, which is a `Partial`.
+An absent key means "leave it alone". Sending the whole listing back would overwrite fields
+the seller edited on Etsy between the diff and the apply — the silent clobbering the confirm
+step exists to prevent — and a test asserts the body contains exactly the changed field.
+
+An empty change set is reported `SKIPPED`, not `SUCCEEDED`: the audit log must not record a
+write that never happened. A failure on one item does not roll back earlier items or stop
+later ones, and each item's error is the user-safe message, never the transport detail — a
+test drives a mid-batch failure and asserts Etsy's own words do not reach the result.
+
+Which shop the tokens belong to comes from Etsy's `/users/me`, never from the request. A
+`shopId` a caller could supply is a cross-shop write waiting to happen, and the callback is
+the one moment in the product where the shop is not already known.
+
+### D50e — A cache keyed by nothing is a cross-shop read
+
+`LiveEtsyService` builds an HTTP client whose token closure captures a `shopId`. The first
+version cached one client on the instance. The adapter is a process-wide singleton, so that
+client would have captured the first shop it was built for and then served **every later
+shop from those credentials** — no error, no warning, just another shop's listings.
+
+The cache is now a `Map` keyed by shop, with a test that asserts a second shop builds a
+second client and a third call for the first shop does not. Breaking the key back to a
+constant fails it.
+
+Worth naming as a class, because this is the second time it has appeared: **a performance
+shortcut that drops an identifier turns an authorization boundary into a coincidence.** The
+same shape as the mock billing store that was two different Maps (D45b) — module-level state
+that looks like an implementation detail and is actually a scoping decision.

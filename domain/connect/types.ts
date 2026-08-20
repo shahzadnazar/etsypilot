@@ -119,6 +119,62 @@ export interface ConnectionState {
   notice: string | null
 }
 
+/*
+ * How an OAuth attempt ended, and what the seller reads about it.
+ *
+ * Written here rather than in the route, because the route and the page must
+ * not be able to describe different outcomes (D46). The route's outcome type is
+ * `keyof typeof CONNECT_OUTCOMES`, so an outcome with no copy does not compile
+ * and a message with no outcome has nowhere to be shown.
+ *
+ * Every failure says the same two things, because both are true and both are
+ * what a seller actually wants to know: nothing was connected, and nothing was
+ * changed on Etsy.
+ */
+export const CONNECT_OUTCOMES = {
+  connected: {
+    tone: 'ok',
+    title: 'Shop connected',
+    detail: 'Etsy approved the connection. Importing starts now — you can keep working while it runs.',
+  },
+  cancelled: {
+    tone: 'info',
+    title: 'Connection cancelled',
+    detail: 'You declined on Etsy, so nothing was connected. Your shop is untouched and you can try again whenever you like.',
+  },
+  expired: {
+    tone: 'warn',
+    title: 'That connection attempt expired',
+    detail: 'A connection has ten minutes to complete. Nothing was connected and nothing was changed on Etsy — start again from this page.',
+  },
+  state_mismatch: {
+    tone: 'warn',
+    title: 'That connection could not be verified',
+    detail: 'The reply from Etsy did not match the request that started it, so it was refused. Nothing was connected. If you did not start a connection just now, you can ignore this.',
+  },
+  no_shop: {
+    tone: 'info',
+    title: 'That Etsy account has no shop',
+    detail: 'Etsy approved the connection, but the account has no shop for EtsyPilot to read. Nothing was connected. Open a shop on Etsy first, then connect again.',
+  },
+  exchange_failed: {
+    tone: 'warn',
+    title: 'Etsy did not complete the connection',
+    detail: 'Etsy refused the final step. Nothing was connected and nothing was changed on Etsy. Try again shortly; if it keeps happening the Etsy app may need its permissions reviewed.',
+  },
+  not_configured: {
+    tone: 'info',
+    title: 'No Etsy app is configured on this server',
+    detail: 'EtsyPilot has no Etsy API credentials yet, so there is no shop to connect to. Demo mode needs none and stays fully usable.',
+  },
+} as const
+
+export type ConnectOutcome = keyof typeof CONNECT_OUTCOMES
+
+export function connectOutcome(raw: string | undefined): ConnectOutcome | null {
+  return raw && raw in CONNECT_OUTCOMES ? (raw as ConnectOutcome) : null
+}
+
 export function selectedScopeStrings(keys: string[]): string[] {
   const selected = ETSY_SCOPES.filter((s) => keys.includes(s.key) || s.requirement === 'REQUIRED')
   return [...new Set(selected.flatMap((s) => s.scopes))]

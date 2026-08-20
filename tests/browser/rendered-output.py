@@ -38,7 +38,11 @@ CHROME = os.environ.get("CHROME_PATH", "/opt/pw-browsers/chromium-1194/chrome-li
 fails, notes = [], []
 
 def check(cond, msg):
-    (notes if cond else fails).append(("PASS " if cond else "FAIL ") + msg)
+    line = ("PASS " if cond else "FAIL ") + msg
+    (notes if cond else fails).append(line)
+    # Progress to stderr as it happens, so a run that stalls says WHERE it
+    # stalled. The summary on stdout at the end is still the report.
+    print(line, file=sys.stderr, flush=True)
 
 def wait_for_text(pg, marker, timeout_ms=15000):
     """Poll main for text after a navigation.
@@ -74,6 +78,26 @@ def open_tab(pg, name, marker):
 with sync_playwright() as p:
     b = p.chromium.launch(executable_path=CHROME)
     pg = b.new_page(viewport={"width": 1440, "height": 1000})
+
+    # --- The server must be serving the build you just made -----------------
+    #
+    # `next build` over a RUNNING `next start` leaves the old process serving a
+    # manifest whose CSS chunk no longer exists. Every page then renders
+    # unstyled, and the first thing that notices is the money-cell check
+    # reporting eighteen cells that "lost tabular-nums" — a page-wide
+    # infrastructure problem wearing a styling regression's clothes. It cost a
+    # rebuild and a re-run to work out. So: fail here, in one line, with the
+    # actual reason.
+    pg.goto(f"{BASE}/profit", wait_until="load"); pg.wait_for_selector("main", timeout=15000)
+    loaded = pg.evaluate("""() => [...document.styleSheets].filter(s => {
+      try { return s.cssRules.length > 0 } catch (e) { return false }
+    }).length""")
+    if loaded == 0:
+        print("ABORT: the page loaded with no stylesheet. The server is serving a stale\n"
+              "build — restart `next start` after `next build`. Every styling check below\n"
+              "would fail for this one reason.", file=sys.stderr)
+        b.close()
+        sys.exit(2)
 
     # --- Profit Reality: inputs panel ---
     pg.goto(f"{BASE}/profit", wait_until="domcontentloaded"); pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)
@@ -437,6 +461,70 @@ with sync_playwright() as p:
     pg.goto(f"{BASE}/shop-pulse", wait_until="domcontentloaded"); pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)
     sp = pg.locator("main").inner_text()
     check("vs calculated baseline" in sp, "Shop Pulse names the baseline as calculated")
+
+    # --- Phase 11: the connect screen, and every OAuth outcome ---
+    pg.goto(f"{BASE}/settings/shops", wait_until="domcontentloaded")
+    pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(400)
+    shops = pg.locator("main").inner_text()
+    check("Connect a shop" in shops, "The connect screen offers a real connection")
+    check("etsy.com" in shops, "The screen says the password is typed on Etsy, not here")
+    # Scoped to main: the page's own promise never to ask for a password is not
+    # evidence that it does not ask for one.
+    check(pg.locator("main input[type=password]").count() == 0,
+          "There is no password field anywhere on the connect screen")
+
+    # The link must carry the scope keys and nothing else.
+    href = pg.get_by_role("link", name="Connect a shop").get_attribute("href")
+    check(href.startswith("/api/etsy/connect?scopes="),
+          "Connecting starts a server-side flow, not a client-side one")
+    check("key" not in href and "token" not in href and "secret" not in href,
+          "The connect link carries no credential")
+    check("inventory" not in href,
+          "The connect link asks for no optional permission nobody chose")
+
+    # Each outcome renders its own copy. A URL a seller could edit by hand is
+    # not a way to make the page say something it does not mean.
+    for outcome, marker in [
+        ("cancelled", "Connection cancelled"),
+        ("expired", "expired"),
+        ("state_mismatch", "could not be verified"),
+        ("exchange_failed", "did not complete"),
+        ("no_shop", "has no shop"),
+        ("not_configured", "No Etsy app is configured"),
+    ]:
+        pg.goto(f"{BASE}/settings/shops?connect={outcome}", wait_until="domcontentloaded")
+        pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(300)
+        body = pg.locator("main").inner_text()
+        check(marker in body, f"?connect={outcome} tells the seller what happened")
+        if outcome not in ("not_configured",):
+            # Case-insensitive: "so nothing was connected" mid-sentence is the
+            # same promise as "Nothing was connected." at the start of one, and
+            # a check that forces one phrasing makes the copy worse.
+            check("nothing was connected" in body.lower(),
+                  f"?connect={outcome} says nothing was connected")
+
+    pg.goto(f"{BASE}/settings/shops?connect=made_up", wait_until="domcontentloaded")
+    pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(300)
+    made_up = pg.locator("main").inner_text()
+    check("made_up" not in made_up, "An invented outcome in the URL renders nothing")
+
+    # --- Phase 11: the routes refuse cleanly with no Etsy app configured ---
+    resp = pg.request.get(f"{BASE}/api/etsy/connect?scopes=read", max_redirects=0)
+    check(resp.status in (303, 307),
+          "Connecting with no key configured redirects rather than erroring")
+    location = resp.headers.get("location", "")
+    check("connect=not_configured" in location,
+          "It says the server has no Etsy app, not that something broke")
+    check("etsy.com" not in location,
+          "It does not send the seller to Etsy with a key it does not have")
+
+    cb = pg.request.get(f"{BASE}/api/etsy/callback?code=abc&state=xyz", max_redirects=0)
+    check(cb.status in (303, 307), "A callback with no flow cookie redirects")
+    check("connect=expired" in cb.headers.get("location", ""),
+          "A callback with no verifier is reported as expired, not as a failure")
+    body = cb.text()
+    check("verifier" not in body and "Error" not in body and "at " not in body,
+          "No stack trace or credential reaches the response body")
 
     b.close()
 

@@ -7,6 +7,8 @@ import { SyncProgress } from '@/components/connect/sync-progress'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { demoSyncState, getConnectionState } from '@/domain/connect/service'
+import { CONNECT_OUTCOMES, connectOutcome, ETSY_SCOPES } from '@/domain/connect/types'
+import { isDemoMode } from '@/lib/etsy'
 import { getSession } from '@/lib/auth'
 import { shopContext } from '@/lib/permissions'
 import { formatDateTime } from '@/lib/utils/format'
@@ -16,10 +18,14 @@ export const metadata: Metadata = { title: 'Shop connections' }
 /*
  * Etsy Connect.
  *
- * Phase 11 replaces the "Continue to Etsy" link with a real OAuth redirect.
- * Everything the seller reads on this page — the scopes, what breaks without
- * each one, what EtsyPilot cannot do, the revoke path — is already true and
- * does not change when the redirect becomes real.
+ * Phase 11 made "Connect a shop" a real OAuth redirect to /api/etsy/connect.
+ * Everything else the seller reads on this page — the scopes, what breaks
+ * without each one, what EtsyPilot cannot do, the revoke path — was already
+ * true before the redirect became real and did not change with it.
+ *
+ * `?connect=<outcome>` reports how an attempt ended. The copy lives in
+ * domain/connect/types.ts so the route and this page cannot describe different
+ * outcomes.
  *
  * `?sync=1` shows the staged import, so the state can be reviewed and tested
  * without waiting for a live connection to be mid-flight.
@@ -27,15 +33,23 @@ export const metadata: Metadata = { title: 'Shop connections' }
 export default async function ShopConnectionsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sync?: string }>
+  searchParams: Promise<{ sync?: string; connect?: string }>
 }) {
   const session = await getSession()
   if (!session) redirect('/login')
 
-  const { sync } = await searchParams
+  const { sync, connect } = await searchParams
   const ctx = shopContext(session, session.shopId)
   const state = await getConnectionState(ctx)
   const showSync = sync === '1'
+  const outcome = connectOutcome(connect)
+  /*
+   * Which scopes the "Connect a shop" link asks for. Everything the consent
+   * screen marks REQUIRED or RECOMMENDED — the optional one is left to the
+   * seller, because asking for a permission nobody chose is how a connect
+   * screen becomes a checkbox people stop reading.
+   */
+  const defaultScopeKeys = ETSY_SCOPES.filter((s) => s.requirement !== 'OPTIONAL').map((s) => s.key)
 
   return (
     <>
@@ -55,9 +69,29 @@ export default async function ShopConnectionsPage({
               View sync details
             </Link>
             <Button variant="secondary">Disconnect shop</Button>
+            {/*
+              * A plain link, not a button with a handler. Starting an OAuth
+              * flow is a top-level navigation by nature, and one that works
+              * with no JavaScript running is one that cannot fail to appear.
+              */}
+            <Link
+              href={`/api/etsy/connect?scopes=${defaultScopeKeys.join(',')}`}
+              className="inline-flex h-11 items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-white hover:bg-brand-strong md:h-[38px]"
+            >
+              Connect a shop
+            </Link>
           </>
         }
       />
+
+      {outcome ? (
+        <Card className="mb-4 p-4">
+          <h2 className="text-section text-ink-1">{CONNECT_OUTCOMES[outcome].title}</h2>
+          <p className="mt-1 max-w-[75ch] text-small leading-relaxed text-ink-2">
+            {CONNECT_OUTCOMES[outcome].detail}
+          </p>
+        </Card>
+      ) : null}
 
       {state.notice ? (
         <Card className="mb-4 p-4 text-small leading-relaxed text-ink-2">{state.notice}</Card>
@@ -70,6 +104,18 @@ export default async function ShopConnectionsPage({
       ) : null}
 
       <ScopeList granted={state.grantedScopes} />
+
+      <Card className="mt-4 p-[18px]">
+        <h3 className="text-section text-ink-1">What Etsy is asked for</h3>
+        <p className="mt-2 max-w-[75ch] text-small leading-relaxed text-ink-2">
+          Connecting sends you to Etsy to approve access. You type your Etsy password on etsy.com and
+          never here — EtsyPilot has nowhere to put one. EtsyPilot receives a permission token, held
+          on the server, encrypted, never in your browser, and revocable from either side.
+          {isDemoMode()
+            ? ' This server is running in demo mode with no Etsy credentials configured, so connecting will say so rather than sending you to Etsy.'
+            : ''}
+        </p>
+      </Card>
 
       <Card className="mt-4 p-[18px]">
         <h3 className="text-section text-ink-1">Revoking access</h3>

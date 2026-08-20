@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { ROLLBACK_WINDOW_DAYS } from '@/domain/bulk-editor/service'
+import { ROLLBACK_WINDOW_DAYS } from '@/domain/bulk-editor/plan'
 
 /*
  * The confirmation gate, made visible (artboard 42).

@@ -5,12 +5,16 @@
 
 ## 1. Current Status
 
-**Phase:** 10 — Simple Calculator & Free Tools (COMPLETE)
-**Current task:** Awaiting go-ahead for Phase 11 — Live Etsy Integration
+**Phase:** 11 — Live Etsy Integration (COMPLETE)
+**Current task:** Awaiting go-ahead for Phase 12 — Quality & Production Hardening
 **Current file being worked on:** None
-**Last completed task:** Structured AI input, provenance-aware prompts, output validation,
-issue explanations, action recommendations, audit trail for applied AI changes
-**Blockers:** NONE. D22 7a is closed by D35 (Audit log under Shops & data).
+**Last completed task:** OAuth 2.0 + PKCE, rate-limited HTTP client, encrypted token store,
+the full LiveEtsyService adapter and both /api/etsy routes — all written and tested with NO
+Etsy API key, which the owner does not have yet. Where the key goes is documented in
+docs/ETSY-SETUP.md, in .env.example, and in banners at the top of oauth.ts, live.ts and
+the connect route.
+**Blockers:** NONE for building. Live mode itself is blocked on the owner's Etsy app
+credentials; demo mode is unaffected and needs none.
 
 ## 2. Current Objective
 
@@ -19,6 +23,15 @@ Build Etsy Pilot as an Etsy Seller Decision & Operations Intelligence platform u
 ## 3. Current Phase
 
 Update this section whenever the phase changes.
+
+```text
+Phase 11 — Live Etsy Integration
+Status: COMPLETE — one file chooses the adapter and a test asserts nothing else imports
+it, so ETSY_MODE=live is the whole swap. Everything is testable with no key, no network
+and no Etsy account because the transport, clock and randomness are injected. Views and
+ads performance still return UNAVAILABLE with a live connection, because a connection
+does not conjure data Etsy withholds.
+```
 
 ```text
 Phase 7 — AI Copilot Hardening
@@ -137,6 +150,30 @@ Keep the latest 5–10 meaningful items.
 - D46: a limit is written once and read everywhere. Three restatements found: the copilot
   quota, the shell's plan chip, and Free's listing limit as an ambiguous null that made an
   UPGRADE warn about pausing.
+- Phase 11 built: OAuth 2.0 Authorization Code + PKCE (S256, constant-time state, httpOnly
+  single-flow cookie), an HTTP client that paces itself from Etsy's own rate headers and
+  honours Retry-After exactly, AES-256-GCM token sealing behind a server-only marker, the
+  full LiveEtsyService adapter with its mappers, and /api/etsy/connect + /api/etsy/callback.
+  Written and verified WITHOUT an Etsy API key — the owner does not have one yet, and
+  docs/ETSY-SETUP.md is the checklist for the day it arrives. 382 tests, 133 checks.
+- D50: the one-file swap is asserted, not intended — a test walks every source file and the
+  list of importers of live.ts must be exactly ['lib/etsy/index.ts'].
+- D50a: `server-only` on the adapter turned 12 green test files red and then failed the
+  build. Neither was fixed by deleting the marker. The runner got an alias (plus a test that
+  the marker is still there); the bulk editor got split into plan.ts (pure) and service.ts
+  (talks to Etsy). The confirm gate survived the file move because it is a type, not
+  adjacency — which is the argument for making it a type.
+- D50c: the six OAuth outcomes are written once in domain/connect/types.ts and the routes'
+  outcome type is keyof that object, so a route cannot emit an outcome the page has no copy
+  for. Etsy's own error text is never passed into a URL.
+- D50e: LiveEtsyService cached ONE HTTP client whose token closure captured a shopId — on a
+  process-wide singleton that is a silent cross-shop read. Keyed by shop now. Same class as
+  D45b: module-level state that looks like an implementation detail and is a scoping
+  decision.
+- Deliberate breaks: 17 run against the new checks; 15 failed as intended and one did not —
+  removing the flow cookie's userId check stayed green, because every case the test tried
+  was ALSO missing `scopes`. Rewritten to omit one field at a time. That check is what stops
+  a callback being completed in someone else's session.
 - Dependency defect cleared: drizzle-kit's @esbuild-kit chain pinned esbuild ~0.18 with
   four advisories. Aliased those deprecated packages to tsx (their own successor) and
   verified by running drizzle-kit generate. npm audit: 0 vulnerabilities.
@@ -408,6 +445,29 @@ output permanently. This is not a Phase 5 note — it applies to every phase aft
 
 These assertions are kept in `tests/browser/rendered-output.py` and run against a
 production build at the end of each phase.
+
+### Check the build you made, not the server that happens to be up
+`next build` over a RUNNING `next start` leaves the old process serving a manifest whose
+CSS chunk no longer exists. Every page renders unstyled, and what the browser checks report
+is eighteen money cells that "lost tabular-nums" — a page-wide infrastructure problem
+wearing a styling regression's clothes. Two runs were spent on it.
+
+`rendered-output.py` now aborts on the first page if no stylesheet loaded, saying so. The
+general rule: when a whole CLASS of check fails at once, suspect the harness before the
+code. And always restart the server after a rebuild — the same lesson as "check the
+artefact, not the source", one layer out.
+
+### A check that passes for a second reason is not a check
+A deliberate break removed the OAuth flow cookie's `userId` validation — the field that
+stops a callback being completed in someone else's session — and the test suite stayed
+green. Every case the test fed it was missing `scopes` as well, so the rejection it observed
+came from a different branch every time. The test was watching the right function and
+proving nothing about the line that mattered.
+
+The generalisation: when a guard checks N conditions, exercise them **one at a time**. A
+fixture missing three fields tests whichever check runs first. This is why every new check
+gets broken deliberately before it is kept — and why a break that DOESN'T fail is the most
+valuable result the exercise produces.
 
 ### A "never says X" check keeps failing on the promise never to say X
 Three times now: "at risk" on the audit, "no dark patterns" copy on billing,

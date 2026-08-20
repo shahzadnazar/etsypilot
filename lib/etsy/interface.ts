@@ -6,9 +6,16 @@
  * service. Phase 11 swaps MockEtsyService for LiveEtsyService and nothing above
  * this file changes (architecture.md section 4).
  *
- * Note what is absent: there is no getListingViews, no getSearchTerms, no
- * getAdsPerformance. Etsy does not expose them, so the interface does not
- * pretend they exist.
+ * Note how refusal is modelled. There is no getSearchTerms at all — Etsy
+ * releases nothing of the kind, so the interface does not pretend the question
+ * can be asked. getListingViews and getAdsPerformance DO exist, and can only
+ * ever return UNAVAILABLE with a null value: those two get asked about
+ * constantly, so an explicit refusal carrying the reason is more useful than a
+ * missing method a caller works around.
+ *
+ * (This comment used to claim all three were absent, which was true of one of
+ * them. A file that misdescribes itself is the same defect as a figure that
+ * misdescribes its source.)
  */
 
 import type { Provenanced } from '@/lib/provenance/types'
