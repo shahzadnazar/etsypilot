@@ -2147,3 +2147,56 @@ Worth naming as a class, because this is the second time it has appeared: **a pe
 shortcut that drops an identifier turns an authorization boundary into a coincidence.** The
 same shape as the mock billing store that was two different Maps (D45b) — module-level state
 that looks like an implementation detail and is actually a scoping decision.
+
+### D51 — Nothing a page needs may come from a third party
+
+The root layout loaded Inter with a `<link rel="stylesheet">` to
+`fonts.googleapis.com`. It now uses `next/font`, which fetches the face at build time and
+serves it from this origin.
+
+Two promises were failing at once, and they turn out to be the same promise.
+
+**Privacy.** This product tells sellers their data stays theirs, and then handed Google
+every seller's IP address and the URL of every page they opened. A privacy promise undone
+by a font link is not a privacy promise.
+
+**Availability.** A third-party stylesheet is *render-blocking*: the browser paints nothing
+until it resolves. A seller behind a corporate proxy, an aggressive blocker or a bad mobile
+connection sees a blank page for as long as their browser takes to give up.
+
+How it was found is the part worth keeping. Five billing checks failed around the cancel
+flow and it looked like a broken mutation. It was not, and the first diagnosis — CPU
+contention from a second browser — was wrong. Measuring each layer separately:
+
+| Layer | Time |
+| --- | --- |
+| `POST /api/billing/cancel` | 3 ms |
+| `GET /billing` (returns the cancelled page) | 18 ms |
+| Browser paints it | **13.4 s** |
+
+The whole 13 seconds was the Google Fonts request hanging before it failed with
+`ERR_CONNECTION_RESET`. `main` read as empty that entire time, which is why the mutation
+looked broken. **The mutation was never slow, and the check was never flaky — a real
+12.6-second stall was being paid on every page load, by every page.** The 15-second budget
+had a 1.6-second margin and contention was merely what pushed it over.
+
+After the fix: cancel round-trip 13.4 s → 0.3 s, holding at 0.3–0.5 s under eight busy
+loops on four cores. The whole browser suite went from over ten minutes to 28 seconds.
+
+The class: **a fixed timeout that "usually passes" is measuring something, and it is worth
+finding out what.** A margin of 1.6 seconds out of 15 is not a passing check, it is a
+failing check that has not happened yet.
+
+### D51a — The check is on the origin of the request, not on the markup
+
+A third-party dependency is invisible in the DOM, invisible in the unit tests, and on a fast
+developer machine invisible in the browser too. The only thing that catches it is watching
+where the requests go, so `tests/browser/rendered-output.py` records every request during
+four page loads and fails if any is off-origin, naming the URL.
+
+Its first version had the vacuous-pass defect this project keeps meeting. "Every font file
+is served from this origin" was `all(f.startswith(BASE) for f in fonts)` — and during the
+deliberate break it **passed**, because the third-party stylesheet never loaded, so the page
+declared no font preloads at all, and `all()` of an empty list is true. It now requires that
+a font is preloaded *and* that it is local. A check that passes when the thing it measures
+is absent is not a check.

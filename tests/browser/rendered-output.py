@@ -99,6 +99,58 @@ with sync_playwright() as p:
         b.close()
         sys.exit(2)
 
+    # --- Nothing a page needs may come from a third party -------------------
+    #
+    # Two promises collapse into one check.
+    #
+    # Privacy: this product tells sellers their data stays theirs. A stylesheet
+    # from fonts.googleapis.com hands a third party every seller's IP address
+    # and the URL of every page they open. A privacy promise undone by a font
+    # link is not a privacy promise.
+    #
+    # Availability: a third-party <link rel="stylesheet"> is RENDER-BLOCKING.
+    # The browser paints nothing until it resolves — so a seller behind a
+    # corporate proxy, an aggressive blocker, or a bad mobile connection stares
+    # at a blank page for however long their browser takes to give up.
+    #
+    # This is not hypothetical and it is why the check exists. The billing
+    # cancel checks failed and it looked like a broken mutation. It was not:
+    # the mutation committed in 3ms and the server returned the cancelled page
+    # in 18ms. The browser then blocked for 12.6 SECONDS on the Google Fonts
+    # stylesheet before giving up with ERR_CONNECTION_RESET, and `main` read as
+    # empty that whole time. Every page load in the suite was paying it. The
+    # fix was next/font, which fetches at build time and self-hosts; the suite
+    # went from minutes to 27 seconds.
+    #
+    # Measuring the origin of each request is the only way to catch this. It is
+    # invisible in the DOM, invisible in the tests, and on a fast developer
+    # machine it is invisible in the browser too.
+    third_party = []
+
+    def record_offsite(r):
+        if not r.url.startswith(BASE) and not r.url.startswith("data:"):
+            third_party.append(r.url)
+
+    pg.on("request", record_offsite)
+    for route in ("/dashboard", "/billing", "/profit", "/tools/etsy-seller-calculator"):
+        pg.goto(f"{BASE}{route}", wait_until="load"); pg.wait_for_selector("main", timeout=15000)
+    pg.remove_listener("request", record_offsite)
+    check(third_party == [],
+          "No page fetches anything from a third-party origin"
+          + ("" if third_party == [] else f" — got {sorted(set(third_party))[:3]}"))
+
+    # The face itself must be served from this origin, not merely referenced.
+    #
+    # `and fonts` is load-bearing. Without it this passed during the deliberate
+    # break, for the worst possible reason: the third-party stylesheet never
+    # loaded, so the page declared NO font preloads at all, and "all of zero
+    # fonts are local" is true. A check that passes when the thing it measures
+    # is absent is not a check.
+    fonts = pg.evaluate("""() => [...document.querySelectorAll('link[rel=preload][as=font]')]
+      .map(l => l.href)""")
+    check(bool(fonts) and all(f.startswith(BASE) for f in fonts),
+          "The font is preloaded, and served from this origin")
+
     # --- Profit Reality: inputs panel ---
     pg.goto(f"{BASE}/profit", wait_until="domcontentloaded"); pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)
     check(open_tab(pg, "Scenarios", "Inputs"), "Scenarios tab opens")

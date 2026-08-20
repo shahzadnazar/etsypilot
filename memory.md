@@ -585,6 +585,35 @@ model, meters, limit policy and upgrade-required state are already built and
 honest (D22); Phase 8 is the money plumbing behind them.
 ```
 
+### A timeout that "usually passes" is measuring something — find out what
+
+Five billing checks failed around the cancel flow. First diagnosis: CPU contention
+from a second browser. That was **wrong**, and the way it was wrong is the lesson.
+
+Measure each layer separately before believing any story about the whole:
+
+| Layer | Time |
+| --- | --- |
+| `POST /api/billing/cancel` | 3 ms |
+| `GET /billing` (returns the cancelled page) | 18 ms |
+| Browser paints it | **13.4 s** |
+
+The mutation was never slow. The browser was blocking 12.6 s on a render-blocking
+Google Fonts stylesheet before it failed, and `main` read empty the whole time. The
+15-second budget had a 1.6-second margin, so contention was only the thing that
+pushed an already-failing check over the line. Every page load in the suite paid it.
+
+Fixed with `next/font` (build-time fetch, self-hosted): 13.4 s → 0.3 s, holding under
+eight busy loops on four cores; whole suite ten-plus minutes → 28 s. See D51.
+
+**A margin of 1.6 seconds out of 15 is not a passing check. It is a failing check that
+has not happened yet.** When a check passes slowly, time the layers.
+
+Corollary, and the reason it stayed hidden: **a third-party dependency is invisible in
+the DOM, invisible in the unit tests, and on a fast machine invisible in the browser.**
+The only thing that catches it is asserting on the ORIGIN of each request. That check
+now exists and names the offending URL when it fires.
+
 ## 16. Memory Update Rule
 
 Claude must update this file:
