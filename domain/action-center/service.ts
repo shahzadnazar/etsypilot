@@ -11,6 +11,7 @@
  */
 
 import { computeWaterfall } from '@/domain/profit/waterfall'
+import { getShopPulse } from '@/domain/shop-pulse/service'
 import { getEtsyService } from '@/lib/etsy'
 import {
   DEMO_ACTOR_ID,
@@ -22,6 +23,7 @@ import {
 } from '@/lib/etsy/demo-dataset'
 import type { ShopContext } from '@/lib/permissions'
 import { formatCurrency } from '@/lib/utils/format'
+import type { ShopPulseView } from '@/domain/shop-pulse/types'
 import type { Action, ActionFilter } from './types'
 import { compareActions, matchesFilter } from './types'
 
@@ -35,7 +37,12 @@ export async function getActions(ctx: ShopContext): Promise<ActionCenterView> {
   const orders = await etsy.getOrders(ctx.shopId, { since: PERIOD_START, until: PERIOD_END })
   const profit = computeWaterfall(orders, DEMO_COST_INPUTS)
 
+  // Shop Pulse is a generator like any other: its findings enter the same
+  // queue rather than living in a parallel list the seller has to check.
+  const pulse = await getShopPulse(ctx)
+
   const actions = [
+    ...pulseActions(ctx, pulse),
     belowCost(ctx),
     missingCosts(ctx, profit.coveragePercent),
     renewalsFixed(ctx),
@@ -52,13 +59,55 @@ export async function getActions(ctx: ShopContext): Promise<ActionCenterView> {
   }
 }
 
+/* ---------------------------------------------------- Shop Pulse findings */
+
+/**
+ * One action per Shop Pulse finding that is worth acting on.
+ *
+ * RULED_OUT findings do not become actions - "we checked and it was not this"
+ * is worth reading on Shop Pulse, but it is not work.
+ *
+ * UNKNOWN findings DO become actions, and say so plainly. An unexplained drop
+ * is the thing a seller most needs to know about, and the honest framing is to
+ * hand them the evidence rather than a cause we do not have.
+ */
+function pulseActions(ctx: ShopContext, pulse: ShopPulseView): Action[] {
+  return pulse.changes
+    .filter((c) => c.diagnosis !== 'RULED_OUT')
+    .slice(0, 2)
+    .map((c, i) => {
+      const unknown = c.diagnosis === 'UNKNOWN'
+      const destination = c.destinations[0] ?? { label: 'Open Shop Pulse', href: '/shop-pulse' }
+      return {
+        id: `ACT-PULSE-${c.id}`,
+        shopId: ctx.shopId,
+        priority: i,
+        severity: unknown ? 'ATTENTION' : 'CRITICAL',
+        title: unknown
+          ? 'Orders fell below your baseline with no recorded change'
+          : `${c.title} — orders moved ${c.ordersAfterPercent}% after`,
+        explanation: unknown
+          ? 'No event in your history explains this. EtsyPilot is not guessing at a cause — the evidence is on Shop Pulse so you can judge it.'
+          : `${c.scope}. This change and the movement that followed it occurred together; that is a correlation, not a cause.`,
+        evidence: {
+          summary: c.evidence.observed[1] ?? c.detail,
+          provenance: 'CALCULATED',
+          source: 'your order history and change log',
+        },
+        destination: { label: destination.label, href: '/shop-pulse' },
+        status: 'OPEN',
+        createdAt: c.occurredAt,
+      } satisfies Action
+    })
+}
+
 /* ---------------------------------------------------------------- OPEN */
 
 function belowCost(ctx: ShopContext): Action {
   return {
     id: 'ACT-0001',
     shopId: ctx.shopId,
-    priority: 1,
+    priority: 10,
     severity: 'CRITICAL',
     title: '4 listings are selling below cost',
     explanation:
@@ -82,7 +131,7 @@ function missingCosts(ctx: ShopContext, coveragePercent: number): Action {
   return {
     id: 'ACT-0002',
     shopId: ctx.shopId,
-    priority: 2,
+    priority: 11,
     severity: 'ATTENTION',
     title: `${total} listings have no product cost`,
     explanation: `Profit is calculated for ${coveragePercent}% of order value. Those ${total} listings are excluded rather than given an assumed cost.`,
@@ -106,7 +155,7 @@ function renewalsFixed(ctx: ShopContext): Action {
   return {
     id: 'ACT-0003',
     shopId: ctx.shopId,
-    priority: 3,
+    priority: 12,
     severity: 'INFO',
     title: 'Renewal dates fixed on 9 listings',
     explanation: 'Bulk job BE-2288 applied the change.',
@@ -133,7 +182,7 @@ function seasonalWindow(ctx: ShopContext): Action {
   return {
     id: 'ACT-0004',
     shopId: ctx.shopId,
-    priority: 4,
+    priority: 13,
     severity: 'INFO',
     title: 'Seasonal window opens for holiday linens',
     explanation: 'Your linen category showed a 2.4× order lift in this window last year.',

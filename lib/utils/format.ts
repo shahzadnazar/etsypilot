@@ -58,6 +58,22 @@ export function formatDate(iso: string, timeZone = 'America/New_York'): string {
   }).format(new Date(iso))
 }
 
+/**
+ * Format a calendar date key ("2026-07-14") without shifting it.
+ *
+ * A date key has no time and no zone - it is the day the shop calls that day.
+ * Running it through a zoned formatter parses it as UTC midnight and renders
+ * the previous evening, which is how the axis came to start a day early.
+ */
+export function formatCalendarDate(dateKey: string): string {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(`${dateKey}T12:00:00.000Z`))
+}
+
 export function formatDateTime(iso: string, timeZone = 'America/New_York'): string {
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',

@@ -82,3 +82,33 @@ describe('action center', () => {
     expect(sorted.map((a) => a.id)).toEqual(['1', '2', '3'])
   })
 })
+
+describe('Shop Pulse feeds the same queue', () => {
+  it('turns pulse findings into actions rather than a parallel list', async () => {
+    const { actions } = await getActions(ctx)
+    expect(actions.some((a) => a.id.startsWith('ACT-PULSE-'))).toBe(true)
+  })
+
+  it('surfaces the unexplained drop and refuses to name a cause', async () => {
+    const { actions } = await getActions(ctx)
+    const unknown = actions.find((a) => a.title.includes('no recorded change'))
+    expect(unknown).toBeDefined()
+    expect(unknown?.explanation).toContain('not guessing at a cause')
+    expect(unknown?.destination.href).toBe('/shop-pulse')
+  })
+
+  it('does not make work out of a ruled-out finding', async () => {
+    const { actions } = await getActions(ctx)
+    expect(actions.some((a) => a.title.toLowerCase().includes('tags replaced'))).toBe(false)
+  })
+
+  it('describes a correlation as a correlation, never a cause', async () => {
+    const { actions } = await getActions(ctx)
+    const correlated = actions.filter((a) => a.id.startsWith('ACT-PULSE-'))
+    for (const a of correlated) {
+      const text = `${a.title} ${a.explanation}`.toLowerCase()
+      expect(text).not.toContain('caused')
+      expect(text).not.toContain('because etsy')
+    }
+  })
+})

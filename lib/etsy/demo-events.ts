@@ -30,7 +30,7 @@ export const DEMO_EVENTS: DomainEvent[] = [
   }),
   ev({
     eventId: 'EV-0002',
-    listingId: 'L01004',
+    listingId: 'L01002',
     actorId: DEMO_ACTOR_ID,
     timestamp: '2026-07-24T09:12:00.000Z',
     type: 'PRICE_CHANGED',

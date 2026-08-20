@@ -24,6 +24,63 @@ export const PERIOD_START = '2026-07-14T04:00:00.000Z'
 export const PERIOD_END = '2026-08-13T03:59:59.000Z'
 /** Fixed "now" for the demo shop, so freshness copy stays stable. */
 export const DEMO_NOW = '2026-08-12T14:06:00.000Z'
+
+/**
+ * The 90 days before the period. Shop Pulse baselines against this, so it has
+ * to exist as real orders rather than as a stored average - otherwise the
+ * baseline is an assertion, not a measurement.
+ */
+export const BASELINE_START = '2026-04-15T04:00:00.000Z'
+export const BASELINE_END = '2026-07-14T03:59:59.000Z'
+
+/**
+ * The listings each recorded event touched.
+ *
+ * Shop Pulse tests events against outcomes, so the demo shop must actually
+ * contain the outcomes: orders on PRICE_GROUP really do fall after Jul 24, the
+ * mug really does sell nothing while out of stock, and the shop-wide dip after
+ * Aug 8 really has no event behind it.
+ */
+export const NARRATIVE = {
+  /** Jul 24 price rise. "Linen table runner +2". */
+  priceGroup: ['L01006', 'L01001', 'L01002'],
+  priceChangeAt: '2026-07-24T09:12:00.000Z',
+  ordersPerDayBefore: 4.1,
+  ordersPerDayAfter: 2.8,
+
+  /** Aug 4-9 stockout, restocked Aug 10. Ceramic mug set. */
+  stockoutListing: 'L01004',
+  stockoutFrom: '2026-08-04',
+  stockoutUntil: '2026-08-10',
+  stockoutRatePerDay: 1.6,
+
+  /**
+   * Jul 28 tag job. A steady seller that the job demonstrably did NOT move -
+   * which is what makes RULED OUT reachable rather than merely asserted. It
+   * needs enough orders to be measurable; 12 listings averaging under one order
+   * each would only produce noise.
+   */
+  tagGroupRatePerDay: 2.4,
+
+  /** Aug 6 deactivation. Seasonal section. */
+  deactivatedFrom: '2026-08-06',
+  deactivatedRatePerDay: 1.2,
+
+  /**
+   * Aug 8-12 dip with NO recorded event. This is what produces the UNKNOWN
+   * diagnosis - we do not invent a cause for it.
+   *
+   * The factor is set so the period's shortfall against baseline is fully
+   * accounted for: the four recorded events explain their share, and this dip
+   * carries the remainder. Without that, ordinary days across the whole period
+   * sit below the band and the sweep reports unexplained runs everywhere.
+   */
+  dipFrom: '2026-08-08',
+  dipFactor: 0.251,
+
+  /** Steady rate for everything no event touches. */
+  restRatePerDay: 7.77,
+} as const
 export const DEMO_LAST_SYNCED = '2026-08-12T14:00:00.000Z'
 
 /** Designed totals. The profit domain computes from orders; these are the target. */
@@ -63,6 +120,9 @@ export const DEMO_BASELINE = {
   listingsTooNew: 11,
   windowDays: 90,
 } as const
+
+/** Length of the reporting period, in whole days. */
+export const PERIOD_DAYS = 30
 
 export const DEMO_COUNTS = {
   activeListings: 412,
@@ -255,47 +315,221 @@ function pickCountry(rng: () => number): string {
   return 'US'
 }
 
+/**
+ * Emit `count` orders for a listing on a given day.
+ *
+ * Fractional daily rates are carried across days rather than rounded away, so
+ * a rate of 4.1/day produces 41 orders over 10 days exactly.
+ */
+interface Emit {
+  listing: EtsyListing
+  day: number
+  rng: () => number
+}
+
+function dayIndex(iso: string): number {
+  return Math.floor(
+    (new Date(iso).getTime() - new Date(PERIOD_START).getTime()) / 86_400_000,
+  )
+}
+
+/**
+ * The listing sets each narrative event touches.
+ *
+ * Exported and shared: the order generator and Shop Pulse must resolve the
+ * identical sets, or the engine measures one group while the data moved
+ * another. The sets are disjoint by construction.
+ */
+export function narrativeGroups(listings: EtsyListing[]) {
+  const byId = new Map(listings.map((l) => [l.etsyListingId, l]))
+  const active = listings.filter((l) => l.state === 'ACTIVE')
+
+  const priceGroup = NARRATIVE.priceGroup
+    .map((id) => byId.get(id))
+    .filter((l): l is EtsyListing => Boolean(l))
+  const stockout = byId.get(NARRATIVE.stockoutListing) ?? null
+  const seasonal = active.filter((l) => l.section === 'Seasonal').slice(0, 4)
+
+  const claimed = new Set<string>([
+    ...priceGroup.map((l) => l.etsyListingId),
+    ...(stockout ? [stockout.etsyListingId] : []),
+    ...seasonal.map((l) => l.etsyListingId),
+  ])
+
+  const tagGroup = active
+    .filter((l) => l.section === 'Home' && !claimed.has(l.etsyListingId))
+    .slice(0, 12)
+  tagGroup.forEach((l) => claimed.add(l.etsyListingId))
+
+  const rest = active.filter((l) => !claimed.has(l.etsyListingId))
+  return { priceGroup, stockout, seasonal, tagGroup, rest }
+}
+
 export function buildDemoOrders(listings: EtsyListing[]): EtsyOrder[] {
   const rng = mulberry32(438438)
-  const sellable = listings.filter((l) => l.state === 'ACTIVE')
-  const orders: EtsyOrder[] = []
+  const { priceGroup, stockout, seasonal, tagGroup, rest } = narrativeGroups(listings)
 
-  const start = new Date(PERIOD_START).getTime()
-  const dayMs = 86_400_000
+  const priceChangeDay = dayIndex(NARRATIVE.priceChangeAt)
+  const stockoutFrom = dayIndex(`${NARRATIVE.stockoutFrom}T04:00:00.000Z`)
+  const stockoutUntil = dayIndex(`${NARRATIVE.stockoutUntil}T04:00:00.000Z`)
+  const deactivatedFrom = dayIndex(`${NARRATIVE.deactivatedFrom}T04:00:00.000Z`)
+  const dipFrom = dayIndex(`${NARRATIVE.dipFrom}T04:00:00.000Z`)
 
-  for (let i = 0; i < DEMO_TOTALS.orderCount; i++) {
-    // Weight order dates so the last five days sit below the baseline band -
-    // this is the dip Shop Pulse diagnoses as UNKNOWN.
-    let dayOffset = Math.floor(rng() * 30)
-    if (dayOffset >= 25 && rng() < 0.45) dayOffset = Math.floor(rng() * 25)
+  const emits: Emit[] = []
+  const carry = new Map<string, number>()
 
-    const listing = pick(rng, sellable)
-    const quantity = rng() < 0.87 ? 1 : 2
-    const unitPrice = listing.price
-    const gross = round2(unitPrice * quantity)
-
-    orders.push({
-      etsyReceiptId: `#${30040 + i}`,
-      placedAt: new Date(start + dayOffset * dayMs + Math.floor(rng() * dayMs)).toISOString(),
-      gross,
-      discounts: 0,
-      refunds: 0,
-      etsyFees: round2(gross * 0.162),
-      paymentProcessing: round2(gross * 0.03 + 0.25),
-      offsiteAds: rng() < 0.14 ? round2(gross * 0.15) : 0,
-      countryCode: pickCountry(rng),
-      items: [{ etsyListingId: listing.etsyListingId, quantity, unitPrice }],
-    })
+  /** Accumulate a fractional rate and emit whole orders as they accrue. */
+  function schedule(group: EtsyListing[], key: string, day: number, ratePerDay: number) {
+    if (group.length === 0 || ratePerDay <= 0) return
+    const acc = (carry.get(key) ?? 0) + ratePerDay
+    const whole = Math.floor(acc)
+    carry.set(key, acc - whole)
+    for (let i = 0; i < whole; i++) {
+      emits.push({ listing: pick(rng, group), day, rng })
+    }
   }
 
+  for (let day = 0; day < PERIOD_DAYS; day++) {
+    const dipped = day >= dipFrom ? NARRATIVE.dipFactor : 1
+
+    // The price group: a real, measurable fall after the change.
+    schedule(
+      priceGroup,
+      'price',
+      day,
+      day < priceChangeDay ? NARRATIVE.ordersPerDayBefore : NARRATIVE.ordersPerDayAfter,
+    )
+
+    // The mug sells nothing at all while it is out of stock.
+    if (stockout) {
+      const out = day >= stockoutFrom && day < stockoutUntil
+      schedule([stockout], 'stockout', day, out ? 0 : NARRATIVE.stockoutRatePerDay)
+    }
+
+    // Deactivated listings stop selling entirely.
+    schedule(
+      seasonal,
+      'seasonal',
+      day,
+      day >= deactivatedFrom ? 0 : NARRATIVE.deactivatedRatePerDay,
+    )
+
+    // The tag-job listings sell steadily throughout. Nothing touches them, so
+    // the job is genuinely ruled out rather than ruled out by assertion.
+    schedule(tagGroup, 'tags', day, NARRATIVE.tagGroupRatePerDay)
+
+    // The dip lands on the listings no event accounts for. That is what makes
+    // it surface as UNKNOWN: real, measurable, and with nothing behind it.
+    schedule(rest, 'rest', day, NARRATIVE.restRatePerDay * dipped)
+  }
+
+  // The narrative rates are deliberately round numbers, so the fractional
+  // carry lands a little short of the designed 438. Settle the difference on
+  // the unconstrained group - never on a group whose rate the diagnosis
+  // depends on.
+  let day = 0
+  while (emits.length < DEMO_TOTALS.orderCount && rest.length > 0) {
+    emits.push({ listing: pick(rng, rest), day: day % dipFrom, rng })
+    day++
+  }
+  while (emits.length > DEMO_TOTALS.orderCount) {
+    const idx = emits.findIndex((e) => rest.includes(e.listing))
+    if (idx === -1) break
+    emits.splice(idx, 1)
+  }
+
+  const orders = emits.map((e, i) => makeOrder(e, i, rng))
   orders.sort((a, b) => a.placedAt.localeCompare(b.placedAt))
   return reconcileToTotals(orders)
 }
 
 /**
- * Scale generated orders onto the designed totals, then absorb the rounding
- * remainder into the final order so the sum is exact rather than approximate.
+ * Baseline history: the 90 days before the period.
+ *
+ * Generated with the SAME group structure as the period, at each group's
+ * pre-change rate. This matters more than it looks: baselining a
+ * group-structured period against a uniformly-distributed history makes the
+ * residual comparison meaningless, and every quiet day reads as a deviation.
+ *
+ * The rates below sum to the shop's prior run rate, so "before" genuinely means
+ * this shop before these changes.
  */
+export function buildDemoPriorOrders(listings: EtsyListing[]): EtsyOrder[] {
+  const rng = mulberry32(90900)
+  const { priceGroup, stockout, seasonal, tagGroup, rest } = narrativeGroups(listings)
+  const start = new Date(BASELINE_START).getTime()
+  const days = Math.round((new Date(BASELINE_END).getTime() - start) / 86_400_000)
+
+  const orders: EtsyOrder[] = []
+  const carry = new Map<string, number>()
+  let n = 0
+
+  function schedule(group: EtsyListing[], key: string, day: number, ratePerDay: number) {
+    if (group.length === 0 || ratePerDay <= 0) return
+    // Weekday shape, so a by-weekday baseline is meaningfully different from a
+    // flat average and weekends do not read as deviations.
+    const weekday = new Date(start + day * 86_400_000).getUTCDay()
+    const shaped = ratePerDay * (weekday === 0 || weekday === 6 ? 0.72 : 1.11)
+    const acc = (carry.get(key) ?? 0) + shaped
+    const whole = Math.floor(acc)
+    carry.set(key, acc - whole)
+    for (let i = 0; i < whole; i++) {
+      orders.push(makeOrder({ listing: pick(rng, group), day, rng }, n++, rng, start))
+    }
+  }
+
+  for (let day = 0; day < days; day++) {
+    schedule(priceGroup, 'price', day, NARRATIVE.ordersPerDayBefore)
+    if (stockout) schedule([stockout], 'stockout', day, NARRATIVE.stockoutRatePerDay)
+    schedule(seasonal, 'seasonal', day, NARRATIVE.deactivatedRatePerDay)
+    schedule(tagGroup, 'tags', day, NARRATIVE.tagGroupRatePerDay)
+    schedule(rest, 'rest', day, NARRATIVE.restRatePerDay)
+  }
+
+  orders.sort((a, b) => a.placedAt.localeCompare(b.placedAt))
+
+  /*
+   * Scale prior revenue onto the shop's prior run rate.
+   *
+   * Period orders are reconciled onto their designed totals; leaving the prior
+   * window unscaled made the revenue baseline reflect raw listing prices
+   * instead, and the revenue deviation came out roughly twice its true size.
+   */
+  const target = (DEMO_BASELINE.revenue / 30) * days
+  const raw = orders.reduce((sum, o) => sum + o.gross, 0)
+  const scale = raw === 0 ? 1 : target / raw
+  return orders.map((o) => ({
+    ...o,
+    gross: round2(o.gross * scale),
+    etsyFees: round2(o.etsyFees * scale),
+    paymentProcessing: round2(o.paymentProcessing * scale),
+    offsiteAds: round2(o.offsiteAds * scale),
+  }))
+}
+
+function makeOrder(
+  { listing, day, rng }: Emit,
+  index: number,
+  seq: () => number,
+  originMs: number = new Date(PERIOD_START).getTime(),
+): EtsyOrder {
+  const quantity = seq() < 0.87 ? 1 : 2
+  const unitPrice = listing.price
+  const gross = round2(unitPrice * quantity)
+  return {
+    etsyReceiptId: `#${30040 + index}`,
+    placedAt: new Date(originMs + day * 86_400_000 + Math.floor(rng() * 86_400_000)).toISOString(),
+    gross,
+    discounts: 0,
+    refunds: 0,
+    etsyFees: round2(gross * 0.162),
+    paymentProcessing: round2(gross * 0.03 + 0.25),
+    offsiteAds: seq() < 0.14 ? round2(gross * 0.15) : 0,
+    countryCode: pickCountry(seq),
+    items: [{ etsyListingId: listing.etsyListingId, quantity, unitPrice }],
+  }
+}
+
 function reconcileToTotals(orders: EtsyOrder[]): EtsyOrder[] {
   const rawGross = orders.reduce((sum, o) => sum + o.gross, 0)
   const scale = DEMO_TOTALS.grossRevenue / rawGross

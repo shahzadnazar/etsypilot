@@ -5,10 +5,10 @@
 
 ## 1. Current Status
 
-**Phase:** 2 — Action Center + Provenance (COMPLETE)
-**Current task:** Awaiting go-ahead for Phase 3 — Shop Pulse
+**Phase:** 3 — Shop Pulse (COMPLETE)
+**Current task:** Awaiting go-ahead for Phase 4 — Safe Bulk Editor
 **Current file being worked on:** None
-**Last completed task:** Action model + Action Center UI + methodology drawer
+**Last completed task:** Baseline + correlation engine + Shop Pulse UI + weekly digest
 **Blockers:** NONE. One item flagged for a decision, non-blocking: D22 7a (Audit log
 placement in the settings sidebar).
 
@@ -21,9 +21,9 @@ Build Etsy Pilot as an Etsy Seller Decision & Operations Intelligence platform u
 Update this section whenever the phase changes.
 
 ```text
-Phase 2 — Action Center + Provenance
-Status: COMPLETE — dashboard answers "what needs my attention?", every badge
-opens its methodology, every action has a destination
+Phase 3 — Shop Pulse
+Status: COMPLETE — a seeded sales drop is detected, explained with observable
+evidence, and converted into an action. Verdicts are reached, not asserted.
 ```
 
 ## 4. Current Work
@@ -70,6 +70,11 @@ Keep the latest 5–10 meaningful items.
 - Phase 2 built: Action model with all four lifecycle states, Action Center page + the
   same list on the dashboard, methodology drawer on the artboard-93 content model
   (incl. coverage), clickable provenance badges. 26 tests passing.
+- Phase 3 built: demo seed rewritten to be narrative-driven so the shop genuinely
+  contains its drop; baseline from 90 days of the shop's own history by weekday;
+  correlation engine reaching CORRELATED/RULED_OUT/UNKNOWN from measurement;
+  Shop Pulse page with baseline chart and evidence panel; weekly digest with the
+  suppression rule; Shop Pulse wired in as an Action Center generator. 63 tests.
 
 ## 6. Files Currently Being Modified
 
@@ -91,15 +96,18 @@ lib/  utils/{cn,format} · provenance/{types,builders} · events/types · errors
       permissions/index
 db/schema/index.ts
 domain/  profit/waterfall · shop/overview · action-center/{types,service}
+         shop-pulse/{types,baseline,correlation,service,digest}
 components/  ui/{button,card,states} · action-center/{action-card,action-list}
+             shop-pulse/{baseline-chart,changes-panel}
              provenance/{provenance-badge,diagnosis-badge,methodology-drawer,
                          provenance-button}
              layout/{app-shell,sidebar,top-bar,shop-context,demo-banner,mobile-tabs,
                      page-header,navigation,theme-script,theme-toggle}
       lib/provenance/methodology.ts
 app/  layout · page · not-found · error
-      (dashboard)/{layout,dashboard,profit,action-center+loading}
-tests/unit/{waterfall,provenance,action-center,methodology}.test.ts
+      (dashboard)/{layout,dashboard,profit,action-center,shop-pulse}(+loading)
+tests/unit/{waterfall,provenance,action-center,methodology,shop-pulse,
+            narrative,digest}.test.ts
 ```
 
 ## 8. Files Modified
@@ -136,6 +144,9 @@ PostHog: Not configured
 ## 12. Known Issues
 
 ```text
+- Artboard 91's UNKNOWN row is labelled -12%; the engine measures about -57%.
+  The artboard's own totals (438 vs 512, four recorded events) need a deeper dip
+  than -12% to reconcile. Awaiting a call, same class as the $1.05 net-profit gap.
 - Google Fonts is loaded over the network; in a sandbox with no egress the font
   falls back to system sans. Consider self-hosting Inter in Phase 12.
 - Mobile top bar is functional but not yet the designed compact bar (logo, shop,
