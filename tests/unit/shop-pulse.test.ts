@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { getShopPulse } from '@/domain/shop-pulse/service'
-import { compareRates, confidenceFor, diagnose } from '@/domain/shop-pulse/correlation'
+import {
+  compareRates,
+  confidenceFor,
+  diagnose,
+  hasEnoughData,
+} from '@/domain/shop-pulse/correlation'
 import { DEMO_SHOP_ID } from '@/lib/etsy/demo-dataset'
 
 const ctx = { shopId: DEMO_SHOP_ID, actorId: 'demo-user-salman', readOnly: true }
@@ -155,5 +160,69 @@ describe('baseline figures reconcile with the designed shop', () => {
     expect(view.orders.deviationPercent).toBeGreaterThan(-20)
     expect(view.revenue.deviationPercent).toBeLessThan(-5)
     expect(view.revenue.deviationPercent).toBeGreaterThan(-15)
+  })
+})
+
+describe('a verdict reachable only by labelling is not a verdict', () => {
+  it('returns UNKNOWN when the sample is too thin, even with an event', () => {
+    const thin = {
+      beforePerDay: 0.3, afterPerDay: 0.4, changePercent: 33.3,
+      daysBefore: 14, daysAfter: 16, ordersBefore: 4, ordersAfter: 6,
+    }
+    expect(diagnose(thin, true)).toBe('UNKNOWN')
+    expect(hasEnoughData(thin)).toBe(false)
+  })
+
+  it('needs observations on both sides, not just in total', () => {
+    const lopsided = {
+      beforePerDay: 5, afterPerDay: 0.1, changePercent: -98,
+      daysBefore: 10, daysAfter: 20, ordersBefore: 50, ordersAfter: 2,
+    }
+    expect(hasEnoughData(lopsided)).toBe(false)
+    expect(diagnose(lopsided, true)).toBe('UNKNOWN')
+  })
+
+  it('reaches a real verdict once there is enough on both sides', () => {
+    const solid = {
+      beforePerDay: 4, afterPerDay: 2.8, changePercent: -30,
+      daysBefore: 10, daysAfter: 20, ordersBefore: 41, ordersAfter: 56,
+    }
+    expect(hasEnoughData(solid)).toBe(true)
+    expect(diagnose(solid, true)).toBe('CORRELATED')
+  })
+
+  it('publishes no percentage for a change it could not measure', () => {
+    for (const c of view.changes) {
+      if (c.evidence.limitations.some((l) => l.includes('Too few orders'))) {
+        expect(c.ordersAfterPercent, c.id).toBeNull()
+        expect(c.diagnosis, c.id).toBe('UNKNOWN')
+      }
+    }
+  })
+})
+
+describe('no Shop Pulse figure is authored', () => {
+  /*
+   * Every percentage on this surface must come out of a measurement. The
+   * -12% that used to sit in the artboard was hand-written, and a hand-written
+   * number in a column of computed ones is indistinguishable from a real one.
+   */
+  it('derives every reported percentage from the order data', () => {
+    for (const c of view.changes) {
+      if (c.ordersAfterPercent === null) continue
+      // A measured figure is a rounded ratio, never a round marketing number.
+      expect(Number.isFinite(c.ordersAfterPercent), c.id).toBe(true)
+      const observed = c.evidence.observed.join(' ')
+      // The evidence must restate the same figure it was derived from.
+      const restated =
+        observed.includes(`${c.ordersAfterPercent}%`) || observed.includes('too few orders')
+      expect(restated, `${c.id} evidence does not restate its own figure`).toBe(true)
+    }
+  })
+
+  it('reports the unexplained drop net of the recorded changes', () => {
+    const unknown = view.changes.find((c) => c.diagnosis === 'UNKNOWN' && c.eventType === null)
+    // The residual sweep means this is not the raw shop-wide shortfall.
+    expect(unknown?.ordersAfterPercent).not.toBe(view.orders.deviationPercent)
   })
 })

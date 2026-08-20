@@ -26,6 +26,7 @@ interface BaselineArgs {
   periodOrders: EtsyOrder[]
   periodStart: string
   periodDays: number
+  /** Retained from the shop record, but display and bucketing are UTC (D24). */
   timezone: string
   coveragePercent: number
   listingsTooNew: number
@@ -36,7 +37,7 @@ export function computeBaseline(args: BaselineArgs): Baseline {
 
   // Group the prior window by weekday, so each day is compared against its own kind.
   const priorByWeekday = new Map<number, number[]>()
-  const priorDaily = bucketByDay(args.priorOrders, args.timezone, value)
+  const priorDaily = bucketByDay(args.priorOrders, value)
   for (const [day, total] of priorDaily) {
     const weekday = new Date(day).getUTCDay()
     const bucket = priorByWeekday.get(weekday) ?? []
@@ -49,7 +50,7 @@ export function computeBaseline(args: BaselineArgs): Baseline {
     stats.set(weekday, meanAndStddev(values))
   }
 
-  const actualDaily = bucketByDay(args.periodOrders, args.timezone, value)
+  const actualDaily = bucketByDay(args.periodOrders, value)
   const startMs = new Date(args.periodStart).getTime()
 
   const series: BaselinePoint[] = []
@@ -87,21 +88,19 @@ export function computeBaseline(args: BaselineArgs): Baseline {
   }
 }
 
-/** Day keys are in the shop's own timezone, so "a day" means what the seller means. */
+/**
+ * Day keys are UTC calendar days (D24).
+ *
+ * Bucketing and display share one basis, so a point on the chart and the
+ * timestamp in its evidence refer to the same day.
+ */
 function bucketByDay(
   orders: EtsyOrder[],
-  timezone: string,
   value: (o: EtsyOrder) => number,
 ): Map<string, number> {
   const out = new Map<string, number>()
-  const fmt = new Intl.DateTimeFormat('en-CA', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  })
   for (const o of orders) {
-    const key = fmt.format(new Date(o.placedAt))
+    const key = o.placedAt.slice(0, 10)
     out.set(key, (out.get(key) ?? 0) + value(o))
   }
   return out

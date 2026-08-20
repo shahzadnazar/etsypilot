@@ -72,9 +72,18 @@ export async function getActions(ctx: ShopContext): Promise<ActionCenterView> {
  * hand them the evidence rather than a cause we do not have.
  */
 function pulseActions(ctx: ShopContext, pulse: ShopPulseView): Action[] {
-  return pulse.changes
-    .filter((c) => c.diagnosis !== 'RULED_OUT')
-    .slice(0, 2)
+  /*
+   * UNKNOWN findings are never truncated.
+   *
+   * Capping by magnitude alone dropped the unexplained drop off the queue
+   * behind three larger correlated ones - and an unexplained drop is the single
+   * thing a seller most needs to see. Correlated findings are capped because
+   * they already have an explanation attached; unexplained ones do not.
+   */
+  const unknown = pulse.changes.filter((c) => c.diagnosis === 'UNKNOWN')
+  const correlated = pulse.changes.filter((c) => c.diagnosis === 'CORRELATED').slice(0, 2)
+
+  return [...unknown, ...correlated]
     .map((c, i) => {
       const unknown = c.diagnosis === 'UNKNOWN'
       const destination = c.destinations[0] ?? { label: 'Open Shop Pulse', href: '/shop-pulse' }
@@ -82,7 +91,15 @@ function pulseActions(ctx: ShopContext, pulse: ShopPulseView): Action[] {
         id: `ACT-PULSE-${c.id}`,
         shopId: ctx.shopId,
         priority: i,
-        severity: unknown ? 'ATTENTION' : 'CRITICAL',
+        /*
+         * The unexplained finding outranks the explained ones.
+         *
+         * A -100% drop the seller caused by deactivating a section is a change
+         * they already know about; an unexplained shop-wide drop is not. This
+         * surface answers "what needs my attention", and the thing you already
+         * understand needs less of it than the thing you do not.
+         */
+        severity: unknown ? 'CRITICAL' : 'ATTENTION',
         title: unknown
           ? 'Orders fell below your baseline with no recorded change'
           : `${c.title} — orders moved ${c.ordersAfterPercent}% after`,

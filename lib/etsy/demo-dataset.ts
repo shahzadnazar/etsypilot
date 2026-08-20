@@ -19,9 +19,9 @@ export const DEMO_SHOP_ID = 'demo-willow-fern'
 export const DEMO_ACTOR_ID = 'demo-user-salman'
 
 /** The period every screen reports on. */
-/* Midnight to midnight in the shop's own timezone (America/New_York, EDT). */
-export const PERIOD_START = '2026-07-14T04:00:00.000Z'
-export const PERIOD_END = '2026-08-13T03:59:59.000Z'
+/* Midnight to midnight, UTC. One time basis across the product (D24). */
+export const PERIOD_START = '2026-07-14T00:00:00.000Z'
+export const PERIOD_END = '2026-08-12T23:59:59.999Z'
 /** Fixed "now" for the demo shop, so freshness copy stays stable. */
 export const DEMO_NOW = '2026-08-12T14:06:00.000Z'
 
@@ -30,8 +30,8 @@ export const DEMO_NOW = '2026-08-12T14:06:00.000Z'
  * to exist as real orders rather than as a stored average - otherwise the
  * baseline is an assertion, not a measurement.
  */
-export const BASELINE_START = '2026-04-15T04:00:00.000Z'
-export const BASELINE_END = '2026-07-14T03:59:59.000Z'
+export const BASELINE_START = '2026-04-15T00:00:00.000Z'
+export const BASELINE_END = '2026-07-13T23:59:59.999Z'
 
 /**
  * The listings each recorded event touched.
@@ -362,7 +362,49 @@ export function narrativeGroups(listings: EtsyListing[]) {
   tagGroup.forEach((l) => claimed.add(l.etsyListingId))
 
   const rest = active.filter((l) => !claimed.has(l.etsyListingId))
-  return { priceGroup, stockout, seasonal, tagGroup, rest }
+
+  const groups = { priceGroup, stockout, seasonal, tagGroup, rest }
+  assertDisjoint(groups)
+  return groups
+}
+
+/**
+ * Overlapping listing groups are how a correlation engine becomes a rumour mill:
+ * measuring one change while the data moved another, and reporting the borrowed
+ * movement as a finding.
+ *
+ * This is a runtime invariant rather than a test, deliberately. A test proves
+ * the sets are disjoint today; this makes them unable to stop being disjoint,
+ * including on the day a future feature makes overlap convenient.
+ */
+function assertDisjoint(groups: {
+  priceGroup: EtsyListing[]
+  stockout: EtsyListing | null
+  seasonal: EtsyListing[]
+  tagGroup: EtsyListing[]
+  rest: EtsyListing[]
+}): void {
+  const named: [string, EtsyListing[]][] = [
+    ['priceGroup', groups.priceGroup],
+    ['stockout', groups.stockout ? [groups.stockout] : []],
+    ['seasonal', groups.seasonal],
+    ['tagGroup', groups.tagGroup],
+    ['rest', groups.rest],
+  ]
+
+  const owner = new Map<string, string>()
+  for (const [name, listings] of named) {
+    for (const l of listings) {
+      const existing = owner.get(l.etsyListingId)
+      if (existing) {
+        throw new Error(
+          `Narrative groups overlap: listing ${l.etsyListingId} is in both "${existing}" and "${name}". ` +
+            'Groups must be disjoint, or Shop Pulse will attribute one change\'s movement to another.',
+        )
+      }
+      owner.set(l.etsyListingId, name)
+    }
+  }
 }
 
 export function buildDemoOrders(listings: EtsyListing[]): EtsyOrder[] {
@@ -370,10 +412,10 @@ export function buildDemoOrders(listings: EtsyListing[]): EtsyOrder[] {
   const { priceGroup, stockout, seasonal, tagGroup, rest } = narrativeGroups(listings)
 
   const priceChangeDay = dayIndex(NARRATIVE.priceChangeAt)
-  const stockoutFrom = dayIndex(`${NARRATIVE.stockoutFrom}T04:00:00.000Z`)
-  const stockoutUntil = dayIndex(`${NARRATIVE.stockoutUntil}T04:00:00.000Z`)
-  const deactivatedFrom = dayIndex(`${NARRATIVE.deactivatedFrom}T04:00:00.000Z`)
-  const dipFrom = dayIndex(`${NARRATIVE.dipFrom}T04:00:00.000Z`)
+  const stockoutFrom = dayIndex(`${NARRATIVE.stockoutFrom}T00:00:00.000Z`)
+  const stockoutUntil = dayIndex(`${NARRATIVE.stockoutUntil}T00:00:00.000Z`)
+  const deactivatedFrom = dayIndex(`${NARRATIVE.deactivatedFrom}T00:00:00.000Z`)
+  const dipFrom = dayIndex(`${NARRATIVE.dipFrom}T00:00:00.000Z`)
 
   const emits: Emit[] = []
   const carry = new Map<string, number>()

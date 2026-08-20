@@ -1060,3 +1060,111 @@ and to the production build; only rendering the dark theme caught them.
 ### Standing check
 When reviewing any new component: for every colour pair, are both sides tokens,
 or both literals? A mixed pair is the bug.
+
+---
+
+## D24 — One time basis: UTC — CONFIRMED
+
+**All timestamps render in UTC.** `DISPLAY_TIMEZONE` in `lib/utils/format.ts` is
+the single definition; period boundaries, day bucketing and display all share it.
+
+`shop.timezone` is retained on the shop record because Etsy supplies it, but it
+does not drive display or bucketing.
+
+### The rule this replaces two bugs with
+Two separate defects had the same root: **a calendar date passed through a zoned
+formatter**.
+
+- Phase 1: `PERIOD_START` stored at UTC midnight rendered as the previous
+  evening in `America/New_York`, so the period displayed a day early.
+- Phase 3: the chart axis ran `"2026-07-14"` through a zoned formatter and
+  started on Jul 13.
+
+**Calendar dates never pass through a zoned formatter.** A date key has no time
+and no zone — it is the day the shop calls that day. `formatCalendarDate()`
+exists for exactly this and formats in UTC.
+
+### The companion rule
+**Any comparison of two periods scales both the same way.** Prior orders were
+left unscaled while period orders were reconciled onto their designed totals,
+which made the revenue deviation read roughly twice its true size. If one side
+of a comparison is normalised, the other side is normalised identically.
+
+Note: artboard 91's chart caption reads "shop time zone (America/New_York)".
+Superseded by this decision — the caption now reads UTC.
+
+---
+
+## D25 — Never author a Shop Pulse figure — CONFIRMED
+
+**Measure it.** Where a designed number and a computed number disagree, the
+computation wins — the same ruling as the $1.05 net-profit gap in D5.
+
+**Every figure in the Shop Pulse artboard is illustrative of shape, not a target
+to reproduce.**
+
+### Canonical
+The unexplained row is **−57%**, measured. The artboard's −12% was a hand-written
+shop-wide number sitting in a column of per-group changes; a hand-written number
+in a column of computed ones is indistinguishable from a real one, which is what
+made it dangerous rather than merely wrong.
+
+### The residual sweep — belongs in the methodology
+Recorded changes are tested first. The unexplained figure is then measured on the
+**residual**: the orders left after every correlated change is accounted for.
+
+Two reasons this matters enough to publish:
+1. Without it the same shortfall is reported once per quiet stretch — four
+   "unexplained" rows describing one dip.
+2. A seller reading −57% deserves to know it is **net of what the four recorded
+   changes already explain**, not the raw shop-wide shortfall.
+
+Added to artboard 93's Shop Pulse baseline card under **Method**, and to
+`METHODOLOGIES.shopPulseBaseline` in code.
+
+---
+
+## D26 — A verdict reachable only by labelling is not a verdict — CONFIRMED
+
+If a group is too thin to measure, return **UNKNOWN** — never a
+measured-looking number.
+
+Twelve listings averaging under one order each produced a +31% swing that was
+pure noise, and `RULED_OUT` was unreachable except by asserting it. The engine
+now requires **20 total observations and 5 on each side** before materiality
+decides anything; below that the answer is UNKNOWN and
+`ordersAfterPercent` is `null` rather than a percentage the sample cannot support.
+
+This is the design's own "too few samples / Unknown" state, applied to
+diagnosis rather than only to research figures.
+
+### Order of checks in `diagnose()`
+1. No event → `UNKNOWN`, whatever the movement.
+2. Not enough data → `UNKNOWN`, even with an event.
+3. Only then does materiality decide `CORRELATED` vs `RULED_OUT`.
+
+---
+
+## D27 — Disjoint listing groups are a structural guarantee — CONFIRMED
+
+**Overlapping listing groups are how a correlation engine becomes a rumour
+mill** — measuring one change while the data moved another, and reporting the
+borrowed movement as a finding.
+
+One shared resolver (`narrativeGroups`), disjoint by construction, with a
+**runtime invariant** that throws on overlap.
+
+Deliberately not a test. A test proves the sets are disjoint today; the
+invariant makes them unable to stop being disjoint — **including on the day a
+future feature makes overlap convenient.** Keep it that way.
+
+### Related product rule found while applying this
+**UNKNOWN findings are never truncated.** Capping pulse findings by magnitude
+dropped the unexplained drop behind three larger correlated ones. Correlated
+findings are capped because they already carry an explanation; unexplained ones
+are not, and an unexplained drop is the single thing a seller most needs to see.
+
+For the same reason the unexplained finding is **CRITICAL** while correlated
+ones are **ATTENTION**: a −100% drop the seller caused by deactivating a section
+is a change they already know about. This surface answers "what needs my
+attention", and the thing you already understand needs less of it.

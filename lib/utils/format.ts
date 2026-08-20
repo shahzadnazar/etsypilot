@@ -49,7 +49,16 @@ export function formatDelta(value: number): { text: string; direction: 'up' | 'd
   return { text: `${arrow} ${Math.abs(value).toFixed(1)}%`, direction }
 }
 
-export function formatDate(iso: string, timeZone = 'America/New_York'): string {
+/*
+ * All timestamps render in UTC.
+ *
+ * One time basis across the product, so a figure means the same thing on every
+ * surface and in every export. Two bases is how a period boundary comes to
+ * display a day early, which happened twice before this rule existed.
+ */
+export const DISPLAY_TIMEZONE = 'UTC'
+
+export function formatDate(iso: string, timeZone: string = DISPLAY_TIMEZONE): string {
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',
@@ -74,7 +83,7 @@ export function formatCalendarDate(dateKey: string): string {
   }).format(new Date(`${dateKey}T12:00:00.000Z`))
 }
 
-export function formatDateTime(iso: string, timeZone = 'America/New_York'): string {
+export function formatDateTime(iso: string, timeZone: string = DISPLAY_TIMEZONE): string {
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',
@@ -82,6 +91,7 @@ export function formatDateTime(iso: string, timeZone = 'America/New_York'): stri
     minute: '2-digit',
     hour12: false,
     timeZone,
+    timeZoneName: 'short',
   }).format(new Date(iso))
 }
 

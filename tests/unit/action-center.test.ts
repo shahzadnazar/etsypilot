@@ -112,3 +112,18 @@ describe('Shop Pulse feeds the same queue', () => {
     }
   })
 })
+
+describe('the unexplained finding is never truncated away', () => {
+  it('keeps every UNKNOWN finding even when larger correlated ones exist', async () => {
+    const { actions } = await getActions(ctx)
+    const pulseActions = actions.filter((a) => a.id.startsWith('ACT-PULSE-'))
+    const unknowns = pulseActions.filter((a) => a.title.includes('no recorded change'))
+    expect(unknowns.length).toBeGreaterThan(0)
+  })
+
+  it('ranks the unexplained drop above the correlated ones', async () => {
+    const { actions } = await getActions(ctx)
+    const pulseActions = actions.filter((a) => a.id.startsWith('ACT-PULSE-'))
+    expect(pulseActions[0]?.title).toContain('no recorded change')
+  })
+})

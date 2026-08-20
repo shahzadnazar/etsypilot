@@ -37,3 +37,16 @@ describe('methodology', () => {
     expect(getMethodology('nope')).toBeNull()
   })
 })
+
+describe('the Shop Pulse baseline card explains the residual sweep', () => {
+  it('says the unexplained figure is measured on the residual', () => {
+    const m = METHODOLOGIES.shopPulseBaseline
+    expect(m?.method).toContain('residual')
+    expect(m?.method).toContain('net of what the recorded changes already explain')
+  })
+
+  it('says a thin sample yields unknown, not a number', () => {
+    const m = METHODOLOGIES.shopPulseBaseline
+    expect(m?.limitations?.join(' ')).toContain('rather than as a percentage the sample cannot support')
+  })
+})

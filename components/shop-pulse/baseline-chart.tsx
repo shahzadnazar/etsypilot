@@ -58,8 +58,8 @@ export function BaselineChart({
     <figure className="m-0">
       <figcaption className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-caption text-muted-1">
         <span>
-          Daily orders · solid line verified from your receipts · band is the expected range from
-          your own {baseline.windowDays}-day history
+          Daily orders · UTC · solid line verified from your receipts · band is the expected range
+          from your own {baseline.windowDays}-day history
         </span>
       </figcaption>
 

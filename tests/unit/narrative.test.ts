@@ -6,6 +6,7 @@ import {
   DEMO_BASELINE,
   DEMO_TOTALS,
   NARRATIVE,
+  narrativeGroups,
 } from '@/lib/etsy/demo-dataset'
 
 const listings = buildDemoListings()
@@ -43,12 +44,12 @@ describe('the demo shop actually contains the drop it claims', () => {
   it('the out-of-stock listing sells nothing at all while it is out', () => {
     const during = countFor(
       [NARRATIVE.stockoutListing],
-      `${NARRATIVE.stockoutFrom}T04:00:00.000Z`,
-      `${NARRATIVE.stockoutUntil}T04:00:00.000Z`,
+      `${NARRATIVE.stockoutFrom}T00:00:00.000Z`,
+      `${NARRATIVE.stockoutUntil}T00:00:00.000Z`,
     )
     expect(during).toBe(0)
 
-    const after = countFor([NARRATIVE.stockoutListing], `${NARRATIVE.stockoutUntil}T04:00:00.000Z`)
+    const after = countFor([NARRATIVE.stockoutListing], `${NARRATIVE.stockoutUntil}T00:00:00.000Z`)
     expect(after).toBeGreaterThan(0)
   })
 
@@ -57,7 +58,7 @@ describe('the demo shop actually contains the drop it claims', () => {
       .filter((l) => l.state === 'ACTIVE' && l.section === 'Seasonal')
       .slice(0, 4)
       .map((l) => l.etsyListingId)
-    const after = countFor(seasonal, `${NARRATIVE.deactivatedFrom}T04:00:00.000Z`)
+    const after = countFor(seasonal, `${NARRATIVE.deactivatedFrom}T00:00:00.000Z`)
     expect(after).toBe(0)
   })
 
@@ -72,5 +73,27 @@ describe('the demo shop actually contains the drop it claims', () => {
     const baselinePerDay = prior.length / 90
     const actualPerDay = orders.length / 30
     expect(actualPerDay).toBeLessThan(baselinePerDay)
+  })
+})
+
+describe('group disjointness is a runtime invariant, not a convention', () => {
+  it('throws rather than returning overlapping groups', () => {
+    // The guard lives inside narrativeGroups, so any future change that makes
+    // two groups share a listing fails loudly at the source instead of quietly
+    // producing a borrowed correlation downstream.
+    //
+    // Duplicate a listing that reaches a filtered group - the price group is
+    // resolved by id lookup and dedupes on its own.
+    const restListing = narrativeGroups(listings).rest[0]!
+    expect(() => narrativeGroups([...listings, restListing])).toThrow(/overlap/i)
+  })
+
+  it('resolves disjoint groups for the real catalogue', () => {
+    const g = narrativeGroups(listings)
+    const all = [
+      ...g.priceGroup, ...(g.stockout ? [g.stockout] : []),
+      ...g.seasonal, ...g.tagGroup, ...g.rest,
+    ].map((l) => l.etsyListingId)
+    expect(new Set(all).size).toBe(all.length)
   })
 })

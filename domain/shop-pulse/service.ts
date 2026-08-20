@@ -33,6 +33,7 @@ import {
   compareRates,
   confidenceFor,
   diagnose,
+  hasEnoughData,
 } from './correlation'
 import type { DetectedChange, Evidence, ShopPulseView, TestedAlternative } from './types'
 
@@ -203,6 +204,7 @@ function buildChange(spec: ChangeSpec, orders: EtsyOrder[]): DetectedChange {
   )
   const diagnosis = diagnose(comparison, true)
   const confidence = confidenceFor(comparison, spec.listingIds.length)
+  const thin = !hasEnoughData(comparison)
 
   const shopWide = compareRates(orders, [], first.timestamp, PERIOD_START, PERIOD_END)
 
@@ -212,11 +214,17 @@ function buildChange(spec: ChangeSpec, orders: EtsyOrder[]): DetectedChange {
         ? ` — ${first.beforeValue} → ${first.afterValue}`
         : ''
     }${first.operationId ? `, operation ${first.operationId}` : ''}.`,
-    `${formatDate(first.timestamp)} – ${formatDate(PERIOD_END)} · outcome window — orders on ${
-      spec.listingIds.length
-    } listing${spec.listingIds.length === 1 ? '' : 's'} moved from ${
-      comparison.beforePerDay
-    }/day to ${comparison.afterPerDay}/day (${signed(comparison.changePercent)}).`,
+    thin
+      ? `${formatDate(first.timestamp)} – ${formatDate(PERIOD_END)} · outcome window — too few orders on ${
+          spec.listingIds.length
+        } listing${spec.listingIds.length === 1 ? '' : 's'} to measure a rate (${
+          comparison.ordersBefore
+        } before, ${comparison.ordersAfter} after).`
+      : `${formatDate(first.timestamp)} – ${formatDate(PERIOD_END)} · outcome window — orders on ${
+          spec.listingIds.length
+        } listing${spec.listingIds.length === 1 ? '' : 's'} moved from ${
+          comparison.beforePerDay
+        }/day to ${comparison.afterPerDay}/day (${signed(comparison.changePercent)}).`,
     `Shop-wide orders moved ${signed(shopWide.changePercent)} over the same window.`,
   ]
 
@@ -229,7 +237,12 @@ function buildChange(spec: ChangeSpec, orders: EtsyOrder[]): DetectedChange {
     }`,
     coveragePercent: 100,
     coverageNote: 'All affected listings have full history in this window',
-    limitations: [ORDERS_ONLY_LIMITATION],
+    limitations: thin
+      ? [
+          'Too few orders on these listings to measure a change. EtsyPilot reports this as unknown rather than publishing a percentage the sample cannot support.',
+          ORDERS_ONLY_LIMITATION,
+        ]
+      : [ORDERS_ONLY_LIMITATION],
   }
 
   return {
@@ -240,7 +253,8 @@ function buildChange(spec: ChangeSpec, orders: EtsyOrder[]): DetectedChange {
     occurredAt: first.timestamp,
     scope: spec.scope,
     affectedListingIds: spec.listingIds,
-    ordersAfterPercent: comparison.changePercent,
+    // A percentage the sample cannot support is not published at all.
+    ordersAfterPercent: thin ? null : comparison.changePercent,
     diagnosis,
     evidence,
     destinations: spec.destinations,
@@ -362,7 +376,7 @@ function unexplainedDeviations(
       const comparison = compareRates(
         orders,
         [],
-        `${from}T04:00:00.000Z`,
+        `${from}T00:00:00.000Z`,
         PERIOD_START,
         PERIOD_END,
       )
@@ -400,7 +414,7 @@ function unexplainedDeviations(
         detail: `${formatDate(`${from}T12:00:00.000Z`)} – ${formatDate(
           `${to}T12:00:00.000Z`,
         )} · no event in your history`,
-        occurredAt: `${from}T04:00:00.000Z`,
+        occurredAt: `${from}T00:00:00.000Z`,
         scope: 'Shop-wide',
         affectedListingIds: [],
         ordersAfterPercent: comparison.changePercent,

@@ -114,7 +114,8 @@ export const METHODOLOGIES: Record<string, Methodology> = {
     metric: 'Shop Pulse baseline',
     type: 'CALCULATED',
     source: 'Your own order history',
-    method: 'A rolling 90-day expected range from your own orders, by weekday.',
+    method:
+      'A rolling 90-day expected range from your own orders, by weekday. Recorded changes are tested first; the unexplained figure is then measured on the residual — the orders left after every correlated change is accounted for — so the same shortfall is never reported twice and an unexplained percentage is always net of what the recorded changes already explain.',
     confidence: 'MODERATE',
     coverage: 88,
     coverageLabel: 'of listings have enough history to baseline',
@@ -122,6 +123,7 @@ export const METHODOLOGIES: Record<string, Methodology> = {
       'Correlation is not cause.',
       'Ninety days cannot separate seasonality from a change you made.',
       'Etsy does not release views or impressions, so diagnoses rest on orders alone.',
+      'Where too few orders fall on the affected listings to measure a rate, the result is reported as unknown rather than as a percentage the sample cannot support.',
     ],
     readMoreHref: '/data/methodology#shop-pulse-baseline',
   },

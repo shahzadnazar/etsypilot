@@ -8,7 +8,8 @@
 **Phase:** 3 — Shop Pulse (COMPLETE)
 **Current task:** Awaiting go-ahead for Phase 4 — Safe Bulk Editor
 **Current file being worked on:** None
-**Last completed task:** Baseline + correlation engine + Shop Pulse UI + weekly digest
+**Last completed task:** D24-D27 corrections: UTC time basis, thin-sample UNKNOWN,
+disjointness invariant, residual sweep in methodology
 **Blockers:** NONE. One item flagged for a decision, non-blocking: D22 7a (Audit log
 placement in the settings sidebar).
 
@@ -144,9 +145,9 @@ PostHog: Not configured
 ## 12. Known Issues
 
 ```text
-- Artboard 91's UNKNOWN row is labelled -12%; the engine measures about -57%.
-  The artboard's own totals (438 vs 512, four recorded events) need a deeper dip
-  than -12% to reconcile. Awaiting a call, same class as the $1.05 net-profit gap.
+- The corrected artboard 91 (residual wording, -57%) has not reached the repo -
+  the newest upload is the one already archived and still shows neither. Not
+  blocking: D25 makes the computation authoritative.
 - Google Fonts is loaded over the network; in a sandbox with no egress the font
   falls back to system sans. Consider self-hosting Inter in Phase 12.
 - Mobile top bar is functional but not yet the designed compact bar (logo, shop,
@@ -200,6 +201,33 @@ Decision: Free $0 / Solo $15 / Growth $29 / Agency $79. Trial 14 days Growth, no
 Refund window 14 days from charge.
 Reason: Billing history (artboard 107) shows $15.00 Solo charges. Brief's $12 superseded.
 Impact: Closes O4.
+
+### 2026-08-20 — UTC is the single time basis
+Decision: All timestamps render in UTC. Calendar dates never pass through a zoned
+formatter. Any comparison of two periods scales both sides identically.
+Reason: Two bugs (period start off by a day, chart axis off by a day) and the revenue
+deviation reading double all traced to two time bases and asymmetric scaling.
+Impact: format.ts DISPLAY_TIMEZONE, period constants, day bucketing, UI captions.
+Supersedes artboard 91's "shop time zone" caption.
+
+### 2026-08-20 — Never author a Shop Pulse figure
+Decision: -57% is canonical for the unexplained row. Every Shop Pulse artboard figure
+is illustrative of shape, not a target. Computation wins over design.
+Reason: The -12% was hand-written and sat in a column of computed values.
+Impact: Residual-sweep explanation added to the methodology; a test asserts every
+reported percentage is restated by the evidence that produced it.
+
+### 2026-08-20 — Thin samples return UNKNOWN
+Decision: 20 observations total and 5 per side before materiality decides anything.
+Below that, UNKNOWN and a null percentage.
+Reason: A verdict reachable only by labelling is not a verdict.
+Impact: diagnose() check order; ordersAfterPercent is nullable; UI shows "Not enough data".
+
+### 2026-08-20 — Disjoint groups enforced at runtime, not by test
+Decision: narrativeGroups throws on overlap. Keep it even when overlap is convenient.
+Reason: Overlapping groups are how a correlation engine becomes a rumour mill.
+Impact: Also found that capping pulse findings by magnitude dropped the unexplained
+one - UNKNOWN findings are now never truncated, and outrank correlated ones.
 
 ### 2026-08-19 — Dark theme stays cool slate
 Decision: Ship D1's exact dark values. Warmed neutrals rejected and recorded as such.

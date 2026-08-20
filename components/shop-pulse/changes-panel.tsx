@@ -36,7 +36,9 @@ export function ChangesPanel({ changes }: { changes: DetectedChange[] }) {
             <tr className="bg-canvas-soft text-left text-label text-muted-1">
               <th scope="col" className="px-[18px] py-2.5 font-semibold">Change</th>
               <th scope="col" className="hidden px-3 py-2.5 font-semibold sm:table-cell">Scope</th>
-              <th scope="col" className="px-3 py-2.5 text-right font-semibold">Orders after</th>
+              <th scope="col" className="px-3 py-2.5 text-right font-semibold">
+                Orders after
+              </th>
               <th scope="col" className="px-[18px] py-2.5 font-semibold">Diagnosis</th>
             </tr>
           </thead>
@@ -66,7 +68,15 @@ export function ChangesPanel({ changes }: { changes: DetectedChange[] }) {
                       <span className="tnum mt-1 block text-caption text-muted-1">{c.detail}</span>
                     </button>
                   </td>
-                  <td className="hidden px-3 py-3 text-small text-ink-2 sm:table-cell">{c.scope}</td>
+                  <td className="hidden px-3 py-3 text-small text-ink-2 sm:table-cell">
+                    {c.scope}
+                    {c.eventType === null ? (
+                      <span className="mt-0.5 block text-caption text-muted-1">
+                        residual after the {changes.filter((x) => x.diagnosis === 'CORRELATED').length}{' '}
+                        recorded changes
+                      </span>
+                    ) : null}
+                  </td>
                   <td
                     className="tnum whitespace-nowrap px-3 py-3 text-right text-small font-semibold"
                     style={{
@@ -74,7 +84,11 @@ export function ChangesPanel({ changes }: { changes: DetectedChange[] }) {
                         (c.ordersAfterPercent ?? 0) < 0 ? 'var(--danger)' : 'var(--ink-2)',
                     }}
                   >
-                    {c.ordersAfterPercent === null ? '—' : `${c.ordersAfterPercent}%`}
+                    {c.ordersAfterPercent === null ? (
+                      <span className="font-normal text-muted-1">Not enough data</span>
+                    ) : (
+                      `${c.ordersAfterPercent}%`
+                    )}
                   </td>
                   <td className="px-[18px] py-3">
                     <DiagnosisBadge diagnosis={c.diagnosis} />

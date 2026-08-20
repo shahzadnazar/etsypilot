@@ -33,7 +33,7 @@ export default async function ShopPulsePage() {
     <>
       <PageHeader
         title="Shop Pulse"
-        subtitle={`${period} measured against this shop's own ${pulse.orders.windowDays}-day baseline · ${pulse.currency} · ${pulse.changes.length} changes detected`}
+        subtitle={`${period} UTC measured against this shop's own ${pulse.orders.windowDays}-day baseline · ${pulse.currency} · ${pulse.changes.length} changes detected`}
         actions={
           <>
             <Button variant="secondary">Export evidence</Button>

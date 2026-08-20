@@ -26,6 +26,19 @@ import type { Confidence } from '@/lib/provenance/types'
 /** Below this, a movement is noise rather than a finding. */
 const MATERIAL_CHANGE = 0.15
 
+/**
+ * Minimum observations before a rate comparison means anything.
+ *
+ * Twelve listings averaging under one order each produced a +31% swing that was
+ * pure noise. A verdict reachable only by labelling is not a verdict, so below
+ * this threshold the engine returns UNKNOWN rather than a measured-looking
+ * number - the same honest answer the design's "too few samples" state gives.
+ */
+const MIN_OBSERVATIONS = 20
+
+/** And enough of them on each side to have something to compare. */
+const MIN_PER_SIDE = 5
+
 export interface RateComparison {
   beforePerDay: number
   afterPerDay: number
@@ -72,14 +85,29 @@ export function compareRates(
 /**
  * Reach a verdict from a measured comparison.
  *
- * Deliberately conservative: anything that does not clear the materiality
- * threshold is RULED_OUT rather than left ambiguous, because "we checked and it
- * does not explain this" is a more useful thing to tell a seller than silence.
+ * Order matters here. No event means UNKNOWN whatever the movement. Too little
+ * data means UNKNOWN even when an event exists, because the comparison cannot
+ * support either of the other two answers. Only once there is an event AND
+ * enough observations does materiality decide between CORRELATED and RULED_OUT.
+ *
+ * RULED_OUT is deliberately reachable rather than left ambiguous: "we checked
+ * and it does not explain this" is more useful to a seller than silence - but
+ * only when the check was real.
  */
 export function diagnose(comparison: RateComparison, hasEvent: boolean): Diagnosis {
   if (!hasEvent) return 'UNKNOWN'
+  if (!hasEnoughData(comparison)) return 'UNKNOWN'
   const magnitude = Math.abs(comparison.changePercent) / 100
   return magnitude >= MATERIAL_CHANGE ? 'CORRELATED' : 'RULED_OUT'
+}
+
+/** Exported so the UI can say "too few samples" rather than showing a range. */
+export function hasEnoughData(comparison: RateComparison): boolean {
+  return (
+    comparison.ordersBefore + comparison.ordersAfter >= MIN_OBSERVATIONS &&
+    comparison.ordersBefore >= MIN_PER_SIDE &&
+    comparison.ordersAfter >= MIN_PER_SIDE
+  )
 }
 
 /**
