@@ -40,6 +40,25 @@ fails, notes = [], []
 def check(cond, msg):
     (notes if cond else fails).append(("PASS " if cond else "FAIL ") + msg)
 
+def wait_for_text(pg, marker, timeout_ms=15000):
+    """Poll main for text after a navigation.
+
+    A form POST redirects, so the page is mid-navigation for a moment after the
+    click. A fixed sleep is a race: it passed locally and failed under load,
+    which is the worst kind of check to keep.
+    """
+    waited = 0
+    while waited < timeout_ms:
+        try:
+            if marker in pg.locator("main").inner_text():
+                return True
+        except Exception:
+            pass
+        pg.wait_for_timeout(250)
+        waited += 250
+    return False
+
+
 def open_tab(pg, name, marker):
     """Click until the tab's own content is on screen — hydration lands late."""
     for _ in range(20):
@@ -188,15 +207,72 @@ with sync_playwright() as p:
     check("Source:" in ai, "Every drafted element names its source")
     check("Publish to Etsy" not in ai, "No control on this page publishes directly")
 
-    # Billing: three tiers, no Agency card, the approved sentence intact.
+    # Billing (Phase 8): the screen is arranged around leaving, not upgrading.
     pg.goto(f"{BASE}/billing", wait_until="domcontentloaded"); pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)
     bill = pg.locator("main").inner_text()
+
     check("we will not bill you for something that does not exist yet" in bill,
           "The agency sentence is on the page verbatim")
     check("$79" not in bill, "No Agency card and no Agency price")
     check("Team seats" not in bill, "No meter for a capacity nobody has")
     check(bill.upper().count("YOUR PLAN") == 1, "Exactly one plan is marked as current")
-    check("450" not in bill, "The listings meter counts active listings, not every state")
+
+    # Cancelling is a real control on this page, not a link to a support inbox.
+    cancel = pg.get_by_role("button", name="Cancel plan")
+    check(cancel.count() == 1, "Cancel plan is a button on the billing page itself")
+    check("no retention call" in bill, "The page says there is no retention call")
+    check("Cancelling takes 1 step" in bill and "subscribing takes 2" in bill,
+          "The page prints both step counts so the symmetry is visible")
+    check("email" not in bill.lower().split("refunds and cancellation")[-1][:400],
+          "Cancelling never asks the seller to send an email")
+
+    # Every plan change prices itself before its button.
+    check("today" in bill and "not a full month" in bill,
+          "An upgrade states the prorated amount and that it is not a full month")
+    check("Nothing charged today" in bill, "A downgrade states that nothing is charged")
+    check("Your data stays" in bill, "A downgrade states that data is kept")
+    check("nothing is removed for you" in bill,
+          "The listing cap says the seller chooses what to remove")
+
+    # Refunds are self-serve with a computed window.
+    check("more days" in bill, "The refund window shows days remaining, computed")
+    check(pg.get_by_role("button", name="Request refund").count() == 1,
+          "Requesting a refund is a button, not an email address")
+
+    # A declined charge stays in the history.
+    check("Card declined" in bill, "A failed payment is shown, not hidden")
+
+    # The usage meters say what continues, not only what stops.
+    check("unaffected" in bill, "A limit says what keeps working")
+
+    # And the flows actually run. Clicking cancel must change the page, not
+    # just return 303 — a cancellation that silently appears not to work is
+    # worse than one that refuses. Found by driving it: the page was
+    # prerendered, so every route returned 303 and nothing on screen moved.
+    #
+    # These checks MUTATE the demo subscription, so they normalise first: a run
+    # that failed halfway used to leave the shop cancelled, and the next run
+    # then failed for a different reason than the one under test.
+    if "Your plan is cancelled" in bill:
+        pg.get_by_role("button", name="Resume plan").first.click()
+        wait_for_text(pg, "Cancel plan")
+
+    pg.get_by_role("button", name="Cancel plan").click()
+    cancelled = wait_for_text(pg, "Your plan is cancelled")
+    after_cancel = pg.locator("main").inner_text()
+    check(cancelled, "Cancelling actually cancels")
+    check("nothing renews" in after_cancel, "The header stops promising a renewal")
+    check("You keep everything until" in after_cancel,
+          "Cancelling says the paid period is kept")
+    check("Nothing is deleted" in after_cancel, "Cancelling says nothing is deleted")
+
+    resume = pg.get_by_role("button", name="Resume plan")
+    check(resume.count() >= 1, "Resuming is offered in one click, like cancelling")
+    if resume.count() >= 1:
+        resume.first.click()
+        back = wait_for_text(pg, "Cancel plan")
+        check(back and "Your plan is cancelled" not in pg.locator("main").inner_text(),
+              "Resuming actually resumes")
 
     # Connect: the password disclosure and the revoke path.
     pg.goto(f"{BASE}/settings/shops", wait_until="domcontentloaded"); pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)

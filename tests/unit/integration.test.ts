@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { csvCell, toCsv, transactionsExport } from '@/domain/export/csv'
 import { PLANS, AGENCY_NOTE, planOf } from '@/domain/billing/plans'
-import { getBillingView, upgradeRequired } from '@/domain/billing/service'
+import { getBillingView } from '@/domain/billing/service'
+import { enforce } from '@/domain/billing/usage'
 import { ETSY_SCOPES, overallPercent, selectedScopeStrings } from '@/domain/connect/types'
 import { checklistComplete, demoSyncState, setupChecklist } from '@/domain/connect/service'
 import { DEMO_ACTOR_ID, DEMO_SHOP_ID } from '@/lib/etsy/demo-dataset'
@@ -131,23 +132,19 @@ describe('plans describe what exists', () => {
     expect(view.meters.map((m) => m.label)).toEqual(['Listings', 'AI generations'])
   })
 
-  it('points the upgrade state at a real limit and says what pauses', () => {
-    const atLimit = {
-      label: 'Listings',
-      used: 200,
-      limit: 200,
-      atLimit: 'New bulk jobs pause. Existing listings and their data are untouched.',
-    }
-    const upgrade = upgradeRequired(atLimit, 'SOLO')
-    expect(upgrade?.title).toContain('200 listings on Solo')
-    expect(upgrade?.body).toContain('2,000 listings')
-    expect(upgrade?.body).toContain('pause')
-    expect(upgrade?.body).not.toContain('automation')
+  it('points a blocked limit at a real ceiling and says what pauses', () => {
+    const decision = enforce({ plan: 'SOLO', metric: 'listings', used: 200 })
+    expect(decision.allowed).toBe(false)
+    expect(decision.blocked?.title).toContain('200 listings on Solo')
+    expect(decision.blocked?.upgrade?.raisesTo).toBe(2000)
+    expect(decision.blocked?.pauses).toContain('pause')
+    expect(decision.blocked?.pauses).not.toContain('automation')
   })
 
   it('offers no upgrade beyond the top tier rather than inventing one', () => {
-    const atLimit = { label: 'Listings', used: 2000, limit: 2000, atLimit: 'x' }
-    expect(upgradeRequired(atLimit, 'GROWTH')).toBeNull()
+    const decision = enforce({ plan: 'GROWTH', metric: 'listings', used: 2000 })
+    expect(decision.allowed).toBe(false)
+    expect(decision.blocked?.upgrade).toBeNull()
   })
 })
 

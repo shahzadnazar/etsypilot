@@ -5,8 +5,8 @@
 
 ## 1. Current Status
 
-**Phase:** 7 — AI Copilot Hardening (COMPLETE)
-**Current task:** Awaiting go-ahead for Phase 8 — Billing & Usage
+**Phase:** 8 — Billing & Usage (COMPLETE)
+**Current task:** Awaiting go-ahead for Phase 9 — Browser Extension
 **Current file being worked on:** None
 **Last completed task:** Structured AI input, provenance-aware prompts, output validation,
 issue explanations, action recommendations, audit trail for applied AI changes
@@ -105,6 +105,23 @@ Keep the latest 5–10 meaningful items.
 - Refreshed design bundle archived: artboard 92 now gives every locked row its own badge,
   the intro copy is corrected, and the three stale items (America/New_York, $4,938, -12%)
   are gone from the source.
+- Phase 8 built: BillingProvider seam (mock + Stripe), subscription lifecycle with a
+  DisclosedCharge branded type, prorated upgrades that show their arithmetic, downgrades
+  that pause and never delete, one-click cancel with a symmetric resume, computed refund
+  window, usage meters that say what continues, verified idempotent allow-listed webhooks,
+  and billing history that keeps declined charges. 278 tests, 84 browser checks.
+- D45: "no dark patterns" made structural — lifecycle.ts throws at load if cancelling ever
+  takes more steps than subscribing.
+- D45a: demo mode blocks Etsy writes, not billing. The real invariant is that a read-only
+  context may never reach a LIVE provider.
+- D45b: the mock billing store lives on globalThis — Next puts route handlers and pages in
+  separate bundles, so module state was two different Maps and the screen never moved.
+- D46: a limit is written once and read everywhere. Three restatements found: the copilot
+  quota, the shell's plan chip, and Free's listing limit as an ambiguous null that made an
+  UPGRADE warn about pausing.
+- Dependency defect cleared: drizzle-kit's @esbuild-kit chain pinned esbuild ~0.18 with
+  four advisories. Aliased those deprecated packages to tsx (their own successor) and
+  verified by running drizzle-kit generate. npm audit: 0 vulnerabilities.
 - D44: audit review caught "revenue at risk" — a backward-looking measurement wearing a
   forward-looking label. Renamed across five surfaces AND the domain field, because a
   field called revenueAtRisk invites the phrase back. The dedup caption the same review
@@ -371,6 +388,20 @@ output permanently. This is not a Phase 5 note — it applies to every phase aft
 
 These assertions are kept in `tests/browser/rendered-output.py` and run against a
 production build at the end of each phase.
+
+### Drive the control, don't just render the page
+Phase 8's cancel flow returned 303 from every route and changed nothing on
+screen: the billing page was prerendered, and the mock store was a different Map
+in the route bundle than in the page bundle. Unit tests passed (one module
+instance) and curl passed (303 is a success). Only clicking the button caught
+it. A second bug hid behind the same click — the redirect resolved against
+NEXT_PUBLIC_APP_URL with a localhost:3000 default, so the browser followed it to
+a server that was not there; curl never noticed because it does not follow
+redirects.
+
+So: for any flow whose whole point is that it works, the check clicks the
+control and asserts the page changed. And a check that MUTATES state normalises
+first, or a half-failed run poisons the next one.
 
 ### Copy is only caught by the browser
 Deliberately breaking five Phase 6 guarantees at once: the unit suite caught three

@@ -4,16 +4,18 @@ import { getSession } from '@/lib/auth'
 import { getEtsyService } from '@/lib/etsy'
 import { shopContext } from '@/lib/permissions'
 import { DEMO_COUNTS } from '@/lib/etsy/demo-dataset'
-import { DEMO_PLAN, planOf } from '@/domain/billing/plans'
+import { currentPlan } from '@/domain/billing/service'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession()
   if (!session) redirect('/login')
 
   const ctx = shopContext(session, session.shopId)
-  const shop = await getEtsyService().getShop(ctx.shopId)
-
-  const plan = planOf(DEMO_PLAN)
+  const [shop, plan] = await Promise.all([
+    getEtsyService().getShop(ctx.shopId),
+    // Read, not restated: the chip and the billing page share one source.
+    currentPlan(ctx),
+  ])
 
   const initials = session.name
     .split(' ')
@@ -29,7 +31,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       isDemo={session.isDemo}
       userInitials={initials}
       plan={plan.name}
-      listingUsage={`${DEMO_COUNTS.activeListings} / ${plan.limits.listings?.toLocaleString('en-US') ?? '—'} listings`}
+      listingUsage={`${DEMO_COUNTS.activeListings} / ${plan.limits.listings.toLocaleString('en-US')} listings`}
     >
       {children}
     </AppShell>

@@ -1,29 +1,44 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { PageHeader } from '@/components/layout/page-header'
-import { Button } from '@/components/ui/button'
+import { BillingHistory } from '@/components/billing/billing-history'
+import { PlanCards } from '@/components/billing/plan-cards'
+import { UsageMeters } from '@/components/billing/usage-meters'
 import { Card } from '@/components/ui/card'
 import { Money, Numeric } from '@/components/ui/numeric'
-import { getBillingView, upgradeRequired } from '@/domain/billing/service'
+import { getBillingView } from '@/domain/billing/service'
 import { getSession } from '@/lib/auth'
 import { shopContext } from '@/lib/permissions'
 import { formatCalendarDate } from '@/lib/utils/format'
-import { cn } from '@/lib/utils/cn'
 
 export const metadata: Metadata = { title: 'Billing & plan' }
 
 /*
- * Billing (D22).
+ * Dynamic, not prerendered.
  *
- * Three tiers. No Agency card — a quiet line under the table instead, with no
- * price, no "coming soon" badge and no waitlist. Every bullet describes
- * something that is built.
+ * This page reads a subscription that the cancel, resume, refund and plan-change
+ * routes mutate. Prerendered, it kept serving the state from build time: the
+ * routes returned 303, the ledger changed, and the screen showed the old plan —
+ * a cancellation that silently appears not to work is worse than one that
+ * refuses, which is the whole failure this phase exists to avoid.
+ */
+export const dynamic = 'force-dynamic'
+
+/*
+ * Billing (D22, D45).
  *
- * Two usage meters, both counted rather than stated. Meters for connected shops
- * and team seats came out with multi-user: a meter for a capacity nobody has is
- * an advertisement dressed as a status.
+ * The acceptance criterion for this phase is "no dark patterns", so the screen
+ * is arranged around leaving rather than around upgrading:
  *
- * Phase 8 adds Stripe. Nothing on this page changes when it does.
+ *   - Cancel is a one-click form on this page. Not in a modal, not behind a
+ *     survey, not "contact us". The page prints the step counts for both flows
+ *     so the symmetry is visible and not merely claimed.
+ *   - Every plan card prices its own change before its button, including the
+ *     proration on an upgrade and the "nothing is charged, nothing is deleted"
+ *     on a downgrade.
+ *   - The refund control appears whenever a charge is inside its window, with
+ *     the days remaining computed from the charge date above it.
+ *   - Declined charges stay in the history.
  */
 export default async function BillingPage() {
   const session = await getSession()
@@ -31,153 +46,164 @@ export default async function BillingPage() {
 
   const ctx = shopContext(session, session.shopId)
   const view = await getBillingView(ctx)
+  const sub = view.subscription
 
-  const upgrades = view.meters
-    .map((m) => upgradeRequired(m, view.currentPlan.key))
-    .filter((u): u is NonNullable<typeof u> => u !== null)
+  const renewalLine = sub.renewsOn
+    ? `renews ${formatCalendarDate(sub.renewsOn)}`
+    : sub.status === 'CANCELLING'
+      ? `ends ${formatCalendarDate(sub.currentPeriodEnd)} — nothing renews`
+      : 'nothing renews — no card on file'
 
   return (
     <>
       <PageHeader
         title="Billing & plan"
-        subtitle={`${view.currentPlan.name} · $${view.currentPlan.priceMonthly} per month · renews ${view.renewsOn ? formatCalendarDate(view.renewsOn) : '—'} · ${view.paymentMethod ?? 'no card on file'}`}
-        actions={
-          <>
-            <Button variant="secondary">Invoices</Button>
-            <Button variant="secondary">Update payment</Button>
-          </>
-        }
+        subtitle={`${view.currentPlan.name} · $${view.currentPlan.priceMonthly} per month · ${renewalLine}${sub.paymentMethod ? ` · ${sub.paymentMethod.brand} ending ${sub.paymentMethod.last4}` : ''}`}
       />
 
-      {upgrades.map((u) => (
-        <Card key={u.title} className="mb-4 p-4 text-small leading-relaxed text-ink-2">
-          <strong className="font-semibold text-ink-1">Upgrade required · {u.title}</strong>{' '}
-          {u.body}
+      {view.isDemo ? (
+        <Card className="mb-4 p-4 text-small leading-relaxed text-ink-2">
+          <strong className="font-semibold text-ink-1">This is a demo subscription.</strong>{' '}
+          Cancelling, resuming, changing plan and requesting a refund all work here and are
+          reversible — they run against the demo billing service, so no card is charged and no real
+          money moves. The flows are real; the money is not.
         </Card>
-      ))}
+      ) : null}
 
-      <section aria-label="Usage" className="grid gap-3 sm:grid-cols-2">
-        {view.meters.map((m) => {
-          const pct = Math.min(100, Math.round((m.used / m.limit) * 100))
-          return (
-            <Card key={m.label} className="flex flex-col gap-2 p-[14px]">
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="text-label text-muted-1">{m.label}</span>
-                <Numeric className="text-small font-semibold text-ink-1">
-                  {m.used.toLocaleString('en-US')} / {m.limit.toLocaleString('en-US')}
-                </Numeric>
-              </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-canvas-soft">
-                <div
-                  className="h-full rounded-full"
-                  style={{ width: `${pct}%`, background: pct >= 100 ? 'var(--danger)' : 'var(--brand)' }}
-                />
-              </div>
-              <span className="text-caption leading-snug text-muted-1">At the limit: {m.atLimit}</span>
-            </Card>
-          )
-        })}
-      </section>
+      {view.trial ? (
+        <Card className="mb-4 p-4 text-small leading-relaxed text-ink-2">
+          <strong className="font-semibold text-ink-1">
+            {view.trial.daysLeft} days left in your {view.currentPlan.name} trial · ends{' '}
+            {formatCalendarDate(view.trial.endsOn)}
+          </strong>{' '}
+          {view.trial.message}
+        </Card>
+      ) : null}
 
-      <section aria-label="Plans" className="mt-5 grid gap-3 lg:grid-cols-3">
-        {view.plans.map((plan) => {
-          const current = plan.key === view.currentPlan.key
-          return (
-            <Card
-              key={plan.key}
-              className={cn('flex flex-col gap-3 p-[18px]', current && 'border-brand bg-brand-tint')}
+      {sub.status === 'CANCELLING' ? (
+        <Card className="mb-4 flex flex-wrap items-center justify-between gap-3 p-4">
+          <span className="text-small leading-relaxed text-ink-2">
+            <strong className="font-semibold text-ink-1">Your plan is cancelled.</strong> You keep
+            everything until {formatCalendarDate(sub.currentPeriodEnd)}, then move to Free. Nothing
+            is deleted.
+          </span>
+          <form action="/api/billing/resume" method="post">
+            <button
+              type="submit"
+              className="h-11 rounded-control border border-line px-3 text-[12px] font-semibold text-ink-2 hover:bg-canvas-soft md:h-[38px]"
             >
-              <div className="flex items-baseline justify-between gap-2">
-                <h2 className="text-section text-ink-1">{plan.name}</h2>
-                {current ? (
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-brand-strong">
-                    Your plan
-                  </span>
-                ) : null}
-              </div>
+              {view.cancellation.resumeLabel}
+            </button>
+          </form>
+        </Card>
+      ) : null}
 
-              <Numeric className="text-metric text-ink-1">
-                ${plan.priceMonthly}
-                <span className="text-body font-normal text-muted-1">
-                  {plan.priceMonthly === 0 ? '' : ' / mo'}
-                </span>
-              </Numeric>
-              <p className="text-caption text-muted-1">{plan.positioning}</p>
+      {view.pressure ? (
+        <Card className="mb-4 p-4 text-small leading-relaxed text-ink-2">
+          <strong className="font-semibold text-ink-1">
+            {view.pressure.label}: {view.pressure.used.toLocaleString('en-US')} of{' '}
+            {view.pressure.limit.toLocaleString('en-US')} used.
+          </strong>{' '}
+          {view.pressure.pauses} {view.pressure.continues}
+        </Card>
+      ) : null}
 
-              <ul className="flex flex-col gap-1.5">
-                {plan.includes.map((line) => (
-                  <li key={line} className="text-small leading-relaxed text-ink-2">
-                    · {line}
-                  </li>
-                ))}
-                {plan.excludes.map((line) => (
-                  <li key={line} className="text-small leading-relaxed text-muted-1">
-                    · {line}
-                  </li>
-                ))}
-              </ul>
+      <UsageMeters meters={view.meters} />
 
-              <div className="mt-auto pt-2">
-                <Button variant={current ? 'secondary' : 'primary'}>
-                  {current ? 'Manage plan' : plan.priceMonthly > view.currentPlan.priceMonthly ? `Upgrade to ${plan.name}` : `Switch to ${plan.name}`}
-                </Button>
-              </div>
-            </Card>
-          )
-        })}
-      </section>
+      <div className="mt-5">
+        <PlanCards
+          plans={view.plans}
+          currentPlanKey={view.currentPlan.key}
+          changes={view.changes}
+          currency={view.currency}
+        />
+      </div>
 
       {/* D22: no fourth card. A quiet line, no price, no waitlist pressure. */}
       <p className="mt-4 max-w-[80ch] text-small leading-relaxed text-muted-1">{view.agencyNote}</p>
 
-      <p className="mt-3 max-w-[80ch] text-caption leading-relaxed text-muted-1">
-        {view.limitPolicy} {view.refundTerms}
-      </p>
-
       <section aria-label="Billing history" className="mt-5">
         <h2 className="pb-2 text-section text-ink-1">Billing history</h2>
-        <Card className="overflow-x-auto">
-          <table className="w-full min-w-[560px] border-collapse text-body">
-            <caption className="sr-only">
-              Charges and refunds on this account, newest first. Refunds are labelled as refunds
-              rather than shown as a negative charge.
-            </caption>
-            <thead>
-              <tr className="bg-canvas-soft text-left text-label text-muted-1">
-                <th scope="col" className="px-4 py-2.5 font-semibold">Date</th>
-                <th scope="col" className="px-3 py-2.5 font-semibold">Description</th>
-                <th scope="col" className="px-3 py-2.5 text-right font-semibold">Amount</th>
-                <th scope="col" className="px-4 py-2.5 font-semibold">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {view.invoices.map((inv) => (
-                <tr key={inv.id} className="border-t border-line">
-                  <td className="px-4 py-3 text-small text-ink-2">
-                    <Numeric>{formatCalendarDate(inv.date)}</Numeric>
-                  </td>
-                  <td className="px-3 py-3 text-small text-ink-1">{inv.description}</td>
-                  <td className="px-3 py-3 text-right">
-                    <Money
-                      value={inv.amount}
-                      currency={view.currency}
-                      negate={inv.kind === 'REFUND'}
-                      className="text-small text-ink-2"
-                    />
-                  </td>
-                  <td className="px-4 py-3 text-small text-muted-1">
-                    {inv.kind === 'REFUND' ? 'Refunded' : 'Paid'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
+        <BillingHistory invoices={view.invoices} />
       </section>
 
-      <p className="mt-3 max-w-[80ch] text-caption leading-relaxed text-muted-1">
-        Trial: {view.trial.days} days of {view.trial.plan}, no card required. {view.trial.endNote}
-      </p>
+      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+        <Card className="flex flex-col gap-3 p-[18px]">
+          <h2 className="text-section text-ink-1">Refunds and cancellation</h2>
+
+          {view.refundable ? (
+            <div className="flex flex-col gap-2 rounded-card border border-line p-3">
+              <span className="text-small leading-relaxed text-ink-2">
+                Your <Money value={view.refundable.amount} currency={view.refundable.currency} />{' '}
+                charge on {formatCalendarDate(view.refundable.chargedOn)} is refundable in full for{' '}
+                <Numeric className="font-semibold text-ink-1">
+                  {view.refundable.daysLeft} more days
+                </Numeric>{' '}
+                — until {formatCalendarDate(view.refundable.until)}.
+              </span>
+              <form action={`/api/billing/refund/${view.refundable.invoiceId}`} method="post">
+                <button
+                  type="submit"
+                  className="h-11 rounded-control border border-line px-3 text-[12px] font-semibold text-ink-2 hover:bg-canvas-soft md:h-[38px]"
+                >
+                  Request refund
+                </button>
+              </form>
+            </div>
+          ) : (
+            <p className="text-small leading-relaxed text-ink-2">
+              No charge is currently inside the {view.refundWindowDays}-day refund window.
+              Cancelling still stops the next renewal, and the period you have paid for runs to its
+              end.
+            </p>
+          )}
+
+          <ul className="flex flex-col gap-1.5">
+            {view.cancellation.effects.map((line) => (
+              <li key={line} className="text-small leading-relaxed text-ink-2">
+                · {line}
+              </li>
+            ))}
+          </ul>
+
+          {sub.status !== 'CANCELLING' ? (
+            <form action="/api/billing/cancel" method="post" className="mt-1">
+              <button
+                type="submit"
+                className="h-11 rounded-control border px-3 text-[12px] font-semibold md:h-[38px]"
+                style={{ borderColor: '#FECACA', color: '#991B1B' }}
+              >
+                Cancel plan
+              </button>
+            </form>
+          ) : null}
+
+          {/*
+            The step counts, printed. The invariant in lifecycle.ts refuses to
+            load if cancelling ever takes more steps than subscribing; this is
+            the same fact where the seller can see it.
+          */}
+          <p className="text-caption leading-relaxed text-muted-1">
+            Cancelling takes {view.flows.cancel.length} step —{' '}
+            {view.flows.cancel.map((s) => s.label).join(', ')} — and subscribing takes{' '}
+            {view.flows.subscribe.length}. No email, no retention call, no confirmation maze.
+          </p>
+        </Card>
+
+        <Card className="flex flex-col gap-3 p-[18px]">
+          <h2 className="text-section text-ink-1">Trial terms</h2>
+          <ul className="flex flex-col gap-1.5 text-small leading-relaxed text-ink-2">
+            <li>· {view.trialTerms.days} days of {view.trialTerms.plan}, no card required</li>
+            <li>· Nothing charges automatically at the end</li>
+            <li>· One trial per account, not per shop</li>
+            <li>· Bulk jobs pause if you drop below the plan they need</li>
+          </ul>
+
+          <h3 className="mt-2 text-section text-ink-1">If you exceed a limit</h3>
+          <p className="text-small leading-relaxed text-ink-2">{view.limitPolicy}</p>
+          <p className="text-caption leading-relaxed text-muted-1">{view.refundTerms}</p>
+        </Card>
+      </div>
     </>
   )
 }

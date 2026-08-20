@@ -26,6 +26,8 @@ import type { EtsyListing } from '@/lib/etsy/interface'
 import { Errors } from '@/lib/errors/types'
 import type { ShopContext } from '@/lib/permissions'
 import { demoLists } from '@/domain/research/service'
+import { currentPlan } from '@/domain/billing/service'
+import { nextPlanAfter, type Plan } from '@/domain/billing/plans'
 import { listingFacts } from './facts'
 import { validateDraft } from './validate'
 import {
@@ -49,9 +51,16 @@ export interface CopilotView {
   queue: { listingId: string; title: string; status: AiDraft['status'] }[]
 }
 
+/** Demo figures. The LIMIT is never one of them — that comes from the plan. */
+const DEMO_GENERATIONS_USED = 42
+const AI_RESETS_ON = '2026-09-01'
+
 export async function getCopilotView(ctx: ShopContext, listingId?: string): Promise<CopilotView> {
   const etsy = getEtsyService()
-  const { listings } = await etsy.getListings(ctx.shopId, { limit: 500 })
+  const [{ listings }, plan] = await Promise.all([
+    etsy.getListings(ctx.shopId, { limit: 500 }),
+    currentPlan(ctx),
+  ])
 
   const target = listingId
     ? listings.find((l) => l.etsyListingId === listingId)
@@ -91,7 +100,7 @@ export async function getCopilotView(ctx: ShopContext, listingId?: string): Prom
     inputs,
     draft: outcome.kind === 'DRAFT' ? outcome.draft : null,
     rejected: outcome.kind === 'REJECTED' ? outcome.rejected : null,
-    quota: demoQuota(),
+    quota: quotaFor(plan),
     provider: provider.mode === 'LIVE' ? provider.model : 'rule-based draft (demo mode)',
     queue,
   }
@@ -203,12 +212,19 @@ export function consumeGeneration(quota: GenerationQuota): GenerationQuota {
   return { ...quota, used: quota.used + 1 }
 }
 
-function demoQuota(): GenerationQuota {
+/**
+ * The generation allowance, read from the plan rather than restated here.
+ *
+ * A limit written down beside a plan drifts away from it — the copilot said 60
+ * while billing said 500, and the seller reads both. One source (D46).
+ */
+function quotaFor(plan: Plan): GenerationQuota {
+  const next = nextPlanAfter(plan.key)
   return {
-    used: 42,
-    limit: 60,
-    resetsOn: '2026-09-01',
-    planName: 'Growth',
-    nextTier: null,
+    used: DEMO_GENERATIONS_USED,
+    limit: plan.limits.aiGenerations,
+    resetsOn: AI_RESETS_ON,
+    planName: plan.name,
+    nextTier: next ? { name: next.name, limit: next.limits.aiGenerations } : null,
   }
 }

@@ -1704,3 +1704,101 @@ that happened or a projection of something that might. The label must say which.
 D32's sibling — D32 governs what a transform does to a number's provenance, D44 governs
 what a tense does to its meaning, and both fail the same way: the arithmetic stays right
 while the claim quietly becomes false.
+
+
+---
+
+## D45 — "No dark patterns" is enforced, not promised
+
+Phase 8's acceptance criterion is a claim about behaviour, so it is built as
+structure rather than as copy.
+
+**1. Leaving is never harder than joining.** `SUBSCRIBE_FLOW` and `CANCEL_FLOW` are
+declared step lists, and `lifecycle.ts` **throws at module load** if cancelling has more
+steps than subscribing. Cancel is one step; subscribe is two. A retention maze cannot be
+added without deleting the invariant, which is a visible act in a diff. The page prints
+both counts, so the symmetry is inspectable and not merely true.
+
+**2. No charge without disclosure.** `chargeDisclosed()` is the only money-moving method
+on the provider and it accepts only `DisclosedCharge` — a branded type whose sole producer
+is `disclose()`, which refuses to build one without an amount, a date and a statement of
+what changes. The same construction as `ConfirmedOperation` in Phase 4: a surprise charge
+is not a policy we follow, it is a call that does not compile.
+
+An upgrade is prorated and the proration is **shown**: "$14 per month more, charged for
+the 10 days left in this period — $4.67 today, not a full month", then the next full
+charge and its date. A seller who has already paid for a month can see they are not being
+charged for another.
+
+**3. Nothing is deleted on a downgrade.** `downgradeEffects()` enumerates what pauses.
+There is no delete in the billing domain to enumerate, and each entry names who chooses:
+"you choose what to remove, and nothing is removed for you."
+
+**4. The refund window is computed.** From the charge date, so "6 more days" can be
+checked against the invoice line above it. Outside the window `refundEligibility` returns
+**null rather than zero days** — "not refundable" and "refundable for zero more days" are
+different claims and only one is true.
+
+**5. Failures stay visible.** A declined charge remains in the billing history with no
+receipt link. A history that shows only successes is how a seller learns about a lapsed
+card from a paused job instead of from their billing page.
+
+### D45a — Demo mode blocks Etsy writes, not billing
+
+`assertCanWrite` exists to stop a demo shop publishing to Etsy. Applying it to billing
+made cancellation unwalkable and failed with "Demo mode cannot publish to Etsy" on a
+refund request, which is not what a refund does.
+
+The invariant is now stated where it bites: **a read-only context may never reach a LIVE
+provider.** In demo mode the adapter selector cannot even construct the Stripe provider,
+so this is the second of two guards on one property — the same doubling as the bulk
+editor's demo refusal. Billing flows run against the mock, move no money, and are
+reversible, so the promise "cancelling is one click" is verifiable rather than asserted.
+
+### D45b — The mock billing store lives on globalThis
+
+Next builds route handlers and pages into separate server bundles, so a module-level Map
+is a *different* Map in each. Cancelling through the route and then re-rendering the page
+read two stores: the route returned 303, the ledger changed, and the screen showed the old
+plan. Every unit test passed, because a test imports one module instance.
+
+The demo store is keyed on `globalThis` so it survives the bundle boundary. Phase 11's
+repository replaces it; `StripeBillingProvider` never reads it.
+
+### D45c — Webhooks
+
+Verification is real and tested — it is a security boundary, not a feature: an unverified
+webhook lets anyone who can reach the URL change a subscription. Signature over the **raw**
+body, timing-safe comparison, and a 300-second age tolerance, because a replayed valid
+signature is still valid. Tested at all four edges: wrong secret, tampered body, replay,
+missing header.
+
+Handling is idempotent by event id and allow-listed to five types. An unknown type is
+acknowledged with 200 and applied to nothing — a non-200 makes the provider retry an event
+we will never act on, and guessing at an unfamiliar payload is how a subscription gets
+cancelled by a notification about a coupon.
+
+The verification function lives in `lib/billing/signature.ts`, deliberately **without**
+`server-only`, so it can be tested at its edges; the adapter that holds the secret keeps
+the marker (D28: change the architecture, never the property).
+
+---
+
+## D46 — A limit is written once and read everywhere
+
+Three defects in this phase were the same defect: a number restated beside the place that
+owns it.
+
+| Where | Said | Owner said |
+|---|---|---|
+| AI copilot quota | 60 generations, "Solo" | the plan: 500, "Growth" |
+| App shell chip | plan from a constant | the subscription |
+| Free tier listings | `null`, read elsewhere as "unlimited" | it connects no shop — `0` |
+
+The third was the sharpest: `limits.listings: number | null` where null meant "not
+applicable" for Free but was read as "unlimited" in `downgradeEffects`, so **upgrading**
+from Free warned that bulk jobs would pause. An ambiguous null in a limits table is a bug
+waiting for a reader; it is now `number`, with `0` meaning the plan connects no shop.
+
+The rule: a limit belongs to the plan. Every surface reads it — the copilot, the shell,
+the meters, the upgrade prompt — and none of them restates it.

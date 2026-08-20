@@ -23,7 +23,8 @@ export interface Plan {
   includes: string[]
   /** Real limits, used by the usage meters. Null means not applicable. */
   limits: {
-    listings: number | null
+    /** Listings the plan may manage. 0 means the plan connects no shop. */
+    listings: number
     aiGenerations: number
     rollbackDays: number | null
     pulseHistoryMonths: number | null
@@ -44,7 +45,13 @@ export const PLANS: Plan[] = [
       'Methodology and data sources',
       '5 AI generations / month',
     ],
-    limits: { listings: null, aiGenerations: 5, rollbackDays: null, pulseHistoryMonths: null },
+    /*
+     * Zero listings, not null. Free connects no shop, so it manages no
+     * listings — and `null` was being read elsewhere as "unlimited", which
+     * turned an upgrade from Free into a warning that bulk jobs would pause.
+     * An ambiguous null in a limits table is a bug waiting for a reader.
+     */
+    limits: { listings: 0, aiGenerations: 5, rollbackDays: null, pulseHistoryMonths: null },
     excludes: ['No shop connection, profit or bulk editing'],
   },
   {
@@ -96,8 +103,11 @@ export const TRIAL_TERMS = {
     'No card on file. Nothing is charged when the trial ends — your account moves to Free and your data stays. Add a card only when you decide to continue.',
 } as const
 
+/** D17. The window is a number so it can be computed against, never restated. */
+export const REFUND_WINDOW_DAYS = 14
+
 export const REFUND_TERMS =
-  'Refunds within 14 days of a charge. Cancel any time; access continues to the end of the paid period.'
+  `Refunds within ${REFUND_WINDOW_DAYS} days of a charge, from this page. Cancel any time; access continues to the end of the paid period.`
 
 /** What happens at a limit. Nothing is deleted, and the seller chooses. */
 export const LIMIT_POLICY =
@@ -109,8 +119,14 @@ export const LIMIT_POLICY =
  * One constant, read by the billing screen AND the app shell's usage chip. Two
  * screens naming different plans for the same shop is the kind of small
  * contradiction that costs more trust than the feature earns.
+ *
+ * Solo rather than the top tier, deliberately: on Growth there is no upgrade
+ * card, so the prorated-charge disclosure — the part of this screen most worth
+ * reviewing — would never appear. On Solo the demo shows both directions, and
+ * its 412 listings sit over the 200 cap, which exercises the over-limit state
+ * too.
  */
-export const DEMO_PLAN: PlanKey = 'GROWTH'
+export const DEMO_PLAN: PlanKey = 'SOLO'
 
 export function planOf(key: PlanKey): Plan {
   const plan = PLANS.find((p) => p.key === key)
