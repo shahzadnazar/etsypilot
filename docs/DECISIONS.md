@@ -1183,3 +1183,102 @@ For the same reason the unexplained finding is **CRITICAL** while correlated
 ones are **ATTENTION**: a −100% drop the seller caused by deactivating a section
 is a change they already know about. This surface answers "what needs my
 attention", and the thing you already understand needs less of it.
+
+---
+
+## D28 — When a safety property makes something hard to test, change the architecture
+
+**Never weaken the property.**
+
+Found in Phase 4: `MockEtsyService` genuinely refuses to write, which made the
+apply and rollback paths untestable through the global adapter. The fix was to
+inject the adapter into the domain rather than relax the mock. The refusal is
+still asserted as a real property, and Phase 11 now swaps the adapter without
+touching the domain.
+
+A safety property that is inconvenient to test is doing its job. The
+inconvenience is a signal about the architecture, not about the property.
+
+---
+
+## D29 — Profit Reality: verified and assumed are different types
+
+**A seller can never adjust an Etsy fee**, and that is enforced by the shape of
+the code rather than by the inputs panel.
+
+```ts
+interface VerifiedTotals {           // readonly at every field
+  readonly grossRevenue: number
+  readonly etsyFees: number
+  readonly paymentProcessing: number
+  readonly offsiteAds: number
+  readonly orderCount: number
+}
+
+interface SellerAssumptions {        // the only mutable inputs
+  shippingPerOrder: number
+  cogsPercent: number
+  labourTotal: number
+  otherCosts: number
+}
+```
+
+`computeScenario(verified, assumptions, …)` takes them as separate parameters.
+There is no parameter through which an adjusted Etsy fee could be passed, so
+even a UI bug could not vary one. The lock icon in the panel presents a
+guarantee made upstream; it is not the guarantee.
+
+### A projected fee is not a verified one
+In `BASE` the fee lines carry **VERIFIED** — they are what Etsy reported.
+
+In `CONSERVATIVE` and `OPTIMISTIC` the sales volume is varied, so the fees that
+follow from it are no longer what Etsy reported. They are relabelled
+**CALCULATED** with the projection named. A scenario that kept calling them
+Verified would be claiming Etsy confirmed a hypothetical it was never asked
+about.
+
+Seller lines stay `SELLER_INPUT` in every scenario.
+
+### Scenarios apply to the waterfall, not to the ledger
+Transactions and Costs describe what actually happened. Projected totals above a
+table of real receipts invite reading one as the sum of the other, so those tabs
+always report the base case whatever is selected — with a line saying so.
+
+---
+
+## D30 — Incomplete coverage is a first-class state
+
+**Missing data lives in the panel, not in a footnote.** It is a state the
+product is designed for, not an error it apologises for.
+
+Every gap is a typed `MissingDataItem` carrying a title, what it costs the
+seller in certainty, the order value affected where quantifiable, and
+`resolutions` — which is required, not optional.
+
+That includes the gap EtsyPilot cannot close: Etsy does not expose ad spend per
+listing. Its resolution is the methodology explanation, so no row is a dead end.
+
+### Reconciliation exceptions need a way out
+Every `TransactionRow` that is not `MATCHED` carries a plain-language `reason`
+and at least one `PRIMARY` resolution. A missing cost and a missing supplier
+invoice get different resolutions, because they are different problems.
+
+**`profit` is null wherever `cost` is null**, and renders as an em dash rather
+than `0.00`. A zero in a money column is a claim; "we do not know" is not zero.
+
+---
+
+## D31 — Assertions on rendered output, not only on return values
+
+Twice the suite was green while the screen was wrong: the thin-sample rule
+labelled the clearest case "not enough data", and dark mode rendered
+white-on-white. Both passed typecheck and unit tests.
+
+The precise failure is **tests asserting what the code does rather than what the
+seller sees**. `hasEnoughData` returning false for zero after-orders is
+defensible in isolation and obviously wrong next to "4 listings deactivated".
+
+So each phase now ends with a browser pass that asserts on rendered text, and
+those assertions are kept. Scope them to visible content — searching raw HTML
+also matches the RSC serialization payload, which produced a false positive on
+this phase's "no Verified badge in a projected scenario" check.

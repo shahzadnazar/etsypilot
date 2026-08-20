@@ -1,0 +1,166 @@
+'use client'
+
+import { useState } from 'react'
+import { ProvenanceBadge } from '@/components/provenance/provenance-badge'
+import { Card } from '@/components/ui/card'
+import type { ProfitView } from '@/domain/profit/service'
+import { SCENARIO_LABEL, type ScenarioKind } from '@/domain/profit/types'
+import { formatCurrency, formatPercent } from '@/lib/utils/format'
+import { cn } from '@/lib/utils/cn'
+import { InputsPanel } from './inputs-panel'
+import { MissingDataPanel } from './missing-data-panel'
+import { ScenarioComparisonPanel } from './scenario-comparison'
+import { TransactionsTable } from './transactions-table'
+import { WaterfallTable } from './waterfall-table'
+
+/*
+ * Profit Reality — one surface, four views (D5).
+ *
+ * Coverage is stated above the tabs rather than inside one of them, because it
+ * qualifies every number on the screen and not just the waterfall.
+ */
+const TABS = ['Waterfall', 'Scenarios', 'Costs', 'Transactions'] as const
+type Tab = (typeof TABS)[number]
+
+export function ProfitTabs({ view, demo }: { view: ProfitView; demo: boolean }) {
+  const [tab, setTab] = useState<Tab>('Waterfall')
+  const [scenario, setScenario] = useState<ScenarioKind>('BASE')
+
+  /*
+   * Scenarios apply to the waterfall, not to the ledger.
+   *
+   * Transactions and Costs describe what actually happened - real receipts,
+   * real cost rules. Showing projected totals above a table of actual
+   * transactions invites the reader to treat one as the sum of the other. So
+   * those tabs always report the base case, whatever is selected on Scenarios.
+   */
+  const scenarioApplies = tab === 'Waterfall' || tab === 'Scenarios'
+  const shown: ScenarioKind = scenarioApplies ? scenario : 'BASE'
+  const result = view.results[shown]
+
+  return (
+    <>
+      {result.coveragePercent < 100 ? (
+        <div
+          className="mb-4 rounded-card border p-4 text-small leading-relaxed"
+          style={{ background: '#FFFBEB', borderColor: '#FDE68A', color: '#92400E' }}
+        >
+          <strong className="font-semibold" style={{ color: '#78350F' }}>
+            Costs are confirmed for {result.coveragePercent}% of order value.
+          </strong>{' '}
+          The figures below exclude the rest rather than assuming a cost — they are a floor, not an
+          estimate of your whole shop.
+        </div>
+      ) : null}
+
+      <section aria-label="Profit summary" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Kpi label="Gross revenue" value={formatCurrency(result.grossRevenue, view.currency)} type={shown === 'BASE' ? 'VERIFIED' : 'CALCULATED'} demo={demo} />
+        <Kpi label="Total costs" value={`−${formatCurrency(result.totalCosts, view.currency)}`} type="CALCULATED" demo={demo} />
+        <Kpi label="Net profit" value={formatCurrency(result.netProfit, view.currency)} type="CALCULATED" demo={demo} />
+        <Kpi label="Net margin" value={formatPercent(result.marginPercent)} type="CALCULATED" demo={demo} />
+      </section>
+
+      <div role="tablist" aria-label="Profit views" className="mt-5 flex flex-wrap gap-2">
+        {TABS.map((t) => (
+          <button
+            key={t}
+            role="tab"
+            aria-selected={tab === t}
+            onClick={() => setTab(t)}
+            className={cn(
+              'rounded-control px-3 py-1.5 text-[12px] font-semibold',
+              tab === t
+                ? 'bg-brand-tint text-brand-strong'
+                : 'border border-line text-ink-2 hover:bg-canvas-soft',
+            )}
+          >
+            {t}
+          </button>
+        ))}
+
+        {shown !== 'BASE' ? (
+          <span className="ml-auto self-center text-caption text-muted-1">
+            Showing the {SCENARIO_LABEL[shown].toLowerCase()} scenario — projected, not verified
+          </span>
+        ) : scenario !== 'BASE' && !scenarioApplies ? (
+          <span className="ml-auto self-center text-caption text-muted-1">
+            Showing actual figures — scenarios apply to the waterfall only
+          </span>
+        ) : null}
+      </div>
+
+      <div role="tabpanel" className="mt-3.5 flex flex-col gap-4">
+        {tab === 'Waterfall' ? (
+          <>
+            <WaterfallTable result={result} currency={view.currency} demo={demo} />
+            <MissingDataPanel items={result.missingData} currency={view.currency} />
+          </>
+        ) : null}
+
+        {tab === 'Scenarios' ? (
+          <>
+            <ScenarioComparisonPanel
+              comparison={view.comparison}
+              selected={scenario}
+              currency={view.currency}
+              onSelect={setScenario}
+            />
+            <InputsPanel rows={view.inputs} />
+            <p className="text-caption text-muted-1">
+              Scenarios are planning tools, not a forecast of your shop.
+            </p>
+          </>
+        ) : null}
+
+        {tab === 'Costs' ? (
+          <>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <CostCard title="Cost coverage" value={`${view.costSetup.coveragePercent}%`} detail={`${view.costSetup.listingsCovered} listings covered · ${view.costSetup.listingsMissing} missing a cost`} />
+              <CostCard title="Default rule" value={view.costSetup.defaultRule.label} detail={view.costSetup.defaultRule.detail} />
+              <CostCard title="Listing costs" value={view.costSetup.listingCosts.label} detail={view.costSetup.listingCosts.detail} />
+              <CostCard title="POD & shipping" value={view.costSetup.imports.label} detail={view.costSetup.imports.detail} />
+              <CostCard title="Ad spend" value={view.costSetup.adSpend.label} detail={view.costSetup.adSpend.detail} />
+            </div>
+            <MissingDataPanel items={result.missingData} currency={view.currency} />
+          </>
+        ) : null}
+
+        {tab === 'Transactions' ? (
+          <TransactionsTable reconciliation={view.reconciliation} currency={view.currency} />
+        ) : null}
+      </div>
+    </>
+  )
+}
+
+function Kpi({
+  label,
+  value,
+  type,
+  demo,
+}: {
+  label: string
+  value: string
+  type: 'VERIFIED' | 'CALCULATED'
+  demo: boolean
+}) {
+  return (
+    <Card className="flex flex-col gap-2 p-[14px]">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-label text-muted-1">{label}</span>
+        <ProvenanceBadge type={type} demo={demo} />
+      </div>
+      <span className="tnum text-metric text-ink-1">{value}</span>
+    </Card>
+  )
+}
+
+function CostCard({ title, value, detail }: { title: string; value: string; detail: string }) {
+  return (
+    <Card className="flex flex-col gap-1.5 p-[14px]">
+      <span className="text-label text-muted-1">{title}</span>
+      <span className="tnum text-[19px] font-semibold text-ink-1">{value}</span>
+      <span className="text-caption leading-snug text-muted-1">{detail}</span>
+    </Card>
+  )
+}

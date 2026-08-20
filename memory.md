@@ -5,10 +5,10 @@
 
 ## 1. Current Status
 
-**Phase:** 4 — Safe Bulk Editor (COMPLETE)
-**Current task:** Awaiting go-ahead for Phase 5 — Profit Reality (scenarios, costs, transactions)
+**Phase:** 5 — Profit Reality (COMPLETE)
+**Current task:** Awaiting go-ahead for Phase 6 — Existing Product Integration
 **Current file being worked on:** None
-**Last completed task:** Bulk editor: confirmation gate, validation, diff, apply, rollback
+**Last completed task:** Profit Reality: scenarios, locked verified inputs, cost setup, reconciliation
 **Blockers:** NONE. One item flagged for a decision, non-blocking: D22 7a (Audit log
 placement in the settings sidebar).
 
@@ -21,9 +21,10 @@ Build Etsy Pilot as an Etsy Seller Decision & Operations Intelligence platform u
 Update this section whenever the phase changes.
 
 ```text
-Phase 4 — Safe Bulk Editor
-Status: COMPLETE — no mutation is reachable without explicit confirmation, and
-that is enforced by the type system rather than by convention.
+Phase 5 — Profit Reality
+Status: COMPLETE — four tabs on one surface. A seller cannot adjust a verified
+figure because no function accepts one, and incomplete coverage is a designed
+state with a resolution on every gap.
 ```
 
 ## 4. Current Work
@@ -79,6 +80,10 @@ Keep the latest 5–10 meaningful items.
   ConfirmedOperation branded type as the write gate, fingerprint binding confirmation to
   the reviewed diff, per-item partial success, rollback with current-state recheck,
   5-step wizard UI. 108 tests.
+- Phase 5 built: VerifiedTotals/SellerAssumptions type split so scenarios cannot vary
+  an Etsy fee; projected lines relabelled CALCULATED outside BASE; reconciliation with
+  a resolution on every exception; missing data as a first-class panel; four-tab
+  Profit Reality. 128 tests.
 
 ## 6. Files Currently Being Modified
 
@@ -102,10 +107,13 @@ db/schema/index.ts
 domain/  profit/waterfall · shop/overview · action-center/{types,service}
          shop-pulse/{types,baseline,correlation,service,digest}
          bulk-editor/{types,state-machine,configure,validate,service}
+         profit/{types,waterfall,scenarios,reconciliation,service}
 components/  ui/{button,card,states} · action-center/{action-card,action-list}
              shop-pulse/{baseline-chart,changes-panel}
              bulk-editor/{stepper,validation-summary,diff-viewer,confirm-dialog,
                           operation-progress,bulk-editor-wizard}
+             profit/{profit-tabs,waterfall-table,scenario-comparison,inputs-panel,
+                     missing-data-panel,transactions-table}
              provenance/{provenance-badge,diagnosis-badge,methodology-drawer,
                          provenance-button}
              layout/{app-shell,sidebar,top-bar,shop-context,demo-banner,mobile-tabs,
@@ -115,7 +123,7 @@ app/  layout · page · not-found · error
       (dashboard)/{layout,dashboard,profit,action-center,shop-pulse,
                    listings/bulk-editor}(+loading)
 tests/unit/{waterfall,provenance,action-center,methodology,shop-pulse,
-            narrative,digest,bulk-editor}.test.ts
+            narrative,digest,bulk-editor,profit-scenarios}.test.ts
 ```
 
 ## 8. Files Modified
