@@ -304,8 +304,10 @@ PostHog: Not configured
   domain models it as a period total (labourTotal), which is what the screen's own
   missing-data row describes ("labour is applied as a period total"). Flagged, not
   changed - a per-unit labour model is a Phase 7+ change, not a caption fix.
-- Google Fonts is loaded over the network; in a sandbox with no egress the font
-  falls back to system sans. Consider self-hosting Inter in Phase 12.
+- RESOLVED 2026-08-20: Inter is self-hosted via next/font (fetched at build, served
+  from this origin). It was not the cosmetic fallback it looked like — the third-party
+  <link> was render-blocking and cost 12.6s on EVERY page load in this sandbox, which
+  is what made the billing cancel checks fail. See D51.
 - npm audit reports 4 moderate advisories, all one chain: drizzle-kit 0.31.10 (latest)
   depends on the deprecated @esbuild-kit/esm-loader, which pins esbuild 0.18. The
   advisory is the esbuild DEV SERVER accepting cross-origin requests. drizzle-kit is a
