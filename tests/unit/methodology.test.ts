@@ -18,9 +18,18 @@ describe('methodology', () => {
   })
 
   it('carries coverage — the field the original tooltips lacked', () => {
-    expect(METHODOLOGIES.netProfit?.coverage).toBe(62)
+    // The label is catalogued; the figure is not. Coverage is measured per shop
+    // and per period (D34), and a constant here would be an authored number in
+    // the one place a seller goes to check one.
     expect(METHODOLOGIES.netProfit?.coverageLabel).toContain('confirmed cost')
+    expect(METHODOLOGIES.netProfit?.coverage).toBeUndefined()
     expect(METHODOLOGIES.shopPulseBaseline?.coverage).toBe(88)
+  })
+
+  it('never claims uncosted orders are excluded from the waterfall (D34)', () => {
+    const text = JSON.stringify(METHODOLOGIES.netProfit)
+    expect(text).toContain('default cost rule')
+    expect(text).not.toContain('net profit is a floor')
   })
 
   it('net profit states that it is computed from the lines', () => {

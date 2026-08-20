@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { PageHeader } from '@/components/layout/page-header'
 import { ProfitTabs } from '@/components/profit/profit-tabs'
@@ -22,6 +23,14 @@ export default async function ProfitPage() {
       <PageHeader
         title="Profit Reality"
         subtitle={`${period} UTC · ${view.currency} · verified revenue and fees, your cost inputs`}
+        actions={
+          <Link
+            href="/api/export/transactions"
+            className="inline-flex h-11 items-center rounded-control border border-line px-3 text-[12px] font-semibold text-ink-2 hover:bg-canvas-soft md:h-[38px]"
+          >
+            Export CSV
+          </Link>
+        }
       />
       <ProfitTabs view={view} demo={session.isDemo} />
     </>

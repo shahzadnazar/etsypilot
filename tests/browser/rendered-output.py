@@ -121,6 +121,77 @@ with sync_playwright() as p:
     }""")
     check(bad == [], f"No money cell wraps or loses tabular-nums at 390px (found {bad})")
 
+    # No page scrolls sideways at 390px. Found the hard way: a seven-column
+    # research table inside a card still put a scrollbar on the whole document,
+    # and the fix was the designed one — cards below md, table above.
+    for route in ["/research/keywords", "/listings/audit", "/listings/ai-copilot",
+                  "/billing", "/settings/shops", "/tools", "/profit"]:
+        pg.goto(f"{BASE}{route}", wait_until="domcontentloaded")
+        pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(400)
+        wide = pg.evaluate("() => document.documentElement.scrollWidth > window.innerWidth + 1")
+        check(not wide, f"{route} does not scroll sideways at 390px")
+    pg.set_viewport_size({"width": 1440, "height": 1000})
+
+    # --- Phase 6 -------------------------------------------------------
+
+    # Keyword Explorer: modelled figures never read as Etsy data.
+    pg.goto(f"{BASE}/research/keywords", wait_until="domcontentloaded"); pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)
+    kw = pg.locator("main").inner_text()
+    check("not official Etsy data" in kw, "Keywords says the figures are not Etsy data")
+    check("Etsy does not publish keyword search volume" in kw,
+          "Keywords states that Etsy publishes no search volume")
+    check("–" in kw and "/ mo" in kw, "Demand renders as a range with a unit")
+    check("Sparse data" in kw, "A term with too little observation says so")
+    # The sparse row must not carry a score derived from the missing demand.
+    sparse_row = kw[kw.find("november birth flower"):][:200]
+    check("Sparse data" in sparse_row, "The sparse row's demand cell says Sparse data")
+
+    # Keyword Explorer for a term with no observation at all.
+    pg.goto(f"{BASE}/research/keywords?q=november+birth+flower+chrysanthemum", wait_until="domcontentloaded")
+    pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)
+    thin = pg.locator("main").inner_text()
+    check("Too few public signals were observed" in thin,
+          "A sparse term explains itself instead of printing a small number")
+    check("Not enough data" in thin, "Demand, competition and opportunity all read Not enough data")
+
+    # Listing Audit: the score says what it weighs.
+    pg.goto(f"{BASE}/listings/audit", wait_until="domcontentloaded"); pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)
+    audit = pg.locator("main").inner_text()
+    check("share of your verified revenue" in audit,
+          "Health score states that it is weighted by revenue, not by count")
+    check("carry no weight" in audit, "Audit says listings without orders carry no weight")
+    check("no one outside Etsy can" in audit, "Audit disclaims ranking knowledge")
+    check("rules" in audit and "14 rules" in audit, "Audit names how many rules it ran")
+
+    # AI Copilot: the approval gate is visible before the draft is read.
+    pg.goto(f"{BASE}/listings/ai-copilot", wait_until="domcontentloaded"); pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)
+    ai = pg.locator("main").inner_text()
+    check("nothing publishes without your approval" in ai,
+          "Copilot states the approval rule in the header")
+    check("Send to review" in ai, "Primary action says review, not publish")
+    check("Impact is not predicted" in ai, "Copilot refuses to forecast impact")
+    check("Source:" in ai, "Every drafted element names its source")
+    check("Publish to Etsy" not in ai, "No control on this page publishes directly")
+
+    # Billing: three tiers, no Agency card, the approved sentence intact.
+    pg.goto(f"{BASE}/billing", wait_until="domcontentloaded"); pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)
+    bill = pg.locator("main").inner_text()
+    check("we will not bill you for something that does not exist yet" in bill,
+          "The agency sentence is on the page verbatim")
+    check("$79" not in bill, "No Agency card and no Agency price")
+    check("Team seats" not in bill, "No meter for a capacity nobody has")
+    check(bill.upper().count("YOUR PLAN") == 1, "Exactly one plan is marked as current")
+    check("450" not in bill, "The listings meter counts active listings, not every state")
+
+    # Connect: the password disclosure and the revoke path.
+    pg.goto(f"{BASE}/settings/shops", wait_until="domcontentloaded"); pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)
+    conn = pg.locator("main").inner_text()
+    check("never receives your Etsy password" in conn, "Connect states the password rule")
+    check("Publish anything without your confirmation." in conn,
+          "Connect lists what EtsyPilot cannot do")
+    check("listings_r" in conn, "Etsy's own scope strings are printed so the grant is inspectable")
+    check(pg.locator("input[type=password]").count() == 0, "No password field exists on the page")
+
     # --- Shop Pulse: baseline is described as calculated ---
     pg.set_viewport_size({"width": 1440, "height": 1000})
     pg.goto(f"{BASE}/shop-pulse", wait_until="domcontentloaded"); pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)

@@ -17,6 +17,7 @@ export type ErrorKind =
   | 'RATE_LIMIT'
   | 'EXTERNAL_SERVICE'
   | 'BACKGROUND_JOB'
+  | 'PLAN_LIMIT'
   | 'UNKNOWN'
 
 export interface UserFacingError {
@@ -105,6 +106,25 @@ export const Errors = {
       code: 'NOT_FOUND',
       message: `That ${what} doesn't exist.`,
       recovery: 'The link may be outdated, or it was deleted on Etsy. Nothing is broken with your account.',
+    }),
+
+  /*
+   * A plan allowance is spent.
+   *
+   * Says what still works, not only what stopped. A limit that reads like a
+   * fault trains a seller to distrust the product; a limit that names what is
+   * unaffected and when it resets is a boundary, which is what it actually is.
+   */
+  limitReached: (what: string, limit: number, resetsOn?: string, unaffected?: string) =>
+    new AppError({
+      kind: 'PLAN_LIMIT',
+      code: 'PLAN_LIMIT_REACHED',
+      message: `You have used all ${limit} ${what} on your plan.`,
+      recovery: [
+        resetsOn ? `Your allowance resets ${resetsOn}.` : 'Your allowance resets at the start of next month.',
+        unaffected ?? 'Everything else keeps working — nothing is paused and nothing is deleted.',
+      ].join(' '),
+      context: { what, limit },
     }),
 
   rateLimited: (resumesAt: string) =>

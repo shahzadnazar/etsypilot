@@ -1459,3 +1459,85 @@ build against the decided order rather than the artboard's.
 
 **Unchanged:** `Audit log` (account and shop-data events) and `Change History` (listing
 mutations and rollback) remain different surfaces and do not merge.
+
+
+---
+
+## D36 — Modelled market signals are a separate adapter, not part of EtsyService
+
+Phase 6 introduces the first data in the product that is **not** Etsy's: keyword demand,
+competition, competitor sales. Etsy publishes none of it, to anyone.
+
+**Decision.** `MarketSignalsService` lives in `lib/signals`, with its own selector, beside
+`EtsyService` rather than inside it. Two adapters, two switches.
+
+**Why not one adapter.** `EtsyService` is the thing the whole product treats as ground
+truth — the interface that deliberately has no `getListingViews`, no `getSearchTerms`, no
+`getAdsPerformance` because Etsy does not expose them. Adding modelled figures to it would
+put a number Etsy has never seen behind the same door as its receipts. The badge would be
+the only thing standing between a seller and that mistake, and badges are a rendering
+decision; a module boundary is not.
+
+It also gets the Free tier right by construction: research works with no shop connected,
+because the research adapter never asks for one.
+
+**Type-level consequences, both enforced:**
+
+1. Every metric returns `Provenanced<EstimatedRange>`, never a number. An estimate that
+   can be rendered as a single figure eventually is. There is no midpoint accessor.
+2. Too little observation returns UNAVAILABLE with `value: null`. "Sparse data" has no
+   shape for a fallback, so it cannot quietly become a small number.
+
+**Opportunity is CALCULATED, not ESTIMATED** — a visible formula over estimated inputs
+(D32 again: the transform names itself). It is null wherever demand is null, because a
+score over a missing input is a number invented to fill a column.
+
+---
+
+## D37 — AI reaches Etsy through the bulk editor or not at all
+
+There is one write path in this product. Phase 6 adds AI drafting and deliberately does
+**not** add a second one.
+
+`AiDraft` has no publish method. The only route out is `draftChanges()` → a DRAFT bulk
+operation → validate → diff → `confirm()` → `ConfirmedOperation`. So "AI never
+auto-publishes" is not a rule the copilot screen honours; it is the absence of a function.
+The primary button says **Send to review**, because that is what it does.
+
+**`AiDraft` has no field for a predicted outcome.** Not optional, not nullable — none.
+"Estimated impact is not predicted. Track results in the experiment tracker after
+publishing." A type with nowhere to put a forecast cannot grow one by accident, and a test
+asserts the absence by name (`predictedImpact`, `expectedLift`, `rankingForecast`).
+
+Every drafted element carries a `DraftSource`. A draft with an unexplained addition is
+indistinguishable from an invention.
+
+**Quota is a boundary, not a penalty.** `Errors.limitReached` names what still works and
+when the allowance resets, and a failed generation is never counted — the difference
+between a limit and a fine.
+
+---
+
+## D38 — The listing audit weighs money, not listings
+
+Health score = each listing's share of **verified revenue**, weighted by the severity of
+its worst issue, subtracted from 100. Errors count fully, warnings a third.
+
+A shop with 300 clean listings and 4 broken ones earning most of the revenue is not
+healthy, and a score that counted listings would tell it that it was.
+
+Consequences, all stated on the screen rather than in a help article:
+
+- A listing with no orders in the period carries **no weight**. Coverage says how much of
+  the catalogue the score could see, and the limitation is printed beside the number.
+- With no orders at all the formula changes to an unweighted count — and **says so**,
+  because a different formula must never hide behind the same number.
+- `Revenue at risk` is **item revenue** from that listing's own receipt lines, so it stays
+  VERIFIED. Order-level discounts belong to the order; apportioning them across items
+  would be a transform and would demote the figure (D32). A precise smaller claim beats a
+  demoted larger one.
+- The headline exposure counts each listing **once**. The per-rule figures overlap, and
+  summing them produced a number larger than the shop's own revenue.
+
+No rule claims a ranking effect. Rules describe what a listing can or cannot do, which is
+knowable; never what Etsy will do with it, which is not.

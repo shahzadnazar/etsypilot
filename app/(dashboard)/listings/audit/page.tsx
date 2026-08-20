@@ -1,0 +1,132 @@
+import type { Metadata } from 'next'
+import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { PageHeader } from '@/components/layout/page-header'
+import { ProvenanceButton } from '@/components/provenance/provenance-button'
+import { RuleGroup } from '@/components/audit/rule-group'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Money, Numeric } from '@/components/ui/numeric'
+import { getAuditView } from '@/domain/audit/service'
+import { getSession } from '@/lib/auth'
+import { getEtsyService } from '@/lib/etsy'
+import { shopContext } from '@/lib/permissions'
+import { formatDateTime } from '@/lib/utils/format'
+
+export const metadata: Metadata = { title: 'Listing Audit' }
+
+/*
+ * Listing Audit.
+ *
+ * The health score is weighted by money, not by count, and the page says so
+ * next to the number rather than in a help article. A shop with 300 clean
+ * listings and 4 broken ones that earn most of the revenue is not healthy, and
+ * a score that counted listings would tell it that it was.
+ */
+export default async function ListingAuditPage() {
+  const session = await getSession()
+  if (!session) redirect('/login')
+
+  const ctx = shopContext(session, session.shopId)
+  const [view, shop] = await Promise.all([getAuditView(ctx), getEtsyService().getShop(ctx.shopId)])
+  const demo = session.isDemo
+
+  return (
+    <>
+      <PageHeader
+        title="Listing audit"
+        subtitle={`${view.listingsChecked} listings checked against ${view.ruleCount} rules · ${view.errors} errors, ${view.warnings} warnings, ${view.passing} pass · last run ${formatDateTime(view.lastRunAt)}`}
+        actions={
+          <>
+            <Button variant="secondary">Audit settings</Button>
+            <Button variant="secondary">Re-run audit</Button>
+            <Link
+              href="/api/export/audit"
+              className="inline-flex h-11 items-center rounded-control border border-line px-3 text-[12px] font-semibold text-ink-2 hover:bg-canvas-soft md:h-[38px]"
+            >
+              Export CSV
+            </Link>
+            <Link
+              href="/listings/bulk-editor"
+              className="inline-flex h-11 items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-white hover:bg-brand-strong md:h-[38px]"
+            >
+              Fix {view.bulkFixable} in bulk
+            </Link>
+          </>
+        }
+      />
+
+      <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
+        <div className="flex flex-col gap-3">
+          <Card className="flex flex-col gap-2 p-[18px]">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-label text-muted-1">Health score</span>
+              <ProvenanceButton metricKey="listingHealth" type="CALCULATED" demo={demo} />
+            </div>
+            <Numeric className="text-metric text-ink-1">
+              {view.healthScore.value}
+              <span className="text-body font-normal text-muted-1"> / 100</span>
+            </Numeric>
+            <p className="text-caption leading-relaxed text-muted-1">
+              {view.healthScore.provenance.methodology}
+            </p>
+            {view.healthScore.provenance.coverage !== undefined ? (
+              <p className="text-caption leading-relaxed text-muted-1">
+                Covers {view.healthScore.provenance.coverage}% of your listings — the rest had no
+                orders in this period, so they carry no weight.
+              </p>
+            ) : null}
+          </Card>
+
+          <Card className="p-[18px]">
+            <h2 className="text-section text-ink-1">Issues by rule</h2>
+            <ul className="mt-3 flex flex-col gap-2">
+              {view.results.map((r) => (
+                <li key={r.rule.code} className="flex items-baseline justify-between gap-3">
+                  <a
+                    href={`#${r.rule.code}`}
+                    className="text-small text-ink-2 underline-offset-2 hover:underline"
+                  >
+                    {r.rule.label}
+                  </a>
+                  <Numeric className="text-small font-semibold text-ink-1">{r.count}</Numeric>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3 text-caption leading-relaxed text-muted-1">
+              Rules follow Etsy’s documented listing requirements plus your own thresholds. Nothing
+              here models Etsy’s ranking — no one outside Etsy can.
+            </p>
+            <Button variant="secondary" className="mt-3">
+              Edit thresholds
+            </Button>
+          </Card>
+
+          <Card className="flex flex-col gap-1.5 p-[18px]">
+            <span className="text-label text-muted-1">Revenue behind flagged listings</span>
+            <Money
+              value={view.revenueAtRisk}
+              currency={shop.currency}
+              className="text-[19px] font-semibold text-ink-1"
+            />
+            <span className="text-caption leading-snug text-muted-1">
+              Summed from those listings’ own receipt lines in the period, counting each listing
+              once. The per-rule figures above overlap — most flagged listings trip more than one
+              rule — so they do not add up to this. Item revenue, before order-level discounts:
+              spreading a discount across an order’s items would be a transform, and a transform
+              demotes a verified figure.
+            </span>
+          </Card>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          {view.results.map((r) => (
+            <div key={r.rule.code} id={r.rule.code}>
+              <RuleGroup result={r} currency={shop.currency} demo={demo} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  )
+}

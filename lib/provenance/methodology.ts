@@ -69,13 +69,18 @@ export const METHODOLOGIES: Record<string, Methodology> = {
     method:
       'Gross revenue − Etsy fees − payment processing − Offsite Ads − shipping − COGS − labour − other costs. Computed from the eight lines, never stored as a figure of its own.',
     confidence: 'MODERATE',
-    coverage: 62,
+    /*
+     * No coverage figure here on purpose (D34). Coverage is measured per shop
+     * and per period; a number written into this catalogue would be an authored
+     * one, and the drawer is exactly where a seller goes to check.
+     */
     coverageLabel: 'of order value has a confirmed cost',
     limitations: [
       'Revenue and fees are verified; the cost lines are yours to supply, so accuracy follows what you entered.',
+      'Where a listing has no confirmed cost, your default cost rule supplies one. That share of net profit rests on your rule, not on a cost you confirmed.',
     ],
     exclusions: [
-      'Orders with no confirmed product cost are excluded rather than assigned an assumed one, so net profit is a floor.',
+      'No per-order profit is computed without a confirmed cost, so those orders are blank in the ledger and excluded from its column totals.',
       'Sales tax, VAT and refunds outside the period.',
     ],
     readMoreHref: '/data/methodology#net-profit',
@@ -108,6 +113,62 @@ export const METHODOLOGIES: Record<string, Methodology> = {
       'Confidence drops below 100 competing listings.',
     ],
     readMoreHref: '/data/methodology#keyword-demand',
+  },
+
+  keywordCompetition: {
+    metric: 'Competition',
+    type: 'ESTIMATED',
+    source: 'Public marketplace signals · listings observed to match the term',
+    method:
+      'Counted from listings observed for the term, then placed in a band: under 8,000 low, under 25,000 medium, above that high.',
+    confidence: 'MODERATE',
+    limitations: [
+      'A band, not a ranking difficulty score. EtsyPilot does not model Etsy ranking and no one outside Etsy can.',
+      'Observed, not exhaustive — Etsy paginates and rotates search results.',
+    ],
+    readMoreHref: '/data/methodology#keyword-competition',
+  },
+
+  keywordOpportunity: {
+    metric: 'Opportunity',
+    type: 'CALCULATED',
+    source: 'Modelled demand and observed competing listings',
+    method:
+      'Modelled demand divided by observed competing listings, scaled to 0-100. A visible formula over two estimated inputs.',
+    limitations: [
+      'Inherits the uncertainty of both inputs — it is not more precise than the ranges it came from.',
+      'Not a prediction of ranking or sales. Etsy publishes neither.',
+      'Blank wherever demand could not be modelled. A score over a missing input would be invented.',
+    ],
+    readMoreHref: '/data/methodology#keyword-opportunity',
+  },
+
+  listingHealth: {
+    metric: 'Health score',
+    type: 'CALCULATED',
+    source: 'Your listings, your thresholds and your verified revenue',
+    method:
+      'Each listing’s share of your verified revenue, weighted by the severity of its worst issue, subtracted from 100. Errors count fully; warnings count a third.',
+    limitations: [
+      'Listings with no orders in the period carry no weight, so a broken listing that never sold does not move the score.',
+      'Severity weights are EtsyPilot thresholds, not Etsy requirements — except the rules that say they block publishing, which are Etsy’s.',
+      'Says how much of your money sits behind a broken listing, not how many listings are broken.',
+    ],
+    readMoreHref: '/data/methodology#listing-health',
+  },
+
+  competitorSales: {
+    metric: 'Competitor estimated sales',
+    type: 'ESTIMATED',
+    source: 'Public marketplace signals · review velocity and public sales counter',
+    method: 'Modelled over a 90-day observation window and published as a range.',
+    confidence: 'MODERATE',
+    limitations: [
+      'Only the shop owner can see their real Etsy figures. These can differ materially.',
+      'Excludes refunds, wholesale and off-platform sales.',
+      'Not comparable with your own verified figures — one is measured, the other is modelled.',
+    ],
+    readMoreHref: '/data/methodology#competitor-sales',
   },
 
   shopPulseBaseline: {

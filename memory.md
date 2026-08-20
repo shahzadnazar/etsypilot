@@ -5,12 +5,12 @@
 
 ## 1. Current Status
 
-**Phase:** 5 — Profit Reality (COMPLETE)
-**Current task:** Awaiting go-ahead for Phase 6 — Existing Product Integration
+**Phase:** 6 — Existing Product Integration (COMPLETE)
+**Current task:** Awaiting go-ahead for Phase 7 — AI Copilot Hardening
 **Current file being worked on:** None
-**Last completed task:** Profit Reality: scenarios, locked verified inputs, cost setup, reconciliation
-**Blockers:** NONE. One item flagged for a decision, non-blocking: D22 7a (Audit log
-placement in the settings sidebar).
+**Last completed task:** Etsy Connect, Listing Audit, AI Copilot, Keyword Explorer,
+Keyword Lists, Tool Hub, CSV Export, Onboarding, Billing
+**Blockers:** NONE. D22 7a is closed by D35 (Audit log under Shops & data).
 
 ## 2. Current Objective
 
@@ -21,10 +21,11 @@ Build Etsy Pilot as an Etsy Seller Decision & Operations Intelligence platform u
 Update this section whenever the phase changes.
 
 ```text
-Phase 5 — Profit Reality
-Status: COMPLETE — four tabs on one surface. A seller cannot adjust a verified
-figure because no function accepts one, and incomplete coverage is a designed
-state with a resolution on every gap.
+Phase 6 — Existing Product Integration
+Status: COMPLETE — nine surfaces, connected to the loop. Modelled research data
+lives behind its own adapter so it can never look like Etsy data; AI drafts reach
+Etsy only through the bulk editor's confirmation gate; the audit weighs money
+rather than listings; every export carries provenance per column.
 ```
 
 ## 4. Current Work
@@ -103,6 +104,14 @@ Keep the latest 5–10 meaningful items.
 - Refreshed design bundle archived: artboard 92 now gives every locked row its own badge,
   the intro copy is corrected, and the three stale items (America/New_York, $4,938, -12%)
   are gone from the source.
+- Phase 6 built: MarketSignalsService as a SEPARATE adapter (D36); Keyword Explorer with
+  ranges, sparse handling and a computed opportunity score; Keyword Lists that hand off to
+  the bulk editor rather than writing; 14-rule Listing Audit with a revenue-weighted health
+  score (D38); AI Copilot whose only route to Etsy is the confirmation gate (D37); Etsy
+  Connect with scopes, what-breaks-without-each, staged sync and no password field anywhere
+  in the type; five-step onboarding + setup checklist; three-tier billing per D22 with
+  counted meters; CSV export carrying a provenance column per value column; free tool hub.
+  196 tests, 51 browser checks.
 - components/ui/numeric.tsx added: Money / Numeric / NumericCell. Money takes
   number | null and handles null itself, so no call site can render a null as zero or
   forget tabular-nums + nowrap. Applied across waterfall, scenarios, transactions,
@@ -148,6 +157,15 @@ app/  layout · page · not-found · error
 tests/unit/{waterfall,provenance,action-center,methodology,shop-pulse,
             narrative,digest,bulk-editor,profit-scenarios}.test.ts
 tests/browser/rendered-output.py   (kept assertions on painted text, see 13b)
+tests/unit/{research,audit,ai-copilot,integration}.test.ts
+lib/signals/{interface,mock,index}.ts
+domain/{research/{types,service},audit/{rules,service},ai/{types,service},
+        connect/{types,service},billing/{plans,service},export/csv}.ts
+components/{research/{demand-chart,related-terms},audit/rule-group,ai/draft-review,
+            connect/{scope-list,sync-progress},provenance/estimate}.tsx
+app/(dashboard)/{research/{keywords,keyword-lists},listings/{audit,ai-copilot},
+                 billing,settings/shops,onboarding,tools}/page.tsx
+app/api/export/[dataset]/route.ts
 ```
 
 ## 8. Files Modified
@@ -327,6 +345,15 @@ output permanently. This is not a Phase 5 note — it applies to every phase aft
 These assertions are kept in `tests/browser/rendered-output.py` and run against a
 production build at the end of each phase.
 
+### Copy is only caught by the browser
+Deliberately breaking five Phase 6 guarantees at once: the unit suite caught three
+(the Agency card returning, the health-score formula losing its wording, sparse
+terms getting a number). It missed two, and both were COPY in components — the
+AI screen printing a predicted lift, and the connect screen dropping "EtsyPilot
+never receives your Etsy password". Product promises that live in a sentence in
+a component have no other test. That is instances four and five of the pattern
+below.
+
 ### Break every new rendered-output check before keeping it
 A check that has never failed is a check that has never been shown to test
 anything. Before a new assertion goes into rendered-output.py, break the thing
@@ -377,9 +404,10 @@ Always keep exactly one clear next step.
 
 ```text
 Next:
-Begin Phase 1 — Foundation: design tokens, Tailwind theme, UI primitives,
-app shell with the D21 sidebar, provenance + event models, mock Etsy service,
-Willow & Fern seed data.
+Await go-ahead for Phase 7 — AI Copilot Hardening: structured AI input,
+provenance-aware prompts, and the audit trail for applied AI changes. The seams
+are built — generateDraft() is the single function Phase 7 replaces, and the
+write path already runs through the bulk editor's confirmation gate.
 ```
 
 ## 16. Memory Update Rule
