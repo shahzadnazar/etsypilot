@@ -5,11 +5,10 @@
 
 ## 1. Current Status
 
-**Phase:** 3 — Shop Pulse (COMPLETE)
-**Current task:** Awaiting go-ahead for Phase 4 — Safe Bulk Editor
+**Phase:** 4 — Safe Bulk Editor (COMPLETE)
+**Current task:** Awaiting go-ahead for Phase 5 — Profit Reality (scenarios, costs, transactions)
 **Current file being worked on:** None
-**Last completed task:** D24-D27 corrections: UTC time basis, thin-sample UNKNOWN,
-disjointness invariant, residual sweep in methodology
+**Last completed task:** Bulk editor: confirmation gate, validation, diff, apply, rollback
 **Blockers:** NONE. One item flagged for a decision, non-blocking: D22 7a (Audit log
 placement in the settings sidebar).
 
@@ -22,9 +21,9 @@ Build Etsy Pilot as an Etsy Seller Decision & Operations Intelligence platform u
 Update this section whenever the phase changes.
 
 ```text
-Phase 3 — Shop Pulse
-Status: COMPLETE — a seeded sales drop is detected, explained with observable
-evidence, and converted into an action. Verdicts are reached, not asserted.
+Phase 4 — Safe Bulk Editor
+Status: COMPLETE — no mutation is reachable without explicit confirmation, and
+that is enforced by the type system rather than by convention.
 ```
 
 ## 4. Current Work
@@ -76,6 +75,10 @@ Keep the latest 5–10 meaningful items.
   correlation engine reaching CORRELATED/RULED_OUT/UNKNOWN from measurement;
   Shop Pulse page with baseline chart and evidence panel; weekly digest with the
   suppression rule; Shop Pulse wired in as an Action Center generator. 63 tests.
+- Phase 4 built: operation state machine, configure/validate/diff/confirm/apply/rollback,
+  ConfirmedOperation branded type as the write gate, fingerprint binding confirmation to
+  the reviewed diff, per-item partial success, rollback with current-state recheck,
+  5-step wizard UI. 108 tests.
 
 ## 6. Files Currently Being Modified
 
@@ -98,17 +101,21 @@ lib/  utils/{cn,format} · provenance/{types,builders} · events/types · errors
 db/schema/index.ts
 domain/  profit/waterfall · shop/overview · action-center/{types,service}
          shop-pulse/{types,baseline,correlation,service,digest}
+         bulk-editor/{types,state-machine,configure,validate,service}
 components/  ui/{button,card,states} · action-center/{action-card,action-list}
              shop-pulse/{baseline-chart,changes-panel}
+             bulk-editor/{stepper,validation-summary,diff-viewer,confirm-dialog,
+                          operation-progress,bulk-editor-wizard}
              provenance/{provenance-badge,diagnosis-badge,methodology-drawer,
                          provenance-button}
              layout/{app-shell,sidebar,top-bar,shop-context,demo-banner,mobile-tabs,
                      page-header,navigation,theme-script,theme-toggle}
       lib/provenance/methodology.ts
 app/  layout · page · not-found · error
-      (dashboard)/{layout,dashboard,profit,action-center,shop-pulse}(+loading)
+      (dashboard)/{layout,dashboard,profit,action-center,shop-pulse,
+                   listings/bulk-editor}(+loading)
 tests/unit/{waterfall,provenance,action-center,methodology,shop-pulse,
-            narrative,digest}.test.ts
+            narrative,digest,bulk-editor}.test.ts
 ```
 
 ## 8. Files Modified
