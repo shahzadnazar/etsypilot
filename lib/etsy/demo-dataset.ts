@@ -15,6 +15,17 @@
 
 import type { EtsyListing, EtsyOrder, ListingState } from './interface'
 
+/*
+ * Etsy listing ids are numeric, so the demo's are too.
+ *
+ * They used to be "L01001". Nothing in the app minded — until the browser
+ * extension, which reads an id out of a real etsy.com URL where the id is
+ * always digits. A demo listing could therefore never match, and the whole
+ * own-listing path was unreachable in demo mode: a flow nobody could walk is a
+ * flow nobody can check.
+ */
+export const DEMO_LISTING_ID_BASE = 1_400_001_001
+
 export const DEMO_SHOP_ID = 'demo-willow-fern'
 export const DEMO_ACTOR_ID = 'demo-user-salman'
 
@@ -43,13 +54,13 @@ export const BASELINE_END = '2026-07-13T23:59:59.999Z'
  */
 export const NARRATIVE = {
   /** Jul 24 price rise. "Linen table runner +2". */
-  priceGroup: ['L01006', 'L01001', 'L01002'],
+  priceGroup: ['1400001006', '1400001001', '1400001002'],
   priceChangeAt: '2026-07-24T09:12:00.000Z',
   ordersPerDayBefore: 4.1,
   ordersPerDayAfter: 2.8,
 
   /** Aug 4-9 stockout, restocked Aug 10. Ceramic mug set. */
-  stockoutListing: 'L01004',
+  stockoutListing: '1400001004',
   stockoutFrom: '2026-08-04',
   stockoutUntil: '2026-08-10',
   stockoutRatePerDay: 1.6,
@@ -247,7 +258,7 @@ export function buildDemoListings(): EtsyListing[] {
 
   FEATURED.forEach((f, i) => {
     listings.push({
-      etsyListingId: `L${String(1001 + i).padStart(5, '0')}`,
+      etsyListingId: `${DEMO_LISTING_ID_BASE + i}`,
       title: f.title,
       description: f.description ?? 'Hand-finished in our Vermont studio and shipped in recyclable packaging.',
       tags: f.tags ?? [],
@@ -275,7 +286,7 @@ export function buildDemoListings(): EtsyListing[] {
     const tagCount = 5 + Math.floor(rng() * 9)
 
     listings.push({
-      etsyListingId: `L${String(1001 + i).padStart(5, '0')}`,
+      etsyListingId: `${DEMO_LISTING_ID_BASE + i}`,
       title: `${adjective} ${noun}, ${qualifier}`,
       description: 'Made to order in small batches. Materials and dimensions are listed below.',
       tags: Array.from({ length: tagCount }, (_, t) => `${noun.split(' ')[0]} tag ${t + 1}`),

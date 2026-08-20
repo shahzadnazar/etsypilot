@@ -1862,3 +1862,78 @@ Verified by removing the cookie read: the check fails with the numbers in its me
 **The general rule:** when a fix is "this surface now reflects state", the next question is
 always *which other surfaces read that state* — and the answer is usually "a shared layout,
 on every page".
+
+
+---
+
+## D48 — The extension's promise is enforced by its packaging
+
+Phase 9's acceptance criterion is "the extension never contains privileged Etsy
+credentials". That is a property of an artefact, so it is checked against the artefact.
+
+**The build refuses.** `extension/build.mjs` audits each package before writing it, and
+exits non-zero on any of: a permission beyond `activeTab`, a host beyond `etsy.com`,
+`chrome.cookies` / `webRequest` / `debugger` / `declarativeNetRequest`, anything shaped
+like a key or token, or a URL pointing anywhere but Etsy and the configured app origin.
+The same checks run in the unit suite **against the built package**, so they are part of
+`npm test` rather than only of a release step.
+
+Verified by attacking it. Four shapes, all stopped:
+
+| Attempt | Result |
+|---|---|
+| `<all_urls>` + `cookies` in the manifest | build fails, naming both |
+| `chrome.cookies.get()` in the popup | build fails, naming the file |
+| A hardcoded `sk_live_…` | build fails, quoting the match |
+| A call to a third-party telemetry host | build fails, naming the host |
+
+**There is also no shape for a credential.** `lib/extension/contract.ts` has no token
+field on any request or response and no message that writes — the same construction as
+`AiDraft` in D37. Authentication is the seller's existing EtsyPilot session cookie, which
+the browser sends and the extension never reads.
+
+**The audit's first catch was its own deny-list.** `FORBIDDEN_APIS` lived in the shared
+contract, the contract ships to the popup, so the build failed on its own list of
+forbidden API names appearing verbatim in a shipped file. Right answer, unexpected reason:
+a list of the exact strings a reviewer greps for has no business inside the artefact under
+review, where it defeats that grep for everyone downstream. It moved to
+`lib/extension/policy.ts`, which is excluded from the extension's compile.
+
+### D48a — The extension reads Etsy's URL, never Etsy's page
+
+The content script takes a URL and returns a listing id. It does not scrape. Prices,
+titles and stock read off Etsy's markup would be data we present as ours, taken from a
+page that changes without notice — and every figure in the popup already exists, computed,
+on the server. It also never touches cookies or storage: the seller's Etsy session is
+theirs, and this extension has neither business with it nor a permission that would allow
+it.
+
+### D48b — Same figures, same badges, and no score where there is no basis
+
+The popup composes the audit and the signals adapter rather than recomputing anything, so
+it cannot drift from the pages it links to. A listing the seller owns gets VERIFIED
+figures and a health score; anyone else's gets ESTIMATED ranges and **no health score at
+all** — one built from public data would look like the same number and mean something
+else. Listing views stay UNAVAILABLE in 380 pixels exactly as they do at 1440.
+
+### D48c — Demo listing ids are numeric, because Etsy's are
+
+They were `L01001`. Nothing in the app minded until the extension, which reads an id out
+of a real `etsy.com` URL where the id is always digits — so a demo listing could never
+match and the entire own-listing path was unreachable in demo mode. A flow nobody can walk
+is a flow nobody can check, which is the same finding as the prerendered billing page one
+phase earlier. Ids are now `1400001001` and up.
+
+### D48d — CORS is the boundary, so it is tested by origin
+
+A browser will send the seller's session cookie to `/api/extension/listing` from any page
+they have open; only the absence of CORS headers stops the response being read. The route
+allow-lists extension ids from `EXTENSION_IDS` and grants nothing to anything else —
+including `https://www.etsy.com` itself — with `Vary: Origin` on every response so a
+permissive one cannot be replayed from a cache. Tested by origin rather than assumed.
+
+The popup's own rendered-output checks route their API call through Playwright rather than
+adding an http origin to that allow-list, because weakening the boundary to make its test
+pass is not testing the boundary. The browser's insistence on a credentialed CORS reply —
+a wildcard origin is rejected when the client sends `credentials: 'include'` — showed up
+during that work as a protection doing its job.

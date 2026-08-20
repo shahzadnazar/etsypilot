@@ -15,3 +15,7 @@ next-env.d.ts
 playwright-report/
 test-results/
 drizzle/
+
+# Extension build output. Rebuilt by `npm run extension:build`.
+extension/dist/
+extension/build/

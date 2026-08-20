@@ -351,6 +351,22 @@ with sync_playwright() as p:
     au = pg.locator("main").inner_text()
     check("Where to start ·" in au, "The audit carries an assistant explanation for the worst rule")
 
+    # Settings → Browser Extension: both stores disabled, and the security
+    # note is on the page rather than only in a README.
+    pg.goto(f"{BASE}/settings/extension", wait_until="domcontentloaded")
+    pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(400)
+    ext = pg.locator("main").inner_text()
+    check(pg.get_by_role("button", name="Coming soon").count() == 2,
+          "Both store buttons are present and disabled")
+    check(pg.locator("button[disabled]").count() >= 2, "Neither store button is clickable")
+    check("Ask for your Etsy password" in ext, "The page lists what the extension can never do")
+    check("activeTab" in ext and "https://www.etsy.com/*" in ext,
+          "The page names the exact permissions requested")
+    check("It does not read the Etsy page itself" in ext,
+          "The page says it does not scrape Etsy's markup")
+    check("fails and is never produced" in ext,
+          "The page says the limits are enforced by the build, not by policy")
+
     # --- Shop Pulse: baseline is described as calculated ---
     pg.set_viewport_size({"width": 1440, "height": 1000})
     pg.goto(f"{BASE}/shop-pulse", wait_until="domcontentloaded"); pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)

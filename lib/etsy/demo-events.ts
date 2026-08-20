@@ -17,7 +17,7 @@ export const DEMO_EVENTS: DomainEvent[] = [
   // Jul 24 - price raised on 3 listings. CORRELATED with a 31% order fall.
   ev({
     eventId: 'EV-0001',
-    listingId: 'L01006',
+    listingId: '1400001006',
     actorId: DEMO_ACTOR_ID,
     timestamp: '2026-07-24T09:12:00.000Z',
     type: 'PRICE_CHANGED',
@@ -30,7 +30,7 @@ export const DEMO_EVENTS: DomainEvent[] = [
   }),
   ev({
     eventId: 'EV-0002',
-    listingId: 'L01002',
+    listingId: '1400001002',
     actorId: DEMO_ACTOR_ID,
     timestamp: '2026-07-24T09:12:00.000Z',
     type: 'PRICE_CHANGED',
@@ -43,7 +43,7 @@ export const DEMO_EVENTS: DomainEvent[] = [
   }),
   ev({
     eventId: 'EV-0003',
-    listingId: 'L01001',
+    listingId: '1400001001',
     actorId: DEMO_ACTOR_ID,
     timestamp: '2026-07-24T09:12:00.000Z',
     type: 'PRICE_CHANGED',
@@ -73,7 +73,7 @@ export const DEMO_EVENTS: DomainEvent[] = [
   // Aug 4 - stockout, restocked Aug 10. CORRELATED, -100% while out.
   ev({
     eventId: 'EV-0005',
-    listingId: 'L01004',
+    listingId: '1400001004',
     actorId: null,
     timestamp: '2026-08-04T03:20:00.000Z',
     type: 'STOCKOUT',
@@ -86,7 +86,7 @@ export const DEMO_EVENTS: DomainEvent[] = [
   }),
   ev({
     eventId: 'EV-0006',
-    listingId: 'L01004',
+    listingId: '1400001004',
     actorId: DEMO_ACTOR_ID,
     timestamp: '2026-08-10T11:05:00.000Z',
     type: 'RESTOCKED',

@@ -5,8 +5,8 @@
 
 ## 1. Current Status
 
-**Phase:** 8 — Billing & Usage (COMPLETE)
-**Current task:** Awaiting go-ahead for Phase 9 — Browser Extension
+**Phase:** 9 — Browser Extension (COMPLETE)
+**Current task:** Awaiting go-ahead for Phase 10 — Simple Calculator & Free Tools
 **Current file being worked on:** None
 **Last completed task:** Structured AI input, provenance-aware prompts, output validation,
 issue explanations, action recommendations, audit trail for applied AI changes
@@ -105,6 +105,17 @@ Keep the latest 5–10 meaningful items.
 - Refreshed design bundle archived: artboard 92 now gives every locked row its own badge,
   the intro copy is corrected, and the three stale items (America/New_York, $4,938, -12%)
   are gone from the source.
+- Phase 9 built: MV3 extension for Chrome and Firefox — one UI, one client, one auth
+  flow, only the manifest differs. Shared contract in lib/extension/contract.ts with no
+  token field and no write message; auth is the existing EtsyPilot session cookie. The
+  packaging script AUDITS each package and refuses to write one that requests too much,
+  uses a cookie/webRequest API, contains anything key-shaped, or points at a third host —
+  verified by four deliberate attacks. Popup composes the audit + signals so it cannot
+  drift from the pages it links to. 300 tests, 92 app checks, 12 popup checks.
+- D48: the extension's promise is enforced by its packaging, not by review. Its first
+  catch was its own deny-list shipping inside the bundle.
+- D48c: demo listing ids are numeric now (1400001001+). "L01001" made the own-listing
+  path unreachable from a real etsy.com URL — same class as the prerendered billing page.
 - Phase 8 built: BillingProvider seam (mock + Stripe), subscription lifecycle with a
   DisclosedCharge branded type, prorated upgrades that show their arithmetic, downgrades
   that pause and never delete, one-click cancel with a symmetric resume, computed refund
@@ -189,6 +200,8 @@ app/  layout · page · not-found · error
 tests/unit/{waterfall,provenance,action-center,methodology,shop-pulse,
             narrative,digest,bulk-editor,profit-scenarios}.test.ts
 tests/browser/rendered-output.py   (kept assertions on painted text, see 13b)
+tests/browser/extension-popup.py  (the popup, run against the BUILT package)
+extension/** (MV3 popup, content script, packaging audit — see extension/README.md)
 tests/unit/{ai-copilot,ai-hardening}.test.ts
 lib/ai/{interface,prompt,mock,claude,index}.ts
 domain/ai/{types,service,facts,validate,explain,audit-trail}.ts
@@ -388,6 +401,15 @@ output permanently. This is not a Phase 5 note — it applies to every phase aft
 
 These assertions are kept in `tests/browser/rendered-output.py` and run against a
 production build at the end of each phase.
+
+### Check the artefact, not the source
+The source is what a reviewer reads; the package is what a seller installs, and
+a security criterion passes or fails on the second one. The extension's audit
+runs over the built directory — manifest, compiled JS, static files — and the
+same checks run in the unit suite against that build, so they are part of
+npm test rather than only of a release step. Attack your own gate before
+trusting it: four attempts (over-broad manifest, cookie read, hardcoded key,
+third-party host) were each stopped, and only then was it worth believing.
 
 ### One fixed surface is not a fixed class
 Phase 8's three "state changed, screen didn't move" bugs were fixed one at a

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>EtsyPilot</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <span class="logo" aria-hidden="true">EP</span>
+      <div class="titles">
+        <strong>EtsyPilot</strong>
+        <span>Etsy Listing Intelligence</span>
+      </div>
+    </header>
+
+    <main id="root" aria-live="polite"></main>
+
+    <footer class="footer">
+      Read-only. No Etsy password, no Etsy API keys, no automatic changes.
+      <span id="app-origin"></span>
+    </footer>
+
+    <script type="module" src="dist/extension/src/popup.js"></script>
+  </body>
+</html>

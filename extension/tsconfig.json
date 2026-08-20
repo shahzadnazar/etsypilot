@@ -1,0 +1,30 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "outDir": "./dist",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "target": "es2022",
+    "lib": [
+      "es2022",
+      "dom"
+    ],
+    "noEmit": false,
+    "declaration": false,
+    "sourceMap": false,
+    "jsx": "preserve",
+    "types": [],
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    },
+    "baseUrl": ".."
+  },
+  "include": [
+    "src/**/*.ts",
+    "../lib/extension/contract.ts",
+    "../lib/provenance/types.ts"
+  ]
+}

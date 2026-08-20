@@ -11,7 +11,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "extension:build": "node extension/build.mjs",
+    "extension:package": "node extension/build.mjs --zip"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.120.0",

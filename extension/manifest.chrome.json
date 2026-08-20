@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "EtsyPilot — Etsy Listing Intelligence",
+  "version": "0.1.0",
+  "description": "See EtsyPilot listing health, keyword opportunity and your own verified figures while browsing Etsy. Read-only.",
+  "permissions": ["activeTab"],
+  "host_permissions": ["https://www.etsy.com/*", "https://etsy.com/*"],
+  "action": {
+    "default_title": "EtsyPilot",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.etsy.com/*", "https://etsy.com/*"],
+      "js": ["dist/extension/src/content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "dist/extension/src/background.js",
+    "type": "module"
+  }
+}
