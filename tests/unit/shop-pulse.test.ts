@@ -173,13 +173,34 @@ describe('a verdict reachable only by labelling is not a verdict', () => {
     expect(hasEnoughData(thin)).toBe(false)
   })
 
-  it('needs observations on both sides, not just in total', () => {
-    const lopsided = {
+  it('treats a collapse to near-zero as a finding, not a thin sample', () => {
+    // 50 orders then almost nothing across 20 days is the clearest signal the
+    // engine can see. Counting the small after-side as "too few samples" would
+    // report the strongest case as unknown.
+    const collapse = {
       beforePerDay: 5, afterPerDay: 0.1, changePercent: -98,
       daysBefore: 10, daysAfter: 20, ordersBefore: 50, ordersAfter: 2,
     }
-    expect(hasEnoughData(lopsided)).toBe(false)
-    expect(diagnose(lopsided, true)).toBe('UNKNOWN')
+    expect(hasEnoughData(collapse)).toBe(true)
+    expect(diagnose(collapse, true)).toBe('CORRELATED')
+  })
+
+  it('needs exposure after the event, not just orders before it', () => {
+    // A strong prior rate but only a day of observation cannot support a verdict.
+    const barelyWatched = {
+      beforePerDay: 4, afterPerDay: 0, changePercent: -100,
+      daysBefore: 20, daysAfter: 1, ordersBefore: 80, ordersAfter: 0,
+    }
+    expect(hasEnoughData(barelyWatched)).toBe(false)
+    expect(diagnose(barelyWatched, true)).toBe('UNKNOWN')
+  })
+
+  it('needs a rate before the event to compare against', () => {
+    const noBaseline = {
+      beforePerDay: 0.1, afterPerDay: 2, changePercent: 1900,
+      daysBefore: 20, daysAfter: 20, ordersBefore: 2, ordersAfter: 40,
+    }
+    expect(hasEnoughData(noBaseline)).toBe(false)
   })
 
   it('reaches a real verdict once there is enough on both sides', () => {

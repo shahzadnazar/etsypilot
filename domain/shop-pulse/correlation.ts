@@ -36,7 +36,7 @@ const MATERIAL_CHANGE = 0.15
  */
 const MIN_OBSERVATIONS = 20
 
-/** And enough of them on each side to have something to compare. */
+/** And enough to establish a rate before the event, and enough exposure after. */
 const MIN_PER_SIDE = 5
 
 export interface RateComparison {
@@ -101,12 +101,28 @@ export function diagnose(comparison: RateComparison, hasEvent: boolean): Diagnos
   return magnitude >= MATERIAL_CHANGE ? 'CORRELATED' : 'RULED_OUT'
 }
 
-/** Exported so the UI can say "too few samples" rather than showing a range. */
+/**
+ * Is this comparison measurable at all?
+ *
+ * The test is EXPOSURE, not raw counts on both sides. A listing that sold 27
+ * times and then nothing after being deactivated is the strongest signal the
+ * engine can see - counting its zero after-orders as "too few samples" would
+ * report the clearest case as unknown.
+ *
+ * So: we need a rate before the event, and enough days after it that the prior
+ * rate would have produced a meaningful number of orders had nothing changed.
+ * Seeing near-zero across that exposure is a finding. Seeing near-zero because
+ * we barely looked is not.
+ *
+ * Exported so the UI can say "not enough data" rather than showing a percentage.
+ */
 export function hasEnoughData(comparison: RateComparison): boolean {
+  const expectedAfterIfUnchanged = comparison.beforePerDay * comparison.daysAfter
   return (
-    comparison.ordersBefore + comparison.ordersAfter >= MIN_OBSERVATIONS &&
     comparison.ordersBefore >= MIN_PER_SIDE &&
-    comparison.ordersAfter >= MIN_PER_SIDE
+    expectedAfterIfUnchanged >= MIN_PER_SIDE &&
+    comparison.ordersBefore + Math.max(comparison.ordersAfter, expectedAfterIfUnchanged) >=
+      MIN_OBSERVATIONS
   )
 }
 

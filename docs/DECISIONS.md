@@ -1130,10 +1130,25 @@ If a group is too thin to measure, return **UNKNOWN** — never a
 measured-looking number.
 
 Twelve listings averaging under one order each produced a +31% swing that was
-pure noise, and `RULED_OUT` was unreachable except by asserting it. The engine
-now requires **20 total observations and 5 on each side** before materiality
-decides anything; below that the answer is UNKNOWN and
-`ordersAfterPercent` is `null` rather than a percentage the sample cannot support.
+pure noise, and `RULED_OUT` was unreachable except by asserting it. ### The test is EXPOSURE, not raw counts on both sides
+The first cut required 5 observations on each side, which reported
+"4 listings deactivated" — 27 orders then exactly zero — as *not enough data*.
+Counting a complete stop as a thin sample reports the clearest case the engine
+can see as unknown.
+
+Measurability now asks: **is there a rate before the event, and enough days
+after it that the prior rate would have produced a meaningful number of orders
+had nothing changed?** Seeing near-zero across that exposure is a finding.
+Seeing near-zero because we barely looked is not.
+
+```
+ordersBefore >= 5
+beforePerDay * daysAfter >= 5
+ordersBefore + max(ordersAfter, beforePerDay * daysAfter) >= 20
+```
+
+Below that the answer is UNKNOWN and `ordersAfterPercent` is `null` rather than
+a percentage the sample cannot support; the table shows "Not enough data".
 
 This is the design's own "too few samples / Unknown" state, applied to
 diagnosis rather than only to research figures.
