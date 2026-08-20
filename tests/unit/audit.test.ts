@@ -110,27 +110,39 @@ describe('the health score is weighted by money, not by count', () => {
 })
 
 describe('findings carry honest provenance', () => {
-  it('keeps revenue at risk VERIFIED — summing receipts does not demote', () => {
+  it('keeps revenue on a listing VERIFIED — summing receipts does not demote', () => {
     const first = view.results[0]?.findings[0]
-    expect(first?.revenueAtRisk.provenance.type).toBe('VERIFIED')
+    expect(first?.revenueOnListing.provenance.type).toBe('VERIFIED')
   })
 
-  it('counts revenue at risk once per listing, not once per rule', () => {
-    const summedPerRule = view.results.reduce((s, r) => s + r.revenueAtRisk, 0)
+  it('counts revenue once per listing, not once per rule', () => {
+    const summedPerRule = view.results.reduce((s, r) => s + r.revenueOnListings, 0)
     const itemRevenue = orders.reduce(
       (s, o) => s + o.items.reduce((t, i) => t + i.unitPrice * i.quantity, 0),
       0,
     )
 
-    // The per-rule figures overlap, so their sum exceeds the real exposure...
-    expect(summedPerRule).toBeGreaterThan(view.revenueAtRisk)
+    // The per-rule figures overlap, so their sum exceeds the deduplicated total...
+    expect(summedPerRule).toBeGreaterThan(view.revenueOnListings)
     // ...and the headline figure never exceeds the item revenue it came from.
-    expect(view.revenueAtRisk).toBeLessThanOrEqual(itemRevenue + 0.01)
+    expect(view.revenueOnListings).toBeLessThanOrEqual(itemRevenue + 0.01)
   })
 
-  it('states that revenue at risk is item revenue, not order gross', () => {
+  it('states that the figure is item revenue, not order gross', () => {
     const first = view.results[0]?.findings[0]
-    expect(first?.revenueAtRisk.provenance.source).toContain('before order-level discounts')
+    expect(first?.revenueOnListing.provenance.source).toContain('before order-level discounts')
+  })
+
+  it('never calls earned revenue "at risk" anywhere in the audit domain', () => {
+    /*
+     * A backward-looking measurement carrying a forward-looking label. The
+     * money was earned; a missing attribute does not endanger it. The field is
+     * named so a future contributor cannot reintroduce the phrase by reading
+     * the type and following its lead.
+     */
+    const view2 = view as unknown as Record<string, unknown>
+    expect('revenueAtRisk' in view2).toBe(false)
+    expect('revenueOnListings' in view2).toBe(true)
   })
 
   it('offers no suggested value rather than inventing a plausible one', () => {

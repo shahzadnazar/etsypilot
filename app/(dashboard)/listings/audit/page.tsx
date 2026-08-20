@@ -116,18 +116,25 @@ export default async function ListingAuditPage() {
           </Card>
 
           <Card className="flex flex-col gap-1.5 p-[18px]">
-            <span className="text-label text-muted-1">Revenue behind flagged listings</span>
+            <span className="text-label text-muted-1">Revenue on listings with issues</span>
             <Money
-              value={view.revenueAtRisk}
+              value={view.revenueOnListings}
               currency={shop.currency}
               className="text-[19px] font-semibold text-ink-1"
             />
             <span className="text-caption leading-snug text-muted-1">
-              Summed from those listings’ own receipt lines in the period, counting each listing
-              once. The per-rule figures above overlap — most flagged listings trip more than one
-              rule — so they do not add up to this. Item revenue, before order-level discounts:
-              spreading a discount across an order’s items would be a transform, and a transform
-              demotes a verified figure.
+              What this is: revenue that {view.errors + view.warnings} flagged listings{' '}
+              <strong className="font-semibold text-ink-2">earned</strong> in this period, summed
+              from their own receipt lines. What it is not: money at risk. A missing attribute on a
+              listing that earned well does not endanger what it already took.
+            </span>
+            <span className="text-caption leading-snug text-muted-1">
+              Each listing is counted once, so the per-rule figures above do not add up to this —
+              a listing failing three rules appears in three of them and once here.
+            </span>
+            <span className="text-caption leading-snug text-muted-1">
+              Item revenue, before order-level discounts: spreading a discount across an order’s
+              items would be a transform, and a transform demotes a verified figure.
             </span>
           </Card>
         </div>

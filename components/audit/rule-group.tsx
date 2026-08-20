@@ -6,9 +6,14 @@
  * listing can or cannot do, which is knowable, and never what Etsy will do with
  * it, which is not.
  *
- * "Revenue at risk" is the listing's own receipts, summed, so it stays VERIFIED
- * (summing does not demote). The bulk-fix button hands the selection to the
- * Safe Bulk Editor rather than writing anything itself.
+ * The money column is revenue these listings EARNED in the period — the
+ * listing's own receipts, summed, so it stays VERIFIED (summing does not
+ * demote). It is not "revenue at risk": that phrasing is forward-looking and
+ * the figure is backward-looking, and a missing attribute does not endanger
+ * money already banked. It says where to look, not what you stand to lose.
+ *
+ * The bulk-fix button hands the selection to the Safe Bulk Editor rather than
+ * writing anything itself.
  */
 
 import Link from 'next/link'
@@ -65,11 +70,11 @@ export function RuleGroup({
           <span className="text-metric text-ink-1">{result.count}</span>
           <span className="text-caption text-muted-1">listings</span>
           <span className="flex items-center gap-1.5 text-caption text-muted-1">
-            <Money value={result.revenueAtRisk} currency={currency} /> at risk
+            <Money value={result.revenueOnListings} currency={currency} /> earned by them
             <ProvenanceBadge
               type="VERIFIED"
               demo={demo}
-              srDetail="Summed from the receipts these listings produced in the period."
+              srDetail="Revenue these listings earned in the period, summed from their own receipts. Not an estimate of what a problem might cost."
             />
           </span>
         </div>
@@ -78,7 +83,7 @@ export function RuleGroup({
       <table className="w-full border-collapse text-body">
         <caption className="sr-only">
           Sample of {sample.length} of {result.count} listings flagged by {rule.label}, with the
-          verified revenue each produced in the period.
+          verified revenue each earned in the period.
         </caption>
         <thead>
           <tr className="bg-canvas-soft text-left text-label text-muted-1">
@@ -89,7 +94,7 @@ export function RuleGroup({
                 <th scope="col" className="px-3 py-2.5 font-semibold">Suggested value</th>
               </>
             ) : null}
-            <th scope="col" className="px-4 py-2.5 text-right font-semibold">Revenue at risk</th>
+            <th scope="col" className="px-4 py-2.5 text-right font-semibold">Revenue in period</th>
           </tr>
         </thead>
         <tbody>
@@ -117,7 +122,7 @@ export function RuleGroup({
                 </>
               ) : null}
               <NumericCell className="text-ink-2">
-                <Money value={f.revenueAtRisk.value} currency={currency} />
+                <Money value={f.revenueOnListing.value} currency={currency} />
               </NumericCell>
             </tr>
           ))}

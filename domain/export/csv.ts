@@ -134,6 +134,7 @@ export function auditExport(args: { healthScore: number; coveragePercent: number
       `Revenue coverage ${args.coveragePercent}% of listings had orders in the period`,
     ],
     excludes: [
+      'Revenue earned in period is what these listings took, not an estimate of what an issue costs. Nothing here says money is at risk.',
       'Listings with no orders in the period carry no weight in the health score.',
       'Severity weights are EtsyPilot thresholds, not Etsy requirements, except where the rule says it blocks publishing.',
       'Nothing here predicts ranking. Etsy does not publish its ranking algorithm.',
@@ -144,7 +145,11 @@ export function auditExport(args: { healthScore: number; coveragePercent: number
       { header: 'SKU', value: (r) => r.sku },
       { header: 'Rule', value: (r) => r.ruleLabel },
       { header: 'Severity', value: (r) => r.severity },
-      { header: 'Revenue at risk', value: (r) => r.revenueAtRisk.value, provenance: () => 'VERIFIED' },
+      {
+        header: 'Revenue earned in period',
+        value: (r) => r.revenueOnListing.value,
+        provenance: () => 'VERIFIED',
+      },
       { header: 'Suggested value', value: (r) => r.suggestedValue ?? null, provenance: () => 'CALCULATED' },
     ],
   }

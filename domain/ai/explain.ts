@@ -48,8 +48,8 @@ export async function explainRule(
     facts: [
       countFact('Listings flagged by this rule', result.count),
       {
-        label: 'Verified revenue behind those listings',
-        value: result.revenueAtRisk.toFixed(2),
+        label: 'Verified revenue those listings earned in the period',
+        value: result.revenueOnListings.toFixed(2),
         provenance: 'VERIFIED',
       },
     ],

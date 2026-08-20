@@ -6,10 +6,19 @@
  * that earn most of the revenue is not a healthy shop, and a score that counted
  * listings would say it was.
  *
+ * On the naming: this is `revenueOnListings`, NOT "revenue at risk".
+ *
+ * The figure is backward-looking — revenue these listings already earned in the
+ * period — and "at risk" is forward-looking. A missing attribute on a listing
+ * that earned $2,000 last month does not put $2,000 in danger; the money is
+ * banked. What the number says is "this much of your revenue passes through
+ * listings with a fixable problem", which is a reason to look, not a loss.
+ * Everything else in this product is careful about that distinction.
+ *
  * Provenance follows D32 throughout:
  *
- *   Revenue at risk   VERIFIED   - the listing's own receipts, summed. Summing
- *                                  does not demote.
+ *   Revenue on listings  VERIFIED  - the listing's own receipts, summed. Summing
+ *                                    does not demote.
  *   Health score      CALCULATED - verified revenue divided into shares and
  *                                  weighted by rule severity. Dividing does.
  *   Coverage          CALCULATED - share of revenue the score could account for.
@@ -30,8 +39,8 @@ export interface AuditFinding {
   listingId: string
   title: string
   sku: string | null
-  /** Verified revenue this listing produced in the period. */
-  revenueAtRisk: Provenanced<number>
+  /** Verified revenue this listing produced in the period. Earned, not endangered. */
+  revenueOnListing: Provenanced<number>
   /** Present only for MISSING_REQUIRED_ATTRIBUTE. */
   missingAttribute?: string
   /** Pre-filled from the listing's own text, and always editable. */
@@ -42,8 +51,8 @@ export interface RuleResult {
   rule: AuditRule
   findings: AuditFinding[]
   count: number
-  /** Verified revenue across every listing this rule flags. */
-  revenueAtRisk: number
+  /** Verified revenue earned by the listings this rule flags. */
+  revenueOnListings: number
 }
 
 export interface AuditView {
@@ -58,13 +67,17 @@ export interface AuditView {
   /** How many flagged listings a bulk operation could fix. */
   bulkFixable: number
   /**
-   * Verified revenue behind flagged listings, counted once per listing.
+   * Verified revenue earned by flagged listings, counted once per listing.
    *
-   * Summing the per-rule totals would double-count every listing that trips
-   * more than one rule, and most do — the shop would read a figure larger than
-   * its own revenue and stop believing the screen.
+   * A union across rules, so the per-rule figures do NOT sum to it: a listing
+   * failing three rules appears in three rule rows and once here. That is the
+   * correct arithmetic and it looks like an error on screen, so every surface
+   * that shows both says so.
+   *
+   * Summing the per-rule totals instead would double-count, and the shop would
+   * read a figure larger than its own revenue.
    */
-  revenueAtRisk: number
+  revenueOnListings: number
   thresholds: RuleContext['thresholds']
   lastRunAt: string
   /** Listings with no orders in the period, so no weight in the score. */
@@ -107,13 +120,13 @@ export function auditListings(
       rule,
       findings,
       count: flagged.length,
-      revenueAtRisk: round2(findings.reduce((s, f) => s + (f.revenueAtRisk.value ?? 0), 0)),
+      revenueOnListings: round2(findings.reduce((s, f) => s + (f.revenueOnListing.value ?? 0), 0)),
     })
   }
 
   results.sort((a, b) => {
     if (a.rule.severity !== b.rule.severity) return a.rule.severity === 'ERROR' ? -1 : 1
-    return b.revenueAtRisk - a.revenueAtRisk
+    return b.revenueOnListings - a.revenueOnListings
   })
 
   const errors = countBySeverity(worstByListing, 'ERROR')
@@ -128,7 +141,7 @@ export function auditListings(
     healthScore: healthScore(listings, worstByListing, revenueByListing),
     results,
     bulkFixable: results.filter((r) => r.rule.bulkFixable).reduce((s, r) => s + r.count, 0),
-    revenueAtRisk: round2(
+    revenueOnListings: round2(
       [...worstByListing.keys()].reduce((s, id) => s + (revenueByListing.get(id) ?? 0), 0),
     ),
     thresholds,
@@ -199,7 +212,7 @@ function toFinding(rule: AuditRule, listing: EtsyListing, revenue: number): Audi
      * that demotes the figure. Better a precise smaller claim than a demoted
      * larger one, and the caption says which it is.
      */
-    revenueAtRisk: verified(
+    revenueOnListing: verified(
       round2(revenue),
       'Your Etsy order receipts — item lines, before order-level discounts',
     ) as Provenanced<number>,

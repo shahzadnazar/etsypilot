@@ -105,6 +105,10 @@ Keep the latest 5–10 meaningful items.
 - Refreshed design bundle archived: artboard 92 now gives every locked row its own badge,
   the intro copy is corrected, and the three stale items (America/New_York, $4,938, -12%)
   are gone from the source.
+- D44: audit review caught "revenue at risk" — a backward-looking measurement wearing a
+  forward-looking label. Renamed across five surfaces AND the domain field, because a
+  field called revenueAtRisk invites the phrase back. The dedup caption the same review
+  asked for was already built; the naming was not.
 - Phase 7 built: AiProvider seam (mock + Claude, server-only, lazily keyed); frozen
   system prompt stating the rules as facts about the world; PromptFact as the only
   channel into a prompt; output validation that blocks invented metrics, ranking claims,
@@ -408,6 +412,9 @@ the string was in the wire format, not on the screen.
 - Bulk changes require validation, diff, confirmation, audit, and rollback where supported.
 - Profit Reality must show coverage/confidence.
 - Every important screen needs loading/empty/error/success/partial/unavailable states.
+- A figure is either a measurement of what happened or a projection of what might,
+  and the label must say which (D44). No backward-looking number carries a
+  forward-looking name.
 - A prompt is an instruction; validation is a check (D39). Every AI prohibition is
   stated twice, and a draft that breaks one is withheld entirely, never repaired.
 - Facts are the only channel into a prompt (D40). No helper accepts a bare number.

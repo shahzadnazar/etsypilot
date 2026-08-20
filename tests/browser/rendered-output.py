@@ -163,6 +163,21 @@ with sync_playwright() as p:
     check("no one outside Etsy can" in audit, "Audit disclaims ranking knowledge")
     check("rules" in audit and "14 rules" in audit, "Audit names how many rules it ran")
 
+    # The money column is backward-looking; "at risk" is not.
+    # Verified by breaking it first: restoring "at risk" fails this check.
+    # "revenue at risk" as a LABEL must be gone. The one permitted occurrence of
+    # the phrase is the sentence that disclaims it, so count rather than forbid —
+    # a blanket check here fails on the disclaimer itself, which is the same
+    # matching-the-prose-near-the-thing mistake as before, inverted.
+    check("revenue at risk" not in audit.lower(),
+          "Audit never labels a column or figure “revenue at risk”")
+    check(audit.lower().count("at risk") == 1,
+          "The only mention of “at risk” is the sentence saying it is not that")
+    check("What it is not: money at risk" in audit,
+          "The headline says outright what the figure does not claim")
+    check("do not add up to this" in audit,
+          "The headline says the per-rule figures do not sum to it")
+
     # AI Copilot: the approval gate is visible before the draft is read.
     pg.goto(f"{BASE}/listings/ai-copilot", wait_until="domcontentloaded"); pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)
     ai = pg.locator("main").inner_text()

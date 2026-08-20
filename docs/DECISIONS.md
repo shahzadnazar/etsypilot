@@ -1661,3 +1661,46 @@ drafted it, and the rationale **the seller actually read at approval time** — 
 regenerated summary. Six months from now "why does this listing say that?" has to be
 answerable, and "a model wrote it and nobody remembers approving it" is the answer this
 product exists to prevent.
+
+
+---
+
+## D44 — A backward-looking figure never carries a forward-looking label
+
+Review of D38 raised two consequences of counting each listing once. One was already
+built; the other was a real defect that had shipped.
+
+**Already built: the union is stated.** The headline counts each listing once, so the
+per-rule figures do not sum to it — a listing failing three rules appears in three rule
+rows and once in the total. The card says so. Without that, a careful seller adds the
+column, gets a different number, and stops trusting the page — the same failure mode as a
+waterfall that does not sum to its total.
+
+**The defect: "revenue at risk".** The number is revenue those listings **earned** in the
+period. "At risk" is forward-looking; the measurement is backward-looking. A missing
+attribute on a listing that took $2,000 last month does not endanger $2,000 — the money is
+banked. The label claimed a loss the figure had no basis for.
+
+Renamed everywhere:
+
+| Surface | Was | Now |
+|---|---|---|
+| Per-rule header | "$4,864 at risk" | "$4,864 earned by them" |
+| Table column | "Revenue at risk" | "Revenue in period" |
+| Headline card | "Revenue behind flagged listings" | "Revenue on listings with issues" |
+| CSV column | "Revenue at risk" | "Revenue earned in period" |
+| Domain field | `revenueAtRisk` | `revenueOnListing` / `revenueOnListings` |
+
+**The field rename is the load-bearing part.** Copy can be re-broken by anyone; a field
+named `revenueAtRisk` actively invites the phrase back, because the next contributor reads
+the type and follows its lead. A test asserts the old name is absent from the view.
+
+The headline now states both halves plainly: what the figure is ("revenue that N flagged
+listings **earned** in this period") and what it is not ("money at risk — a missing
+attribute on a listing that earned well does not endanger what it already took").
+
+**The general rule:** every figure in this product is either a measurement of something
+that happened or a projection of something that might. The label must say which. This is
+D32's sibling — D32 governs what a transform does to a number's provenance, D44 governs
+what a tense does to its meaning, and both fail the same way: the arithmetic stays right
+while the claim quietly becomes false.
