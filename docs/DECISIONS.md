@@ -183,11 +183,17 @@ beside it. One surface, four tabs: **Waterfall · Scenarios · Costs · Transact
 | COGS | `−$6,996` | Seller input |
 | Labour | `−$1,020` | Seller input |
 | Other costs | `−$302` | Seller input |
-| **Net profit** | **`$4,938`** | **Calculated** |
+| **Net profit** | **`$4,937.15`** | **Calculated** |
 
 ### KPI row (5)
 Gross revenue (Verified) · Total costs (Calculated) · Net profit (Calculated) ·
 Net margin (Calculated, 26.8%) · Cost coverage (Calculated, 62%)
+Total costs (Calculated, −$13,483.50)
+
+**Net profit is COMPUTED from the eight cost lines. Never stored, never stated as
+a literal.** The canvas originally read $4,938.20, arrived at independently of
+the lines; the lines were right and the total was the bug. Corrected in the
+design source and here: total costs −$13,483.50, net $4,937.15, margin 26.8%.
 
 ### Coverage warning (always present when coverage < 100%)
 > "Costs are confirmed for 62% of order value. 38 listings have no product cost
@@ -1023,3 +1029,34 @@ All open items are closed. **Phase 1 is unblocked.**
 
 One item carries a flagged resolution awaiting confirmation, non-blocking:
 **7a** — settings sidebar, `Audit log` placement.
+
+
+---
+
+## D23 — Literal colours for elements that must not flip — SYSTEM CONVENTION
+
+Any element that must stay dark in **both** themes carries a literal `#241B12`
+background with `#F7F3ED` text. Never `var(--ink-1)` or `var(--ink-2)` — those
+tokens invert to near-white in dark mode.
+
+### The precise failure mode
+It is not "never use a token as a background". A token background paired with a
+token foreground is fine: both invert together and contrast holds (the demo chip
+does exactly this). The bug is **mixing a token with a literal on the same
+contrast pair** — a token background under literal white text, or the reverse.
+When one side flips and the other does not, the pair collapses.
+
+Same reasoning as the literal badge pill fills in D1/D10.
+
+### Applied
+| Surface | Was | Now |
+|---|---|---|
+| Demo banner (artboard 103b) | `var(--ink-1)` bg + `#F1F5F9` text | `#241B12` + `#F7F3ED` |
+| Top-bar avatar chip | `var(--ink-2)` bg + `text-white` | `#241B12` + `#F7F3ED` |
+
+Found by the audit this convention prompted. Both were invisible to typecheck
+and to the production build; only rendering the dark theme caught them.
+
+### Standing check
+When reviewing any new component: for every colour pair, are both sides tokens,
+or both literals? A mixed pair is the bug.

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { PageHeader } from '@/components/layout/page-header'
 import { ProvenanceBadge } from '@/components/provenance/provenance-badge'
+import { ProvenanceButton } from '@/components/provenance/provenance-button'
 import { Card } from '@/components/ui/card'
 import { computeWaterfall } from '@/domain/profit/waterfall'
 import { getSession } from '@/lib/auth'
@@ -58,7 +59,13 @@ export default async function ProfitPage() {
       <section aria-label="Profit summary" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Summary label="Gross revenue" value={formatCurrency(profit.grossRevenue)} type="VERIFIED" demo={session.isDemo} />
         <Summary label="Total costs" value={`−${formatCurrency(profit.totalCosts)}`} type="CALCULATED" demo={session.isDemo} />
-        <Summary label="Net profit" value={formatCurrency(profit.netProfit)} type="CALCULATED" demo={session.isDemo} />
+        <Summary
+          label="Net profit"
+          value={formatCurrency(profit.netProfit)}
+          type="CALCULATED"
+          demo={session.isDemo}
+          methodologyKey="netProfit"
+        />
         <Summary label="Net margin" value={formatPercent(profit.marginPercent)} type="CALCULATED" demo={session.isDemo} />
       </section>
 
@@ -139,17 +146,23 @@ function Summary({
   value,
   type,
   demo,
+  methodologyKey,
 }: {
   label: string
   value: string
   type: 'VERIFIED' | 'CALCULATED'
   demo: boolean
+  methodologyKey?: string
 }) {
   return (
     <Card className="flex flex-col gap-2 p-[14px]">
       <div className="flex items-center justify-between gap-2">
         <span className="text-label text-muted-1">{label}</span>
-        <ProvenanceBadge type={type} demo={demo} />
+        {methodologyKey ? (
+          <ProvenanceButton metricKey={methodologyKey} type={type} demo={demo} />
+        ) : (
+          <ProvenanceBadge type={type} demo={demo} />
+        )}
       </div>
       <span className="tnum text-metric text-ink-1">{value}</span>
     </Card>

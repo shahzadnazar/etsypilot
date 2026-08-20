@@ -5,12 +5,12 @@
 
 ## 1. Current Status
 
-**Phase:** 1 — Foundation (COMPLETE)
-**Current task:** Awaiting go-ahead for Phase 2 — Action Center + Provenance
+**Phase:** 2 — Action Center + Provenance (COMPLETE)
+**Current task:** Awaiting go-ahead for Phase 3 — Shop Pulse
 **Current file being worked on:** None
-**Last completed task:** Phase 1 foundation: tokens, shell, domain models, mock Etsy, seed
-**Blockers:** NONE. Two items flagged for a decision, neither blocking: D22 7a (Audit log
-placement) and the $1.05 waterfall discrepancy on artboard 92.
+**Last completed task:** Action model + Action Center UI + methodology drawer
+**Blockers:** NONE. One item flagged for a decision, non-blocking: D22 7a (Audit log
+placement in the settings sidebar).
 
 ## 2. Current Objective
 
@@ -21,8 +21,9 @@ Build Etsy Pilot as an Etsy Seller Decision & Operations Intelligence platform u
 Update this section whenever the phase changes.
 
 ```text
-Phase 1 — Foundation
-Status: COMPLETE — app runs end-to-end in demo mode with zero credentials
+Phase 2 — Action Center + Provenance
+Status: COMPLETE — dashboard answers "what needs my attention?", every badge
+opens its methodology, every action has a destination
 ```
 
 ## 4. Current Work
@@ -63,6 +64,12 @@ Keep the latest 5–10 meaningful items.
   provenance/event/error models, Drizzle schema with D20 seams, MockEtsyService,
   deterministic Willow & Fern seed, dashboard + Profit Reality waterfall.
   12 tests passing, typecheck clean, build clean, verified in browser light/dark/mobile.
+- Net profit canonicalised at $4,937.15 (computed, never stored); design source corrected.
+- D23 recorded: literal #241B12 for elements that must stay dark in both themes. Audit
+  found a second instance of the same bug in the top-bar avatar chip; fixed.
+- Phase 2 built: Action model with all four lifecycle states, Action Center page + the
+  same list on the dashboard, methodology drawer on the artboard-93 content model
+  (incl. coverage), clickable provenance badges. 26 tests passing.
 
 ## 6. Files Currently Being Modified
 
@@ -83,12 +90,16 @@ lib/  utils/{cn,format} · provenance/{types,builders} · events/types · errors
       etsy/{interface,mock,live,index,demo-dataset,demo-events} · db/index · auth/index
       permissions/index
 db/schema/index.ts
-domain/  profit/waterfall · shop/overview
-components/  ui/{button,card,states} · provenance/{provenance-badge,diagnosis-badge}
+domain/  profit/waterfall · shop/overview · action-center/{types,service}
+components/  ui/{button,card,states} · action-center/{action-card,action-list}
+             provenance/{provenance-badge,diagnosis-badge,methodology-drawer,
+                         provenance-button}
              layout/{app-shell,sidebar,top-bar,shop-context,demo-banner,mobile-tabs,
                      page-header,navigation,theme-script,theme-toggle}
-app/  layout · page · not-found · error · (dashboard)/{layout,dashboard,profit}
-tests/unit/{waterfall,provenance}.test.ts
+      lib/provenance/methodology.ts
+app/  layout · page · not-found · error
+      (dashboard)/{layout,dashboard,profit,action-center+loading}
+tests/unit/{waterfall,provenance,action-center,methodology}.test.ts
 ```
 
 ## 8. Files Modified
@@ -125,9 +136,6 @@ PostHog: Not configured
 ## 12. Known Issues
 
 ```text
-- Artboard 92's eight cost lines sum to $4,937.15, not the stated $4,938.20
-  ($1.05 rounding artifact in the design). We compute; awaiting a call on which
-  figure is canonical.
 - Google Fonts is loaded over the network; in a sandbox with no egress the font
   falls back to system sans. Consider self-hosting Inter in Phase 12.
 - Mobile top bar is functional but not yet the designed compact bar (logo, shop,

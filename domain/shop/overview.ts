@@ -20,6 +20,8 @@ import { computeWaterfall } from '@/domain/profit/waterfall'
 
 export interface OverviewMetric {
   key: string
+  /** Key into METHODOLOGIES, so the badge can open its explanation. */
+  methodologyKey: string
   label: string
   display: string
   /** Delta against the shop's own prior comparable period. */
@@ -53,6 +55,7 @@ export async function getShopOverview(ctx: ShopContext): Promise<ShopOverview> {
   const metrics: OverviewMetric[] = [
     {
       key: 'gross',
+      methodologyKey: 'grossSales',
       label: 'Gross sales',
       display: currency(grossRevenue, shop.currency),
       deltaPercent: pctChange(grossRevenue, DEMO_BASELINE.revenue),
@@ -62,6 +65,7 @@ export async function getShopOverview(ctx: ShopContext): Promise<ShopOverview> {
     },
     {
       key: 'orders',
+      methodologyKey: 'orders',
       label: 'Orders',
       display: String(orderCount),
       deltaPercent: pctChange(orderCount, DEMO_BASELINE.orders),
@@ -71,6 +75,7 @@ export async function getShopOverview(ctx: ShopContext): Promise<ShopOverview> {
     },
     {
       key: 'net',
+      methodologyKey: 'netProfit',
       label: 'Net profit',
       display: currency(profit.netProfit, shop.currency),
       deltaPercent: null,
@@ -81,6 +86,7 @@ export async function getShopOverview(ctx: ShopContext): Promise<ShopOverview> {
     },
     {
       key: 'listings',
+      methodologyKey: 'activeListings',
       label: 'Active listings',
       display: String(DEMO_COUNTS.activeListings),
       deltaPercent: null,

@@ -32,9 +32,14 @@ export function TopBar({
         <ThemeToggle />
       </div>
 
+      {/*
+        Literal, not tokenised. Pairing a token background with a literal
+        foreground breaks on theme flip: --ink-2 inverts to #CBD5E1 in dark,
+        which put white text on light grey. Same convention as the demo banner.
+      */}
       <span
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-control text-[11px] font-semibold text-white"
-        style={{ background: 'var(--ink-2)' }}
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-control text-[11px] font-semibold"
+        style={{ background: '#241B12', color: '#F7F3ED' }}
         aria-hidden
       >
         {userInitials}

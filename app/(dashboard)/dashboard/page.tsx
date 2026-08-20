@@ -1,9 +1,11 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { PageHeader } from '@/components/layout/page-header'
-import { ProvenanceBadge } from '@/components/provenance/provenance-badge'
+import { ProvenanceButton } from '@/components/provenance/provenance-button'
 import { Card } from '@/components/ui/card'
 import { UnavailableCard } from '@/components/ui/states'
+import { ActionList } from '@/components/action-center/action-list'
+import { getActions } from '@/domain/action-center/service'
 import { getShopOverview } from '@/domain/shop/overview'
 import { getSession } from '@/lib/auth'
 import { shopContext } from '@/lib/permissions'
@@ -16,7 +18,10 @@ export default async function DashboardPage() {
   if (!session) redirect('/login')
 
   const ctx = shopContext(session, session.shopId)
-  const overview = await getShopOverview(ctx)
+  const [overview, { actions, counts }] = await Promise.all([
+    getShopOverview(ctx),
+    getActions(ctx),
+  ])
 
   const period = `${formatDate(overview.periodStart, overview.timezone)} – ${formatDate(
     overview.periodEnd,
@@ -38,10 +43,10 @@ export default async function DashboardPage() {
             <Card key={metric.key} className="flex flex-col gap-2 p-[14px]">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-label text-muted-1">{metric.label}</span>
-                <ProvenanceBadge
+                <ProvenanceButton
+                  metricKey={metric.methodologyKey}
                   type={metric.provenance.type}
                   demo={session.isDemo}
-                  srDetail={metric.provenance.methodology}
                 />
               </div>
               <span className="tnum text-metric text-ink-1">{metric.display}</span>
@@ -68,20 +73,17 @@ export default async function DashboardPage() {
       </section>
 
       {/*
-        Phase 2 replaces this with the Action Center, which outranks the chart.
-        Until then the page says what is coming rather than showing a
-        placeholder chart that implies data we are not yet computing.
+        The Action Center outranks the chart. It is the answer to "what needs my
+        attention?", so it sits directly under the KPI row rather than below a
+        trend line that answers a question nobody asked first.
       */}
-      <section aria-label="Next" className="mt-4 grid gap-3 lg:grid-cols-2">
-        <Card className="p-[18px]">
-          <h2 className="text-section text-ink-1">Action Center</h2>
-          <p className="mt-2 max-w-prose text-body text-ink-2">
-            The prioritised queue that answers &ldquo;what needs my attention?&rdquo; arrives in
-            Phase 2, with evidence and a destination on every card.
-          </p>
-        </Card>
+      <section aria-label="Action Center" className="mt-5">
+        <h2 className="mb-3 text-section text-ink-1">What needs your attention</h2>
+        <ActionList actions={actions} counts={counts} demo={session.isDemo} />
+      </section>
 
-        {/* Etsy does not expose views. We say so rather than estimating them. */}
+      {/* Etsy does not expose views. We say so rather than estimating them. */}
+      <section aria-label="Unavailable metrics" className="mt-4 grid gap-3 lg:grid-cols-2">
         <UnavailableCard
           label="Listing views"
           reason="Etsy does not provide listing views through the public API."
