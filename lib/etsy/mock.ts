@@ -1,0 +1,138 @@
+/*
+ * MockEtsyService.
+ *
+ * The demo adapter. Serves the Willow & Fern dataset behind exactly the same
+ * contract LiveEtsyService will implement, so Phase 11 is an adapter swap
+ * rather than a rewrite.
+ *
+ * It cannot write. Demo mode is read-only by design (artboard 103a: "Publish
+ * anything to Etsy - demo mode cannot write"), and applyListingChanges says so
+ * explicitly instead of silently pretending to succeed.
+ */
+
+import { Errors } from '@/lib/errors/types'
+import {
+  UNAVAILABLE_ADS_PERFORMANCE,
+  UNAVAILABLE_LISTING_VIEWS,
+} from '@/lib/provenance/builders'
+import type { Provenanced } from '@/lib/provenance/types'
+import {
+  DEMO_COUNTS,
+  DEMO_LAST_SYNCED,
+  DEMO_SHOP_ID,
+  buildDemoListings,
+  buildDemoOrders,
+} from './demo-dataset'
+import type {
+  EtsyListing,
+  EtsyOrder,
+  EtsyService,
+  EtsyShop,
+  ListingWriteRequest,
+  ListingWriteResult,
+  SyncProgress,
+} from './interface'
+
+/* Built once per process. Deterministic, so this is safe to memoise. */
+let listingCache: EtsyListing[] | null = null
+let orderCache: EtsyOrder[] | null = null
+
+function listings(): EtsyListing[] {
+  if (!listingCache) listingCache = buildDemoListings()
+  return listingCache
+}
+
+function orders(): EtsyOrder[] {
+  if (!orderCache) orderCache = buildDemoOrders(listings())
+  return orderCache
+}
+
+export class MockEtsyService implements EtsyService {
+  readonly canWrite = false
+  readonly mode = 'mock' as const
+
+  async getShop(shopId: string): Promise<EtsyShop> {
+    assertDemoShop(shopId)
+    return {
+      etsyShopId: DEMO_SHOP_ID,
+      name: 'Willow & Fern Studio',
+      currency: 'USD',
+      timezone: 'America/New_York',
+      connectionStatus: 'DEMO',
+      lastSyncedAt: DEMO_LAST_SYNCED,
+      activeListingCount: DEMO_COUNTS.activeListings,
+      grantedScopes: ['listings_r', 'shops_r', 'transactions_r', 'billing_r'],
+    }
+  }
+
+  async getListings(
+    shopId: string,
+    opts: { limit?: number; offset?: number } = {},
+  ): Promise<{ listings: EtsyListing[]; total: number }> {
+    assertDemoShop(shopId)
+    const all = listings()
+    const offset = opts.offset ?? 0
+    const limit = opts.limit ?? 50
+    return { listings: all.slice(offset, offset + limit), total: all.length }
+  }
+
+  async getListing(shopId: string, etsyListingId: string): Promise<EtsyListing | null> {
+    assertDemoShop(shopId)
+    return listings().find((l) => l.etsyListingId === etsyListingId) ?? null
+  }
+
+  async getOrders(
+    shopId: string,
+    opts: { since?: string; until?: string } = {},
+  ): Promise<EtsyOrder[]> {
+    assertDemoShop(shopId)
+    return orders().filter((o) => {
+      if (opts.since && o.placedAt < opts.since) return false
+      if (opts.until && o.placedAt > opts.until) return false
+      return true
+    })
+  }
+
+  async getSyncProgress(shopId: string): Promise<SyncProgress> {
+    assertDemoShop(shopId)
+    // The demo shop is static: nothing syncs, and the UI says so rather than
+    // showing a progress bar that never moves.
+    return {
+      overallPercent: 100,
+      etaSeconds: 0,
+      rateLimitedUntil: null,
+      stages: [
+        { key: 'shop', label: 'Confirming shop', detail: 'Willow & Fern Studio', status: 'DONE' },
+        { key: 'listings', label: 'Importing listings', detail: '450 of 450', status: 'DONE', current: 450, total: 450 },
+        { key: 'inventory', label: 'Syncing inventory and variations', detail: '450 of 450', status: 'DONE', current: 450, total: 450 },
+        { key: 'orders', label: 'Loading 24 months of orders', detail: '438 of 438', status: 'DONE', current: 438, total: 438 },
+        { key: 'metrics', label: 'Calculating profit and catalog health', detail: 'Complete', status: 'DONE' },
+      ],
+    }
+  }
+
+  /**
+   * Demo mode cannot write. This throws a named, user-safe error rather than
+   * returning a fake success - a demo that pretends to publish is worse than
+   * one that refuses.
+   */
+  async applyListingChanges(
+    _shopId: string,
+    _requests: ListingWriteRequest[],
+  ): Promise<ListingWriteResult[]> {
+    throw Errors.demoModeWrite()
+  }
+
+  async getListingViews(_shopId: string, _etsyListingId: string): Promise<Provenanced<number>> {
+    return { value: null, provenance: UNAVAILABLE_LISTING_VIEWS }
+  }
+
+  async getAdsPerformance(_shopId: string): Promise<Provenanced<number>> {
+    return { value: null, provenance: UNAVAILABLE_ADS_PERFORMANCE }
+  }
+}
+
+/** A user must never be able to operate on another shop's data. */
+function assertDemoShop(shopId: string): void {
+  if (shopId !== DEMO_SHOP_ID) throw Errors.crossShop(shopId)
+}

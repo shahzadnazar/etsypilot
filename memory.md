@@ -5,12 +5,12 @@
 
 ## 1. Current Status
 
-**Phase:** 0 — Discovery & Audit (COMPLETE)
-**Current task:** Ready to begin Phase 1 — Foundation
+**Phase:** 1 — Foundation (COMPLETE)
+**Current task:** Awaiting go-ahead for Phase 2 — Action Center + Provenance
 **Current file being worked on:** None
-**Last completed task:** D22 plan copy approved and locked → docs/DECISIONS.md
-**Blockers:** NONE. O1-O4 and D22 all resolved. One flagged non-blocking item: D22 7a,
-Audit log placement in the settings sidebar.
+**Last completed task:** Phase 1 foundation: tokens, shell, domain models, mock Etsy, seed
+**Blockers:** NONE. Two items flagged for a decision, neither blocking: D22 7a (Audit log
+placement) and the $1.05 waterfall discrepancy on artboard 92.
 
 ## 2. Current Objective
 
@@ -21,8 +21,8 @@ Build Etsy Pilot as an Etsy Seller Decision & Operations Intelligence platform u
 Update this section whenever the phase changes.
 
 ```text
-Phase 0 — Discovery & Audit
-Status: COMPLETE — awaiting approval for Phase 1
+Phase 1 — Foundation
+Status: COMPLETE — app runs end-to-end in demo mode with zero credentials
 ```
 
 ## 4. Current Work
@@ -59,6 +59,10 @@ Keep the latest 5–10 meaningful items.
 - D22 approved: three tiers (Free $0 / Solo $15 / Growth $29), Agency held, Growth cap
   500 -> 2,000. Seven screen consequences locked, incl. shop switcher collapse and
   settings nav rework.
+- Phase 1 built: Next 16 + TS strict, D1/D19 tokens, UI primitives, D21 shell,
+  provenance/event/error models, Drizzle schema with D20 seams, MockEtsyService,
+  deterministic Willow & Fern seed, dashboard + Profit Reality waterfall.
+  12 tests passing, typecheck clean, build clean, verified in browser light/dark/mobile.
 
 ## 6. Files Currently Being Modified
 
@@ -71,10 +75,20 @@ None
 ## 7. Files Created
 
 ```text
-docs/PHASE-0-AUDIT.md
-docs/DECISIONS.md
-docs/source/**   (archived spec docs + 17 screen files)
-memory.md
+docs/PHASE-0-AUDIT.md · docs/DECISIONS.md · docs/source/** (21 screen files)
+package.json · tsconfig.json · next.config.ts · tailwind.config.ts · postcss.config.mjs
+drizzle.config.ts · vitest.config.ts · .env.example · .gitignore · README.md · memory.md
+styles/globals.css
+lib/  utils/{cn,format} · provenance/{types,builders} · events/types · errors/types
+      etsy/{interface,mock,live,index,demo-dataset,demo-events} · db/index · auth/index
+      permissions/index
+db/schema/index.ts
+domain/  profit/waterfall · shop/overview
+components/  ui/{button,card,states} · provenance/{provenance-badge,diagnosis-badge}
+             layout/{app-shell,sidebar,top-bar,shop-context,demo-banner,mobile-tabs,
+                     page-header,navigation,theme-script,theme-toggle}
+app/  layout · page · not-found · error · (dashboard)/{layout,dashboard,profit}
+tests/unit/{waterfall,provenance}.test.ts
 ```
 
 ## 8. Files Modified
@@ -98,7 +112,7 @@ None
 ## 11. Integrations
 
 ```text
-Etsy: Mock mode
+Etsy: Mock mode (MockEtsyService, read-only, no credentials)
 Claude AI: Not configured
 Stripe: Not configured
 Supabase: Not configured
@@ -111,7 +125,13 @@ PostHog: Not configured
 ## 12. Known Issues
 
 ```text
-None
+- Artboard 92's eight cost lines sum to $4,937.15, not the stated $4,938.20
+  ($1.05 rounding artifact in the design). We compute; awaiting a call on which
+  figure is canonical.
+- Google Fonts is loaded over the network; in a sandbox with no egress the font
+  falls back to system sans. Consider self-hosting Inter in Phase 12.
+- Mobile top bar is functional but not yet the designed compact bar (logo, shop,
+  notifications, menu). Phase 2.
 ```
 
 ## 13. Decisions

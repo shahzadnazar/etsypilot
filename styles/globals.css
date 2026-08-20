@@ -1,0 +1,132 @@
+/*
+ * EtsyPilot design tokens.
+ *
+ * Source of truth: docs/DECISIONS.md D1 (light + dark) and D19 (dark stays cool slate).
+ * These values are copied verbatim from the design canvases. Do not re-derive them,
+ * do not warm the dark set - that alternative was considered and rejected (D19).
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* D1 - light (default). Warm cream ground, terracotta accent. */
+  --brand: #B4472A;
+  --brand-strong: #8C371F;
+  --brand-tint: #FBEEE7;
+  --ink-1: #241B12;
+  --ink-2: #4A4234;
+  --muted-1: #6B6152;
+  --muted-2: #8C7F6C;
+  --border: #E9E2D6;
+  --surface: #FFFFFF;
+  --canvas-soft: #FBF8F3;
+  --page-bg: #FBF8F3;
+  --success: #15803D;
+  --success-strong: #15803D;
+  --warning: #B45309;
+  --warning-strong: #B45309;
+  --danger: #B91C1C;
+  --danger-strong: #B91C1C;
+  --accent-ai: #7C3AED;
+  --accent-calc: #0891B2;
+}
+
+/*
+ * D19 - dark is a cool slate carrying a warm accent, deliberately.
+ * Declared for both the explicit choice and the system default so all three
+ * toggle states resolve.
+ */
+:root[data-theme='dark'] {
+  --brand: #E07A4A;
+  --brand-strong: #F3B08C;
+  --brand-tint: rgba(224, 122, 74, 0.16);
+  --ink-1: #F1F5F9;
+  --ink-2: #CBD5E1;
+  --muted-1: #94A3B8;
+  --muted-2: #64748B;
+  --border: #2B3444;
+  --surface: #1E293B;
+  --canvas-soft: #1E293B;
+  --page-bg: #0F172A;
+  --success: #34D399;
+  --success-strong: #34D399;
+  --warning: #FBBF24;
+  --warning-strong: #FBBF24;
+  --danger: #F87171;
+  --danger-strong: #FCA5A5;
+  --accent-ai: #C4B5FD;
+  --accent-calc: #67E8F9;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --brand: #E07A4A;
+    --brand-strong: #F3B08C;
+    --brand-tint: rgba(224, 122, 74, 0.16);
+    --ink-1: #F1F5F9;
+    --ink-2: #CBD5E1;
+    --muted-1: #94A3B8;
+    --muted-2: #64748B;
+    --border: #2B3444;
+    --surface: #1E293B;
+    --canvas-soft: #1E293B;
+    --page-bg: #0F172A;
+    --success: #34D399;
+    --success-strong: #34D399;
+    --warning: #FBBF24;
+    --warning-strong: #FBBF24;
+    --danger: #F87171;
+    --danger-strong: #FCA5A5;
+    --accent-ai: #C4B5FD;
+    --accent-calc: #67E8F9;
+  }
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    color-scheme: light dark;
+  }
+
+  body {
+    margin: 0;
+    background: var(--page-bg);
+    color: var(--ink-2);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+      'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /*
+   * Foundations 04: a 2px brand ring with a 2px offset on every interactive
+   * element, including table rows and menu items.
+   */
+  :focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+  }
+
+  /* Design.md section 15 / brief section 16: respect reduced motion. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  /* Every numeric column and metric. Foundations 02. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+}
