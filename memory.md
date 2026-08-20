@@ -389,6 +389,19 @@ output permanently. This is not a Phase 5 note — it applies to every phase aft
 These assertions are kept in `tests/browser/rendered-output.py` and run against a
 production build at the end of each phase.
 
+### One fixed surface is not a fixed class
+Phase 8's three "state changed, screen didn't move" bugs were fixed one at a
+time, and an audit then found a fourth already live and worse: the dashboard
+LAYOUT reads the plan, so /billing showed 412 / 2,000 while /dashboard showed
+412 / 200. No click involved — the seller upgrades, navigates, and the product
+contradicts itself quietly.
+
+Fixed at the source rather than per page (D47): getSession() reads cookies(), so
+every page that depends on who is asking is dynamic — including pages nobody has
+written yet. When a fix is "this surface now reflects state", always ask which
+OTHER surfaces read that state. The answer is usually "a shared layout, on every
+page".
+
 ### Drive the control, don't just render the page
 Phase 8's cancel flow returned 303 from every route and changed nothing on
 screen: the billing page was prerendered, and the mock store was a different Map

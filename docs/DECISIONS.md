@@ -1802,3 +1802,63 @@ waiting for a reader; it is now `number`, with `0` meaning the plan connects no 
 
 The rule: a limit belongs to the plan. Every surface reads it — the copilot, the shell,
 the meters, the upgrade prompt — and none of them restates it.
+
+
+---
+
+## D47 — A session is per-request, so nothing that reads one is prerendered
+
+The three Phase 8 defects were three faces of one failure: **state changed and the
+screen did not move.** Fixing them individually left the class open, and an audit found a
+fourth instance already live.
+
+### The audit
+
+| Class | Elsewhere? |
+|---|---|
+| Hardcoded / env-defaulted URL in a redirect | Clean. One instance, fixed; every redirect now resolves against `request.url`. |
+| Module-level mutable state crossing a bundle boundary | Clean. Every other module-level binding is a cache of a deterministic value or a frozen constant — duplicating one per bundle costs a recompute, not a disagreement. |
+| A prerendered page reading mutable state | **Still live, and worse than the original.** |
+
+### The fourth instance
+
+The dashboard *layout* reads the plan for the shell chip. `/billing` was made dynamic;
+every other page was still prerendered at build time. So after an upgrade:
+
+```
+/billing    412 / 2,000 listings     ← correct
+/dashboard  412 / 200 listings       ← the plan it was built with
+```
+
+One page fixed, ten pages wrong — and worse than the button bug, because there is no
+click to make a reviewer suspicious. The seller upgrades, navigates, and the product
+quietly contradicts itself.
+
+### The fix, placed where it cannot be forgotten
+
+Not `export const dynamic` on ten pages — the next page added would be the eleventh
+mistake. `getSession()` now reads the request's cookies:
+
+```ts
+export async function getSession(): Promise<Session | null> {
+  await cookies()          // Phase 11 reads the auth cookie here
+  if (isDemoMode()) return DEMO_SESSION
+  return null
+}
+```
+
+This is not a trick to force a render mode. **A session is per-request by definition**, so
+a page whose content depends on who is asking cannot be prerendered, and touching the
+request is how that fact is expressed. Demo mode returning a constant session was hiding a
+real property of the product. Every dashboard page is now dynamic, including the ones that
+do not exist yet.
+
+### The check that would have caught it
+
+Change plan, then read the shell chip on three different pages and assert they agree.
+Verified by removing the cookie read: the check fails with the numbers in its message
+("billing 412 / 2,000, dashboard 412 / 200"), which is what a reviewer needs to see.
+
+**The general rule:** when a fix is "this surface now reflects state", the next question is
+always *which other surfaces read that state* — and the answer is usually "a shared layout,
+on every page".

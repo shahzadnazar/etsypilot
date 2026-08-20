@@ -274,6 +274,44 @@ with sync_playwright() as p:
         check(back and "Your plan is cancelled" not in pg.locator("main").inner_text(),
               "Resuming actually resumes")
 
+    # The shell must agree with the billing page across a navigation.
+    # Found by reading two pages after one change: /billing said "412 / 2,000"
+    # while /dashboard still said "412 / 200" — the shell reads the plan and
+    # every page but billing was prerendered at build time. Same failure as the
+    # cancel button: state changed, screen did not move.
+    def shell_usage(route):
+        pg.goto(f"{BASE}{route}", wait_until="domcontentloaded")
+        pg.wait_for_selector("main", timeout=15000)
+        pg.wait_for_timeout(300)
+        found = re.search(r"[\d,]+ / [\d,]+ listings", pg.locator("body").inner_text())
+        return found.group(0) if found else None
+
+    pg.goto(f"{BASE}/billing", wait_until="domcontentloaded")
+    pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(300)
+    upgrade = pg.get_by_role("button", name=re.compile("Upgrade to Growth"))
+    check(upgrade.count() >= 1, "An upgrade is offered from the demo plan")
+    if upgrade.count() >= 1:
+        upgrade.first.click()
+        wait_for_text(pg, "Growth · $29 per month")
+
+        on_billing = shell_usage("/billing")
+        on_dashboard = shell_usage("/dashboard")
+        on_profit = shell_usage("/profit")
+        check(
+            on_billing is not None and on_billing == on_dashboard == on_profit,
+            f"The plan chip agrees on every page after a change "
+            f"(billing {on_billing}, dashboard {on_dashboard}, profit {on_profit})",
+        )
+
+        # Put the demo shop back, so the run is repeatable.
+        pg.goto(f"{BASE}/billing", wait_until="domcontentloaded")
+        pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(300)
+        back = pg.get_by_role("button", name=re.compile("Move to Solo"))
+        if back.count() >= 1:
+            back.first.click()
+            wait_for_text(pg, "Solo · $15 per month")
+
+
     # Connect: the password disclosure and the revoke path.
     pg.goto(f"{BASE}/settings/shops", wait_until="domcontentloaded"); pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)
     conn = pg.locator("main").inner_text()
