@@ -704,3 +704,191 @@ are up 4% since — **measured, not claimed**."*
   Standing proposal: add an **Analytics** group (Shop Analytics · Sales Map ·
   Experiments · Orders); move **Change History** under Listings.
 - ~~**O4** — pricing~~ → **RESOLVED by D17.** Solo is $15.
+
+---
+
+# Round 3 — O1, O2, O3 resolved
+
+## D19 — Dark theme stays cool — RESOLVED (O1)
+
+**Ship D1's exact dark values. Do not warm them.**
+
+`--page-bg #0F172A` · `--surface #1E293B` · `--ink-2 #CBD5E1` · `--brand #E07A4A`
+
+Rationale, recorded so it is not re-litigated: the terracotta decision was about the
+**light theme**, which is the default and where the warm cream ground does the work.
+The dark theme is **a cool slate carrying a warm accent, deliberately** — and it is
+what all nineteen screens render today.
+
+### REJECTED ALTERNATIVE — warmed dark neutrals
+Considered and declined. Kept here only so the option is not re-proposed.
+
+| Token | Shipping | Rejected |
+|---|---|---|
+| `--page-bg` | `#0F172A` | ~~`#1A1410`~~ |
+| `--surface` / `--canvas-soft` | `#1E293B` | ~~`#241C16`~~ |
+| `--border` | `#2B3444` | ~~`#3A2E24`~~ |
+| `--ink-1` | `#F1F5F9` | ~~`#F7F3ED`~~ |
+| `--ink-2` | `#CBD5E1` | ~~`#DCD3C6`~~ |
+| `--muted-1` | `#94A3B8` | ~~`#A89B89`~~ |
+| `--muted-2` | `#64748B` | ~~`#7A6E5E`~~ |
+
+---
+
+## D20 — Multi-user is out of MVP — RESOLVED (O2)
+
+**Single owner, single shop. Park the surfaces, build the seams.**
+
+Justification on the record: none of the PRD's twelve must-haves or six success
+criteria involve a second person touching the shop.
+
+### Seams to build from day one (additive later at no cost)
+- `shop_id` **and** `actor_id` on every row.
+- Create the single-owner `Membership` row — needed regardless.
+- `approval_state` **nullable** on `BulkOperation`.
+- Repositories already take a shop context argument (D-audit §4), so shop scoping is
+  in place before multi-shop exists.
+
+### Do NOT build
+- The four-role capability matrix (artboard 74)
+- Client workspaces
+- The approval queue
+- The automation rule builder (artboard 106 / brief §9.22)
+- Any route behind them: `/team/*`, `/automations/*`
+
+### Parked screens (designed, not implemented)
+Team & roles (74) · agency delegation on Connect (10–11) · "Other shops" section on
+Shop connections (72) · approval notifications (75, 18) · permission-error
+pending-job state (84, keep the state, drop the approver reference).
+
+---
+
+## D21 — Final navigation IA — RESOLVED (O3)
+
+Supersedes the route map in `PHASE-0-AUDIT.md` §5.
+
+```
+Dashboard      Overview · Action Center · Shop Pulse
+Research       Keywords · Opportunities · Niche Research · Competitors · Keyword Lists
+Listings       All Listings · Listing Audit · AI Copilot · Bulk Editor · Change History
+Analytics      Shop Analytics · Sales Map · Experiments
+Profit         Profit Reality (Waterfall · Scenarios · Costs · Transactions tabs)
+Tools          Simple Calculator · Fee · Ads ROI · Profit · Category Finder ·
+               Seasonal Calendar · Keyword Lists · Trademark Screening
+Data           Methodology · Data Sources
+Billing
+Settings
+```
+
+- **Analytics** is a new group between Listings and Profit, with **exactly three
+  members** — all designed: Shop Analytics (51) · Sales Map (57–58) · Experiments (59–60).
+- **Change History** moves under Listings (it is the bulk-edit audit trail, and the
+  Bulk Editor links straight into it).
+
+### Correction applied: Orders is not a designed screen
+**Orders, Reviews, Inventory and Delivery status have no design anywhere** — they are
+nav items inherited from the old brief. They must not look built.
+
+**Decision: leave all four out of the navigation entirely.** An empty state still
+occupies a nav slot and implies the feature is imminent; omission is the honest
+default and is trivially reversible. If they are wanted later, Orders slots into
+Analytics and Inventory / Delivery status / Reviews into Listings.
+
+---
+
+## D22 — Plan copy — PROPOSED, awaiting decision
+
+O2 removes most of what Growth and Agency currently advertise. The billing screen
+(76–77) sells team seats, approvals, multi-shop and client workspaces — all parked.
+
+### What is actually left after O2
+Every tier differentiator that survives is **capacity or depth**, not seats or shops:
+listing capacity · AI generations · rollback window · Shop Pulse baseline depth ·
+profit scenarios · export · support.
+
+### The problem with each tier
+- **Growth** currently: "3 shops · Automation rules and scheduling · 5 team seats with
+  approvals". All three are parked. Only "500 AI generations" survives.
+- **Agency** currently: "10 shops · Client workspaces and approvals · White-label
+  reports". **All of it is parked.** Nothing distinct remains — there is no product to sell.
+
+### Recommendation — ship three tiers, hold Agency
+
+Agency without multi-shop and client workspaces is not a thin plan, it is an empty
+one. Listing it at $79 with nothing behind it is exactly the dark pattern `rules.md` §7
+forbids. Hold it until Phase 9+ and present three honest tiers.
+
+| Plan | Price | Positioning line |
+|---|---|---|
+| **Free** | `$0` | Research and calculators, no shop connection |
+| **Solo** | `$15/mo` | One shop, up to 200 listings |
+| **Growth** | `$29/mo` | One shop, up to 2,000 listings |
+
+**Free — $0**
+- Keyword, niche and product research
+- All six calculators
+- Methodology and data sources
+- 5 AI generations / month
+- ✕ No shop connection, profit or bulk editing
+
+**Solo — $15/mo**
+- Everything in Free
+- Connect one Etsy shop, up to 200 listings
+- Profit Reality with scenarios, and cost setup
+- Bulk edits with validation, diff and 30-day rollback
+- Shop Pulse with 90-day baseline and weekly digest
+- 60 AI generations / month
+
+**Growth — $29/mo**
+- Everything in Solo
+- Up to 2,000 listings
+- 500 AI generations / month
+- 90-day rollback window
+- 12-month Shop Pulse history
+- Full data export (CSV and JSON)
+- Priority sync and support
+
+**Agency — not listed.** Replace the fourth card with a quiet line beneath the table:
+> "Managing several shops or a team? Multi-shop, roles and client approvals are in
+> development. Tell us what you need — we will not bill you for something that does not
+> exist yet."
+
+No price, no "coming soon" badge, no waitlist pressure.
+
+### Alternative, if all four tiers must appear now
+Keep Agency at `$79` but rewrite it as **capacity only** (unlimited listings, 2,000 AI
+generations, 12-month history, priority support) and delete every seat, shop and
+client-workspace claim. Honest, but a weak $79 — which is why I recommend holding it.
+
+### Screen consequences either way
+1. **Usage meters (76)** — drop `Connected shops 2/3` and `Team seats 2/5`. Two meters
+   remain: **Listings** and **AI generations**.
+2. **Upgrade-required state (16)** — currently *"Automation rules are on Growth… Rules,
+   approvals and multi-shop reporting start at Growth."* Automation is parked, so this
+   state must be re-pointed at a real limit. Replacement:
+   > **Upgrade required · You have reached 200 listings on Solo**
+   > Growth raises the limit to 2,000 listings and 500 AI generations — $29/month,
+   > cancel any time.
+3. **Solo's negative line (76)** — *"No automation or team seats"* → *"One shop"*.
+   Do not advertise the absence of something no tier has.
+4. **Shop connections (72)** — the "Other shops" section (Northlight, Harbour Ceramics)
+   comes out with multi-shop.
+5. **AI quotas (D8/Q7)** become **Free 5 · Solo 60 · Growth 500**. The Agency figure of
+   2,000 is held with the tier.
+
+Trial and refund terms from **D17** are unaffected: 14 days of Growth, no card, nothing
+charges automatically, 14-day refund window.
+
+---
+
+## Open items after round 3
+
+- **D22 plan copy** — proposed above, awaiting your decision. Not a blocker: Phase 1
+  touches no billing surface.
+- ~~**O1** dark neutrals~~ → **RESOLVED by D19.** Cool slate, exact D1 values.
+- ~~**O2** multi-user scope~~ → **RESOLVED by D20.** Out of MVP; seams built.
+- ~~**O3** orphaned surfaces~~ → **RESOLVED by D21.** Analytics group of three; Orders,
+  Reviews, Inventory and Delivery status omitted.
+- ~~**O4** pricing~~ → **RESOLVED by D17.** Solo is $15.
+
+**No blockers remain for Phase 1.**

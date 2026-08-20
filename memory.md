@@ -6,10 +6,11 @@
 ## 1. Current Status
 
 **Phase:** 0 — Discovery & Audit (COMPLETE)
-**Current task:** Awaiting go-ahead to begin Phase 1 — Foundation
+**Current task:** Ready to begin Phase 1 — Foundation
 **Current file being worked on:** None
-**Last completed task:** Recorded confirmed decisions → docs/DECISIONS.md
-**Blockers:** O2 (agency/team MVP scope) blocks final schema only. O1 (dark neutrals: D1 vs Q2 contradict) and O3 (home for orphaned designed surfaces) are non-blocking. O4 resolved (Solo = $15).
+**Last completed task:** Round 3 decisions D19-D22 recorded → docs/DECISIONS.md
+**Blockers:** NONE. O1-O4 all resolved. D22 (plan copy) is proposed and awaiting a
+decision, but touches no Phase 1 surface.
 
 ## 2. Current Objective
 
@@ -52,6 +53,9 @@ Keep the latest 5–10 meaningful items.
 - Round 2 designs received (artboards 93-108): Data & Methodology, Niche Research +
   Demo Mode + Digest, PRD Gap Fixes, Tools. Closes M6, M8, M9, M10, M11, M12, M16, M17
   and O4. Recorded as D9-D18.
+- Round 3: O1 resolved (dark stays cool slate), O2 resolved (multi-user out of MVP,
+  seams built), O3 resolved (Analytics group of three; Orders/Reviews/Inventory/
+  Delivery omitted). Recorded as D19-D21. Plan copy proposed as D22.
 
 ## 6. Files Currently Being Modified
 
@@ -155,6 +159,26 @@ Refund window 14 days from charge.
 Reason: Billing history (artboard 107) shows $15.00 Solo charges. Brief's $12 superseded.
 Impact: Closes O4.
 
+### 2026-08-19 — Dark theme stays cool slate
+Decision: Ship D1's exact dark values. Warmed neutrals rejected and recorded as such.
+Reason: The terracotta decision was about the light theme, which is the default. The dark
+theme is a cool slate carrying a warm accent, deliberately, and is what all 19 screens render.
+Impact: One CSS block. Do not re-propose warming.
+
+### 2026-08-19 — Multi-user out of MVP; build the seams
+Decision: Single owner, single shop. shop_id + actor_id on every row, single-owner
+Membership row, approval_state nullable on BulkOperation. No role matrix, client
+workspaces, approval queue or automation rule builder.
+Reason: None of the PRD's 12 must-haves or 6 success criteria involve a second person.
+Impact: Schema stays additive. Growth and Agency plan copy must be rewritten (D22).
+
+### 2026-08-19 — Navigation: Analytics group of three; four surfaces omitted
+Decision: Add Analytics (Shop Analytics, Sales Map, Experiments) between Listings and
+Profit. Change History moves under Listings. Orders, Reviews, Inventory and Delivery
+status are omitted from nav entirely - they have no design and must not look built.
+Reason: Owner correction - Orders is a nav item from the old brief, not a designed screen.
+Impact: Supersedes the route map in PHASE-0-AUDIT.md section 5.
+
 ### 2026-08-19 — Product name is "EtsyPilot", one word
 Decision: One word everywhere; EP monogram lockup unchanged; no two-word variant.
 Reason: Owner confirmation, matching every screen.
@@ -180,8 +204,9 @@ Always keep exactly one clear next step.
 
 ```text
 Next:
-Await go-ahead for Phase 1 — Foundation. Only O2 (agency/team MVP scope)
-gates the final schema; everything else in Phase 1 can proceed.
+Begin Phase 1 — Foundation: design tokens, Tailwind theme, UI primitives,
+app shell with the D21 sidebar, provenance + event models, mock Etsy service,
+Willow & Fern seed data.
 ```
 
 ## 16. Memory Update Rule
