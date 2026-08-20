@@ -145,9 +145,11 @@ PostHog: Not configured
 ## 12. Known Issues
 
 ```text
-- The corrected artboard 91 (residual wording, -57%) has not reached the repo -
-  the newest upload is the one already archived and still shows neither. Not
-  blocking: D25 makes the computation authoritative.
+- Design handoff bundle received and archived at docs/source/handoff (supersedes
+  docs/source/screens). Carries the residual wording and $4,937.15.
+- Two stale captions remain in the design source, both flagged and in flight with
+  the owner: "America/New_York" in Foundations and Analytics & Profit, and one
+  "$4,938" in a Shop Pulse summary tile. Code is already correct on both.
 - Google Fonts is loaded over the network; in a sandbox with no egress the font
   falls back to system sans. Consider self-hosting Inter in Phase 12.
 - Mobile top bar is functional but not yet the designed compact bar (logo, shop,
