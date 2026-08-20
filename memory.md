@@ -89,6 +89,20 @@ Keep the latest 5–10 meaningful items.
   were implying Verified and are now CALCULATED with the transform named. Sales and
   Offsite Ads stay VERIFIED (exact aggregates, not transforms). Every inputs row now
   carries its own badge, so locked is visibly not the same as verified.
+- D34: cost coverage was STATED (62%) while the ledger measured 83%, and three surfaces
+  claimed uncosted orders were "excluded rather than given an assumed cost" while the
+  waterfall applied the default 38% rule to all revenue. Coverage constant deleted and
+  computed in reconcile(); copy now names the fallback rule and what rests on it. Net
+  profit unchanged at $4,937.15 - no figure moved, only the sentences about it.
+- D34a: domain/profit/totals.ts (sumOrNull / partialSum / ledgerTotals) and a totals row
+  on the ledger where Cost and Profit go blank because 87 orders have no confirmed cost.
+- D33 recorded and audited: the inputs panel was the only surface with locked value
+  fields; every row carries its badge and the note naming its transform.
+- D35 closes D22 7a: Audit log sits under Shops & data, directly below Data permissions.
+  SETTINGS_NAV encoded in navigation.ts.
+- Refreshed design bundle archived: artboard 92 now gives every locked row its own badge,
+  the intro copy is corrected, and the three stale items (America/New_York, $4,938, -12%)
+  are gone from the source.
 - components/ui/numeric.tsx added: Money / Numeric / NumericCell. Money takes
   number | null and handles null itself, so no call site can render a null as zero or
   forget tabular-nums + nowrap. Applied across waterfall, scenarios, transactions,
@@ -170,11 +184,13 @@ PostHog: Not configured
 ## 12. Known Issues
 
 ```text
-- Design handoff bundle received and archived at docs/source/handoff (supersedes
-  docs/source/screens). Carries the residual wording and $4,937.15.
-- Two stale captions remain in the design source, both flagged and in flight with
-  the owner: "America/New_York" in Foundations and Analytics & Profit, and one
-  "$4,938" in a Shop Pulse summary tile. Code is already correct on both.
+- Design handoff bundle refreshed 2026-08-20 and archived at docs/source/handoff
+  (supersedes docs/source/screens). All previously flagged stale items are corrected
+  at source: UTC captions, $4,937.15, -57%, per-row badges in the inputs panel.
+- Open discrepancy, non-blocking: artboard 92 shows Labour as "$24 / hr" while the
+  domain models it as a period total (labourTotal), which is what the screen's own
+  missing-data row describes ("labour is applied as a period total"). Flagged, not
+  changed - a per-unit labour model is a Phase 7+ change, not a caption fix.
 - Google Fonts is loaded over the network; in a sandbox with no egress the font
   falls back to system sans. Consider self-hosting Inter in Phase 12.
 - Mobile top bar is functional but not yet the designed compact bar (logo, shop,
@@ -311,6 +327,16 @@ output permanently. This is not a Phase 5 note — it applies to every phase aft
 These assertions are kept in `tests/browser/rendered-output.py` and run against a
 production build at the end of each phase.
 
+### Break every new rendered-output check before keeping it
+A check that has never failed is a check that has never been shown to test
+anything. Before a new assertion goes into rendered-output.py, break the thing
+it watches on purpose and confirm it goes red, then restore. Done for D34a
+(sumOrNull made to skip nulls -> two checks failed), for the D34 copy (exclusion
+claim restored -> two checks failed) and for measured coverage (constant put
+back -> the unit test failed). Both of this phase's false positives matched
+prose sitting near the thing under test rather than the thing itself, and a
+deliberate break is what separates the two.
+
 ### Assert on what's painted, never on what's shipped
 Scope browser assertions to **visible text** — `page.locator('main').inner_text()`,
 not the raw HTML. Searching the HTML also matches the RSC serialization payload,
@@ -332,6 +358,13 @@ the string was in the wire format, not on the screen.
 - Bulk changes require validation, diff, confirmation, audit, and rollback where supported.
 - Profit Reality must show coverage/confidence.
 - Every important screen needs loading/empty/error/success/partial/unavailable states.
+- Locked is not the same as verified (D33). Read-only styling and provenance are
+  orthogonal; a greyed field reads as authoritative, so any disabled or derived
+  field anywhere needs its badge.
+- A null in a column total propagates (D34a). sumOrNull has no skipNulls option;
+  partialSum is the explicit alternative and returns the count it left out.
+- A screen may fall back to a seller's own assumption, but it must name the
+  assumption and what rests on it, and never call that exclusion (D34).
 - Provenance is a property of the number as displayed, not of its source table (D32).
   Any transform — projection, proration, currency conversion, apportioning a
   shop-level fee across listings — demotes a verified figure and names what was done.

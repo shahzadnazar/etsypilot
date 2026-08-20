@@ -9,7 +9,8 @@ import { getEtsyService } from '@/lib/etsy'
 import {
   DEMO_COST_INPUTS,
   DEMO_COUNTS,
-  DEMO_TOTALS,
+  demoConfirmedCosts,
+  demoUnmatchedOrderIds,
   PERIOD_END,
   PERIOD_START,
 } from '@/lib/etsy/demo-dataset'
@@ -64,11 +65,11 @@ export async function getProfitView(ctx: ShopContext): Promise<ProfitView> {
   }
 
   // Costs exist for most listings, not all. The gap is the point of the screen.
-  const withCost = listings.filter((_, i) => i % 8 !== 0)
-  const costs = new Map(
-    withCost.map((l) => [l.etsyListingId, Number((l.price * assumptions.cogsPercent).toFixed(2))]),
-  )
-  const unmatchedOrderIds = new Set(orders.slice(0, 8).map((o) => o.etsyReceiptId))
+  // One resolver supplies the confirmed-cost set everywhere it is needed, so
+  // the coverage figure and the ledger can never describe different sets.
+  const costs = demoConfirmedCosts(listings)
+  const withCost = listings.filter((l) => costs.has(l.etsyListingId))
+  const unmatchedOrderIds = demoUnmatchedOrderIds(orders)
 
   const reconciliation = reconcile({ orders, listings, costs, unmatchedOrderIds })
   const missingData = missingDataFrom({
@@ -77,7 +78,8 @@ export async function getProfitView(ctx: ShopContext): Promise<ProfitView> {
     labourRecorded: false,
   })
 
-  const coverage = DEMO_TOTALS.costCoveragePercent / 100
+  // Measured from the reconciliation, not stated. See D34.
+  const coverage = reconciliation.coveragePercent / 100
   const { results, comparison } = buildScenarios(verified, assumptions, { coverage, missingData })
 
   return {
@@ -91,7 +93,7 @@ export async function getProfitView(ctx: ShopContext): Promise<ProfitView> {
     inputs: inputRows(verified, assumptions, shop.currency),
     reconciliation,
     costSetup: {
-      coveragePercent: DEMO_TOTALS.costCoveragePercent,
+      coveragePercent: reconciliation.coveragePercent,
       listingsCovered: DEMO_COUNTS.activeListings - DEMO_COUNTS.listingsWithoutCost,
       listingsMissing: DEMO_COUNTS.listingsWithoutCost,
       defaultRule: {

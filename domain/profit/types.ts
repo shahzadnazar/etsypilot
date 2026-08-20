@@ -106,8 +106,14 @@ export interface ReconciliationSummary {
   matched: number
   partial: number
   unmatched: number
-  /** Order value that cannot be included in profit until resolved. */
+  /** Order value with no confirmed cost, so no per-order profit is computed. */
   excludedValue: number
+  /** Order value carrying a confirmed per-listing cost. */
+  confirmedGross: number
+  /** Order value costed by the seller's default rule instead. */
+  ruleCostedGross: number
+  /** Measured share of order value with a confirmed cost. Never a constant. */
+  coveragePercent: number
   rows: TransactionRow[]
 }
 

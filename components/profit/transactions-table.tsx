@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card'
 import type { ReconciliationStatus, ReconciliationSummary } from '@/domain/profit/types'
 import { STATUS_LABEL } from '@/domain/profit/types'
 import { Money, NumericCell } from '@/components/ui/numeric'
+import { ledgerTotals } from '@/domain/profit/totals'
 import { formatCurrency, formatDate } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
 
@@ -33,9 +34,15 @@ export function TransactionsTable({
   currency: string
 }) {
   const [filter, setFilter] = useState<ReconciliationStatus | 'ALL'>('ALL')
-  const rows = reconciliation.rows
-    .filter((r) => filter === 'ALL' || r.status === filter)
-    .slice(0, 12)
+  /*
+    `matching` is every order in the current filter; `rows` is the sample on
+    screen. The totals row sums `matching`, never `rows` — a Total under a
+    truncated table that only added the visible twelve would be wrong twice
+    over, and wrong in the direction of looking complete.
+  */
+  const matching = reconciliation.rows.filter((r) => filter === 'ALL' || r.status === filter)
+  const rows = matching.slice(0, 12)
+  const totals = ledgerTotals(matching)
 
   const filters: (ReconciliationStatus | 'ALL')[] = ['ALL', 'MATCHED', 'PARTIAL', 'UNMATCHED']
   const countFor = (f: ReconciliationStatus | 'ALL') =>
@@ -78,6 +85,7 @@ export function TransactionsTable({
         <table className="w-full min-w-[720px] border-collapse text-body">
           <caption className="sr-only">
             Transactions for the period, with reconciliation status and how to resolve exceptions.
+            Showing {rows.length} of {matching.length}; the totals row covers all {matching.length}.
           </caption>
           <thead>
             <tr className="bg-canvas-soft text-left text-label text-muted-1">
@@ -153,12 +161,55 @@ export function TransactionsTable({
               )
             })}
           </tbody>
+
+          {/*
+            The totals row propagates nulls rather than skipping them. If one
+            order has no confirmed cost, the Cost and Profit totals are unknown —
+            not the sum of the orders that happen to be costed. A total that
+            added up only the rows it understood would reassert, in the position
+            a reader trusts most, a number this same table just said it did not
+            have.
+          */}
+          <tfoot>
+            <tr className="border-t-2 border-line bg-canvas-soft">
+              <th scope="row" colSpan={2} className="px-4 py-3 text-left text-small font-semibold text-ink-1">
+                Total · all {matching.length} orders in this filter
+                <span className="mt-0.5 block text-caption font-normal text-muted-1">
+                  {totals.uncostedOrders > 0
+                    ? `${totals.uncostedOrders} have no confirmed cost, so cost and profit cannot be totalled`
+                    : 'Every order in this filter has a confirmed cost'}
+                </span>
+              </th>
+              <NumericCell className="font-semibold text-ink-1">
+                <Money value={totals.gross} currency={currency} />
+              </NumericCell>
+              <NumericCell className="font-semibold text-ink-1">
+                <Money value={totals.fees} currency={currency} negate />
+              </NumericCell>
+              <NumericCell className="font-semibold text-ink-1">
+                <Money
+                  value={totals.cost}
+                  currency={currency}
+                  negate
+                  unknownLabel={`Unknown — ${totals.uncostedOrders} orders have no confirmed cost`}
+                />
+              </NumericCell>
+              <NumericCell className="font-semibold text-ink-1">
+                <Money
+                  value={totals.profit}
+                  currency={currency}
+                  unknownLabel={`Unknown — cost is unknown for ${totals.uncostedOrders} orders`}
+                />
+              </NumericCell>
+              <td className="px-4 py-3" />
+            </tr>
+          </tfoot>
         </table>
       </Card>
 
       <p className="text-caption leading-relaxed text-muted-1">
-        Unmatched and partial transactions are excluded from profit until resolved, rather than
-        given an assumed cost.
+        Unmatched and partial transactions have no confirmed cost, so no profit is computed for
+        them and no column total can include them. Resolving one turns two dashes into figures.
       </p>
     </div>
   )

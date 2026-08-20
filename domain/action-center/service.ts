@@ -151,7 +151,7 @@ function missingCosts(ctx: ShopContext, coveragePercent: number): Action {
     priority: 11,
     severity: 'ATTENTION',
     title: `${total} listings have no product cost`,
-    explanation: `Profit is calculated for ${coveragePercent}% of order value. Those ${total} listings are excluded rather than given an assumed cost.`,
+    explanation: `${coveragePercent}% of order value has a confirmed cost. The other ${100 - coveragePercent}% falls back to your default rule, so profit for those ${total} listings rests on an assumption you set rather than a cost you confirmed.`,
     evidence: {
       summary: `${total} of ${DEMO_COUNTS.activeListings} active listings have no cost rule · ${formatCurrency(6998)} of order value uncovered`,
       provenance: 'CALCULATED',

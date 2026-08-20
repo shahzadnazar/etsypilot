@@ -177,7 +177,7 @@ export function inputRows(
       locked: true,
       // A count of receipts is an exact aggregate, not a transform.
       provenance: 'VERIFIED',
-      note: 'Counted from your receipts',
+      note: 'counted from your receipts',
     },
     {
       key: 'averagePrice',
@@ -185,15 +185,15 @@ export function inputRows(
       value: money(verifiedTotals.grossRevenue / Math.max(1, verifiedTotals.orderCount)),
       locked: true,
       provenance: 'CALCULATED',
-      note: 'Gross revenue ÷ orders — cannot be edited',
+      note: 'revenue ÷ orders',
     },
     {
       key: 'etsyFees',
       label: 'Etsy fees',
-      value: `${((verifiedTotals.etsyFees / verifiedTotals.grossRevenue) * 100).toFixed(1)}% effective`,
+      value: `${((verifiedTotals.etsyFees / verifiedTotals.grossRevenue) * 100).toFixed(1)}%`,
       locked: true,
       provenance: 'CALCULATED',
-      note: 'Fees charged ÷ gross revenue — cannot be edited',
+      note: 'fees ÷ revenue',
     },
     {
       key: 'ads',
@@ -201,7 +201,7 @@ export function inputRows(
       value: money(verifiedTotals.offsiteAds),
       locked: true,
       provenance: 'VERIFIED',
-      note: 'Charged by Etsy — cannot be edited',
+      note: 'charged by Etsy',
     },
     { key: 'cogs', label: 'COGS', value: `${(assumptions.cogsPercent * 100).toFixed(1)}%`, locked: false, provenance: 'SELLER_INPUT' },
     { key: 'shipping', label: 'Shipping', value: `${money(assumptions.shippingPerOrder)} / order`, locked: false, provenance: 'SELLER_INPUT' },

@@ -98,3 +98,41 @@ export const MOBILE_TABS: NavItem[] = [
   { label: 'Analytics', href: '/analytics' },
   { label: 'More', href: '/settings/profile' },
 ]
+
+/*
+ * Settings sub-navigation (D22 consequence 7, as amended by D35).
+ *
+ * `Team & roles` is gone with multi-user parked (D20) and the Workspace group
+ * with it. `Audit log` sits under Shops & data directly below Data permissions:
+ * it is a record of what happened to shop data, next to the export and deletion
+ * controls a seller reaches for in the same frame of mind. It is not an account
+ * surface — it is not about the person, it is about the shop.
+ *
+ * Not to be confused with Change History (Listings), which records listing
+ * mutations and rollback. Different surfaces; they do not merge.
+ */
+export const SETTINGS_NAV: NavGroup[] = [
+  {
+    label: 'Account',
+    items: [
+      { label: 'Profile', href: '/settings/profile' },
+      { label: 'Security', href: '/settings/security' },
+      { label: 'Notifications', href: '/settings/notifications' },
+      { label: 'Billing & plan', href: '/billing' },
+    ],
+  },
+  {
+    label: 'Shops & data',
+    items: [
+      { label: 'Shop connections', href: '/settings/shops' },
+      { label: 'Data permissions', href: '/settings/data-permissions' },
+      { label: 'Audit log', href: '/settings/audit-log' },
+      { label: 'Costs & fees', href: '/settings/costs' },
+      { label: 'Export & deletion', href: '/settings/export' },
+    ],
+  },
+  {
+    label: 'Integrations',
+    items: [{ label: 'Browser Extension', href: '/settings/extension' }],
+  },
+]

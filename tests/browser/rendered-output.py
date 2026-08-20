@@ -67,8 +67,8 @@ with sync_playwright() as p:
     # tells the seller that all locked lines are verified, because two are not.
     check("Verified lines are read from your receipts" not in main,
           "Inputs panel no longer claims every locked line is verified")
-    check("Gross revenue ÷ orders" in main, "Average price names the transform on screen")
-    check("Fees charged ÷ gross revenue" in main, "Etsy fee rate names the transform on screen")
+    check("revenue ÷ orders" in main, "Average price names the transform on screen")
+    check("fees ÷ revenue" in main, "Etsy fee rate names the transform on screen")
     inputs = main[main.find("Inputs"):]
     check(inputs.count("figures from the demo shop") >= 8,
           "Every input row carries its own badge (demo override, D11)")
@@ -82,6 +82,25 @@ with sync_playwright() as p:
     check(pg.get_by_text(re.compile("Not computed")).first.count() > 0,
           "Unknown profit em dash carries an accessible reason")
 
+
+    # --- The totals row propagates the unknown (D34a) ---
+    # Verified: broken deliberately before being kept — with sumOrNull changed to
+    # skip nulls, this check fails on the em-dash assertion, as it must.
+    check("Total · all" in tx, "The ledger has a totals row")
+    total_row = tx[tx.find("Total · all"):]
+    check("have no confirmed cost, so cost and profit cannot be totalled" in total_row,
+          "The totals row says why cost and profit are blank")
+    check("—" in total_row[:400], "Cost and profit totals render the em dash, not a sum")
+    check(pg.get_by_text(re.compile("Unknown . cost is unknown for")).first.count() > 0,
+          "The blank profit total carries its reason for screen readers")
+
+    # --- The page does not claim an exclusion it does not perform (D34) ---
+    pg.goto(f"{BASE}/profit", wait_until="domcontentloaded"); pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)
+    banner = pg.locator("main").inner_text()
+    check("exclude the rest rather than assuming a cost" not in banner,
+          "Banner no longer claims uncosted orders are excluded")
+    check("they are a floor" not in banner, "Banner no longer calls net profit a floor")
+    check("costed by your default rule" in banner, "Banner names the fallback rule")
 
     # --- Money cells never wrap ---
     pg.set_viewport_size({"width": 390, "height": 900})

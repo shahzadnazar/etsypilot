@@ -97,7 +97,6 @@ export const DEMO_TOTALS = {
   otherCosts: 302.05,
   netProfit: 4938.2,
   orderCount: 438,
-  costCoveragePercent: 62,
 } as const
 
 /** Shop Pulse baselines, from the shop's own 90-day history. */
@@ -110,8 +109,15 @@ export const DEMO_COST_INPUTS = {
   cogsPercent: DEMO_TOTALS.cogs / DEMO_TOTALS.grossRevenue,
   labourTotal: DEMO_TOTALS.labour,
   otherCosts: DEMO_TOTALS.otherCosts,
-  coverage: DEMO_TOTALS.costCoveragePercent / 100,
-} as const
+  /**
+   * Computed below from the orders and the confirmed-cost set, never stated.
+   * A coverage figure is a measurement of this shop's own data; writing one
+   * down as a constant is the same mistake as authoring a Shop Pulse number.
+   */
+  get coverage(): number {
+    return demoCostCoverage().coverage
+  },
+}
 
 export const DEMO_BASELINE = {
   orders: 512,
@@ -606,4 +612,61 @@ function apportion(orders: EtsyOrder[], field: 'etsyFees' | 'paymentProcessing' 
   const last = out[out.length - 1]
   if (last && drift !== 0) last[field] = round2(last[field] + drift)
   return out
+}
+
+/*
+ * Which listings have a confirmed per-listing cost.
+ *
+ * One resolver, used by the profit service, the bulk editor page and the
+ * coverage computation below. Two call sites deriving "which listings are
+ * costed" independently is how a screen comes to disagree with its own
+ * coverage figure.
+ */
+export function demoConfirmedCosts(listings: EtsyListing[]): Map<string, number> {
+  const cogsPercent = DEMO_TOTALS.cogs / DEMO_TOTALS.grossRevenue
+  return new Map(
+    listings
+      .filter((_, i) => i % 8 !== 0)
+      .map((l) => [l.etsyListingId, Number((l.price * cogsPercent).toFixed(2))]),
+  )
+}
+
+/** Orders whose supplier invoice never arrived, so they cannot be costed at all. */
+export function demoUnmatchedOrderIds(orders: EtsyOrder[]): Set<string> {
+  return new Set(orders.slice(0, 8).map((o) => o.etsyReceiptId))
+}
+
+let coverageCache: { coverage: number; confirmedGross: number; ruleGross: number } | null = null
+
+/**
+ * Cost coverage, measured.
+ *
+ * `coverage` is the share of order value carrying a confirmed per-listing cost.
+ * The rest is costed by the seller's default rule, which is a seller input, not
+ * a confirmed cost - so it is counted in the waterfall and named as a rule
+ * wherever the split is shown.
+ */
+export function demoCostCoverage(): { coverage: number; confirmedGross: number; ruleGross: number } {
+  if (coverageCache) return coverageCache
+  const listings = buildDemoListings()
+  const orders = buildDemoOrders(listings)
+  const costs = demoConfirmedCosts(listings)
+  const unmatched = demoUnmatchedOrderIds(orders)
+
+  let confirmedGross = 0
+  let ruleGross = 0
+  for (const order of orders) {
+    const listingId = order.items[0]?.etsyListingId ?? ''
+    const confirmed = costs.has(listingId) && !unmatched.has(order.etsyReceiptId)
+    if (confirmed) confirmedGross += order.gross
+    else ruleGross += order.gross
+  }
+
+  const total = confirmedGross + ruleGross
+  coverageCache = {
+    coverage: total === 0 ? 0 : confirmedGross / total,
+    confirmedGross: round2(confirmedGross),
+    ruleGross: round2(ruleGross),
+  }
+  return coverageCache
 }

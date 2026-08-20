@@ -1027,8 +1027,9 @@ All open items are closed. **Phase 1 is unblocked.**
 | ~~O4~~ pricing | **D17** — Solo is $15 |
 | ~~D22~~ plan copy | **Approved** — three tiers, Agency held |
 
-One item carries a flagged resolution awaiting confirmation, non-blocking:
-**7a** — settings sidebar, `Audit log` placement.
+~~One item carries a flagged resolution awaiting confirmation, non-blocking:
+**7a** — settings sidebar, `Audit log` placement.~~ **Closed by the owner 2026-08-20 —
+see D35.**
 
 
 ---
@@ -1333,3 +1334,128 @@ exports `Money`, `Numeric` and `NumericCell`. `Money` takes `number | null` and
 handles the null case itself, so no call site can render a null as zero or forget
 `font-variant-numeric: tabular-nums` and `white-space: nowrap`. Money cells were
 wrapping mid-value; a shared cell is the fix that cannot be forgotten.
+
+
+---
+
+## D33 — Locked is not the same as verified
+
+**Owner, 2026-08-20:** *"A greyed field reads as authoritative, so read-only styling and
+provenance are orthogonal and both must be shown. That generalises past this panel: any
+disabled or derived field anywhere needs its badge."*
+
+**Decision.** Read-only state and provenance are two independent facts about a field, and
+a screen must show both:
+
+| Fact | Says | Shown by |
+|---|---|---|
+| Locked | you cannot change this | the lock icon, the greyed fill |
+| Provenance | where the number came from | the badge, and only the badge |
+
+Neither implies the other. A field can be locked and Calculated (`Average price`), locked
+and Verified (`Sales`), editable and Seller input (`COGS`). A future surface could have an
+unlocked Estimated field and nothing about that would be contradictory.
+
+**Why this is not a styling note.** Greying a field is a trust signal whether or not it is
+meant as one: it reads as "the system owns this number", which is precisely the claim
+Verified makes. A locked field with no badge therefore asserts Verified by default, and it
+asserts it in the one place a seller cannot argue with — a control they are not permitted
+to touch.
+
+**Scope.** Every disabled, read-only or derived field in the product, not just the Profit
+Reality inputs panel. Phase 6 onward — Listing Audit scores, Keyword Explorer volume and
+competition figures, AI Copilot drafts, calculator outputs — these are mostly derived and
+mostly read-only, and each one needs its badge at the point of display.
+
+**Audited 2026-08-20.** The inputs panel was the only surface in the product with locked
+value fields; every row now carries its own badge and the note that names its transform.
+Buttons and dialog controls are actions, not figures, and take no badge.
+
+---
+
+## D34 — Coverage is measured, and the page says what it actually does
+
+Found while checking the null-propagation property the owner asked about. Three
+statements about the same 30 days disagreed:
+
+| Source | Said |
+|---|---|
+| The ledger | 87 of 438 orders have no confirmed cost — $3,200.96, 17.4% of order value |
+| The banner | "Costs are confirmed for 62% of order value" |
+| The waterfall | COGS = 38% × **all** gross revenue, uncosted orders included |
+
+Two separate faults.
+
+**1. Coverage was stated, not measured.** `DEMO_TOTALS.costCoveragePercent: 62` was a
+constant, and the measured figure is 83%. This is D25 ("never author a figure — measure
+it") in a new place, and a worse place: coverage is the number a seller uses to decide how
+much of the rest of the screen to believe. **Constant deleted.** `reconcile()` now returns
+`coveragePercent`, `confirmedGross` and `ruleCostedGross`, computed from the rows, and the
+banner, the waterfall, the Costs tab and the Action Center all read that one figure. A
+test asserts the displayed coverage equals the share the ledger supports.
+
+**2. The copy claimed an exclusion that never happened.** Three surfaces said uncosted
+orders were "excluded rather than given an assumed cost" and that net profit was therefore
+"a floor". The waterfall does no such thing — it applies the seller's default cost rule
+(38% of price) to all revenue, which `computeWaterfall`'s own comment already described.
+So the page rendered a dash in the ledger and then quietly included the same order in the
+total above it.
+
+**Resolution: the mechanism stays, the claims change.** The default rule is the right
+mechanism — it is the seller's own configured assumption, advertised on the Costs tab as
+"applies where no specific cost exists", and it carries SELLER_INPUT on the COGS line. The
+strict alternative — propagate the null all the way up, so one uncosted order makes Net
+profit unknown — would blank the product's headline figure over 17% of orders, and a
+product whose answer to a coverage gap is a dash is not a product. So:
+
+- **The waterfall** says the uncovered share is costed by your default rule, names the
+  rule and the amount ($3,200.96), and says net profit is only as good as that rule.
+- **The ledger** assumes nothing per order: cost and profit stay blank wherever no
+  confirmed cost exists, and the column totals go blank with them.
+- Neither surface claims exclusion any more, because neither excludes.
+
+Net profit is unchanged at **$4,937.15** — no figure moved, only the sentences about it.
+
+**The general rule this leaves behind:** a screen may fall back to a seller's own
+assumption, but it must name the assumption, name what rests on it, and never describe
+that as exclusion. Falling back silently and calling it a floor is worse than either
+honest option.
+
+### D34a — A null in a column total propagates
+
+`domain/profit/totals.ts`: `sumOrNull` returns null if any single value is null. There is
+deliberately **no `skipNulls` option**. The explicit alternative is `partialSum`, which
+returns `{ knownTotal, unknownCount }` — it cannot be mistaken for a total because it
+arrives carrying the count of what it left out.
+
+The transactions ledger now has a totals row, which is the point: Gross and Fees total
+because they are known on every row; Cost and Profit render the em dash with "Unknown — 87
+orders have no confirmed cost". A total is the position a reader trusts most, so it is the
+worst place to sum the rows we happen to understand.
+
+The totals row sums the **filtered set**, not the twelve rows on screen. A total under a
+truncated table that added only the visible rows would be wrong twice, and wrong in the
+direction of looking complete.
+
+---
+
+## D35 — Audit log lives under Shops & data (closes D22 7a)
+
+**Owner, 2026-08-20:** *"Put it in the Shops & data group, directly under Data
+permissions. It's a record of what happened to shop data, which is what that group is
+about, and it sits next to the export and delete controls a seller reaches for in the same
+frame of mind. Not under Account — it isn't about the person, it's about the shop."*
+
+```
+Account       Profile · Security · Notifications · Billing & plan
+Shops & data  Shop connections · Data permissions · Audit log · Costs & fees ·
+              Export & deletion
+Integrations  Browser Extension
+```
+
+Supersedes the D22 7a resolution that folded it into Account. Encoded in
+`components/layout/navigation.ts` as `SETTINGS_NAV` so the settings screens in Phase 6
+build against the decided order rather than the artboard's.
+
+**Unchanged:** `Audit log` (account and shop-data events) and `Change History` (listing
+mutations and rollback) remain different surfaces and do not merge.

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { getProfitView, totalsFrom } from '@/domain/profit/service'
 import { buildScenarios, computeScenario, inputRows, SCENARIO_SHAPES } from '@/domain/profit/scenarios'
 import { missingDataFrom, reconcile } from '@/domain/profit/reconciliation'
+import { ledgerTotals, partialSum, sumOrNull } from '@/domain/profit/totals'
 import type { SellerAssumptions, VerifiedTotals } from '@/domain/profit/types'
 import { DEMO_SHOP_ID } from '@/lib/etsy/demo-dataset'
 
@@ -26,10 +27,15 @@ describe('a seller can never adjust a verified figure', () => {
     expect(editable).toEqual(['cogs', 'shipping', 'labour', 'other'])
   })
 
-  it('says why a locked row is locked', () => {
+  it('says where a locked row came from, not just that it is locked', () => {
     const rows = inputRows(verified, assumptions, 'USD')
-    const fees = rows.find((r) => r.key === 'etsyFees')
-    expect(fees?.note).toContain('cannot be edited')
+    for (const row of rows.filter((r) => r.locked)) {
+      // D33: the lock says "you cannot change this". Only the badge and its
+      // note say where the number came from, and a greyed field reads as
+      // authoritative until something says otherwise.
+      expect(row.provenance).toBeTruthy()
+      expect(row.note).toBeTruthy()
+    }
   })
 
   it('leaves fees untouched when only the assumptions change', () => {
@@ -158,9 +164,46 @@ describe('missing data is a first-class state', () => {
     expect(ads?.resolutions[0]?.href).toContain('methodology')
   })
 
-  it('says net profit is a floor when coverage is incomplete', () => {
+  it('says what actually happens to an uncosted order, in both places', () => {
     const gap = view.results.BASE.missingData.find((m) => m.code === 'NO_PRODUCT_COST')
-    expect(gap?.detail).toContain('floor')
+    // The waterfall falls back to the seller's default rule; the ledger does
+    // not. Claiming exclusion in one place while the other assumes a rule is
+    // how a page reasserts a number it said it did not have.
+    expect(gap?.detail).toContain('default cost rule')
+    expect(gap?.detail).toContain('ledger')
+    expect(gap?.detail).not.toContain('excluded from profit')
+  })
+
+  it('measures cost coverage instead of stating it', () => {
+    const { rows, coveragePercent, confirmedGross, ruleCostedGross } = view.reconciliation
+    const gross = rows.reduce((s, r) => s + r.gross, 0)
+    const confirmed = rows.filter((r) => r.cost !== null).reduce((s, r) => s + r.gross, 0)
+
+    expect(coveragePercent).toBe(Math.round((confirmed / gross) * 100))
+    expect(confirmedGross + ruleCostedGross).toBeCloseTo(gross, 1)
+    // The figure the seller reads must be the figure the ledger supports.
+    expect(view.results.BASE.coveragePercent).toBe(coveragePercent)
+    expect(view.costSetup.coveragePercent).toBe(coveragePercent)
+  })
+
+  it('propagates a null through a column total rather than skipping it', () => {
+    const totals = ledgerTotals(view.reconciliation.rows)
+    expect(totals.uncostedOrders).toBeGreaterThan(0)
+    expect(totals.cost).toBeNull()
+    expect(totals.profit).toBeNull()
+    // Verified columns are complete on every row, so they still total.
+    expect(totals.gross).toBeGreaterThan(0)
+    expect(totals.fees).toBeGreaterThan(0)
+  })
+
+  it('totals every value once every value is known', () => {
+    const costed = view.reconciliation.rows.filter((r) => r.cost !== null)
+    const totals = ledgerTotals(costed)
+    expect(totals.cost).not.toBeNull()
+    expect(totals.profit).toBeCloseTo(
+      costed.reduce((s, r) => s + (r.profit ?? 0), 0),
+      1,
+    )
   })
 
   it('drops a gap once it no longer applies', () => {
@@ -209,5 +252,31 @@ describe('D32 — provenance follows the number as displayed, not its source tab
     }
     // A locked row that is not verified is exactly the case the badge exists for.
     expect(rows.some((r) => r.locked && r.provenance !== 'VERIFIED')).toBe(true)
+  })
+})
+
+describe('a null in a column total propagates', () => {
+  it('returns null from sumOrNull if any single value is unknown', () => {
+    expect(sumOrNull([1, 2, 3])).toBe(6)
+    expect(sumOrNull([1, null, 3])).toBeNull()
+    expect(sumOrNull([])).toBe(0)
+  })
+
+  it('offers no way to skip nulls without saying so', () => {
+    // partialSum is the explicit alternative, and it cannot be mistaken for a
+    // total: it comes back with the count of what it left out.
+    const p = partialSum([1, null, 3])
+    expect(p.knownTotal).toBe(4)
+    expect(p.unknownCount).toBe(1)
+  })
+
+  it('reports how much order value sits behind the unknown rows', () => {
+    const totals = ledgerTotals([
+      { gross: 10, fees: 1, cost: 4, profit: 5 },
+      { gross: 20, fees: 2, cost: null, profit: null },
+    ])
+    expect(totals.profit).toBeNull()
+    expect(totals.uncostedOrders).toBe(1)
+    expect(totals.uncostedGross).toBe(20)
   })
 })

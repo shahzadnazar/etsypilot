@@ -49,8 +49,12 @@ export function ProfitTabs({ view, demo }: { view: ProfitView; demo: boolean }) 
           <strong className="font-semibold" style={{ color: '#78350F' }}>
             Costs are confirmed for {result.coveragePercent}% of order value.
           </strong>{' '}
-          The figures below exclude the rest rather than assuming a cost — they are a floor, not an
-          estimate of your whole shop.
+          The other{' '}
+          <Money value={view.reconciliation.ruleCostedGross} currency={view.currency} /> is costed
+          by your default rule ({view.costSetup.defaultRule.label}), which is your assumption rather
+          than a confirmed cost. Net profit below includes it and is only as good as that rule. Per
+          order, nothing is assumed: the ledger leaves cost and profit blank wherever no confirmed
+          cost exists.
         </div>
       ) : null}
 

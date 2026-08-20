@@ -19,9 +19,9 @@ export function InputsPanel({ rows, demo = false }: { rows: InputRow[]; demo?: b
       <div className="border-b border-line p-[18px]">
         <h3 className="text-section text-ink-1">Inputs</h3>
         <p className="mt-1 text-caption leading-relaxed text-muted-1">
-          Locked lines come from your Etsy data and cannot be edited here — some are read
-          straight from your receipts, some are calculated from them. The badge on each row
-          says which. Seller inputs drive the scenarios.
+          Locked rows cannot be edited here — the badge on each says whether it came from
+          Etsy or was derived. Seller inputs drive the scenarios, and scenarios change the
+          waterfall only: the transactions ledger always shows real receipts.
         </p>
       </div>
 
@@ -43,12 +43,17 @@ export function InputsPanel({ rows, demo = false }: { rows: InputRow[]; demo?: b
                   </>
                 ) : null}
                 {row.label}
-                {/* Locked is not the same as verified — the badge says which. */}
-                <ProvenanceBadge type={row.provenance} demo={demo} />
               </span>
-              {row.note ? (
-                <span className="text-caption text-muted-1">{row.note}</span>
-              ) : null}
+              {/*
+                Locked is not the same as verified (D33). Read-only styling and
+                provenance are orthogonal: a greyed field reads as authoritative,
+                so the badge is what says where the number came from — never the
+                lock icon, and never the fact that it cannot be edited.
+              */}
+              <span className="flex flex-wrap items-center gap-1.5 text-caption text-muted-1">
+                <ProvenanceBadge type={row.provenance} demo={demo} />
+                {row.note ? <span>· {row.note}</span> : null}
+              </span>
             </dt>
 
             <dd className="shrink-0">

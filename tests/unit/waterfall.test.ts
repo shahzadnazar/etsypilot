@@ -4,6 +4,7 @@ import {
   buildDemoListings,
   buildDemoOrders,
   DEMO_COST_INPUTS,
+  demoCostCoverage,
   DEMO_TOTALS,
 } from '@/lib/etsy/demo-dataset'
 
@@ -70,8 +71,15 @@ describe('profit waterfall', () => {
   })
 
   it('never presents incomplete profit as complete', () => {
-    expect(result.coveragePercent).toBe(62)
-    expect(result.missingData.join(' ')).toContain('floor')
+    // Measured, not stated - no literal here, on purpose.
+    expect(result.coveragePercent).toBe(Math.round(demoCostCoverage().coverage * 100))
+    expect(result.coveragePercent).toBeLessThan(100)
+
+    const missing = result.missingData.join(' ')
+    // The waterfall does fall back to the default rule, so it must say so
+    // rather than claiming the uncosted orders were left out.
+    expect(missing).toContain('default rule')
+    expect(missing).not.toContain('floor')
   })
 
   it('reproduces every designed cost line from artboard 92', () => {

@@ -111,7 +111,7 @@ function describeMissing(coveragePercent: number, costs: CostInputs): string[] {
   const missing: string[] = []
   if (coveragePercent < 100) {
     missing.push(
-      `Costs are confirmed for ${coveragePercent}% of order value. The figures exclude the rest rather than assuming a cost — they are a floor, not an estimate of your whole shop.`,
+      `Costs are confirmed for ${coveragePercent}% of order value. The rest is costed by your default rule, which is your own assumption rather than a confirmed cost, so net profit is only as good as that rule.`,
     )
   }
   if (costs.labourTotal === 0) missing.push('No labour minutes recorded per product.')

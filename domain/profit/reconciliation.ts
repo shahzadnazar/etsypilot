@@ -90,12 +90,26 @@ export function reconcile(args: ReconcileArgs): ReconciliationSummary {
   })
 
   const excluded = rows.filter((r) => r.status !== 'MATCHED')
+  const grossTotal = rows.reduce((s, r) => s + r.gross, 0)
+  const confirmedGross = rows
+    .filter((r) => r.status === 'MATCHED')
+    .reduce((s, r) => s + r.gross, 0)
 
   return {
     matched: rows.filter((r) => r.status === 'MATCHED').length,
     partial: rows.filter((r) => r.status === 'PARTIAL').length,
     unmatched: rows.filter((r) => r.status === 'UNMATCHED').length,
     excludedValue: round2(excluded.reduce((s, r) => s + r.gross, 0)),
+    /*
+     * Measured here, never stated. Coverage is the share of order value with a
+     * confirmed per-listing cost; the remainder is costed by the seller's
+     * default rule. A constant would be an authored figure, and an authored
+     * coverage figure is worse than none - it is the number a seller uses to
+     * decide how much of the screen to believe.
+     */
+    confirmedGross: round2(confirmedGross),
+    ruleCostedGross: round2(grossTotal - confirmedGross),
+    coveragePercent: grossTotal === 0 ? 100 : Math.round((confirmedGross / grossTotal) * 100),
     rows,
   }
 }
@@ -133,7 +147,7 @@ export function missingDataFrom(args: {
       code: 'NO_PRODUCT_COST',
       title: `${args.listingsWithoutCost} listings without a product cost`,
       detail:
-        'Their orders are excluded from profit rather than given an assumed cost, so net profit is a floor.',
+        'Their orders fall back to your default cost rule in the waterfall, and are left blank in the ledger — no per-order profit is computed without a confirmed cost.',
       affectedValue: args.summary.excludedValue,
       resolutions: [
         { label: 'Add costs', href: '/profit?tab=costs', kind: 'PRIMARY' },
