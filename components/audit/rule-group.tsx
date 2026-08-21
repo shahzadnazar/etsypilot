@@ -23,8 +23,8 @@ import { Money, NumericCell } from '@/components/ui/numeric'
 import type { RuleResult } from '@/domain/audit/service'
 
 const SEVERITY_FILL = {
-  ERROR: { bg: '#FEF2F2', border: '#FECACA', fg: '#991B1B' },
-  WARNING: { bg: '#FFFBEB', border: '#FDE68A', fg: '#92400E' },
+  ERROR: { bg: 'var(--danger-surface)', border: 'var(--danger-border)', fg: 'var(--danger-ink)' },
+  WARNING: { bg: 'var(--warning-surface)', border: 'var(--warning-border)', fg: 'var(--warning-ink)' },
 } as const
 
 export function RuleGroup({
@@ -141,7 +141,7 @@ export function RuleGroup({
         {rule.bulkFixable ? (
           <Link
             href={`/listings/bulk-editor?rule=${rule.code}`}
-            className="inline-flex h-11 items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-white hover:bg-brand-strong md:h-[38px]"
+            className="inline-flex h-11 items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-brand-on hover:bg-brand-strong md:h-[38px]"
           >
             Review &amp; fix {result.count} in bulk
           </Link>

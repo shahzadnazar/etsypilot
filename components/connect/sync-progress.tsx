@@ -64,7 +64,7 @@ export function SyncProgress({ sync }: { sync: SyncState }) {
       {sync.pausedNotice ? (
         <p
           className="border-t border-line p-[18px] text-small leading-relaxed"
-          style={{ background: '#FFFBEB', color: '#92400E' }}
+          style={{ background: 'var(--warning-surface)', color: 'var(--warning-ink)' }}
         >
           {sync.pausedNotice}
         </p>

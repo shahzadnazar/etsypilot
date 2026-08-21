@@ -77,7 +77,7 @@ export default async function KeywordListsPage() {
               <div className="mt-auto flex flex-wrap gap-2 pt-1">
                 <Link
                   href={`/listings/bulk-editor?list=${list.id}`}
-                  className="inline-flex h-11 items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-white hover:bg-brand-strong md:h-[38px]"
+                  className="inline-flex h-11 items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-brand-on hover:bg-brand-strong md:h-[38px]"
                 >
                   Apply to listings
                 </Link>

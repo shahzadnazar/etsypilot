@@ -37,7 +37,15 @@ export function PlanCards({
             className={cn('flex flex-col gap-3 p-[18px]', current && 'border-brand bg-brand-tint')}
           >
             <div className="flex items-baseline justify-between gap-2">
-              <h3 className="text-section text-ink-1">{plan.name}</h3>
+              {/*
+                * h2, not h3. Each plan card is a top-level section of the
+                * billing page, sibling to "Billing history" and "Trial terms",
+                * and the page's only h1 is its title. As an h3 it skipped a
+                * level, which for anyone navigating by heading reads as a
+                * subsection of something that does not exist. Same size on
+                * screen — text-section — so nothing moves.
+                */}
+              <h2 className="text-section text-ink-1">{plan.name}</h2>
               {current ? (
                 <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-brand-strong">
                   Your plan
@@ -108,7 +116,7 @@ export function PlanCards({
                     className={cn(
                       'h-11 w-full rounded-control text-[12px] font-semibold md:h-[38px]',
                       change.kind === 'UPGRADE'
-                        ? 'bg-brand text-white hover:bg-brand-strong'
+                        ? 'bg-brand text-brand-on hover:bg-brand-strong'
                         : 'border border-line text-ink-2 hover:bg-canvas-soft',
                     )}
                   >

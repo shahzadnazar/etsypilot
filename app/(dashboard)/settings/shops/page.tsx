@@ -76,7 +76,7 @@ export default async function ShopConnectionsPage({
               */}
             <Link
               href={`/api/etsy/connect?scopes=${defaultScopeKeys.join(',')}`}
-              className="inline-flex h-11 items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-white hover:bg-brand-strong md:h-[38px]"
+              className="inline-flex h-11 items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-brand-on hover:bg-brand-strong md:h-[38px]"
             >
               Connect a shop
             </Link>

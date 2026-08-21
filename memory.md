@@ -6,7 +6,9 @@
 ## 1. Current Status
 
 **Phase:** 12 — Quality & Production Hardening (IN PROGRESS)
-**Current task:** Phase 12. Security headers + CSP done. Next: accessibility pass.
+**Current task:** Phase 12. Security headers + CSP done; accessibility (WCAG A/AA, both
+themes) done. Next: error/observability hardening, then the remaining free tools and the
+designed mobile top bar.
 **Current file being worked on:** None
 **Last completed task:** OAuth 2.0 + PKCE, rate-limited HTTP client, encrypted token store,
 the full LiveEtsyService adapter and both /api/etsy routes — all written and tested with NO
@@ -615,6 +617,39 @@ Corollary, and the reason it stayed hidden: **a third-party dependency is invisi
 the DOM, invisible in the unit tests, and on a fast machine invisible in the browser.**
 The only thing that catches it is asserting on the ORIGIN of each request. That check
 now exists and names the offending URL when it fires.
+
+### A check that passes when the thing it measures is absent is not a check
+
+Three times now, in three different shapes:
+
+1. "Every font file is local" passed during a deliberate break, because the blocked
+   stylesheet meant zero font preloads existed and `all([])` is True (D51a).
+2. The extension audit's first catch was its own deny-list (D48).
+3. The axe check passed with the original contrast bug reinstated, because the
+   affected pill lives behind a tab nobody clicked (D53a).
+
+Two habits that catch it:
+
+- **Break it deliberately, and if the break passes, the CHECK is the bug** — not the
+  code. That is how all three were found.
+- Ask what the check reads when the feature is missing entirely. If the answer is
+  "green", add the existence half: `bool(fonts) and all(...)`, a marker proving the tab
+  opened, an artefact scan rather than a source scan.
+
+Corollary for UI checks: **the audited surface is (route, state, theme), not route.**
+Anything behind a tab, a modal or a toggle is uncovered until something drives it.
+
+### Semantic colour is a pair, and both halves must live in the same theme block
+
+A foreground token that flips (`var(--danger)`) painted on a background literal that does
+not (`#FEF2F2`) reads 7.6:1 in light and 2.5:1 in dark. Each half looks reasonable in the
+source; only the pairing is wrong, and only in one theme. 222 contrast failures across 10
+pages, in a product that had passed every phase's browser check.
+
+Also: **a token used as a background needs a paired "on" token.** In dark, `--brand` and
+`--success` are LIGHT colours, so `text-white` on them is 2.98:1 and 1.92:1.
+
+Compute contrast, never eyeball it. See D53.
 
 ## 16. Memory Update Rule
 

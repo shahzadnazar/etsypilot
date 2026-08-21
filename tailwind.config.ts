@@ -13,13 +13,20 @@ const config: Config = {
           DEFAULT: 'var(--brand)',
           strong: 'var(--brand-strong)',
           tint: 'var(--brand-tint)',
+          /*
+           * Text that sits ON the brand colour. White in light, near-black in
+           * dark, because the dark brand (#E07A4A) is a light orange: white on
+           * it measures 2.98:1, which fails AA. A literal text-white next to
+           * bg-brand looks correct and is unreadable in one of the two themes.
+           */
+          on: 'var(--on-brand)',
         },
         ink: { 1: 'var(--ink-1)', 2: 'var(--ink-2)' },
         muted: { 1: 'var(--muted-1)', 2: 'var(--muted-2)' },
         line: 'var(--border)',
         surface: 'var(--surface)',
         canvas: { DEFAULT: 'var(--page-bg)', soft: 'var(--canvas-soft)' },
-        success: { DEFAULT: 'var(--success)', strong: 'var(--success-strong)' },
+        success: { DEFAULT: 'var(--success)', strong: 'var(--success-strong)', on: 'var(--on-success)' },
         warning: { DEFAULT: 'var(--warning)', strong: 'var(--warning-strong)' },
         danger: { DEFAULT: 'var(--danger)', strong: 'var(--danger-strong)' },
         ai: 'var(--accent-ai)',

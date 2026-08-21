@@ -36,8 +36,8 @@ export function BulkStepper({ current }: { current: number }) {
               <span
                 className={cn(
                   'tnum flex h-[18px] w-[18px] items-center justify-center rounded-full text-[10px] font-semibold',
-                  active && 'bg-brand text-white',
-                  done && 'bg-success text-white',
+                  active && 'bg-brand text-brand-on',
+                  done && 'bg-success text-success-on',
                   !active && !done && 'border border-line text-muted-1',
                 )}
               >

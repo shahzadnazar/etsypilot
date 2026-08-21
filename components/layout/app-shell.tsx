@@ -29,14 +29,28 @@ export function AppShell({
 }) {
   return (
     <div className="flex min-h-screen flex-col bg-canvas">
-      {isDemo ? <DemoBanner /> : null}
+      {/*
+        * Both of these sit above the sidebar and the top bar, so they belonged
+        * to no landmark at all — and a screen-reader user navigating by
+        * landmark could reach neither. Not a technicality: the demo banner is
+        * the notice saying nothing on screen can be published to Etsy.
+        *
+        * They get one landmark EACH rather than a shared one, because they are
+        * different things. A shared role="banner" would also have been a second
+        * banner on the page — TopBar's <header> is already the first — and
+        * "two banners" is its own violation. The fix for a missing landmark
+        * must not be another landmark in the wrong place.
+        */}
+      <nav aria-label="Skip links">
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:m-2 focus:rounded-control focus:bg-surface focus:px-3 focus:py-2 focus:text-body"
+        >
+          Skip to content
+        </a>
+      </nav>
 
-      <a
-        href="#main"
-        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:m-2 focus:rounded-control focus:bg-surface focus:px-3 focus:py-2 focus:text-body"
-      >
-        Skip to content
-      </a>
+      {isDemo ? <DemoBanner /> : null}
 
       <div className="flex flex-1 overflow-hidden">
         <Sidebar plan={plan} listingUsage={listingUsage} />

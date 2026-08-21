@@ -15,10 +15,10 @@ import type { Invoice, InvoiceStatus } from '@/lib/billing/interface'
 import { formatCalendarDate } from '@/lib/utils/format'
 
 const STATUS_FILL: Record<InvoiceStatus, { bg: string; border: string; fg: string; label: string }> = {
-  PAID: { bg: '#F0FDF4', border: '#BBF7D0', fg: '#166534', label: 'Paid' },
+  PAID: { bg: 'var(--success-surface)', border: 'var(--success-border)', fg: 'var(--success-ink)', label: 'Paid' },
   REFUNDED: { bg: '#ECFEFF', border: '#A5F3FC', fg: '#0E7490', label: 'Refunded' },
-  DECLINED: { bg: '#FEF2F2', border: '#FECACA', fg: '#991B1B', label: 'Card declined' },
-  OPEN: { bg: '#FFFBEB', border: '#FDE68A', fg: '#92400E', label: 'Open' },
+  DECLINED: { bg: 'var(--danger-surface)', border: 'var(--danger-border)', fg: 'var(--danger-ink)', label: 'Card declined' },
+  OPEN: { bg: 'var(--warning-surface)', border: 'var(--warning-border)', fg: 'var(--warning-ink)', label: 'Open' },
 }
 
 export function BillingHistory({ invoices }: { invoices: Invoice[] }) {

@@ -2282,3 +2282,76 @@ diagnosis in one line, where the first only says a script was refused.
 It counts what is SERVED rather than reading the source, because nothing in the source says
 which chunk a component lands in. Same rule as the extension audit (D48): check the
 artefact, not the source.
+
+### D53 — Semantic colour is a PAIR, and the pair lives in one place
+
+The first axe run over the finished product found **222 colour-contrast failures across 10
+pages**, in a product that had passed every phase's browser check.
+
+The largest group was one mistake repeated: a foreground token that flips with the theme,
+painted on a background literal that does not.
+
+```
+CRITICAL: { bg: '#FEF2F2', border: '#FECACA', fg: 'var(--danger)' }
+```
+
+In light that reads 7.6:1. In dark, `--danger` becomes `#F87171` while `#FEF2F2` stays pale
+pink: **2.5:1**. Nothing in the source looks wrong, because each half is individually
+reasonable. Only the pairing is wrong, and only in one theme.
+
+So semantic colour is now three tokens per state — `--danger-surface`, `--danger-border`,
+`--danger-ink`, and the same for warning and success — defined together in each theme block.
+The fg and the bg come from the same block, so they cannot disagree. 71 literals across 12
+components were replaced.
+
+**A token used as a BACKGROUND needs a paired "on" token.** `--brand` and `--success` are
+painted with text on top, and in dark both are LIGHT colours: `text-white` on them measures
+2.98:1 and 1.92:1. `--on-brand` and `--on-success` are white in light and near-black in
+dark. 21 `text-white` class strings became `text-brand-on`.
+
+Two token values were changed outright for AA, overriding D1's "copied verbatim from the
+canvases, do not re-derive":
+
+| Token | Was | Now | Why |
+| --- | --- | --- | --- |
+| `--muted-2` light | `#8C7F6C` | `#756A58` | 3.91:1 on white → 5.30:1 |
+| `--muted-2` dark | `#64748B` | `#8B9AAE` | 3.07:1 on surface → 5.11:1 |
+| `--danger` dark | `#F87171` | `#FA8A8A` | 4.23:1 on a selected (brand-tint) row → 5.06:1 |
+
+D1 says ship the canvas values. It did not anticipate that three of them fail WCAG AA, and
+a design decision cannot make text readable that isn't. Recorded here rather than changed
+quietly. Every value was **computed**, not eyeballed — candidates were run through a
+contrast calculator against every ground they actually sit on.
+
+Result: **222 → 0** WCAG A/AA violations, both themes.
+
+Landmarks and headings, from the same run:
+
+- The skip link and the demo banner sat above every landmark, so landmark navigation reached
+  neither — including the notice saying nothing on screen can be published to Etsy. They now
+  get one landmark each: a labelled `nav` for the skip link, `role="status"` for the banner.
+  Not a shared `role="banner"`, which would have been a *second* banner on the page and its
+  own violation. **The fix for a missing landmark must not be another landmark in the wrong
+  place.**
+- `/billing` went `h1` → `h3`, which reads as a subsection of something that does not exist.
+  Plan names are `h2`, siblings of "Billing history". Same `text-section` size, so nothing
+  moved on screen.
+
+### D53a — A tab is a state, not a page
+
+The axe check was written to audit each route as it loads. A deliberate break proved it
+hollow: the original bug was reinstated verbatim in the Transactions table's UNMATCHED pill,
+and **the check passed** — that pill lives behind a tab nobody had clicked.
+
+The audited surface is `(route, state, theme)`. Anything reachable only by driving a control
+has to be driven first, or it is not covered however green the line reads. With the tabs
+driven, the same break fails with `{'color-contrast': ['dark:/profit#Transactions(8)']}` —
+the theme, the route, the state and the node count.
+
+The tab markers are not optional either. `open_tab(pg, name, "")` returns after one click
+whether or not anything opened, so an empty marker would audit the previous tab twice and
+report it as coverage. Each entry carries a marker proving the tab's own content is on
+screen, and a tab that never opens is recorded as a failure.
+
+Same rule as D51a and D48: **a check that passes when the thing it measures is absent is not
+a check.** That is now the third time this exact shape has appeared.

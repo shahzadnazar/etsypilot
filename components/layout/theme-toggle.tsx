@@ -36,7 +36,7 @@ export function ThemeToggle() {
           onClick={() => apply(m)}
           className={cn(
             'rounded-full px-2.5 py-1.5 text-[11px] font-semibold capitalize transition-colors duration-150',
-            mode === m ? 'bg-brand text-white' : 'text-ink-2 hover:bg-canvas-soft',
+            mode === m ? 'bg-brand text-brand-on' : 'text-ink-2 hover:bg-canvas-soft',
           )}
         >
           {m}

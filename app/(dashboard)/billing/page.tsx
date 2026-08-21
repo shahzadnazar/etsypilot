@@ -171,7 +171,7 @@ export default async function BillingPage() {
               <button
                 type="submit"
                 className="h-11 rounded-control border px-3 text-[12px] font-semibold md:h-[38px]"
-                style={{ borderColor: '#FECACA', color: '#991B1B' }}
+                style={{ borderColor: 'var(--danger-border)', color: 'var(--danger-ink)' }}
               >
                 Cancel plan
               </button>

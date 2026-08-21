@@ -18,7 +18,7 @@
   --ink-1: #241B12;
   --ink-2: #4A4234;
   --muted-1: #6B6152;
-  --muted-2: #8C7F6C;
+  --muted-2: #756A58;
   --border: #E9E2D6;
   --surface: #FFFFFF;
   --canvas-soft: #FBF8F3;
@@ -29,6 +29,17 @@
   --warning-strong: #B45309;
   --danger: #B91C1C;
   --danger-strong: #B91C1C;
+  --success-surface: #F0FDF4;
+  --success-border: #BBF7D0;
+  --success-ink: #166534;
+  --warning-surface: #FFFBEB;
+  --warning-border: #FDE68A;
+  --warning-ink: #92400E;
+  --danger-surface: #FEF2F2;
+  --danger-border: #FECACA;
+  --danger-ink: #991B1B;
+  --on-brand: #FFFFFF;
+  --on-success: #FFFFFF;
   --accent-ai: #7C3AED;
   --accent-calc: #0891B2;
 }
@@ -45,7 +56,7 @@
   --ink-1: #F1F5F9;
   --ink-2: #CBD5E1;
   --muted-1: #94A3B8;
-  --muted-2: #64748B;
+  --muted-2: #8B9AAE;
   --border: #2B3444;
   --surface: #1E293B;
   --canvas-soft: #1E293B;
@@ -54,8 +65,19 @@
   --success-strong: #34D399;
   --warning: #FBBF24;
   --warning-strong: #FBBF24;
-  --danger: #F87171;
+  --danger: #FA8A8A;
   --danger-strong: #FCA5A5;
+    --success-surface: #12291F;
+  --success-border: #35895F;
+  --success-ink: #6EE7B7;
+  --warning-surface: #2A2113;
+  --warning-border: #A87816;
+  --warning-ink: #FCD34D;
+  --danger-surface: #2C1517;
+  --danger-border: #AE5252;
+  --danger-ink: #FCA5A5;
+  --on-brand: #241B12;
+  --on-success: #241B12;
   --accent-ai: #C4B5FD;
   --accent-calc: #67E8F9;
 }
@@ -68,7 +90,7 @@
     --ink-1: #F1F5F9;
     --ink-2: #CBD5E1;
     --muted-1: #94A3B8;
-    --muted-2: #64748B;
+    --muted-2: #8B9AAE;
     --border: #2B3444;
     --surface: #1E293B;
     --canvas-soft: #1E293B;
@@ -77,8 +99,19 @@
     --success-strong: #34D399;
     --warning: #FBBF24;
     --warning-strong: #FBBF24;
-    --danger: #F87171;
+    --danger: #FA8A8A;
     --danger-strong: #FCA5A5;
+    --success-surface: #12291F;
+    --success-border: #35895F;
+    --success-ink: #6EE7B7;
+    --warning-surface: #2A2113;
+    --warning-border: #A87816;
+    --warning-ink: #FCD34D;
+    --danger-surface: #2C1517;
+    --danger-border: #AE5252;
+    --danger-ink: #FCA5A5;
+    --on-brand: #241B12;
+    --on-success: #241B12;
     --accent-ai: #C4B5FD;
     --accent-calc: #67E8F9;
   }

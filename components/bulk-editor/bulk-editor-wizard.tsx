@@ -163,7 +163,7 @@ export function BulkEditorWizard({
                   <p
                     role="alert"
                     className="rounded-control border p-3 text-small leading-relaxed"
-                    style={{ background: '#FEF2F2', borderColor: '#FECACA', color: 'var(--ink-2)' }}
+                    style={{ background: 'var(--danger-surface)', borderColor: 'var(--danger-border)', color: 'var(--ink-2)' }}
                   >
                     {publishError}
                   </p>

@@ -26,7 +26,7 @@ export function Sidebar({ plan, listingUsage }: { plan: string; listingUsage: st
       className="hidden w-shell shrink-0 flex-col border-r border-line bg-surface lg:flex"
     >
       <div className="flex items-center gap-2.5 px-4 py-4">
-        <span className="flex h-[30px] w-[30px] items-center justify-center rounded-control bg-brand text-[12px] font-bold text-white">
+        <span className="flex h-[30px] w-[30px] items-center justify-center rounded-control bg-brand text-[12px] font-bold text-brand-on">
           EP
         </span>
         <span className="text-[15px] font-bold tracking-[-0.01em] text-ink-1">EtsyPilot</span>

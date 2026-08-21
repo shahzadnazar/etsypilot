@@ -32,7 +32,7 @@ export function PublicCalculator() {
           </span>
           <Link
             href="/onboarding"
-            className="inline-flex h-11 shrink-0 items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-white hover:bg-brand-strong md:h-[38px]"
+            className="inline-flex h-11 shrink-0 items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-brand-on hover:bg-brand-strong md:h-[38px]"
           >
             Create a free account
           </Link>

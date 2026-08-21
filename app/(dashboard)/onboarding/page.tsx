@@ -131,7 +131,7 @@ export default async function OnboardingPage({
                     'inline-flex h-11 shrink-0 items-center rounded-control px-3 text-[12px] font-semibold md:h-[38px]',
                     item.done
                       ? 'border border-line text-ink-2 hover:bg-canvas-soft'
-                      : 'bg-brand text-white hover:bg-brand-strong',
+                      : 'bg-brand text-brand-on hover:bg-brand-strong',
                   )}
                 >
                   {item.cta}

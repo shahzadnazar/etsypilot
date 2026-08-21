@@ -36,7 +36,7 @@ export default function ErrorBoundary({
       <div>
         <button
           onClick={reset}
-          className="rounded-control bg-brand px-3.5 py-2.5 text-[12.5px] font-semibold text-white"
+          className="rounded-control bg-brand px-3.5 py-2.5 text-[12.5px] font-semibold text-brand-on"
         >
           Reload
         </button>

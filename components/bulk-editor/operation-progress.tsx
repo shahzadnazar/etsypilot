@@ -59,7 +59,7 @@ export function OperationProgressPanel({
       {failures.length > 0 ? (
         <div
           className="rounded-control border p-3 text-small leading-relaxed"
-          style={{ background: '#FEF2F2', borderColor: '#FECACA', color: 'var(--danger)' }}
+          style={{ background: 'var(--danger-surface)', borderColor: 'var(--danger-border)', color: 'var(--danger-ink)' }}
           role="alert"
         >
           <span className="font-semibold">

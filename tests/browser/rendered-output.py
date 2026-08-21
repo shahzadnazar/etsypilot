@@ -220,6 +220,98 @@ with sync_playwright() as p:
           "Every script tag the app serves carries the CSP nonce"
           + ("" if unnonced == {} else f" — {unnonced}"))
 
+    # --- Accessibility, in BOTH themes -------------------------------------
+    #
+    # axe-core, run over real pages, in light and dark. Dark is not a courtesy
+    # pass: every finding of the serious class here was dark-only or
+    # dark-mostly, and none of them was visible in the source.
+    #
+    # What the first run found, on a product that looked finished:
+    #
+    #   222 colour-contrast nodes across 10 pages. The largest group was a
+    #   foreground token that flips with the theme painted on a background
+    #   literal that does not — var(--danger) on #FEF2F2 reads 7.6:1 in light
+    #   and 2.5:1 in dark. Each half looked reasonable in the source. Only the
+    #   pairing was wrong, and only in one theme.
+    #
+    #    40 region nodes. The skip link and the demo banner sat above every
+    #   landmark, so a screen-reader user navigating by landmark could reach
+    #   neither — including the notice saying nothing here can reach Etsy.
+    #
+    #     2 heading-order nodes. The billing page went h1 -> h3, which reads as
+    #   a subsection of something that does not exist.
+    #
+    # axe is injected through evaluate() rather than add_script_tag, because
+    # the CSP refuses an un-nonced inline script — correctly. Playwright's
+    # evaluate runs through CDP, which is not subject to the page's policy.
+    #
+    # A tab is a state, not a page. The first version of this check audited each
+    # route as it loads and nothing else, and a deliberate break proved it
+    # hollow: the original bug was put back verbatim — a flipping var(--danger)
+    # on a fixed #FEF2F2 — in the Transactions table's UNMATCHED pill, and the
+    # check PASSED, because that pill lives behind a tab nobody had clicked.
+    #
+    # So the audited surface is (route, state, theme). Anything reachable only
+    # by driving a control has to be driven first, or it is simply not covered
+    # however green the line reads.
+    axe_source = open("node_modules/axe-core/axe.min.js").read()
+    SURFACES = [
+        ("/dashboard", None),
+        ("/billing", None),
+        ("/profit", None),
+        # (tab name, a marker proving the tab's OWN content is on screen).
+        # An empty marker would make open_tab return after one click whether or
+        # not anything opened — auditing the previous tab twice and reporting
+        # it as coverage.
+        ("/profit", ("Transactions", "excluded from profit until")),
+        ("/profit", ("Scenarios", "Inputs")),
+        ("/shop-pulse", None),
+        ("/listings/audit", None),
+        ("/listings/bulk-editor", None),
+        ("/settings/shops", None),
+        ("/tools/etsy-seller-calculator", None),
+    ]
+    a11y = {}
+    for theme in ("light", "dark"):
+        for route, tab in SURFACES:
+            pg.goto(f"{BASE}{route}", wait_until="load")
+            pg.evaluate(f"document.documentElement.setAttribute('data-theme','{theme}')")
+            pg.wait_for_timeout(200)
+            if tab:
+                # Reuse the helper that waits for the tab's own content, rather
+                # than clicking and hoping — hydration lands late. If it never
+                # opens, that is recorded as a failure rather than passing as a
+                # clean audit of a surface nobody looked at.
+                name, marker = tab
+                if not open_tab(pg, name, marker):
+                    a11y.setdefault("tab-never-opened", []).append(f"{theme}:{route}#{name}")
+                pg.wait_for_timeout(300)
+            pg.evaluate(axe_source)
+            report = pg.evaluate("""async () => await axe.run(document, {
+              resultTypes: ['violations'],
+              runOnly: {type: 'tag', values: ['wcag2a','wcag2aa','wcag21a','wcag21aa']}
+            })""")
+            where = f"{theme}:{route}{'#' + tab[0] if tab else ''}"
+            for v in report["violations"]:
+                a11y.setdefault(v["id"], []).append(f"{where}({len(v['nodes'])})")
+    check(a11y == {},
+          "No WCAG A/AA violation on any page, in either theme"
+          + ("" if a11y == {} else f" — {dict(list(a11y.items())[:3])}"))
+
+    # The theme toggle must actually reach the tokens.
+    #
+    # Asserting on a rendered COLOUR, not on the attribute: setting data-theme
+    # and reading it back would pass even if every dark value were missing.
+    pg.goto(f"{BASE}/dashboard", wait_until="load")
+    shades = {}
+    for theme in ("light", "dark"):
+        pg.evaluate(f"document.documentElement.setAttribute('data-theme','{theme}')")
+        pg.wait_for_timeout(150)
+        shades[theme] = pg.evaluate(
+            "() => getComputedStyle(document.body).backgroundColor")
+    check(shades["light"] != shades["dark"],
+          f"The theme toggle repaints the page ({shades['light']} vs {shades['dark']})")
+
     # --- Profit Reality: inputs panel ---
     pg.goto(f"{BASE}/profit", wait_until="domcontentloaded"); pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)
     check(open_tab(pg, "Scenarios", "Inputs"), "Scenarios tab opens")

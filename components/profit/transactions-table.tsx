@@ -21,9 +21,9 @@ import { cn } from '@/lib/utils/cn'
  */
 
 const STATUS_FILL: Record<ReconciliationStatus, { bg: string; border: string; fg: string }> = {
-  MATCHED: { bg: '#F0FDF4', border: '#BBF7D0', fg: '#166534' },
-  PARTIAL: { bg: '#FFFBEB', border: '#FDE68A', fg: '#B45309' },
-  UNMATCHED: { bg: '#FEF2F2', border: '#FECACA', fg: 'var(--danger)' },
+  MATCHED: { bg: 'var(--success-surface)', border: 'var(--success-border)', fg: 'var(--success-ink)' },
+  PARTIAL: { bg: 'var(--warning-surface)', border: 'var(--warning-border)', fg: 'var(--warning-ink)' },
+  UNMATCHED: { bg: 'var(--danger-surface)', border: 'var(--danger-border)', fg: 'var(--danger-ink)' },
 }
 
 export function TransactionsTable({
@@ -123,7 +123,7 @@ export function TransactionsTable({
                             className={cn(
                               'rounded-control px-2 py-1 text-[11px] font-semibold',
                               r.kind === 'PRIMARY'
-                                ? 'bg-brand text-white hover:bg-brand-strong'
+                                ? 'bg-brand text-brand-on hover:bg-brand-strong'
                                 : 'border border-line text-ink-2 hover:bg-canvas-soft',
                             )}
                           >

@@ -58,7 +58,7 @@ export function MissingDataPanel({
                   className={cn(
                     'rounded-control px-2.5 py-1.5 text-[11.5px] font-semibold',
                     r.kind === 'PRIMARY'
-                      ? 'bg-brand text-white hover:bg-brand-strong'
+                      ? 'bg-brand text-brand-on hover:bg-brand-strong'
                       : 'border border-line text-ink-2 hover:bg-canvas-soft',
                   )}
                 >

@@ -44,9 +44,16 @@ export function ProfitTabs({ view, demo }: { view: ProfitView; demo: boolean }) 
       {result.coveragePercent < 100 ? (
         <div
           className="mb-4 rounded-card border p-4 text-small leading-relaxed"
-          style={{ background: '#FFFBEB', borderColor: '#FDE68A', color: '#92400E' }}
+          style={{ background: 'var(--warning-surface)', borderColor: 'var(--warning-border)', color: 'var(--warning-ink)' }}
         >
-          <strong className="font-semibold" style={{ color: '#78350F' }}>
+          {/*
+            * No colour override. The panel already sets --warning-ink, and
+            * font-semibold carries the emphasis. The literal darker amber that
+            * used to be here was the last hard-coded colour in the product: it
+            * did not flip with the theme, so in dark mode it was #78350F on a
+            * dark amber ground — 1.7:1, unreadable.
+            */}
+          <strong className="font-semibold">
             Costs are confirmed for {result.coveragePercent}% of order value.
           </strong>{' '}
           The other{' '}

@@ -199,7 +199,7 @@ export function SimpleCalculator({
             className={cn(
               'h-11 rounded-control px-3 text-[12px] font-semibold md:h-[38px]',
               result
-                ? 'bg-brand text-white hover:bg-brand-strong'
+                ? 'bg-brand text-brand-on hover:bg-brand-strong'
                 : 'cursor-not-allowed border border-line text-muted-1',
             )}
           >

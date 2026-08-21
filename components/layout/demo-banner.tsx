@@ -10,6 +10,14 @@ import Link from 'next/link'
 export function DemoBanner() {
   return (
     <div
+      /*
+       * A labelled region, so it is reachable by landmark navigation, and
+       * role="status" so a screen reader announces the mode rather than leaving
+       * it to be discovered. It says nothing here can be published to Etsy,
+       * which is the single most important sentence on the page.
+       */
+      role="status"
+      aria-label="Demo mode"
       className="flex flex-wrap items-center gap-2.5 px-4 py-2.5 md:px-[18px]"
       /*
        * Literal, not tokenised. --ink-1 inverts between themes, so using it here

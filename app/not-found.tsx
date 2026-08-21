@@ -12,7 +12,7 @@ export default function NotFound() {
       <div className="flex gap-2">
         <Link
           href="/dashboard"
-          className="rounded-control bg-brand px-3.5 py-2.5 text-[12.5px] font-semibold text-white"
+          className="rounded-control bg-brand px-3.5 py-2.5 text-[12.5px] font-semibold text-brand-on"
         >
           Back to overview
         </Link>

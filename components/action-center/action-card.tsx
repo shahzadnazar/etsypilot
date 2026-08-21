@@ -22,8 +22,8 @@ import { ProvenanceBadge } from '@/components/provenance/provenance-badge'
  */
 
 const SEVERITY_FILL: Record<ActionSeverity, { bg: string; border: string; fg: string }> = {
-  CRITICAL: { bg: '#FEF2F2', border: '#FECACA', fg: 'var(--danger)' },
-  ATTENTION: { bg: '#FFFBEB', border: '#FDE68A', fg: 'var(--warning-strong)' },
+  CRITICAL: { bg: 'var(--danger-surface)', border: 'var(--danger-border)', fg: 'var(--danger-ink)' },
+  ATTENTION: { bg: 'var(--warning-surface)', border: 'var(--warning-border)', fg: 'var(--warning-ink)' },
   INFO: { bg: 'var(--canvas-soft)', border: 'var(--border)', fg: 'var(--muted-1)' },
 }
 
@@ -83,7 +83,7 @@ export function ActionCard({ action, demo }: { action: Action; demo: boolean }) 
           ) : null}
 
           {isCompleted ? (
-            <Pill bg="#F0FDF4" border="#BBF7D0" fg="#166534">
+            <Pill bg="var(--success-surface)" border="var(--success-border)" fg="var(--success-ink)">
               Completed
             </Pill>
           ) : null}
@@ -133,9 +133,9 @@ function Marker({
     return (
       <span
         className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-control border"
-        style={{ background: '#F0FDF4', borderColor: '#BBF7D0' }}
+        style={{ background: 'var(--success-surface)', borderColor: 'var(--success-border)' }}
       >
-        <Check size={14} strokeWidth={3} style={{ color: '#166534' }} aria-hidden />
+        <Check size={14} strokeWidth={3} style={{ color: 'var(--success-ink)' }} aria-hidden />
       </span>
     )
   }
@@ -243,7 +243,7 @@ function Actions({ action }: { action: Action }) {
     <div className="flex shrink-0 flex-col gap-1.5 sm:w-[180px]">
       <Link
         href={action.destination.href}
-        className="rounded-control bg-brand px-3 py-2.5 text-center text-[12px] font-semibold text-white hover:bg-brand-strong"
+        className="rounded-control bg-brand px-3 py-2.5 text-center text-[12px] font-semibold text-brand-on hover:bg-brand-strong"
       >
         {action.destination.label}
       </Link>

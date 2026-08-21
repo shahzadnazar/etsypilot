@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils/cn'
 type Variant = 'primary' | 'secondary' | 'destructive' | 'quiet'
 
 const VARIANT_CLASS: Record<Variant, string> = {
-  primary: 'bg-brand text-white border border-brand hover:bg-brand-strong hover:border-brand-strong',
+  primary: 'bg-brand text-brand-on border border-brand hover:bg-brand-strong hover:border-brand-strong',
   secondary: 'bg-surface text-ink-2 border border-line hover:bg-canvas-soft',
   destructive: 'bg-surface text-danger border border-line hover:bg-canvas-soft',
   quiet: 'bg-transparent text-ink-2 border border-transparent hover:bg-canvas-soft',

@@ -61,7 +61,7 @@ export default async function ListingAuditPage() {
             </Link>
             <Link
               href="/listings/bulk-editor"
-              className="inline-flex h-11 items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-white hover:bg-brand-strong md:h-[38px]"
+              className="inline-flex h-11 items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-brand-on hover:bg-brand-strong md:h-[38px]"
             >
               Fix {view.bulkFixable} in bulk
             </Link>

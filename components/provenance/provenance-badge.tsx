@@ -26,9 +26,9 @@ import { PROVENANCE_LABEL, type ProvenanceType } from '@/lib/provenance/types'
 type Variant = { bg: string; border: string; fg: string; icon: LucideIcon }
 
 const VARIANTS: Record<ProvenanceType, Variant> = {
-  VERIFIED: { bg: '#F0FDF4', border: '#BBF7D0', fg: '#166534', icon: ShieldCheck },
+  VERIFIED: { bg: 'var(--success-surface)', border: 'var(--success-border)', fg: 'var(--success-ink)', icon: ShieldCheck },
   CALCULATED: { bg: '#ECFEFF', border: '#A5F3FC', fg: '#0E7490', icon: Calculator },
-  ESTIMATED: { bg: '#FFFBEB', border: '#FDE68A', fg: '#B45309', icon: TrendingUp },
+  ESTIMATED: { bg: 'var(--warning-surface)', border: 'var(--warning-border)', fg: 'var(--warning-ink)', icon: TrendingUp },
   SELLER_INPUT: { bg: 'var(--canvas-soft)', border: '#CBD5E1', fg: 'var(--ink-2)', icon: Pencil },
   AI_DRAFT: { bg: '#F5F3FF', border: '#DDD6FE', fg: '#6D28D9', icon: Wand2 },
   UNAVAILABLE: {

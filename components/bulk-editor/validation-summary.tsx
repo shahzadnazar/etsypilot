@@ -17,25 +17,25 @@ export function ValidationSummaryPanel({ summary }: { summary: ValidationSummary
           icon={<Check size={14} strokeWidth={3} aria-hidden />}
           label="Ready"
           count={summary.ready}
-          bg="#F0FDF4"
-          border="#BBF7D0"
-          fg="#166534"
+          bg="var(--success-surface)"
+          border="var(--success-border)"
+          fg="var(--success-ink)"
         />
         <Tile
           icon={<AlertTriangle size={14} strokeWidth={2.4} aria-hidden />}
           label="Warnings"
           count={summary.warnings}
-          bg="#FFFBEB"
-          border="#FDE68A"
-          fg="#B45309"
+          bg="var(--warning-surface)"
+          border="var(--warning-border)"
+          fg="var(--warning-ink)"
         />
         <Tile
           icon={<Ban size={14} strokeWidth={2.4} aria-hidden />}
           label="Blocked"
           count={summary.blocked}
-          bg="#FEF2F2"
-          border="#FECACA"
-          fg="var(--danger)"
+          bg="var(--danger-surface)"
+          border="var(--danger-border)"
+          fg="var(--danger-ink)"
         />
       </div>
 

@@ -45,7 +45,7 @@ export default async function AiCopilotPage({
             <Button variant="secondary">Discard draft</Button>
             <Link
               href={draft ? `/listings/bulk-editor?draft=${draft.id}` : '/listings/audit'}
-              className="inline-flex h-11 items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-white hover:bg-brand-strong md:h-[38px]"
+              className="inline-flex h-11 items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-brand-on hover:bg-brand-strong md:h-[38px]"
               aria-disabled={draft === null}
             >
               {draft ? 'Send to review' : 'No draft to review'}

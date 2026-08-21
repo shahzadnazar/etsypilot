@@ -134,7 +134,7 @@ export default async function KeywordsPage({
             <Button variant="secondary">Save to list</Button>
             <Link
               href="/listings/ai-copilot"
-              className="inline-flex h-11 items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-white hover:bg-brand-strong md:h-[38px]"
+              className="inline-flex h-11 items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-brand-on hover:bg-brand-strong md:h-[38px]"
             >
               Optimize a listing with selected
             </Link>

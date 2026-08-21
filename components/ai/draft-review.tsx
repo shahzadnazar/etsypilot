@@ -134,7 +134,7 @@ export function DraftReview({ draft, demo }: { draft: AiDraft; demo: boolean }) 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <Link
             href={`/listings/bulk-editor?draft=${draft.id}`}
-            className="inline-flex h-11 items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-white hover:bg-brand-strong md:h-[38px]"
+            className="inline-flex h-11 items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-brand-on hover:bg-brand-strong md:h-[38px]"
           >
             Send to review
           </Link>
@@ -189,7 +189,7 @@ function TagList({
             className="rounded-control border px-2 py-1 text-caption"
             style={
               isNew
-                ? { background: '#F0FDF4', borderColor: '#BBF7D0', color: '#166534' }
+                ? { background: 'var(--success-surface)', borderColor: 'var(--success-border)', color: 'var(--success-ink)' }
                 : { borderColor: 'var(--border)', color: 'var(--ink-2)' }
             }
           >
@@ -202,7 +202,7 @@ function TagList({
         <li
           key={t}
           className="rounded-control border px-2 py-1 text-caption line-through"
-          style={{ background: '#FEF2F2', borderColor: '#FECACA', color: '#991B1B' }}
+          style={{ background: 'var(--danger-surface)', borderColor: 'var(--danger-border)', color: 'var(--danger-ink)' }}
         >
           − {t}
         </li>
