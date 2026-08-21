@@ -271,7 +271,8 @@ with sync_playwright() as p:
                     "/listings/ai-copilot", "/research/keywords",
                     "/research/keyword-lists", "/settings/shops", "/tools",
                     "/tools/etsy-seller-calculator", "/onboarding",
-                    "/action-center", "/settings/export", "/data/methodology")
+                    "/action-center", "/settings/export", "/data/methodology",
+                    "/tools/fee-calculator", "/tools/ads-roi", "/tools/profit-calculator")
 
     def audit_here(where, sink):
         pg.evaluate(axe_source)
@@ -675,6 +676,51 @@ with sync_playwright() as p:
     check(len(numbers) == 1,
           f"The bell, the drawer and the sidebar report one count "
           f"(bell={bell_label!r} drawer={drawer_row!r} sidebar={sidebar_row!r})")
+
+    # --- The free tools -----------------------------------------------------
+    #
+    # Three of the six. Each check asserts the thing the tool exists to correct,
+    # not that a page renders.
+    pg.goto(f"{BASE}/tools/fee-calculator", wait_until="load"); pg.wait_for_timeout(600)
+    fees = pg.locator("main").inner_text()
+    # The mistake the tool is for: sellers apply the transaction fee to the item
+    # price and come out low, because Etsy charges on price PLUS shipping. The
+    # only way to surface that is to print the basis with the real number in it.
+    check("6.5% of $29.50" in fees,
+          "The fee calculator shows the transaction fee's real basis, not just the rate")
+    check("$24.50" not in fees.split("Transaction fee")[1][:60],
+          "...which is the price plus shipping, not the price")
+    check("not attributed to an Etsy ad" in fees,
+          "An uncharged fee is shown at zero WITH its reason, not omitted")
+    check("recorded" in fees and "differ by country" in fees,
+          "The rate set is dated and says it can be wrong for you")
+
+    pg.goto(f"{BASE}/tools/ads-roi", wait_until="load"); pg.wait_for_timeout(600)
+    ads = pg.locator("main").inner_text()
+    # The whole point: 4x ROAS reads as a triumph and loses money at a 20%
+    # margin. The money figure must lead, and it must be negative here.
+    check("4.00×" in ads, "The ads tool reports the ROAS")
+    check("−$20.00" in ads, "...and that a 4x ROAS is losing $20 at this margin")
+    check(ads.index("Money kept after ad spend") < ads.index("Return on ad spend"),
+          "Money kept is shown BEFORE the ratio that flatters")
+    check("party selling the advertising" in ads,
+          "Attribution is named as Etsy's claim, not a measurement")
+
+    pg.goto(f"{BASE}/tools/profit-calculator", wait_until="load"); pg.wait_for_timeout(600)
+    profit = pg.locator("main").inner_text()
+    # Labour is a line with a rate in it. Omitting it is how a handmade seller
+    # concludes a product is profitable while paying themselves nothing.
+    check("25 min at $20.00/hr" in profit, "The profit calculator costs the seller's time as a line")
+    check("Break-even price" in profit, "It says the price below which each sale costs money")
+    check("charge $5.00" in profit and "pay $6.40" in profit,
+          "It distinguishes postage charged from postage paid")
+
+    # The hub says WHY each remaining tool is unbuilt, per tool.
+    pg.goto(f"{BASE}/tools", wait_until="load"); pg.wait_for_timeout(400)
+    hub = pg.locator("main").inner_text()
+    check("Needs a trademark register" in hub,
+          "The hub says why trademark screening is not built, rather than 'coming soon'")
+    check(hub.count("Open →") >= 4, f"Four tools are open-able from the hub")
 
     check(len(routes_with_states) >= 5,
           f"The sweep still finds hidden state across the app "

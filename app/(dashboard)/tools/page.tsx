@@ -24,19 +24,22 @@ const TOOL_DETAIL: Record<string, { detail: string; needs: string; ready: boolea
     ready: true,
   },
   'Fee Calculator': {
-    detail: 'Listing, transaction and processing fees against published rates, with the rule set and effective date stated.',
+    detail:
+      'Listing, transaction and processing fees against published rates, with the rule set and effective date stated — and every rate editable, because Etsy changes them and they differ by country.',
     needs: 'No shop needed',
-    ready: false,
+    ready: true,
   },
   'Ads ROI Calculator': {
-    detail: 'Spend against attributed revenue, from figures you enter — Etsy does not expose ads performance through the API.',
+    detail:
+      'Spend against attributed revenue, from figures you enter — Etsy does not expose ads performance through the API. Leads with money kept, not the ROAS that flatters.',
     needs: 'Your own figures',
-    ready: false,
+    ready: true,
   },
   'Profit Calculator': {
-    detail: 'One product, end to end: price, fees, cost, shipping and labour.',
+    detail:
+      'One product, end to end: price, fees, materials, postage and your time — costed as a line, not an option.',
     needs: 'No shop needed',
-    ready: false,
+    ready: true,
   },
   'Category Finder': {
     detail: 'Find the Etsy category and its required attributes before you list.',
@@ -53,6 +56,23 @@ const TOOL_DETAIL: Record<string, { detail: string; needs: string; ready: boolea
     needs: 'No shop needed',
     ready: false,
   },
+}
+
+/*
+ * Why each unbuilt tool is unbuilt.
+ *
+ * Two of these are waiting on data this product does not have, and one of them
+ * cannot be built honestly at all without a source. Saying "coming soon" for
+ * all three would hide a real difference between "not yet" and "not without
+ * something we do not have".
+ */
+const BLOCKED_BY: Record<string, string> = {
+  'Category Finder':
+    'Needs Etsy’s category taxonomy and its per-category required attributes. Etsy publishes these through the API only for a connected shop, so this arrives with live mode.',
+  'Seasonal Calendar':
+    'Needs several years of category demand history. EtsyPilot models demand from public signals sampled weekly and has been sampling for months, not years — a seasonal claim on this much data would be a guess with a chart around it.',
+  'Trademark Screening':
+    'Needs a trademark register. Not a matter of build time: a screening tool that guessed would let a seller read a clear result and use a registered mark, which is worse than having no tool at all.',
 }
 
 export default function ToolsPage() {
@@ -89,8 +109,17 @@ export default function ToolsPage() {
                    * would be the "looks built" problem D21 removed from the
                    * navigation, reintroduced one card at a time.
                    */
-                  <span className="text-caption text-muted-1">
-                    Not built yet. Phase 10 shipped the Simple Calculator; the rest follow.
+                  /*
+                    * Says WHY, per tool, rather than one blanket line.
+                    *
+                    * Trademark screening in particular is not a matter of
+                    * finding time: it needs a trademark register, and a tool
+                    * that guessed at one would be worse than no tool — a
+                    * seller could read a clear result and use a mark that is
+                    * registered.
+                    */
+                  <span className="text-caption leading-relaxed text-muted-1">
+                    {BLOCKED_BY[tool.label] ?? 'Not built yet.'}
                   </span>
                 )}
               </div>

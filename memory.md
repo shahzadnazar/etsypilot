@@ -7,7 +7,9 @@
 
 **Phase:** 12 — Quality & Production Hardening (IN PROGRESS)
 **Current task:** Phase 12. Done: security headers + CSP, accessibility (WCAG A/AA at
-390/768/1440), link integrity, error/observability, empty + loading states. Remaining: the six unbuilt free tools. (Mobile top bar done, D61.)
+390/768/1440), link integrity, error/observability, empty + loading states. Remaining: nothing in Phase 12. Three free tools shipped (fee, ads ROI, product profit);
+the other three are blocked on data this product does not have, stated per tool on the hub
+(D62a) — Trademark Screening needs a real register and must not be guessed.
 Security review done (docs/SECURITY-REVIEW.md): 2 findings, both fixed -- CSRF on the
 billing mutations (verified 303 from evil.example), and no rate limiting anywhere. (Telemetry adapters done — all three noop by default, D59.)
 

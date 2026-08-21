@@ -95,9 +95,9 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Tools',
     items: [
       { label: 'Simple Calculator', href: '/tools/simple-calculator' },
-      { label: 'Fee Calculator', href: '/tools/fee-calculator', unbuilt: true },
-      { label: 'Ads ROI Calculator', href: '/tools/ads-roi', unbuilt: true },
-      { label: 'Profit Calculator', href: '/tools/profit-calculator', unbuilt: true },
+      { label: 'Fee Calculator', href: '/tools/fee-calculator' },
+      { label: 'Ads ROI Calculator', href: '/tools/ads-roi' },
+      { label: 'Profit Calculator', href: '/tools/profit-calculator' },
       { label: 'Category Finder', href: '/tools/category-finder', unbuilt: true },
       { label: 'Seasonal Calendar', href: '/tools/seasonal-calendar', unbuilt: true },
       { label: 'Trademark Screening', href: '/tools/trademark-screening', unbuilt: true },

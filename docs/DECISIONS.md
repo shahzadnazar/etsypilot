@@ -2822,3 +2822,53 @@ can see, then reporting the result as a checked state, is the vacuous pass in a 
 
 Worth noting the guard did its job unprompted: `reached == offered` (D53b) turned a silent
 15-route coverage hole into a failing line naming every route.
+
+### D62 — Three of the six free tools, and why the other three are not built
+
+**Fee Calculator, Ads ROI and Profit Calculator** ship. Each was built around the specific
+mistake it exists to correct, and each check asserts that rather than "the page renders".
+
+**Fee Calculator.** The rates are **editable**. Etsy changes its fees, they differ by country,
+and no API reports the schedule — so a fixed rate set gives anyone outside the United States a
+confidently wrong answer, which is worse than no tool. The set carries the date it was
+recorded and the policy it came from.
+
+Every line prints its own arithmetic with real numbers: `6.5% of $29.50`, not `6.5%`. The
+commonest hand-calculation error is applying the transaction fee to the item price rather than
+price *plus shipping*, and printing the basis is the only way to surface it. A fee that is not
+charged shows at zero **with its reason** — a seller who cannot see the line cannot tell
+whether it was excluded or forgotten.
+
+**Ads ROI.** Everything is typed in, because Etsy does not publish Ads performance through its
+API — the same fact behind `getAdsPerformance()` returning UNAVAILABLE in both adapters.
+
+The screen leads with **money kept after ad spend**, not ROAS. 4× reads as a triumph and loses
+$20 at a 20% margin, and showing the ratio first would be putting the comfortable figure above
+the true one. Zero spend returns `null`, not `0×`: no ratio at all, rather than a figure that
+reads as "these ads made nothing" (D57b).
+
+Attributed revenue is named as **Etsy's own claim about causality, made by the party selling
+the advertising** — and the limitation that some of those sales would have happened anyway is
+returned with the numbers, not left to a footnote.
+
+**Profit Calculator.** Your time is a line with a rate in it, not an option. Omitting labour is
+how a handmade seller concludes a product is profitable while paying themselves below minimum
+wage, and correcting that conclusion is what the tool is for. Break-even solves for price *with
+the fee percentage applied*, because raising the price raises the fee — cost-plus-nothing is
+always short. A loss is stated in words, not left to be inferred from a minus sign.
+
+### D62a — "Coming soon" would have hidden a real difference
+
+The three unbuilt tools are not waiting on the same thing, and the hub now says which per
+tool:
+
+| Tool | Blocked by |
+| --- | --- |
+| Category Finder | Etsy's category taxonomy and per-category required attributes, published through the API only for a connected shop. Arrives with live mode |
+| Seasonal Calendar | Several years of category demand history. This product has sampled public signals for months, not years — a seasonal claim on that would be a guess with a chart around it |
+| Trademark Screening | **A trademark register.** Not build time |
+
+The third is the one worth being firm about. A screening tool that guessed would let a seller
+read a clear result and use a registered mark. **That is worse than having no tool at all**,
+so it stays unbuilt until there is a register behind it, and the page says exactly that rather
+than implying someone simply has not got round to it.
