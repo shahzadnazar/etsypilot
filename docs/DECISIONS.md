@@ -2769,3 +2769,56 @@ code and against injected transports only.
 The most important line in it is that **the CSRF fix must ship with the auth work, not
 after** — the vulnerability is dormant precisely because the thing that would arm it is
 missing.
+
+### D61 — The mobile shell is a different bar, not a smaller one
+
+Foundations says it outright: *"Mobile is re-composed around actions and summaries, not a
+shrunken desktop."* So `MobileTopBar` is a separate component rather than responsive classes
+on `TopBar` — the two hold different things in a different order, and expressing that as a
+pile of `hidden`/`lg:flex` on shared markup produces markup nobody can read or change safely.
+
+Built to the design's own figures: 56px tall (not the desktop 64), 44×44 controls,
+hamburger · shop chip · notifications. The negative margins are the design's too — they let a
+44px touch target sit flush to a 14px gutter without the icon looking inset.
+
+The drawer matters more than it looks. The bottom tab bar carries five destinations; the
+drawer is how the **other twenty** are reached at all on a phone. Unbuilt items are listed
+and not linked there, exactly as in the sidebar (D54), because a "Soon" row that 404s would
+be worse on the only route to most of the product than anywhere else.
+
+Two things the design does not specify and this does anyway: Escape closes the drawer, and
+the scrim is a `<button>` rather than a `div` with an `onClick`. Tapping outside to dismiss
+is an action, and an action only a pointer can reach is one a keyboard user is stuck inside.
+
+The bell's dot is 7px and says nothing to a screen reader, so the count lives in an `sr-only`
+label — "Action Center, 5 open actions". A dot is a signal, not a number.
+
+### D61a — Three places reported one count, two answers
+
+`navigation.ts` carried literal badges: Action Center `'2'`, Shop Pulse `'5'`, All Listings
+`'412'`. The Action Center genuinely had **five** open actions, so the sidebar said 2 while
+the bell beside it said 5. **The same product answering one question two ways, on one
+screen.**
+
+The `badge` field is gone. Counts come from the domain, passed in by the shell and looked up
+by href, so the sidebar, the drawer and the bell read one source. A measured count can be
+absent and render no chip; an authored one is wrong the day after it is written (D34).
+
+The same commit fixed the other end of it: the shell's listing usage read
+`DEMO_COUNTS.activeListings`, a constant, so it reported "450 / 2,000 listings" for a shop
+with none. It reads `shop.activeListingCount` now — the field D57 had already fixed in the
+mock, being ignored by its only consumer.
+
+### D61b — Discovery must find what is REACHABLE, not what is present
+
+Adding the mobile bar broke the accessibility sweep, and the break was correct. The
+hamburger carries `aria-expanded` and sits in the DOM on every page, hidden by `lg:hidden` at
+the sweep's viewport. Discovery found it on all fifteen routes, could not click it, and
+reported **20 of 64 states reached** rather than passing.
+
+The sweep now discovers only *visible* disclosures. A control the viewport hides is not a
+state a user can reach there, so it is not a surface to audit — and clicking something nobody
+can see, then reporting the result as a checked state, is the vacuous pass in a new costume.
+
+Worth noting the guard did its job unprompted: `reached == offered` (D53b) turned a silent
+15-route coverage hole into a failing line naming every route.

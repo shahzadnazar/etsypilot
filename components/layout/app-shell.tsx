@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { DemoBanner } from './demo-banner'
+import { MobileTopBar } from './mobile-top-bar'
 import { MobileTabs } from './mobile-tabs'
 import { Sidebar } from './sidebar'
 import { TopBar } from './top-bar'
@@ -18,6 +19,8 @@ export function AppShell({
   userInitials,
   plan,
   listingUsage,
+  openActionCount,
+  counts,
 }: {
   children: ReactNode
   shopName: string
@@ -26,6 +29,10 @@ export function AppShell({
   userInitials: string
   plan: string
   listingUsage: string
+  /** Drives the bell's dot on mobile. */
+  openActionCount: number
+  /** Measured nav counts by href. Never authored — see navigation.ts. */
+  counts: Record<string, number>
 }) {
   return (
     <div className="flex min-h-screen flex-col bg-canvas">
@@ -53,15 +60,31 @@ export function AppShell({
       {isDemo ? <DemoBanner /> : null}
 
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar plan={plan} listingUsage={listingUsage} />
+        <Sidebar plan={plan} listingUsage={listingUsage} counts={counts} />
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <TopBar
+          {/*
+            * Two bars, one per breakpoint, rather than one bar with responsive
+            * classes. "Mobile is re-composed around actions and summaries, not
+            * a shrunken desktop" — they hold different things in a different
+            * order, and expressing that as hidden/lg:flex on shared markup
+            * produces something nobody can read or change safely.
+            */}
+          <MobileTopBar
             shopName={shopName}
             lastSyncedAt={lastSyncedAt}
             isDemo={isDemo}
-            userInitials={userInitials}
+            unreadCount={openActionCount}
+            counts={counts}
           />
+          <div className="hidden lg:contents">
+            <TopBar
+              shopName={shopName}
+              lastSyncedAt={lastSyncedAt}
+              isDemo={isDemo}
+              userInitials={userInitials}
+            />
+          </div>
           <main id="main" className="flex-1 overflow-y-auto px-4 py-5 md:px-6">
             <div className="mx-auto w-full max-w-content">{children}</div>
           </main>

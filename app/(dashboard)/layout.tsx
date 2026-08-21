@@ -3,18 +3,20 @@ import { AppShell } from '@/components/layout/app-shell'
 import { getSession } from '@/lib/auth'
 import { getEtsyService } from '@/lib/etsy'
 import { shopContext } from '@/lib/permissions'
-import { DEMO_COUNTS } from '@/lib/etsy/demo-dataset'
 import { currentPlan } from '@/domain/billing/service'
+import { getActions } from '@/domain/action-center/service'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession()
   if (!session) redirect('/login')
 
   const ctx = shopContext(session, session.shopId)
-  const [shop, plan] = await Promise.all([
+  const [shop, plan, actions] = await Promise.all([
     getEtsyService().getShop(ctx.shopId),
     // Read, not restated: the chip and the billing page share one source.
     currentPlan(ctx),
+    // Same rule for the bell: the dot and the Action Center count one set.
+    getActions(ctx),
   ])
 
   const initials = session.name
@@ -31,7 +33,21 @@ export default async function DashboardLayout({ children }: { children: React.Re
       isDemo={session.isDemo}
       userInitials={initials}
       plan={plan.name}
-      listingUsage={`${DEMO_COUNTS.activeListings} / ${plan.limits.listings.toLocaleString('en-US')} listings`}
+      /*
+       * From the shop, not from DEMO_COUNTS.
+       *
+       * The constant was baked in, so the shell reported "450 / 2,000
+       * listings" for a shop with none — a count that disagrees with the
+       * catalogue it is counting, on every page. Exactly the defect the mock's
+       * activeListingCount was fixed for (D57); this was the other end of it.
+       */
+      listingUsage={`${shop.activeListingCount.toLocaleString('en-US')} / ${plan.limits.listings.toLocaleString('en-US')} listings`}
+      openActionCount={actions.counts.OPEN ?? 0}
+      /*
+       * One source for both. The sidebar chip and the bell used to disagree —
+       * a literal '2' in navigation.ts beside a real count of 5.
+       */
+      counts={{ '/action-center': actions.counts.OPEN ?? 0 }}
     >
       {children}
     </AppShell>

@@ -318,14 +318,25 @@ with sync_playwright() as p:
             pg.goto(f"{BASE}{route}", wait_until="load")
             pg.evaluate(f"document.documentElement.setAttribute('data-theme','{theme}')")
             pg.wait_for_timeout(200)
-            count = pg.evaluate(
-                "() => document.querySelectorAll('[aria-expanded=\"false\"]').length")
+            # VISIBLE disclosures only.
+            #
+            # The mobile top bar's hamburger carries aria-expanded and sits in
+            # the DOM on every page, hidden by `lg:hidden` at this viewport. The
+            # sweep found it on all fifteen routes, could not click it, and
+            # correctly refused to call that coverage — 20 of 64 states reached.
+            #
+            # A control the viewport hides is not a state a user can reach here,
+            # so it is not a surface to audit. Auditing what is merely PRESENT
+            # rather than what is REACHABLE would have meant clicking a control
+            # nobody can see and reporting the result as a checked state.
+            count = pg.evaluate("""() => [...document.querySelectorAll('[aria-expanded="false"]')]
+              .filter(e => e.offsetWidth || e.offsetHeight || e.getClientRects().length).length""")
             offered += count
             if count:
                 routes_with_states.add(route)
             for i in range(count):
                 try:
-                    pg.locator('[aria-expanded="false"]').first.click(timeout=4000)
+                    pg.locator('[aria-expanded="false"]:visible').first.click(timeout=4000)
                 except Exception:
                     # Not swallowed. An unopenable disclosure is an unaudited
                     # surface, and `reached` will not match `offered` below.
@@ -343,7 +354,7 @@ with sync_playwright() as p:
                 # offered-vs-reached guard exists to say out loud.
                 pg.keyboard.press("Escape")
                 pg.wait_for_timeout(150)
-                still_open = pg.locator('[aria-expanded="true"]')
+                still_open = pg.locator('[aria-expanded="true"]:visible')
                 if still_open.count():
                     try:
                         still_open.first.click(timeout=2000)
@@ -599,6 +610,71 @@ with sync_playwright() as p:
     page = pg.request.get(f"{BASE}/billing", headers={"X-Forwarded-For": "203.0.113.201"},
                           fail_on_status_code=False)
     check(page.status == 200, f"Pages are never rate limited (got {page.status})")
+
+    # --- The mobile shell ---------------------------------------------------
+    #
+    # A separate 56px bar below `lg`, per Foundations "Mobile shell · 390 × 844"
+    # — hamburger, shop chip, notifications — with the full navigation behind a
+    # drawer. The bottom tab bar carries five destinations; the drawer is how
+    # the other twenty are reached at all on a phone.
+    pg.set_viewport_size({"width": 390, "height": 844})
+    pg.goto(f"{BASE}/dashboard", wait_until="load"); pg.wait_for_timeout(400)
+
+    headers = pg.evaluate("""() => [...document.querySelectorAll('header')]
+      .map(h => !!(h.offsetWidth || h.offsetHeight || h.getClientRects().length))""")
+    # Exactly one. Two visible <header>s would be two banner landmarks, which is
+    # its own violation — the fix for a missing landmark must not be another
+    # landmark in the wrong place (D53).
+    check(headers.count(True) == 1, f"Exactly one top bar is visible on mobile (got {headers})")
+
+    bar = pg.evaluate("""() => {
+      const h = [...document.querySelectorAll('header')].find(x => x.offsetHeight);
+      const btn = [...document.querySelectorAll('button')]
+        .find(b => (b.textContent || '').includes('Open navigation'));
+      const r = btn ? btn.getBoundingClientRect() : null;
+      return {height: h ? Math.round(h.getBoundingClientRect().height) : 0,
+              tap: r ? [Math.round(r.width), Math.round(r.height)] : null};
+    }""")
+    check(bar["height"] == 56, f"The mobile bar is the designed 56px (got {bar['height']})")
+    check(bar["tap"] == [44, 44], f"Its controls are the designed 44x44 (got {bar['tap']})")
+
+    opened = open_tab  # noqa: F841  (kept for symmetry with the tab helper above)
+    pg.get_by_role("button", name="Open navigation").click()
+    pg.wait_for_timeout(400)
+    check(pg.locator("#mobile-nav").count() == 1, "The drawer opens")
+    rows = pg.evaluate("() => document.querySelectorAll('#mobile-nav li').length")
+    check(rows > 15, f"The drawer carries the whole navigation, not the five tabs (got {rows})")
+    short = pg.evaluate("""() => [...document.querySelectorAll('#mobile-nav li > *')]
+      .filter(e => e.getBoundingClientRect().height < 44).length""")
+    check(short == 0, f"Every drawer row is at least 44px tall (got {short} shorter)")
+    pg.keyboard.press("Escape"); pg.wait_for_timeout(300)
+    # A drawer that only a pointer can dismiss is one a keyboard user is stuck in.
+    check(pg.locator("#mobile-nav").count() == 0, "Escape closes the drawer")
+
+    # --- One count, not three -----------------------------------------------
+    #
+    # navigation.ts used to carry literal badges: Action Center '2', beside a
+    # bell reporting the real 5. The same product answering one question two
+    # ways, on one screen. Counts are measured now and this asserts they agree.
+    pg.goto(f"{BASE}/dashboard", wait_until="load"); pg.wait_for_timeout(400)
+    bell_label = pg.evaluate(
+        "() => document.querySelector(\"header a[href='/action-center']\")?.innerText || ''")
+    pg.get_by_role("button", name="Open navigation").click(); pg.wait_for_timeout(400)
+    drawer_row = pg.evaluate("""() => {
+      const a = document.querySelector("#mobile-nav a[href='/action-center']");
+      return a ? a.innerText.replace(/\s+/g, ' ').trim() : '';
+    }""")
+    pg.keyboard.press("Escape")
+    pg.set_viewport_size({"width": 1440, "height": 1000})
+    pg.goto(f"{BASE}/dashboard", wait_until="load"); pg.wait_for_timeout(400)
+    sidebar_row = pg.evaluate("""() => {
+      const a = document.querySelector("nav[aria-label='Main'] a[href='/action-center']");
+      return a ? a.innerText.replace(/\s+/g, ' ').trim() : '';
+    }""")
+    numbers = {re.sub(r"\D", "", t) for t in (bell_label, drawer_row, sidebar_row) if re.search(r"\d", t)}
+    check(len(numbers) == 1,
+          f"The bell, the drawer and the sidebar report one count "
+          f"(bell={bell_label!r} drawer={drawer_row!r} sidebar={sidebar_row!r})")
 
     check(len(routes_with_states) >= 5,
           f"The sweep still finds hidden state across the app "

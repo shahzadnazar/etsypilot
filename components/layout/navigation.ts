@@ -13,8 +13,18 @@
 export interface NavItem {
   label: string
   href: string
-  /** Rendered as a count chip beside the label. */
-  badge?: string
+  /*
+   * No badge field any more.
+   *
+   * It held literals — Action Center '2', Shop Pulse '5', All Listings '412' —
+   * authored once and never true again. The Action Center genuinely had FIVE
+   * open actions, so the sidebar said 2 while the bell beside it said 5: the
+   * same product giving two answers to one question, on one screen.
+   *
+   * Counts now come from the domain, passed in by the shell and looked up by
+   * href. A count that is measured can be missing; a count that is authored is
+   * wrong the day after it is written (D34).
+   */
   /*
    * No page behind this yet.
    *
@@ -45,8 +55,8 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Dashboard',
     items: [
       { label: 'Overview', href: '/dashboard' },
-      { label: 'Action Center', href: '/action-center', badge: '2' },
-      { label: 'Shop Pulse', href: '/shop-pulse', badge: '5' },
+      { label: 'Action Center', href: '/action-center' },
+      { label: 'Shop Pulse', href: '/shop-pulse' },
     ],
   },
   {
@@ -62,7 +72,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Listings',
     items: [
-      { label: 'All Listings', href: '/listings', badge: '412', unbuilt: true },
+      { label: 'All Listings', href: '/listings', unbuilt: true },
       { label: 'Listing Audit', href: '/listings/audit' },
       { label: 'AI Copilot', href: '/listings/ai-copilot' },
       { label: 'Bulk Editor', href: '/listings/bulk-editor' },

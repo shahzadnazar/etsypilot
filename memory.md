@@ -7,7 +7,7 @@
 
 **Phase:** 12 — Quality & Production Hardening (IN PROGRESS)
 **Current task:** Phase 12. Done: security headers + CSP, accessibility (WCAG A/AA at
-390/768/1440), link integrity, error/observability, empty + loading states. Remaining: the designed mobile top bar, and the six unbuilt free tools.
+390/768/1440), link integrity, error/observability, empty + loading states. Remaining: the six unbuilt free tools. (Mobile top bar done, D61.)
 Security review done (docs/SECURITY-REVIEW.md): 2 findings, both fixed -- CSRF on the
 billing mutations (verified 303 from evil.example), and no rate limiting anywhere. (Telemetry adapters done — all three noop by default, D59.)
 
@@ -320,9 +320,9 @@ PostHog: Not configured
   CLI dev dependency, we never run an esbuild dev server, and none of it is in the app
   bundle. An npm override does not take (the pin is hard) and audit fix --force would
   break drizzle-kit. Revisit when drizzle-kit drops @esbuild-kit.
-- Mobile top bar is functional but not yet the designed compact bar (logo, shop,
-  notifications, menu). Phase 2. Responsive QA otherwise done: zero horizontal overflow
-  and zero WCAG A/AA violations at 390 / 768 / 1440 (D56).
+- RESOLVED 2026-08-21: mobile top bar built to the Foundations spec — 56px, 44x44
+  controls, hamburger/shop chip/notifications, full nav in a drawer (D61). Responsive QA
+  done: zero horizontal overflow and zero WCAG A/AA violations at 390 / 768 / 1440 (D56).
 ```
 
 ## 13. Decisions

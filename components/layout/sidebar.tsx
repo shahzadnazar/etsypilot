@@ -17,7 +17,20 @@ function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`)
 }
 
-export function Sidebar({ plan, listingUsage }: { plan: string; listingUsage: string }) {
+export function Sidebar({
+  plan,
+  listingUsage,
+  counts,
+}: {
+  plan: string
+  listingUsage: string
+  /*
+   * Measured counts, keyed by href. Empty is a valid state and renders no
+   * chip — the alternative was the literal badges this replaces, which said
+   * Action Center "2" while the bell said 5.
+   */
+  counts: Record<string, number>
+}) {
   const pathname = usePathname()
 
   return (
@@ -78,9 +91,9 @@ export function Sidebar({ plan, listingUsage }: { plan: string; listingUsage: st
                       }
                     >
                       <span>{item.label}</span>
-                      {item.badge ? (
+                      {counts[item.href] ? (
                         <span className="tnum text-[10.5px] font-semibold text-muted-1">
-                          {item.badge}
+                          {counts[item.href]}
                         </span>
                       ) : null}
                     </Link>
