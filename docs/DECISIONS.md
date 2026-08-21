@@ -2227,28 +2227,58 @@ The nonce is read from a request header in the root layout, so every page now re
 demand. Measured rather than assumed: TTFB on the public calculator is 19–29 ms, and D49's
 speed guarantee is about client-side arithmetic, which is untouched.
 
-### D52a — `strict-dynamic` is off because of a measured framework bug
+### D52a — `strict-dynamic` is ON; the bug was in the bundler, and the build moved
 
-`'strict-dynamic'` **ignores `'self'` by design**: under it a `<script src>` is allowed only
-if it carries the nonce or was loaded by a script that did. Next 16.3.1 nonces every script
-tag it emits *except* one class of page-level client chunk — nine tags in the served HTML
-carry `nonce=`, exactly one does not.
+`'strict-dynamic'` **ignores `'self'` by design**: a `<script src>` runs only if it carries
+the nonce or was loaded by a script that did. That is strictly stronger than `'self'` — an
+attacker who can write a `.js` file onto this origin still cannot get it executed — and it
+also means one un-nonced tag breaks a page.
 
-The result was a page silently missing a piece of its JavaScript on `/billing` and
-`/shop-pulse`. No server error, no hydration warning, no missing markup. **Only the browser
-console knew.**
+Next 16.3.1's **Turbopack** build emits exactly one such tag. Measured rather than guessed:
+eleven script tags per page, ten carrying `nonce=`, one not, and always the same one — the
+chunk the bundler split the `Button` component into. It appeared on `/billing` and
+`/shop-pulse` only, because only there did `Button` land in a chunk of its own.
 
-What is kept without it is most of the value: inline script still requires the nonce, so an
-injected `<script>` or `onclick` payload is refused — the actual XSS vector — and external
-script is still confined to this origin. What is given up is protection against an attacker
-who can already place a file on our own origin, and this app serves no user-supplied file as
-script.
+Nothing reported it. No server error, no hydration warning, no missing markup — the page
+silently lost a piece of its JavaScript, and only the browser console knew.
+
+The same source built with **webpack** nonces every tag on every page. So this is a
+Turbopack code path, not a policy mistake, and **not something app code can fix**: which
+chunk a component lands in is the bundler's decision, so any app-level workaround would be
+luck rather than a fix.
+
+| | Turbopack | webpack |
+| --- | --- | --- |
+| Build time | 19 s | 44 s |
+| Un-nonced script tags | 1 (on 2 of 8 pages) | 0 |
+| `strict-dynamic` usable | no | yes |
+
+`npm run build` therefore uses `--webpack`. Twenty-five seconds buys the strongest script
+directive available, on a product holding OAuth tokens and card details.
+`npm run build:turbopack` is kept so re-testing upstream is one command.
 
 Two related traps, both worth stating:
 
 - The nonce must go on the **request** headers as well as the response, under the
   `Content-Security-Policy` key. That is how Next finds it to nonce its own script tags.
   Setting only `x-nonce` compiles, serves a valid-looking policy, and breaks two pages.
-- **A policy becoming less strict never fails a check.** The browser check catches a policy
-  the app violates; it cannot catch a policy that permits too much. Widening one is a
-  decision that has to be made deliberately, which is why the reasoning is in the file.
+- **A policy becoming less strict never fails a check.** The browser checks catch a policy
+  the app violates; they cannot catch one that permits too much. Widening is always a
+  deliberate decision, which is why the reasoning sits in the file.
+
+### D52b — Check the cause as well as the symptom
+
+Two checks cover this, deliberately overlapping:
+
+- *"No page violates its own CSP"* — the symptom. Reads the browser console during real
+  page loads.
+- *"Every script tag the app serves carries the CSP nonce"* — the cause. Counts un-nonced
+  tags in the **served HTML** and names the offending chunk and pages.
+
+Building with Turbopack fails both, and the second prints
+`{'/billing': ['0upzpjnwu9tf1.js'], '/shop-pulse': ['0upzpjnwu9tf1.js']}` — the whole
+diagnosis in one line, where the first only says a script was refused.
+
+It counts what is SERVED rather than reading the source, because nothing in the source says
+which chunk a component lands in. Same rule as the extension audit (D48): check the
+artefact, not the source.

@@ -1,5 +1,20 @@
 import type { NextConfig } from 'next'
 
+/*
+ * A note that belongs next to the build, and package.json cannot hold comments:
+ *
+ *   `npm run build` uses --webpack, deliberately.
+ *
+ * Next 16.3.1's Turbopack build emits one <script> tag per page without the CSP
+ * nonce — always the chunk it splits the Button component into. Under
+ * 'strict-dynamic' (middleware.ts) that tag is refused and the page silently
+ * loses a piece of its JavaScript. The webpack build nonces every tag on every
+ * page. Cost: 19s -> 44s, measured.
+ *
+ * `npm run build:turbopack` is kept so re-testing is one command. If the
+ * browser checks still pass on that build, the bug is fixed upstream and the
+ * default can move back.
+ */
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,

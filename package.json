@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
@@ -13,7 +13,8 @@
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "extension:build": "node extension/build.mjs",
-    "extension:package": "node extension/build.mjs --zip"
+    "extension:package": "node extension/build.mjs --zip",
+    "build:turbopack": "next build"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.120.0",

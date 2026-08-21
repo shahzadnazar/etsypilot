@@ -5,8 +5,8 @@
 
 ## 1. Current Status
 
-**Phase:** 11 — Live Etsy Integration (COMPLETE)
-**Current task:** Awaiting go-ahead for Phase 12 — Quality & Production Hardening
+**Phase:** 12 — Quality & Production Hardening (IN PROGRESS)
+**Current task:** Phase 12. Security headers + CSP done. Next: accessibility pass.
 **Current file being worked on:** None
 **Last completed task:** OAuth 2.0 + PKCE, rate-limited HTTP client, encrypted token store,
 the full LiveEtsyService adapter and both /api/etsy routes — all written and tested with NO

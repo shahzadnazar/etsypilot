@@ -42,28 +42,35 @@ export function middleware(request: NextRequest) {
   const csp = [
     "default-src 'self'",
     /*
-     * No 'strict-dynamic', and the reason is a measured framework bug rather
-     * than a preference.
+     * 'strict-dynamic' is ON, and getting it there took finding a real bug.
      *
-     * 'strict-dynamic' IGNORES 'self' by design: under it, a <script src> is
-     * allowed only if it carries the nonce or was loaded by a script that did.
-     * Next 16.3.1 nonces every script tag it emits EXCEPT one class of
-     * page-level client chunk — verified by reading the served HTML, where
-     * nine tags carry nonce= and exactly one does not. With 'strict-dynamic'
-     * that chunk was refused on /billing and /shop-pulse: no server error, no
-     * hydration warning, just a page missing a piece of its JavaScript.
+     * It IGNORES 'self' by design: a <script src> is allowed only if it carries
+     * the nonce, or was loaded by a script that did. That makes it strictly
+     * better than 'self' — an attacker who can write a .js file onto this
+     * origin still cannot get it executed — but it also means one un-nonced tag
+     * breaks a page.
      *
-     * What is kept without it is most of the value. Inline script still
-     * requires the nonce, so an injected <script> or an onclick payload is
-     * refused — that is the actual XSS vector. External script is still
-     * confined to this origin, so a third party cannot be pulled in. What is
-     * given up is protection against an attacker who can already place a file
-     * on our own origin, and this app serves no user-supplied file as script.
+     * Next 16.3.1's TURBOPACK build emits exactly one such tag. Measured, not
+     * guessed: eleven script tags per page, ten with nonce=, one without, and
+     * always the same one — the chunk the bundler split the Button component
+     * into. It surfaced on /billing and /shop-pulse only, because only there
+     * did Button land in a chunk of its own. Nothing reported it: no server
+     * error, no hydration warning, no missing markup. The page silently lost a
+     * piece of its JavaScript and only the browser console knew.
      *
-     * Revisit when Next nonces that chunk; the check below will not notice on
-     * its own, because a policy being LESS strict never fails a browser check.
+     * The same source built with WEBPACK nonces all of them, on every page. So
+     * this is a Turbopack code path, not a policy mistake and not something our
+     * own code can fix — which chunk a component lands in is the bundler's
+     * decision, so any app-level workaround would be luck rather than a fix.
+     *
+     * package.json therefore builds with --webpack. It costs 25 seconds
+     * (19s -> 44s, measured) and buys back the strongest script directive
+     * available. Revisit when Turbopack nonces that tag: the browser checks
+     * assert every script tag carries a nonce AND that no page violates its own
+     * policy, so flipping the build back is a one-line experiment with an
+     * immediate answer.
      */
-    `script-src 'self' 'nonce-${nonce}'`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
     "style-src 'self'",
     // Style ATTRIBUTES only. See the note above: nothing else can permit them.
     "style-src-attr 'unsafe-inline'",

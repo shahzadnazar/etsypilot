@@ -196,6 +196,30 @@ with sync_playwright() as p:
           "No page violates its own CSP"
           + ("" if violations == [] else f" — {violations[:2]}"))
 
+    # Every script tag must carry the nonce.
+    #
+    # The CSP check above catches the SYMPTOM — a page the browser refuses to
+    # run properly. This one names the CAUSE, and it is the check to read first
+    # when someone flips the build back to Turbopack: Next 16.3.1's Turbopack
+    # build leaves exactly one tag un-nonced, and under 'strict-dynamic' that is
+    # a page silently missing part of its JavaScript.
+    #
+    # It counts tags in the SERVED HTML rather than trusting the source, because
+    # which chunk a component lands in is the bundler's decision and nothing in
+    # our code says it.
+    unnonced = {}
+    for route in ("/dashboard", "/billing", "/shop-pulse", "/settings/shops",
+                  "/tools/etsy-seller-calculator"):
+        pg.goto(f"{BASE}{route}", wait_until="load")
+        bad = pg.evaluate("""() => [...document.querySelectorAll('script[src]')]
+          .filter(s => s.src.includes('/_next/') && !s.nonce)
+          .map(s => s.src.split('/').pop())""")
+        if bad:
+            unnonced[route] = bad
+    check(unnonced == {},
+          "Every script tag the app serves carries the CSP nonce"
+          + ("" if unnonced == {} else f" — {unnonced}"))
+
     # --- Profit Reality: inputs panel ---
     pg.goto(f"{BASE}/profit", wait_until="domcontentloaded"); pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)
     check(open_tab(pg, "Scenarios", "Inputs"), "Scenarios tab opens")
