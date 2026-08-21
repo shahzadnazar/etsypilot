@@ -7,9 +7,8 @@
 
 **Phase:** 12 — Quality & Production Hardening (IN PROGRESS)
 **Current task:** Phase 12. Done: security headers + CSP, accessibility (WCAG A/AA at
-390/768/1440), link integrity, error/observability, empty + loading states. Remaining:
-Sentry/PostHog/Resend adapters, written security review, the designed mobile top bar, and
-the six unbuilt free tools.
+390/768/1440), link integrity, error/observability, empty + loading states. Remaining: written security review, the designed mobile top bar, and the six unbuilt
+free tools. (Telemetry adapters done — all three noop by default, D59.)
 
 Performance baseline (D58): 143 kB JS compressed, LCP 132ms median, CLS 0.000, TTFB
 20-34ms, ~33 SSR renders/sec/process, domain linear to 25k listings (138ms).

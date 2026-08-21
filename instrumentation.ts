@@ -49,6 +49,24 @@ export async function onRequestError(
       ? String((error as { digest?: unknown }).digest)
       : undefined
 
+  /*
+   * The error reporter gets it too, if one is configured. It receives the error
+   * WHOLE so the same redaction pass that protects the log protects the
+   * tracker — an error tracker is a log with a web UI and a third party's
+   * retention policy.
+   *
+   * With no DSN set this is the noop reporter, which logs rather than
+   * swallows: "no tracker configured" must not come to mean "errors disappear".
+   */
+  const { getErrorReporter } = await import('./lib/telemetry')
+  const reporter = getErrorReporter()
+  if (reporter.mode === 'live') {
+    reporter.reportError(error, {
+      ...(digest ? { reference: digest } : {}),
+      ...(request.path ? { path: request.path } : {}),
+    })
+  }
+
   log.error('unhandled server error', error, {
     ...(digest ? { reference: digest } : {}),
     // Path only. A full URL carries the query string, and a query string

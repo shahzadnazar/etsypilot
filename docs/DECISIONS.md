@@ -2674,3 +2674,59 @@ Worth recording as a property rather than a coincidence: a security control remo
 class of performance regression. It also means the budget's own measurement had to be proved
 separately, by tightening the thresholds below the measured values and confirming it reports
 the real figures (JS 142–151 kB, CLS 0.000) rather than passing on absent data.
+
+### D59 — Three services that send seller data get three switches
+
+Sentry, PostHog and Resend are a different kind of dependency from the Etsy adapter or the AI
+provider: **each one sends a seller's data to a third party.** So each has its own switch and
+its own credential. A single `TELEMETRY=on` would bundle three separate disclosures into one
+decision nobody made deliberately — wanting error reports is not consenting to product
+analytics, and neither implies email.
+
+All three are the noop adapter until their credential is set, **and** refuse in demo mode.
+Two conditions, not one, for the same reason the AI provider needs two: a stray key in a
+developer's environment must not put a demo shop on a live pipeline.
+
+The guarantees are in the types rather than in a policy document:
+
+| Promise | How it is kept |
+| --- | --- |
+| Analytics carries no seller content | `AnalyticsProps` admits numbers, booleans and two enums — **not** `Record<string, unknown>`. A listing title has nowhere to go without editing the interface |
+| Only these events are sent | `ANALYTICS_EVENTS` is a closed list of nine. The list *is* the disclosure — someone can read it and know what leaves |
+| Email is transactional only | `EmailKind` is a closed set. There is no campaign method, no template id and no recipient list |
+| Errors are redacted | `reportError` takes the error whole, so the redactor sees name, message and stack — an error tracker is a log with a web UI and someone else's retention policy |
+
+The noop adapters are **silent, not chatty**. The instinct was to `console.log` each dropped
+event so the wiring could be seen working; that turns "we send nothing" into "we write
+everything to stdout", which on a real deployment is the same disclosure through a different
+pipe. The one exception is the error reporter, which logs — "no DSN set" must never come to
+mean "errors disappear".
+
+`NoopMailer` reports `delivered: false` with a reason. Returning `true` because nothing went
+wrong locally would have the product tell a seller "we emailed you" when no mailer exists.
+
+### D59a — The privacy page reads the adapters, it does not describe them
+
+Settings → Export & deletion prints what each service is doing by reading `mode` off the
+running adapter. So the page cannot claim "nothing is sent" while a provider is switched on.
+An authored privacy paragraph is the same defect as a coverage figure that is stated rather
+than computed (D34): true on the day it was written, and unowned afterwards.
+
+### D59b — A convenience import dragged the Etsy adapter into the Edge runtime
+
+`lib/telemetry/index.ts` imported `isDemoMode` from `@/lib/etsy`. That pulled in
+`LiveEtsyService` → `node:crypto`, which the Edge runtime cannot load, and the build failed
+with `UnhandledSchemeError`.
+
+It reads the environment directly now, which is better layering anyway: telemetry has no
+reason to know an Etsy adapter exists. Worth recording because the import looked like the
+tidy choice — reusing the existing helper rather than re-reading an env var — and tidiness in
+an import is not worth a runtime coupling.
+
+### D59c — A "never says X" check failed on the promise never to say X
+
+Fourth time. The test asserting `Mailer` has no `sendCampaign` failed on interface.ts's own
+comment: *"There is no `sendCampaign`"*. A promise never to do X contains X.
+
+The tests now strip comments before asserting on source. Same rule as the disclaimer checks
+in the browser suite: **assert on the region under test, never on the prose describing it.**

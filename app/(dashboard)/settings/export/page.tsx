@@ -5,6 +5,8 @@ import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
 import { getSession } from '@/lib/auth'
 import { isDemoMode } from '@/lib/etsy'
+import { ANALYTICS_EVENTS } from '@/lib/telemetry/interface'
+import { getAnalytics, getErrorReporter, getMailer } from '@/lib/telemetry'
 
 export const metadata: Metadata = { title: 'Export & deletion' }
 
@@ -108,6 +110,55 @@ export default async function ExportPage() {
           </Card>
         ))}
       </div>
+
+      {/*
+        * What leaves the product, read from the running configuration.
+        *
+        * Not a written policy paragraph: `mode` comes from the adapters
+        * themselves, so this page cannot claim "nothing is sent" while a
+        * provider is switched on. A privacy statement that is authored rather
+        * than measured is the same defect as a coverage figure that is stated
+        * rather than computed (D34).
+        */}
+      <Card className="mt-4 p-[18px]">
+        <h2 className="text-section text-ink-1">What leaves EtsyPilot</h2>
+        <dl className="mt-3 flex flex-col gap-2">
+          <div className="flex flex-col gap-0.5 sm:flex-row sm:gap-3">
+            <dt className="shrink-0 text-caption font-semibold text-muted-1 sm:w-[168px]">
+              Error reports
+            </dt>
+            <dd className="text-small leading-relaxed text-ink-2">
+              {getErrorReporter().mode === 'live'
+                ? 'Sent to our error tracker when something breaks, with credentials, tokens and personal fields stripped before they leave.'
+                : 'Not sent anywhere. Errors are recorded in this server’s own log only.'}
+            </dd>
+          </div>
+          <div className="flex flex-col gap-0.5 sm:flex-row sm:gap-3">
+            <dt className="shrink-0 text-caption font-semibold text-muted-1 sm:w-[168px]">
+              Usage analytics
+            </dt>
+            <dd className="text-small leading-relaxed text-ink-2">
+              {getAnalytics().mode === 'live'
+                ? `Counts of ${ANALYTICS_EVENTS.length} named actions — which features are used, never what you typed or listed. Listing text, search terms and shop names cannot be sent: there is nowhere in the event format to put them.`
+                : 'Not collected. No analytics provider is configured on this server.'}
+            </dd>
+          </div>
+          <div className="flex flex-col gap-0.5 sm:flex-row sm:gap-3">
+            <dt className="shrink-0 text-caption font-semibold text-muted-1 sm:w-[168px]">
+              Email
+            </dt>
+            <dd className="text-small leading-relaxed text-ink-2">
+              {getMailer().mode === 'live'
+                ? 'Transactional only — a finished bulk job, a failed sync, a plan change. There is no marketing send in this product.'
+                : 'Not sent. No mail provider is configured on this server.'}
+            </dd>
+          </div>
+        </dl>
+        <p className="mt-3 max-w-[80ch] text-caption leading-relaxed text-muted-1">
+          Your Etsy access token is never sent to any of these, and never reaches your browser.
+          Buyer names, emails and addresses never reach EtsyPilot at all.
+        </p>
+      </Card>
 
       <Card className="mt-4 p-[18px]">
         <h2 className="text-section text-ink-1">Deletion</h2>
