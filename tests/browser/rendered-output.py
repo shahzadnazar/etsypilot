@@ -270,7 +270,7 @@ with sync_playwright() as p:
                     "/listings/ai-copilot", "/research/keywords",
                     "/research/keyword-lists", "/settings/shops", "/tools",
                     "/tools/etsy-seller-calculator", "/onboarding",
-                    "/action-center")
+                    "/action-center", "/settings/export", "/data/methodology")
 
     def audit_here(where, sink):
         pg.evaluate(axe_source)

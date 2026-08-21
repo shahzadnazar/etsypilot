@@ -41,6 +41,27 @@ export function Sidebar({ plan, listingUsage }: { plan: string; listingUsage: st
             <ul className="flex flex-col gap-px">
               {group.items.map((item) => {
                 const active = isActive(pathname, item.href)
+                if (item.unbuilt) {
+                  /*
+                   * Listed, not linked. Every one of these used to be a <Link>
+                   * to a 404 — the sidebar advertised 38 surfaces when 17
+                   * existed. Showing the item keeps the roadmap honest; making
+                   * it a destination was the dishonest half.
+                   */
+                  return (
+                    <li key={item.href}>
+                      <span
+                        className="flex items-center justify-between rounded-control py-2 pl-2.5 pr-2 text-[12.5px] font-medium text-muted-1"
+                        title="Not built yet"
+                      >
+                        <span>{item.label}</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-2">
+                          Soon
+                        </span>
+                      </span>
+                    </li>
+                  )
+                }
                 return (
                   <li key={item.href}>
                     <Link

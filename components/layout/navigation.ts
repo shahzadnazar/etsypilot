@@ -15,6 +15,24 @@ export interface NavItem {
   href: string
   /** Rendered as a count chip beside the label. */
   badge?: string
+  /*
+   * No page behind this yet.
+   *
+   * D21 removed the surfaces that had no design, so the nav would not look more
+   * built than the product. It missed the other half: 21 items that ARE listed
+   * and have no page, so the sidebar offered a link and Next answered 404.
+   * Found by diffing every href in the source against every page that exists.
+   *
+   * The Tools page already had the honest pattern — it names an unbuilt tool
+   * and says so instead of linking into nothing. This carries it into the
+   * sidebar. The item stays visible, because the roadmap is not a secret; it
+   * just stops pretending to be a destination.
+   *
+   * tests/unit/links.test.ts asserts this flag against the filesystem in BOTH
+   * directions, so it cannot drift: marking a page unbuilt after building it
+   * fails just as loudly as forgetting to mark one.
+   */
+  unbuilt?: true
 }
 
 export interface NavGroup {
@@ -35,28 +53,28 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Research',
     items: [
       { label: 'Keywords', href: '/research/keywords' },
-      { label: 'Opportunities', href: '/research/opportunities' },
-      { label: 'Niche Research', href: '/research/niche' },
-      { label: 'Competitors', href: '/research/competitors' },
+      { label: 'Opportunities', href: '/research/opportunities', unbuilt: true },
+      { label: 'Niche Research', href: '/research/niche', unbuilt: true },
+      { label: 'Competitors', href: '/research/competitors', unbuilt: true },
       { label: 'Keyword Lists', href: '/research/keyword-lists' },
     ],
   },
   {
     label: 'Listings',
     items: [
-      { label: 'All Listings', href: '/listings', badge: '412' },
+      { label: 'All Listings', href: '/listings', badge: '412', unbuilt: true },
       { label: 'Listing Audit', href: '/listings/audit' },
       { label: 'AI Copilot', href: '/listings/ai-copilot' },
       { label: 'Bulk Editor', href: '/listings/bulk-editor' },
-      { label: 'Change History', href: '/listings/change-history' },
+      { label: 'Change History', href: '/listings/change-history', unbuilt: true },
     ],
   },
   {
     label: 'Analytics',
     items: [
-      { label: 'Shop Analytics', href: '/analytics' },
-      { label: 'Sales Map', href: '/analytics/sales-map' },
-      { label: 'Experiments', href: '/analytics/experiments' },
+      { label: 'Shop Analytics', href: '/analytics', unbuilt: true },
+      { label: 'Sales Map', href: '/analytics/sales-map', unbuilt: true },
+      { label: 'Experiments', href: '/analytics/experiments', unbuilt: true },
     ],
   },
   {
@@ -67,19 +85,19 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Tools',
     items: [
       { label: 'Simple Calculator', href: '/tools/simple-calculator' },
-      { label: 'Fee Calculator', href: '/tools/fee-calculator' },
-      { label: 'Ads ROI Calculator', href: '/tools/ads-roi' },
-      { label: 'Profit Calculator', href: '/tools/profit-calculator' },
-      { label: 'Category Finder', href: '/tools/category-finder' },
-      { label: 'Seasonal Calendar', href: '/tools/seasonal-calendar' },
-      { label: 'Trademark Screening', href: '/tools/trademark-screening' },
+      { label: 'Fee Calculator', href: '/tools/fee-calculator', unbuilt: true },
+      { label: 'Ads ROI Calculator', href: '/tools/ads-roi', unbuilt: true },
+      { label: 'Profit Calculator', href: '/tools/profit-calculator', unbuilt: true },
+      { label: 'Category Finder', href: '/tools/category-finder', unbuilt: true },
+      { label: 'Seasonal Calendar', href: '/tools/seasonal-calendar', unbuilt: true },
+      { label: 'Trademark Screening', href: '/tools/trademark-screening', unbuilt: true },
     ],
   },
   {
     label: 'Data',
     items: [
       { label: 'Methodology', href: '/data/methodology' },
-      { label: 'Data Sources', href: '/data/sources' },
+      { label: 'Data Sources', href: '/data/sources', unbuilt: true },
     ],
   },
 ]
@@ -87,16 +105,26 @@ export const NAV_GROUPS: NavGroup[] = [
 /** Billing and Settings sit below the groups, without a heading. */
 export const NAV_FOOTER: NavItem[] = [
   { label: 'Billing', href: '/billing' },
-  { label: 'Settings', href: '/settings/profile' },
+  // Retargeted, not disabled. "Settings" pointed at /settings/profile, which
+  // does not exist; Shop connections does, and is what a seller opening
+  // Settings is looking for. Where a real destination matches the intent,
+  // pointing at it beats a "Soon" label on a whole section.
+  { label: 'Settings', href: '/settings/shops' },
 ]
 
 /** Five-item bottom tab bar at <= 767px (artboard 90). */
 export const MOBILE_TABS: NavItem[] = [
+  /*
+   * Three of these five went to a 404: Listings, Analytics and More. On a
+   * phone the bottom bar IS the navigation, so more than half of it was dead —
+   * and a "Soon" label on three of five tabs would be a worse answer than
+   * sending each one to the real surface behind its intent.
+   */
   { label: 'Home', href: '/dashboard' },
   { label: 'Research', href: '/research/keywords' },
-  { label: 'Listings', href: '/listings' },
-  { label: 'Analytics', href: '/analytics' },
-  { label: 'More', href: '/settings/profile' },
+  { label: 'Listings', href: '/listings/audit' },
+  { label: 'Profit', href: '/profit' },
+  { label: 'Settings', href: '/settings/shops' },
 ]
 
 /*
@@ -115,9 +143,9 @@ export const SETTINGS_NAV: NavGroup[] = [
   {
     label: 'Account',
     items: [
-      { label: 'Profile', href: '/settings/profile' },
-      { label: 'Security', href: '/settings/security' },
-      { label: 'Notifications', href: '/settings/notifications' },
+      { label: 'Profile', href: '/settings/profile', unbuilt: true },
+      { label: 'Security', href: '/settings/security', unbuilt: true },
+      { label: 'Notifications', href: '/settings/notifications', unbuilt: true },
       { label: 'Billing & plan', href: '/billing' },
     ],
   },
@@ -125,9 +153,9 @@ export const SETTINGS_NAV: NavGroup[] = [
     label: 'Shops & data',
     items: [
       { label: 'Shop connections', href: '/settings/shops' },
-      { label: 'Data permissions', href: '/settings/data-permissions' },
-      { label: 'Audit log', href: '/settings/audit-log' },
-      { label: 'Costs & fees', href: '/settings/costs' },
+      { label: 'Data permissions', href: '/settings/data-permissions', unbuilt: true },
+      { label: 'Audit log', href: '/settings/audit-log', unbuilt: true },
+      { label: 'Costs & fees', href: '/settings/costs', unbuilt: true },
       { label: 'Export & deletion', href: '/settings/export' },
     ],
   },

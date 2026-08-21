@@ -2387,3 +2387,57 @@ six surfaces. The sweep now closes each disclosure before opening the next.
 
 Same rule as D51a and D48, for the fourth time: **a check that passes when the thing it
 measures is absent is not a check.**
+
+### D54 — A link that 404s is a promise the product does not keep
+
+A `/settings/export` 404 turned up while surveying hidden UI states. Diffing **every** href
+in the source against **every** page that exists found it was not one broken link. It was
+**25**, and the four hand-written ones were all on trust surfaces:
+
+| Link | Where | What it promised |
+| --- | --- | --- |
+| `/settings/export` | next to the revoke control | "you can export or delete it from Export & deletion" — a data-rights claim |
+| `/data/methodology` | every provenance drawer | "Open the full methodology →". Eleven anchors, no page |
+| `/onboarding/connect` | the demo banner | "Connect my shop" — the one action the banner exists to offer |
+| `/listings` | `app/not-found.tsx` | the 404 page's own recovery link was a 404 |
+
+The other 21 were navigation entries. The sidebar advertised 38 surfaces; 17 existed. D21
+removed the items that had no *design* so the nav would not look more built than the
+product, and missed the other half: items that are listed and have no *page*.
+
+None of this was catchable by typecheck, unit test or browser check. A `<Link>` with a bad
+href is valid TypeScript and renders valid HTML. Nothing is wrong until someone clicks — and
+nobody clicks the second button on the 404 page.
+
+Fixed by building what was promised rather than deleting the promise:
+
+- **`/settings/export`** — the two wired datasets, each stating what it leaves out. No delete
+  button: there is no repository behind one yet, and a button that appears to delete your
+  data while doing nothing is the worst thing that page could contain. It gives the route to
+  request deletion, which is true today.
+- **`/data/methodology`** — generated from `METHODOLOGIES`, not written beside it, so the
+  drawer and the page read the same record and cannot drift into describing one metric two
+  ways. A methodology page that disagrees with the badge it explains turns one uncertain
+  number into two contradictory claims.
+- **Nav** — unbuilt items stay visible and stop being destinations, the pattern the Tools
+  page already used. The mobile bar was retargeted instead: three of its five tabs were
+  dead, and on a phone the bottom bar *is* the navigation, so "Soon" on three of five would
+  have been a worse answer than sending each to the real surface behind its intent.
+
+### D54a — The flag is checked against the filesystem, in both directions
+
+`unbuilt` is a claim about the world, so a test compares it to the world:
+
+```
+item.unbuilt && exists      → "marked unbuilt, but the page exists"
+!item.unbuilt && !exists    → "linked, but there is no page"
+```
+
+Both matter. Forgetting the flag puts a 404 back in the sidebar — the original defect, 21
+times. Leaving it on after building the page is quieter and arguably worse: the product
+grows a feature and the navigation goes on calling it "Soon", so nobody finds it.
+
+A unit test, not a browser check: no server, no build, no browser, so it runs in under a
+second and catches a broken link at the moment it is written rather than at the end of a
+phase. Broken three ways to confirm — unmark an unbuilt item, mark a built one, and point an
+href at nothing; all three caught.

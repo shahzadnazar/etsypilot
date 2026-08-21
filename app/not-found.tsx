@@ -17,10 +17,10 @@ export default function NotFound() {
           Back to overview
         </Link>
         <Link
-          href="/listings"
+          href="/listings/audit"
           className="rounded-control border border-line px-3.5 py-2.5 text-[12.5px] font-semibold text-ink-2"
         >
-          Search listings
+          Listing audit
         </Link>
       </div>
     </main>

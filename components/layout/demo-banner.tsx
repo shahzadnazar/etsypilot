@@ -37,7 +37,7 @@ export function DemoBanner() {
         You are exploring Willow &amp; Fern, a fictional shop. Nothing here is connected to Etsy.
       </span>
       <Link
-        href="/onboarding/connect"
+        href="/onboarding?step=connect"
         className="shrink-0 rounded-[7px] bg-white px-2.5 py-1.5 text-[11px] font-semibold"
         style={{ color: '#241B12' }}
       >
