@@ -542,6 +542,64 @@ with sync_playwright() as p:
     check(set(payload) <= {"kind", "message", "recovery", "retryable", "reference"},
           f"The error body carries nothing but the user-facing shape (got {sorted(payload)})")
 
+    # --- CSRF and rate limiting --------------------------------------------
+    #
+    # Both were findings, both verified as real attacks before being fixed.
+    #
+    # CSRF: a POST to /api/billing/cancel carrying `Origin: https://evil.example`
+    # returned 303 — a successful cancellation from any website. It was not
+    # exploitable only because demo mode reads no auth cookie, which is not a
+    # defence, it is a coincidence of the current auth state.
+    origin_attack = pg.request.post(f"{BASE}/api/billing/cancel",
+                                    headers={"Origin": "https://evil.example"},
+                                    fail_on_status_code=False)
+    check(origin_attack.status == 403,
+          f"A cross-origin POST is refused (got {origin_attack.status})")
+
+    # The prefix case a startsWith() check would let through: this app's own
+    # origin is a prefix of an attacker's subdomain.
+    prefix_attack = pg.request.post(f"{BASE}/api/billing/cancel",
+                                    headers={"Origin": f"{BASE}.evil.example"},
+                                    fail_on_status_code=False)
+    check(prefix_attack.status == 403,
+          f"An origin that merely STARTS with ours is refused (got {prefix_attack.status})")
+
+    # ...and the fix must not have broken the real thing. Immediately resumed,
+    # because these checks share a shop with the billing flow checks above.
+    same_origin = pg.request.post(f"{BASE}/api/billing/cancel",
+                                  headers={"Origin": BASE}, fail_on_status_code=False)
+    check(same_origin.status in (200, 303),
+          f"A same-origin POST still works (got {same_origin.status})")
+    pg.request.post(f"{BASE}/api/billing/resume", headers={"Origin": BASE},
+                    fail_on_status_code=False)
+
+    # Stripe calls the webhook from its own servers with no Origin, and proves
+    # itself with an HMAC instead. A 403 here would mean payments stop.
+    hook = pg.request.post(f"{BASE}/api/billing/webhook", data="{}", fail_on_status_code=False)
+    check(hook.status != 403,
+          f"The signature-verified webhook is not blocked by the origin check (got {hook.status})")
+
+    # Rate limiting: /api/export runs the whole profit or audit domain per call,
+    # against a server that renders ~33 pages a second.
+    codes = []
+    for _ in range(13):
+        r = pg.request.get(f"{BASE}/api/export/transactions",
+                           headers={"X-Forwarded-For": "203.0.113.201"},
+                           fail_on_status_code=False)
+        codes.append(r.status)
+    check(429 in codes, f"A request loop against the expensive route is shed (saw {sorted(set(codes))})")
+    check(codes[0] == 200, "...but the first requests are served normally")
+
+    # A limiter that locks a seller out of their own shop has done more harm
+    # than the loop it was shedding.
+    other = pg.request.get(f"{BASE}/api/export/transactions",
+                           headers={"X-Forwarded-For": "203.0.113.202"},
+                           fail_on_status_code=False)
+    check(other.status == 200, f"One caller's limit does not affect another (got {other.status})")
+    page = pg.request.get(f"{BASE}/billing", headers={"X-Forwarded-For": "203.0.113.201"},
+                          fail_on_status_code=False)
+    check(page.status == 200, f"Pages are never rate limited (got {page.status})")
+
     check(len(routes_with_states) >= 5,
           f"The sweep still finds hidden state across the app "
           f"({offered} states on {len(routes_with_states)} routes: "

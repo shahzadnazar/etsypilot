@@ -2730,3 +2730,42 @@ comment: *"There is no `sendCampaign`"*. A promise never to do X contains X.
 
 The tests now strip comments before asserting on source. Same rule as the disclaimer checks
 in the browser suite: **assert on the region under test, never on the prose describing it.**
+
+### D60 — The security review probed a running build, not the source
+
+Two findings, both confirmed as working attacks before being fixed. Full write-up in
+`docs/SECURITY-REVIEW.md`.
+
+**CSRF (HIGH).** `POST /api/billing/cancel` with `Origin: https://evil.example` returned
+**303** — a successful cancellation from any website. Not exploitable that day, for a reason
+that is not a defence: demo mode reads no auth cookie, so there was nothing to ride. The day
+auth lands, cancel/change/refund become one-click attacks from any page a seller visits.
+
+Fixed with an Origin check in middleware rather than a per-form token, so a route added later
+is covered without anyone knowing the file exists — and because the forms here are
+deliberately plain HTML posts with no JavaScript, where a missing token would fail closed and
+silently. Compared as an **exact origin**: `startsWith` would admit
+`https://etsypilot.app.evil.com`, and a test asserts that case.
+
+**Rate limiting (MEDIUM).** Nothing refused a request loop, and `/api/export/*` runs the whole
+profit or audit domain per call against a server measured at ~33 renders/sec. Now 10/min
+there and 60/min elsewhere, per caller, with pages never limited — **a limiter that locks a
+seller out of their own shop has done more harm than the loop it shed.**
+
+The two compromises are stated in the file rather than hidden: an in-memory store means N
+instances allow N× the limit, and a fixed window means 2× across a boundary. Both are fine
+for shedding a runaway loop; neither is presented as more.
+
+### D60a — A review states what it could not cover
+
+`docs/SECURITY-REVIEW.md` ends with its own limits, because a review that lists only what it
+checked reads as a clean bill of health for things it never looked at. Authentication does
+not exist yet, so session fixation, expiry and takeover are unreviewable; there is no
+authorization matrix because there is one role and one shop; the database token store is
+unimplemented, so encryption at rest is reviewed as cryptography and not as a deployed
+system; and no live Etsy or Stripe credentials exist, so those integrations are reviewed as
+code and against injected transports only.
+
+The most important line in it is that **the CSRF fix must ship with the auth work, not
+after** — the vulnerability is dormant precisely because the thing that would arm it is
+missing.

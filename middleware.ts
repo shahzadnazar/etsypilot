@@ -35,8 +35,68 @@
 
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { checkCsrf } from '@/lib/security/csrf'
+import { rateLimit } from '@/lib/security/rate-limit'
+
+/**
+ * The caller, for rate limiting.
+ *
+ * `x-forwarded-for` is set by whatever proxy sits in front, and its FIRST
+ * entry is the client — later entries are proxies, and the whole header is
+ * attacker-controlled when nothing trusted rewrites it. That is acceptable
+ * here: the worst case is an attacker spreading their own requests across
+ * forged keys, which costs them the same effort as using more IPs, while a
+ * genuine seller behind a corporate NAT still gets a stable key.
+ *
+ * It is NOT acceptable for anything that grants access, which is why this is
+ * used only to shed load and never to identify anyone.
+ */
+function callerKey(request: NextRequest): string {
+  const forwarded = request.headers.get('x-forwarded-for')
+  if (forwarded) return forwarded.split(',')[0]!.trim()
+  return request.headers.get('x-real-ip') ?? 'unknown'
+}
 
 export function middleware(request: NextRequest) {
+  const url = new URL(request.url)
+
+  /*
+   * CSRF first, before any work is done for the request.
+   *
+   * In middleware rather than per-route on purpose: a route added later is
+   * covered without anyone remembering. Verified against the real attack — a
+   * cross-origin POST to /api/billing/cancel used to return 303.
+   */
+  const verdict = checkCsrf({
+    method: request.method,
+    path: url.pathname,
+    origin: request.headers.get('origin'),
+    referer: request.headers.get('referer'),
+    self: url.origin,
+  })
+  if (!verdict.allowed) {
+    // 403 with nothing in it. The reason is for our log, not for whoever sent
+    // it — telling an attacker which check refused them is free reconnaissance.
+    return new NextResponse(null, { status: 403 })
+  }
+
+  /*
+   * Then rate limiting, and only for /api. Pages are cheap and a seller
+   * clicking around a dashboard must never be throttled; the API routes are
+   * where a loop costs real work (/api/export runs the whole profit domain).
+   */
+  if (url.pathname.startsWith('/api/')) {
+    const decision = rateLimit(callerKey(request), url.pathname, Date.now())
+    if (!decision.allowed) {
+      return new NextResponse(null, {
+        status: 429,
+        // Say when, exactly. A 429 without Retry-After invites a retry loop,
+        // which is the thing being defended against.
+        headers: { 'Retry-After': String(decision.retryAfter) },
+      })
+    }
+  }
+
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64')
 
   const csp = [
