@@ -8,8 +8,11 @@
 **Phase:** 12 — Quality & Production Hardening (IN PROGRESS)
 **Current task:** Phase 12. Done: security headers + CSP, accessibility (WCAG A/AA at
 390/768/1440), link integrity, error/observability, empty + loading states. Remaining:
-performance measurement, Sentry/PostHog/Resend adapters, written security review, the
-designed mobile top bar, and the six unbuilt free tools.
+Sentry/PostHog/Resend adapters, written security review, the designed mobile top bar, and
+the six unbuilt free tools.
+
+Performance baseline (D58): 143 kB JS compressed, LCP 132ms median, CLS 0.000, TTFB
+20-34ms, ~33 SSR renders/sec/process, domain linear to 25k listings (138ms).
 **Current file being worked on:** None
 **Last completed task:** OAuth 2.0 + PKCE, rate-limited HTTP client, encrypted token store,
 the full LiveEtsyService adapter and both /api/etsy routes — all written and tested with NO

@@ -2621,3 +2621,56 @@ against `:3111` and passes against `:3112`.
 
 Fifth instance of the same class. **A check that passes when the thing it measures is absent
 is not a check** — and a guard is a check.
+
+### D58 — Performance was measured before anything was changed, and nothing needed changing
+
+The first honest finding of this phase is that there was no work to do. Measured on a 4-core
+container, production build:
+
+| | Measured | Note |
+| --- | --- | --- |
+| JS per route | **143 kB compressed** (472 kB decoded) | both large chunks are Next's own runtime; the app's own client code is ~20 kB |
+| CSS | 28 kB | |
+| LCP | **132 ms median**, 320 ms worst | "good" is under 2500 ms |
+| CLS | **0.000 on every route** | the self-hosted font's size-adjusted fallback (D51) |
+| TTFB | 20–34 ms median | |
+
+The 490 kB figure that first looked alarming was `decodedBodySize` — the file, not the
+download. **Measuring the wrong number makes a healthy app look broken**, which would have
+led to a week of pointless bundle-splitting.
+
+Domain cost was checked at a scale the demo shop cannot reach. The demo is 450 listings;
+real shops reach tens of thousands, and nothing here had ever been run at that size:
+
+| Listings | Audit rules | Reconcile | Total |
+| --- | --- | --- | --- |
+| 450 | 4 ms | 1 ms | 6 ms |
+| 2,000 | 16 ms | 2 ms | 18 ms |
+| 10,000 | 43 ms | 13 ms | 56 ms |
+| 25,000 | 111 ms | 27 ms | 138 ms |
+
+Linear, with no quadratic term. 25,000 listings costs 138 ms.
+
+Under 20-way concurrency `/dashboard` goes from 34 ms to 404 ms median. That is not a
+pathology — it is single-threaded SSR queueing, and 20 × 30 ms serialised is 600 ms, which is
+what was measured. The number worth recording is the capacity it implies: **≈33 renders per
+second per process.**
+
+### D58a — The budget bounds what is deterministic tightly and what is not, loosely
+
+Bytes and CLS get tight bounds: the same build produces the same numbers on any machine.
+Timing gets a loose one, because a shared runner can be several times slower with nothing
+wrong — and **a flaky budget gets raised until it means nothing**. The LCP bound is Core Web
+Vitals' "good" threshold, so crossing it is a statement rather than a local hiccup.
+
+### D58b — The CSP turned a performance regression into a blocked resource
+
+Re-adding the render-blocking Google Fonts link — the exact regression D51 removed, which
+cost 12.6 s on every page load — did **not** fail the performance budget. It failed the
+off-origin check and the CSP check, because the browser now *refuses* the stylesheet, so it
+never gets the chance to block rendering.
+
+Worth recording as a property rather than a coincidence: a security control removed a whole
+class of performance regression. It also means the budget's own measurement had to be proved
+separately, by tightening the thresholds below the measured values and confirming it reports
+the real figures (JS 142–151 kB, CLS 0.000) rather than passing on absent data.

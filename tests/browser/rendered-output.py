@@ -429,6 +429,69 @@ with sync_playwright() as p:
           "Every tap target is at least 24x24 (WCAG 2.2 SC 2.5.8)"
           + ("" if undersized == [] else f" — {undersized[:3]}"))
 
+    # --- Performance budget -------------------------------------------------
+    #
+    # Measured first, then bounded. The numbers this was written against, on a
+    # 4-core container:
+    #
+    #   JS transfer   143 kB compressed per route (472 kB decoded), and the two
+    #                 large chunks are Next's own runtime — the app's client
+    #                 code is roughly 20 kB.
+    #   CSS            28 kB
+    #   LCP           132 ms median, 320 ms worst
+    #   CLS           0.000 on every route
+    #   TTFB           20-34 ms median sequential
+    #
+    # Bytes and CLS get tight bounds because they are deterministic: the same
+    # build produces the same numbers on any machine. Timing gets a loose one
+    # because it is not — a shared runner can be several times slower without
+    # anything being wrong, and a flaky budget gets raised until it means
+    # nothing. The LCP bound is the "good" threshold from Core Web Vitals, so
+    # crossing it is a real statement rather than a local hiccup.
+    #
+    # What this is really guarding: D51 removed a render-blocking third-party
+    # font that cost 12.6 SECONDS on every page load and hid behind a note
+    # calling it cosmetic. A budget is how that stops being a thing someone has
+    # to remember.
+    BUDGET_JS_KB = 250        # measured 143
+    BUDGET_CSS_KB = 60        # measured 28
+    BUDGET_CLS = 0.05         # measured 0.000
+    BUDGET_LCP_MS = 2500      # measured 320 worst; this is the Web Vitals bound
+
+    over = []
+    for route in ("/dashboard", "/profit", "/listings/audit", "/billing",
+                  "/tools/etsy-seller-calculator"):
+        pg.goto(f"{BASE}{route}", wait_until="load")
+        pg.wait_for_timeout(600)
+        m = pg.evaluate("""() => new Promise(done => {
+          const out = {lcp: 0, cls: 0, js: 0, css: 0};
+          try {
+            new PerformanceObserver(l => { for (const e of l.getEntries()) out.lcp = e.startTime; })
+              .observe({type: 'largest-contentful-paint', buffered: true});
+            new PerformanceObserver(l => {
+              for (const e of l.getEntries()) if (!e.hadRecentInput) out.cls += e.value;
+            }).observe({type: 'layout-shift', buffered: true});
+          } catch (e) {}
+          setTimeout(() => {
+            for (const r of performance.getEntriesByType('resource')) {
+              // encodedBodySize is what crosses the wire. decodedBodySize would
+              // measure the file, not the download.
+              if (r.name.endsWith('.js')) out.js += r.encodedBodySize;
+              if (r.name.endsWith('.css')) out.css += r.encodedBodySize;
+            }
+            done(out);
+          }, 400);
+        })""")
+        js_kb, css_kb = m["js"] / 1024, m["css"] / 1024
+        if js_kb > BUDGET_JS_KB: over.append(f"{route} JS {js_kb:.0f}kB")
+        if css_kb > BUDGET_CSS_KB: over.append(f"{route} CSS {css_kb:.0f}kB")
+        if m["cls"] > BUDGET_CLS: over.append(f"{route} CLS {m['cls']:.3f}")
+        if m["lcp"] > BUDGET_LCP_MS: over.append(f"{route} LCP {m['lcp']:.0f}ms")
+    check(over == [],
+          f"Every page is inside the performance budget "
+          f"(JS<={BUDGET_JS_KB}kB, CSS<={BUDGET_CSS_KB}kB, CLS<={BUDGET_CLS}, LCP<={BUDGET_LCP_MS}ms)"
+          + ("" if over == [] else f" — {over}"))
+
 
     # The sweep must have opened every state it found.
     #
