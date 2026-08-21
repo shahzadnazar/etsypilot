@@ -55,16 +55,34 @@ export interface CopilotView {
 const DEMO_GENERATIONS_USED = 42
 const AI_RESETS_ON = '2026-09-01'
 
-export async function getCopilotView(ctx: ShopContext, listingId?: string): Promise<CopilotView> {
+/**
+ * Null when the shop has no listings at all.
+ *
+ * Not an error, and the distinction is the point. A listingId that names a
+ * listing which does not exist IS a 404 — a stale link, a listing deleted on
+ * Etsy — and still throws. A shop with nothing in it has not failed at
+ * anything; there is simply nothing to draft for yet.
+ *
+ * Both used to throw notFound('listing'), so opening the Copilot on an empty
+ * shop produced a 500 page reading "Something went wrong on our side". It went
+ * unnoticed for four phases because the demo shop always has 450 listings.
+ */
+export async function getCopilotView(
+  ctx: ShopContext,
+  listingId?: string,
+): Promise<CopilotView | null> {
   const etsy = getEtsyService()
   const [{ listings }, plan] = await Promise.all([
     etsy.getListings(ctx.shopId, { limit: 500 }),
     currentPlan(ctx),
   ])
 
+  if (listings.length === 0) return null
+
   const target = listingId
     ? listings.find((l) => l.etsyListingId === listingId)
     : listings.find((l) => l.tags.length < 13) ?? listings[0]
+  // Reached only when an id was asked for and does not match: a real 404.
   if (!target) throw Errors.notFound('listing')
 
   const list = demoLists(ctx.shopId)[0]

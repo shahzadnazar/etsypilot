@@ -47,7 +47,16 @@ export interface ProfitResult {
   grossRevenue: number
   totalCosts: number
   netProfit: number
-  marginPercent: number
+  /*
+   * Null when there is no revenue to be a margin OF.
+   *
+   * It used to be `grossRevenue === 0 ? 0 : ...`, so a shop with no sales and
+   * $1,322 of fixed costs reported a net margin of 0.0% — which reads as
+   * breaking even, next to a net profit of −$1,322.05. Zero is a real margin;
+   * this is the absence of one, and the product already distinguishes those
+   * everywhere else (D34a).
+   */
+  marginPercent: number | null
   coveragePercent: number
   /** Stated plainly, never inferred from a chart gap. */
   missingData: string[]
@@ -72,7 +81,7 @@ export function computeWaterfall(orders: EtsyOrder[], costs: CostInputs): Profit
     etsyFees + paymentProcessing + offsiteAds + shipping + cogs + labour + otherCosts,
   )
   const netProfit = round2(grossRevenue - totalCosts)
-  const marginPercent = grossRevenue === 0 ? 0 : round1((netProfit / grossRevenue) * 100)
+  const marginPercent = grossRevenue === 0 ? null : round1((netProfit / grossRevenue) * 100)
   const coveragePercent = Math.round(costs.coverage * 100)
 
   const verifiedSource = 'Your Etsy order receipts'

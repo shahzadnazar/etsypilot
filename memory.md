@@ -6,9 +6,10 @@
 ## 1. Current Status
 
 **Phase:** 12 — Quality & Production Hardening (IN PROGRESS)
-**Current task:** Phase 12. Done: security headers + CSP, accessibility (WCAG A/AA both
-themes), link integrity, error/observability. Remaining: the six unbuilt free tools and the
-designed mobile top bar.
+**Current task:** Phase 12. Done: security headers + CSP, accessibility (WCAG A/AA at
+390/768/1440), link integrity, error/observability, empty + loading states. Remaining:
+performance measurement, Sentry/PostHog/Resend adapters, written security review, the
+designed mobile top bar, and the six unbuilt free tools.
 **Current file being worked on:** None
 **Last completed task:** OAuth 2.0 + PKCE, rate-limited HTTP client, encrypted token store,
 the full LiveEtsyService adapter and both /api/etsy routes — all written and tested with NO
@@ -697,6 +698,22 @@ scroll containers unreachable by keyboard and several sub-24px targets.
 The audited surface is (route, state, theme, VIEWPORT). Expanding every axis at once is
 too slow, so pick per rule type: states matter for content rules, viewports for
 geometric ones — and state the limit in the check instead of implying coverage.
+
+### Render the product against NO data — the demo dataset hides everything
+
+The demo shop always has 450 listings and 438 orders, so a screen that renders nonsense
+with no data renders perfectly in every review. `DEMO_DATASET=empty` exists for this.
+
+One run found four defects on an eleven-phase-old product, three invisible to every
+existing check. The worst was not an empty-state bug at all: **Money rendered
+`Math.abs(value)`**, so a NEGATIVE net profit displayed as a POSITIVE one. A loss shown
+as a profit, in the number that matters most, surviving because the demo shop is
+profitable (D57a).
+
+The shared shape of the rest: **a number that is arithmetically correct can still say
+something false.** A health score of 100 over an empty set; a 0.0% margin from a
+divide-by-zero guard. **The guard against dividing by zero is where a false zero usually
+enters** — the answer is not a fallback figure, it is saying there is no figure (D57b).
 
 ## 16. Memory Update Rule
 

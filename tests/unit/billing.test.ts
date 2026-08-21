@@ -462,6 +462,7 @@ describe('one plan, read everywhere', () => {
     const ctx = { shopId: 'demo-willow-fern', actorId: 'demo-user-salman', readOnly: true }
 
     const [copilot, billing] = await Promise.all([getCopilotView(ctx), getBillingView(ctx)])
+    if (!copilot) throw new Error('expected a view for the demo shop')
     const meter = billing.meters.find((m) => m.metric === 'aiGenerations')!
 
     // The copilot said 60 while billing said 500, and a seller reads both.

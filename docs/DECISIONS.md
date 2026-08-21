@@ -2556,3 +2556,68 @@ The deliberate break is what exposed it — reverting the change did not fail an
 was the signal to go and measure rather than assume the check was inadequate. **A break that
 does not fail means either the check is wrong or the fix was not a fix.** Both are worth
 knowing, and the second is easy to miss because the code still looks improved.
+
+### D57 — Empty states were unreachable, which is why so few existed
+
+The demo shop always has 450 listings and 438 orders. So a screen that renders nonsense with
+no data renders perfectly in every review, every browser check and every phase sign-off.
+`DEMO_DATASET=empty` serves the same shop with nothing in it — a test seam that changes no
+behaviour anywhere else.
+
+One run, on a product eleven phases in, found four defects. Three of them were invisible to
+every check that existed:
+
+| Screen | What it said |
+| --- | --- |
+| `/profit` | **"Net profit $1,322.05"** on zero revenue |
+| `/listings/audit` | **"Health score 100 / 100"** for a shop with no listings — directly above "Covers 0% of your listings" |
+| `/listings/ai-copilot` | **HTTP 500.** Not "no listings yet" — "Something went wrong on our side" |
+| `/listings/bulk-editor` | A wizard on step 3, two steps ticked, offering to "Validate 0 listings" |
+
+### D57a — A loss was displayed as a profit
+
+The worst of the four, and the one that is not an empty-state bug at all.
+
+`Money` rendered `formatCurrency(Math.abs(value))` and prefixed a minus **only when the
+caller passed `negate`**. So any negative figure displayed as positive — including net
+profit, the number in this product that most needs to be right, and which goes negative
+exactly when a seller most needs to know.
+
+It survived eleven phases because the demo shop is profitable. Nothing in the type system,
+the unit tests or the browser checks could see it: the value was correct all the way to the
+last line of the renderer.
+
+The fix is in `formatSignedCurrency`, a pure function, because the bug lived somewhere
+nothing could assert on (D28: change the architecture, never the property). `negate` still
+means "this value is a deduction" but now flips the sign rather than erasing it, so a
+negative cost — a refund, a credit — reads as a credit instead of becoming a second charge.
+
+### D57b — A number that is arithmetically correct can still say something false
+
+Three of the four share one shape, and it is worth naming separately from the display bug:
+
+- A health score of 100 over an empty set is `1 - 0` — correct, and meaningless.
+- A net margin of `0.0%` on zero revenue was `grossRevenue === 0 ? 0 : …` — a deliberate
+  guard against dividing by zero that produced a figure reading "broke even" beside a net
+  profit of −$1,322.05.
+- A wizard reporting "0 listings · will be written 0" is accurate about a job that should
+  not exist.
+
+Each is the absence of a value, and this product already distinguishes absence from zero
+everywhere else (D34a). They now return `unavailable()` or `null` and render an em dash with
+a reason. **The guard against dividing by zero is where a false zero usually enters** — the
+answer is not a fallback figure, it is saying there is no figure.
+
+### D57c — The guard on the empty checks was satisfied by the wrong server
+
+`tests/browser/empty-states.py` refuses to run unless the server really is serving the empty
+dataset, because passing these checks against the normal demo shop would be meaningless.
+
+The first version tested `"0 listings checked" not in text` — which is **satisfied by "450
+listings checked"**, since that contains the string. The guard written to prove the checks
+were pointed at the right server was itself satisfied by the wrong one. Now
+`re.search(r"(?<!\d)0 listings checked", …)`, and verified both ways: it aborts with exit 2
+against `:3111` and passes against `:3112`.
+
+Fifth instance of the same class. **A check that passes when the thing it measures is absent
+is not a check** — and a guard is a check.

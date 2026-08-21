@@ -13,7 +13,7 @@
  */
 
 import { cn } from '@/lib/utils/cn'
-import { formatCurrency } from '@/lib/utils/format'
+import { formatSignedCurrency } from '@/lib/utils/format'
 
 export function Numeric({
   children,
@@ -55,11 +55,26 @@ export function Money({
     )
   }
 
+  /*
+   * The sign is the VALUE's, not the caller's.
+   *
+   * This used to render `formatCurrency(Math.abs(value))` and prefix a minus
+   * only when `negate` was passed. So a negative number displayed as a positive
+   * one — and the number that matters most in this product is net profit, which
+   * goes negative exactly when a seller most needs to know.
+   *
+   * Found by rendering the app against a shop with no orders: fixed labour and
+   * other costs still apply, so net profit was −$1,322.05 and the screen said
+   * "Net profit $1,322.05". A loss shown as a profit. Invisible for eleven
+   * phases because the demo shop is profitable and nothing else was ever tried.
+   *
+   * `negate` keeps its meaning — "this value is a deduction, show it as one" —
+   * but it now flips the sign rather than erasing it, so a negative cost (a
+   * refund, a credit) correctly reads as a positive line instead of being
+   * silently turned into another deduction.
+   */
   return (
-    <Numeric className={className}>
-      {negate ? '−' : ''}
-      {formatCurrency(Math.abs(value), currency)}
-    </Numeric>
+    <Numeric className={className}>{formatSignedCurrency(value, currency, { negate })}</Numeric>
   )
 }
 

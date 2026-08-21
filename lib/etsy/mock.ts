@@ -33,16 +33,35 @@ import type {
   SyncProgress,
 } from './interface'
 
+/*
+ * The empty variant.
+ *
+ * Every empty state in this product was unreachable, which is why so few of
+ * them existed. The demo shop always has 450 listings and 438 orders, so a
+ * screen that renders nonsense with no data — a table of headers and no rows, a
+ * "0%" where "nothing yet" belongs, an average over an empty set — renders
+ * perfectly in every review and every check.
+ *
+ * DEMO_DATASET=empty serves the same shop with nothing in it. It is a test
+ * seam, not a feature: it changes no behaviour anywhere else, and the browser
+ * checks drive it to prove the empty states are real rather than assumed.
+ */
+function isEmptyDataset(): boolean {
+  return process.env.DEMO_DATASET === 'empty'
+}
+
 /* Built once per process. Deterministic, so this is safe to memoise. */
 let listingCache: EtsyListing[] | null = null
 let orderCache: EtsyOrder[] | null = null
 
 function listings(): EtsyListing[] {
+  if (isEmptyDataset()) return []
   if (!listingCache) listingCache = buildDemoListings()
   return listingCache
 }
 
 function orders(): EtsyOrder[] {
+  if (isEmptyDataset()) return []
   if (!orderCache) orderCache = buildDemoOrders(listings())
   return orderCache
 }
@@ -60,7 +79,9 @@ export class MockEtsyService implements EtsyService {
       timezone: 'America/New_York',
       connectionStatus: 'DEMO',
       lastSyncedAt: DEMO_LAST_SYNCED,
-      activeListingCount: DEMO_COUNTS.activeListings,
+      // Must agree with listings(). A count that disagrees with the list is the
+      // 'shop has 450 listings' header above an empty table.
+      activeListingCount: isEmptyDataset() ? 0 : DEMO_COUNTS.activeListings,
       grantedScopes: ['listings_r', 'shops_r', 'transactions_r', 'billing_r'],
     }
   }

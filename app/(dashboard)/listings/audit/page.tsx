@@ -74,12 +74,37 @@ export default async function ListingAuditPage() {
           <Card className="flex flex-col gap-2 p-[18px]">
             <div className="flex items-center justify-between gap-2">
               <span className="text-label text-muted-1">Health score</span>
-              <ProvenanceButton metricKey="listingHealth" type="CALCULATED" demo={demo} />
+              {/*
+                * The badge must follow the value, not be written next to it. A
+                * score that is UNAVAILABLE was still labelled "Calculated"
+                * because the type was hard-coded here — the badge described the
+                * code path rather than the number that came out of it.
+                */}
+              <ProvenanceButton
+                metricKey="listingHealth"
+                type={view.healthScore.provenance.type}
+                demo={demo}
+              />
             </div>
-            <Numeric className="text-metric text-ink-1">
-              {view.healthScore.value}
-              <span className="text-body font-normal text-muted-1"> / 100</span>
-            </Numeric>
+            {/*
+              * "/ 100" belongs to a score, so it renders only when there is
+              * one. With the value absent it printed on its own — a card whose
+              * headline read "/ 100" above a sentence explaining there was
+              * nothing to score.
+              */}
+            {view.healthScore.value === null ? (
+              <Numeric className="text-metric text-muted-1">
+                <span title="No health score yet" aria-hidden>
+                  —
+                </span>
+                <span className="sr-only">No health score yet</span>
+              </Numeric>
+            ) : (
+              <Numeric className="text-metric text-ink-1">
+                {view.healthScore.value}
+                <span className="text-body font-normal text-muted-1"> / 100</span>
+              </Numeric>
+            )}
             <p className="text-caption leading-relaxed text-muted-1">
               {view.healthScore.provenance.methodology}
             </p>

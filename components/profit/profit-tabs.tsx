@@ -84,7 +84,28 @@ export function ProfitTabs({ view, demo }: { view: ProfitView; demo: boolean }) 
           type="CALCULATED"
           demo={demo}
         />
-        <Kpi label="Net margin" value={formatPercent(result.marginPercent)} type="CALCULATED" demo={demo} />
+        <Kpi
+          label="Net margin"
+          /*
+           * An em dash with a reason, not "0.0%". There is no margin without
+           * revenue to be a margin of, and printing zero there reads as
+           * breaking even beside a net profit of −$1,322.05.
+           */
+          value={
+            result.marginPercent === null ? (
+              <Numeric className="text-muted-1">
+                <span title="No revenue in this period" aria-hidden>
+                  —
+                </span>
+                <span className="sr-only">No revenue in this period, so there is no margin</span>
+              </Numeric>
+            ) : (
+              formatPercent(result.marginPercent)
+            )
+          }
+          type="CALCULATED"
+          demo={demo}
+        />
       </section>
 
       <div role="tablist" aria-label="Profit views" className="mt-5 flex flex-wrap gap-2">

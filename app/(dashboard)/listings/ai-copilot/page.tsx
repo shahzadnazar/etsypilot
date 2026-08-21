@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { PageHeader } from '@/components/layout/page-header'
+import { EmptyState } from '@/components/ui/states'
 import { DraftReview } from '@/components/ai/draft-review'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -31,6 +32,28 @@ export default async function AiCopilotPage({
   const { listing } = await searchParams
   const ctx = shopContext(session, session.shopId)
   const view = await getCopilotView(ctx, listing)
+  if (!view) {
+    return (
+      <>
+        <PageHeader
+          title="AI Copilot"
+          subtitle="Drafts titles, tags and descriptions for a listing you choose — and never publishes anything without you."
+        />
+        <EmptyState
+          title="No listings to draft for yet"
+          description="The Copilot rewrites a listing you already have, so it needs at least one. Once your shop has synced, open a listing from the audit and the Copilot will pick up the weakest one automatically."
+          action={
+            <Link
+              href="/listings/audit"
+              className="text-caption font-semibold text-brand-strong underline underline-offset-2"
+            >
+              Go to the listing audit →
+            </Link>
+          }
+        />
+      </>
+    )
+  }
   const demo = session.isDemo
   const exhausted = quotaExhausted(view.quota)
   const { draft, rejected, inputs } = view

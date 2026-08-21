@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { consumeGeneration, generateDraft, getCopilotView } from '@/domain/ai/service'
 import { DEFAULT_GUARDRAILS, draftChanges, quotaExhausted, type AiDraft, type GenerationInputs } from '@/domain/ai/types'
 import { createDraft } from '@/domain/bulk-editor/service'
@@ -182,6 +182,9 @@ describe('the generation quota is a boundary, not a penalty', () => {
 describe('the copilot view', () => {
   it('returns exactly one of a draft or a rejection', async () => {
     const view = await getCopilotView(CTX)
+    // The demo shop always has listings; null means the empty-shop path, which
+    // has its own test below.
+    if (!view) throw new Error('expected a view for the demo shop')
     expect(view.draft === null).not.toBe(view.rejected === null)
     expect(view.inputs.lockedTerms.length).toBeGreaterThan(0)
     for (const q of view.queue) {
@@ -191,6 +194,36 @@ describe('the copilot view', () => {
 
   it('runs the rule-based provider in demo mode, never a live model', async () => {
     const view = await getCopilotView(CTX)
+    // The demo shop always has listings; null means the empty-shop path, which
+    // has its own test below.
+    if (!view) throw new Error('expected a view for the demo shop')
     expect(view.provider).toContain('demo mode')
+  })
+})
+
+describe('a shop with no listings', () => {
+  /*
+   * The Copilot used to throw notFound('listing') here, so opening it on an
+   * empty shop rendered the 500 page: "Something went wrong on our side."
+   * Nothing had gone wrong. The shop was new.
+   *
+   * The distinction the code now makes, and this asserts: an id that matches
+   * nothing is still a 404 — a stale link, or a listing deleted on Etsy — while
+   * a shop with nothing in it returns null and gets an empty state.
+   */
+  const EMPTY = { ...CTX }
+
+  it('returns null instead of throwing', async () => {
+    const previous = process.env.DEMO_DATASET
+    process.env.DEMO_DATASET = 'empty'
+    try {
+      vi.resetModules()
+      const { getCopilotView } = await import('@/domain/ai/service')
+      await expect(getCopilotView(EMPTY)).resolves.toBeNull()
+    } finally {
+      if (previous === undefined) delete process.env.DEMO_DATASET
+      else process.env.DEMO_DATASET = previous
+      vi.resetModules()
+    }
   })
 })

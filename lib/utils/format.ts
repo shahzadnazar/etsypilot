@@ -18,6 +18,30 @@ export function formatCurrency(
   }).format(amount)
 }
 
+/**
+ * A money string that carries the value's own sign.
+ *
+ * Pure, and separated from the component on purpose. The bug this replaces
+ * lived in the last line of a renderer — `formatCurrency(Math.abs(value))` with
+ * a minus added only when the CALLER asked for one — so a negative figure
+ * displayed as a positive one, and nothing that could be unit tested ever saw
+ * it. Moving the decision here makes it assertable without a browser (D28:
+ * change the architecture, never the property).
+ *
+ * `negate` means "this value is a deduction, show it as one". It flips the
+ * sign rather than erasing it, so a negative cost — a refund, a credit — reads
+ * as a positive line instead of becoming a second deduction.
+ */
+export function formatSignedCurrency(
+  value: number,
+  currency = 'USD',
+  opts: { negate?: boolean } = {},
+): string {
+  const signed = opts.negate ? -value : value
+  // U+2212, the character the design uses. Intl would emit a hyphen-minus.
+  return `${signed < 0 ? '\u2212' : ''}${formatCurrency(Math.abs(signed), currency)}`
+}
+
 export function formatNumber(value: number): string {
   return new Intl.NumberFormat('en-US').format(value)
 }

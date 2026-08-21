@@ -31,7 +31,7 @@ import { getEtsyService } from '@/lib/etsy'
 import { demoConfirmedCosts, PERIOD_END, PERIOD_START } from '@/lib/etsy/demo-dataset'
 import type { EtsyListing, EtsyOrder } from '@/lib/etsy/interface'
 import type { ShopContext } from '@/lib/permissions'
-import { calculated, verified } from '@/lib/provenance/builders'
+import { calculated, unavailable, verified } from '@/lib/provenance/builders'
 import type { Provenanced } from '@/lib/provenance/types'
 import { AUDIT_RULES, DEFAULT_THRESHOLDS, type AuditRule, type RuleContext, type Severity } from './rules'
 
@@ -163,15 +163,35 @@ function healthScore(
   worstByListing: Map<string, Severity>,
   revenueByListing: Map<string, number>,
 ): Provenanced<number> {
+  /*
+   * Nothing to score.
+   *
+   * This used to fall through to the unweighted branch, where an empty listing
+   * set produced a penalty of 0 and therefore a score of 100 — a perfect health
+   * score for a shop with no listings in it, printed directly above the line
+   * "Covers 0% of your listings". The two sentences contradicted each other on
+   * the same screen.
+   *
+   * A score over an empty set is not a good score, it is an absent one, and
+   * this product already has a shape for that. Found by rendering the app
+   * against an empty shop; the demo shop always has 450 listings, so the branch
+   * was unreachable in every review.
+   */
+  if (listings.length === 0) {
+    return unavailable(
+      'There are no listings to check yet, so there is no health score to report.',
+      'Connect a shop, or add your first listing on Etsy — the audit runs on the next sync.',
+    ) as Provenanced<number>
+  }
+
   const totalRevenue = [...revenueByListing.values()].reduce((s, v) => s + v, 0)
 
   if (totalRevenue === 0) {
     // No revenue means no weights. Fall back to counting listings and say so —
     // a different formula must never hide behind the same number.
+    // listings.length is non-zero: the empty case returned above.
     const penalty =
-      listings.length === 0
-        ? 0
-        : [...worstByListing.values()].reduce((s, sev) => s + SEVERITY_WEIGHT[sev], 0) / listings.length
+      [...worstByListing.values()].reduce((s, sev) => s + SEVERITY_WEIGHT[sev], 0) / listings.length
     return calculated(Math.round((1 - penalty) * 100), 'No orders in this period, so the score counts listings equally instead of weighting them by revenue.', {
       coverage: 0,
       limitations: ['Unweighted: with no sales, no listing carries more of the shop than another.'],

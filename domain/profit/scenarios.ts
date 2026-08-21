@@ -102,7 +102,7 @@ export function computeScenario(
     grossRevenue,
     totalCosts,
     netProfit,
-    marginPercent: grossRevenue === 0 ? 0 : round1((netProfit / grossRevenue) * 100),
+    marginPercent: grossRevenue === 0 ? null : round1((netProfit / grossRevenue) * 100),
     coveragePercent: Math.round(args.coverage * 100),
     missingData: args.missingData,
   }
@@ -112,7 +112,16 @@ export interface ScenarioComparison {
   kind: ScenarioKind
   basis: string
   netProfit: number
-  marginPercent: number
+  /*
+   * Null when there is no revenue to be a margin OF.
+   *
+   * It used to be `grossRevenue === 0 ? 0 : ...`, so a shop with no sales and
+   * $1,322 of fixed costs reported a net margin of 0.0% — which reads as
+   * breaking even, next to a net profit of −$1,322.05. Zero is a real margin;
+   * this is the absence of one, and the product already distinguishes those
+   * everywhere else (D34a).
+   */
+  marginPercent: number | null
 }
 
 /** All three, for side-by-side comparison. */

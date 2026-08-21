@@ -54,7 +54,7 @@ export function ScenarioComparisonPanel({
                 className="text-[24px] font-semibold leading-none text-ink-1"
               />
               <Numeric className="text-caption text-muted-1">
-                {formatPercent(s.marginPercent)} margin
+                {s.marginPercent === null ? 'no margin — no revenue' : `${formatPercent(s.marginPercent)} margin`}
               </Numeric>
               <span className="mt-auto pt-1 text-caption leading-snug text-muted-1">{s.basis}</span>
             </Card>
