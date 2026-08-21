@@ -627,6 +627,8 @@ Three times now, in three different shapes:
 2. The extension audit's first catch was its own deny-list (D48).
 3. The axe check passed with the original contrast bug reinstated, because the
    affected pill lives behind a tab nobody clicked (D53a).
+4. The FIX for (3) hard-coded two tabs — 2 of 34 real hidden states. Enumerating by
+   hand is the same bug with a smaller hole: it covers nothing added later (D53a).
 
 Two habits that catch it:
 
@@ -637,7 +639,14 @@ Two habits that catch it:
   opened, an artefact scan rather than a source scan.
 
 Corollary for UI checks: **the audited surface is (route, state, theme), not route.**
-Anything behind a tab, a modal or a toggle is uncovered until something drives it.
+Anything behind a tab, a modal or a toggle is uncovered until something drives it —
+and the states must be DISCOVERED (`[role=tab]`, `[aria-expanded=false]`), never listed,
+or the check covers only what someone remembered on the day.
+
+Then measure the sweep against itself: `reached == offered`, plus a floor proving
+discovery still finds anything. The first alone is satisfied by a selector matching
+nothing (0 == 0). This caught a real 28/34 gap where an open popover covered the next
+button (D53b).
 
 ### Semantic colour is a pair, and both halves must live in the same theme block
 

@@ -245,58 +245,136 @@ with sync_playwright() as p:
     # the CSP refuses an un-nonced inline script — correctly. Playwright's
     # evaluate runs through CDP, which is not subject to the page's policy.
     #
-    # A tab is a state, not a page. The first version of this check audited each
-    # route as it loads and nothing else, and a deliberate break proved it
-    # hollow: the original bug was put back verbatim — a flipping var(--danger)
-    # on a fixed #FEF2F2 — in the Transactions table's UNMATCHED pill, and the
-    # check PASSED, because that pill lives behind a tab nobody had clicked.
+    # A tab is a state, not a page — and the states are DISCOVERED, not listed.
     #
-    # So the audited surface is (route, state, theme). Anything reachable only
-    # by driving a control has to be driven first, or it is simply not covered
-    # however green the line reads.
+    # Two rounds of getting this wrong are why it works this way.
+    #
+    # Round one audited each route as it loads. A deliberate break proved it
+    # hollow: the original contrast bug was put back verbatim in the
+    # Transactions table's UNMATCHED pill and the check PASSED, because that
+    # pill lives behind a tab nobody had clicked.
+    #
+    # Round two hard-coded two /profit tabs. That is the same hole, smaller: a
+    # survey found 17 hidden-state controls across the app — three tabs on
+    # /dashboard, four on /profit, three on /action-center, and expandable
+    # panels on four more routes. Naming two of them covered 2 of 17, and
+    # covered nothing anyone adds tomorrow.
+    #
+    # So this walks the page and finds them: every [role=tab], every
+    # [aria-expanded=false]. A tab added next month is audited the day it
+    # ships, without anyone remembering this file exists.
     axe_source = open("node_modules/axe-core/axe.min.js").read()
-    SURFACES = [
-        ("/dashboard", None),
-        ("/billing", None),
-        ("/profit", None),
-        # (tab name, a marker proving the tab's OWN content is on screen).
-        # An empty marker would make open_tab return after one click whether or
-        # not anything opened — auditing the previous tab twice and reporting
-        # it as coverage.
-        ("/profit", ("Transactions", "excluded from profit until")),
-        ("/profit", ("Scenarios", "Inputs")),
-        ("/shop-pulse", None),
-        ("/listings/audit", None),
-        ("/listings/bulk-editor", None),
-        ("/settings/shops", None),
-        ("/tools/etsy-seller-calculator", None),
-    ]
-    a11y = {}
+
+    AUDIT_ROUTES = ("/dashboard", "/billing", "/profit", "/shop-pulse",
+                    "/listings/audit", "/listings/bulk-editor",
+                    "/listings/ai-copilot", "/research/keywords",
+                    "/research/keyword-lists", "/settings/shops", "/tools",
+                    "/tools/etsy-seller-calculator", "/onboarding",
+                    "/action-center")
+
+    def audit_here(where, sink):
+        pg.evaluate(axe_source)
+        report = pg.evaluate("""async () => await axe.run(document, {
+          resultTypes: ['violations'],
+          runOnly: {type: 'tag', values: ['wcag2a','wcag2aa','wcag21a','wcag21aa']}
+        })""")
+        for v in report["violations"]:
+            sink.setdefault(v["id"], []).append(f"{where}({len(v['nodes'])})")
+
+    a11y, audited = {}, 0
+    # Per (theme, route): how many hidden states the DOM offered, and how many
+    # were actually audited. Comparing those two is what makes the sweep
+    # self-checking; a fixed expected number would just be another thing to
+    # remember to update.
+    offered, reached = 0, 0
+    routes_with_states = set()
     for theme in ("light", "dark"):
-        for route, tab in SURFACES:
+        for route in AUDIT_ROUTES:
             pg.goto(f"{BASE}{route}", wait_until="load")
             pg.evaluate(f"document.documentElement.setAttribute('data-theme','{theme}')")
             pg.wait_for_timeout(200)
-            if tab:
-                # Reuse the helper that waits for the tab's own content, rather
-                # than clicking and hoping — hydration lands late. If it never
-                # opens, that is recorded as a failure rather than passing as a
-                # clean audit of a surface nobody looked at.
-                name, marker = tab
-                if not open_tab(pg, name, marker):
-                    a11y.setdefault("tab-never-opened", []).append(f"{theme}:{route}#{name}")
-                pg.wait_for_timeout(300)
-            pg.evaluate(axe_source)
-            report = pg.evaluate("""async () => await axe.run(document, {
-              resultTypes: ['violations'],
-              runOnly: {type: 'tag', values: ['wcag2a','wcag2aa','wcag21a','wcag21aa']}
-            })""")
-            where = f"{theme}:{route}{'#' + tab[0] if tab else ''}"
-            for v in report["violations"]:
-                a11y.setdefault(v["id"], []).append(f"{where}({len(v['nodes'])})")
+            audit_here(f"{theme}:{route}", a11y); audited += 1
+
+            # Every tab, by name, re-read after each click because the DOM moves.
+            names = pg.evaluate(
+                "() => [...document.querySelectorAll('[role=tab]')].map(e => e.textContent.trim())")
+            offered += len(names)
+            if names:
+                routes_with_states.add(route)
+            for name in names:
+                try:
+                    pg.get_by_role("tab", name=name, exact=True).first.click(timeout=4000)
+                except Exception:
+                    # Recorded, never swallowed: a tab that cannot be opened is
+                    # a surface that went unaudited, which is the whole failure
+                    # this check exists to stop repeating.
+                    a11y.setdefault("tab-would-not-open", []).append(f"{theme}:{route}#{name}")
+                    continue
+                pg.wait_for_timeout(350)
+                audit_here(f"{theme}:{route}#{name}", a11y); audited += 1; reached += 1
+
+            # Every collapsed disclosure.
+            pg.goto(f"{BASE}{route}", wait_until="load")
+            pg.evaluate(f"document.documentElement.setAttribute('data-theme','{theme}')")
+            pg.wait_for_timeout(200)
+            count = pg.evaluate(
+                "() => document.querySelectorAll('[aria-expanded=\"false\"]').length")
+            offered += count
+            if count:
+                routes_with_states.add(route)
+            for i in range(count):
+                try:
+                    pg.locator('[aria-expanded="false"]').first.click(timeout=4000)
+                except Exception:
+                    # Not swallowed. An unopenable disclosure is an unaudited
+                    # surface, and `reached` will not match `offered` below.
+                    a11y.setdefault("disclosure-would-not-open", []).append(
+                        f"{theme}:{route}#{i}")
+                    break
+                pg.wait_for_timeout(250)
+                audit_here(f"{theme}:{route}#disclosure{i}", a11y); audited += 1; reached += 1
+                # Close it before opening the next.
+                #
+                # The dashboard has four provenance buttons; the panel the first
+                # one opens covers the second, so the next click timed out and
+                # three of four states went unaudited on that route. The sweep
+                # reported 28 of 34 states reached, which is exactly what the
+                # offered-vs-reached guard exists to say out loud.
+                pg.keyboard.press("Escape")
+                pg.wait_for_timeout(150)
+                still_open = pg.locator('[aria-expanded="true"]')
+                if still_open.count():
+                    try:
+                        still_open.first.click(timeout=2000)
+                        pg.wait_for_timeout(150)
+                    except Exception:
+                        pass
+
     check(a11y == {},
-          "No WCAG A/AA violation on any page, in either theme"
+          f"No WCAG A/AA violation on any of {audited} audited surfaces, in either theme"
           + ("" if a11y == {} else f" — {dict(list(a11y.items())[:3])}"))
+
+    # The sweep must have opened every state it found.
+    #
+    # Compared against what the DOM OFFERED, not against a number written here.
+    # A hard-coded expectation is one more thing to update, and when it drifts
+    # the honest-looking move is to lower it. This cannot drift: if the tab
+    # selector stops matching, `offered` falls to zero and the next check below
+    # catches that instead.
+    check(reached == offered,
+          f"Every hidden state the page offered was opened and audited "
+          f"({reached}/{offered})")
+    # ...and it must have found some. Otherwise a selector that matches nothing
+    # satisfies the line above perfectly: 0 == 0.
+    #
+    # The floor is on BREADTH — how many routes hide something — rather than on
+    # a total, because a total moves whenever a card is added, and the
+    # honest-looking response to a number that keeps drifting is to lower it.
+    # Six routes hide state today; five only trips if discovery genuinely breaks.
+    check(len(routes_with_states) >= 5,
+          f"The sweep still finds hidden state across the app "
+          f"({offered} states on {len(routes_with_states)} routes: "
+          f"{sorted(routes_with_states)})")
 
     # The theme toggle must actually reach the tokens.
     #

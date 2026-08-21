@@ -2337,21 +2337,53 @@ Landmarks and headings, from the same run:
   Plan names are `h2`, siblings of "Billing history". Same `text-section` size, so nothing
   moved on screen.
 
-### D53a — A tab is a state, not a page
+### D53a — A tab is a state, not a page, and the states are DISCOVERED
 
-The axe check was written to audit each route as it loads. A deliberate break proved it
-hollow: the original bug was reinstated verbatim in the Transactions table's UNMATCHED pill,
-and **the check passed** — that pill lives behind a tab nobody had clicked.
+Three rounds, because the first two fixes were both wrong in the same direction.
 
-The audited surface is `(route, state, theme)`. Anything reachable only by driving a control
-has to be driven first, or it is not covered however green the line reads. With the tabs
-driven, the same break fails with `{'color-contrast': ['dark:/profit#Transactions(8)']}` —
-the theme, the route, the state and the node count.
+**Round one** audited each route as it loads. A deliberate break proved it hollow: the
+original contrast bug was reinstated verbatim in the Transactions table's UNMATCHED pill and
+the check **passed** — that pill lives behind a tab nobody had clicked.
 
-The tab markers are not optional either. `open_tab(pg, name, "")` returns after one click
-whether or not anything opened, so an empty marker would audit the previous tab twice and
-report it as coverage. Each entry carries a marker proving the tab's own content is on
-screen, and a tab that never opens is recorded as a failure.
+**Round two** hard-coded the two /profit tabs. That is the same hole, smaller. A survey found
+**34 hidden states across 6 routes** (both themes): three tabs on /dashboard, four on
+/profit, three on /action-center, and disclosure panels on four routes. Naming two covered
+2 of 34 — and covered nothing anyone adds tomorrow.
 
-Same rule as D51a and D48: **a check that passes when the thing it measures is absent is not
-a check.** That is now the third time this exact shape has appeared.
+**Round three** walks the page and finds them: every `[role=tab]`, every
+`[aria-expanded="false"]`. 62 surfaces audited. A tab added next month is covered the day it
+ships without anyone remembering this file exists.
+
+The expansion immediately found a real bug the hard-coded version could not see. Dismissed
+action cards carried `opacity-[.72]`, which artboard 108 asks for — and which blends every
+text colour toward the background. `--ink-2` fell to 4.3:1 and the timestamp line to 2.9:1,
+in **both** themes, on /dashboard and /action-center. It had shipped through two phases
+because the Dismissed tab is not the tab that opens by default.
+
+**There is no opacity value that fixes it.** The tokens are tuned to just clear AA at full
+strength (D53), so any alpha below 1 puts the weakest under — the failure is arithmetic, not
+a bad number. The opacity is gone; the dashed border, the "Dismissed …by" line and the
+Restore action carry the state, as they already did.
+
+### D53b — Coverage is measured against what the page offered
+
+The sweep counts what the DOM **offered** and what it actually **reached**, and fails when
+they differ. Both halves are needed, and neither is a number written in the file:
+
+```
+reached == offered                       # every state found was opened
+len(routes_with_states) >= 5             # ...and states are still being found
+```
+
+The first without the second is satisfied perfectly by a selector that matches nothing:
+`0 == 0`. The second is a floor on **breadth** — how many routes hide something — rather
+than on a total, because a total moves whenever a card is added, and the honest-looking
+response to a number that keeps drifting is to lower it.
+
+It earned its place on the first run: `28/34`. Clicking a provenance button on /dashboard
+opens a panel that covers the next button, so three of four states timed out and went
+unaudited. Without the guard that reads as a clean pass over a sweep that quietly skipped
+six surfaces. The sweep now closes each disclosure before opening the next.
+
+Same rule as D51a and D48, for the fourth time: **a check that passes when the thing it
+measures is absent is not a check.**

@@ -42,7 +42,25 @@ export function ActionCard({ action, demo }: { action: Action; demo: boolean }) 
     <article
       className={cn(
         'flex flex-col gap-4 rounded-card border p-4 sm:flex-row sm:items-start sm:gap-4',
-        isDismissed ? 'border-dashed border-line opacity-[.72]' : 'border-line',
+        /*
+         * No opacity on a container that holds text.
+         *
+         * Artboard 108 asks for "reduced opacity" on a dismissed card, and
+         * opacity-[.72] delivered it — by blending every text colour toward the
+         * background. Measured: --ink-2 fell to 4.3:1 and the timestamp line to
+         * 2.9:1, in both themes. It was invisible for two phases because the
+         * Dismissed tab is not the tab that opens by default.
+         *
+         * There is no opacity that fixes this. The colour tokens are tuned to
+         * just clear AA at full strength (D53), so ANY alpha below 1 puts the
+         * weakest of them under — the failure is arithmetic, not a bad value.
+         *
+         * So the de-emphasis drops and the other three signals from the same
+         * artboard carry the state: the dashed border, the "Dismissed …by" line,
+         * and the Restore action. The card was never distinguished by opacity
+         * alone.
+         */
+        isDismissed ? 'border-dashed border-line' : 'border-line',
         isCompleted && 'bg-canvas-soft',
       )}
       style={
