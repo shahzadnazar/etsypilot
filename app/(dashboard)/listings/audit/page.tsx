@@ -93,12 +93,19 @@ export default async function ListingAuditPage() {
 
           <Card className="p-[18px]">
             <h2 className="text-section text-ink-1">Issues by rule</h2>
-            <ul className="mt-3 flex flex-col gap-2">
+            <ul className="mt-3 flex flex-col gap-3">
               {view.results.map((r) => (
-                <li key={r.rule.code} className="flex items-baseline justify-between gap-3">
+                <li key={r.rule.code} className="flex items-center justify-between gap-3">
+                  {/*
+                    * min-h-[24px] because this is a jump link in a list of
+                    * controls, not a link inside a sentence — WCAG 2.2's
+                    * target-size applies and the inline exemption does not. It
+                    * measured 19.5px. Only visible at a mobile viewport, which
+                    * is why a desktop-only accessibility sweep passed it.
+                    */}
                   <a
                     href={`#${r.rule.code}`}
-                    className="text-small text-ink-2 underline-offset-2 hover:underline"
+                    className="inline-flex min-h-[28px] items-center text-small text-ink-2 underline-offset-2 hover:underline"
                   >
                     {r.rule.label}
                   </a>

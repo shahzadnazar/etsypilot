@@ -2505,3 +2505,54 @@ browser checks assert on the response. It is a fixture, not a leftover: without 
 that genuinely fails, the error path is reasoned about rather than exercised, and every
 finding above came from exercising it. It refuses in production unless
 `ALLOW_ERROR_PROBE=1`.
+
+### D56 — The accessibility sweep only ever ran at 1440px
+
+Same shape as auditing only the tab that opens by default (D53a), one level up. Several WCAG
+rules are **geometric**, so they can only fail at a width where the geometry differs. Running
+the same pages at 390 and 768 found, immediately:
+
+- **`scrollable-region-focusable`** — four containers that scroll horizontally and could not
+  be reached from a keyboard at all. A mouse drags them; a keyboard had no way in. They now
+  take focus and carry a label saying they scroll.
+- **`target-size`** — jump links at 19.5px and methodology nav chips at 15.4px. Both are
+  standalone controls in lists, not links inside a sentence, so WCAG 2.2's 24×24 applies with
+  no inline exemption.
+
+Horizontal document overflow was clean at all three widths, which was the risk being looked
+for and was not the one found.
+
+State expansion is deliberately **not** repeated per viewport. It would cube the run —
+surfaces × states × themes × viewports — for rules that are about geometry, and geometry does
+not change when a tab opens. The limit is stated in the check rather than left implied: tab
+states at mobile width are not covered.
+
+### D56a — Enforce the criterion, not the tool
+
+SC 2.5.8 is met **either** by a target being at least 24×24 **or** by spacing. axe reports
+both routes through one `target-size` rule and words the spacing failure as *"partially
+obscured"*, which reads like something is covering the control.
+
+Measured with `elementFromPoint` across each flagged target: **nothing is**. The flagged
+buttons on `/action-center` are 86×36 and the flagged link on `/onboarding` is a 358px card —
+all far past the minimum, so the criterion is met by size and axe is reporting the spacing
+alternative it did not need.
+
+So the check asserts the criterion directly: every target axe flags must measure at least
+24×24 in reality. A genuinely undersized control still fails. An allow-list would have
+achieved the same green today and hidden the next real one.
+
+### D56b — A comment claimed a fix that was not one
+
+While fixing the above, an inline `<a>` wrapping a whole card was changed to `block`, with a
+comment stating the hit area had been "a fraction of what the card looks like".
+
+That was asserted, not measured, and it is **false**. Tested in isolation, a browser computes
+an inline `<a>` containing a block-level child as `display: block`: both versions return the
+same `getBoundingClientRect()` and the same `elementFromPoint` at an empty corner of the card.
+The change is tidiness, and the comment now says so.
+
+The deliberate break is what exposed it — reverting the change did not fail any check, which
+was the signal to go and measure rather than assume the check was inadequate. **A break that
+does not fail means either the check is wrong or the fix was not a fix.** Both are worth
+knowing, and the second is easy to miss because the code still looks improved.

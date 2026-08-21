@@ -355,6 +355,81 @@ with sync_playwright() as p:
           f"No WCAG A/AA violation on any of {audited} audited surfaces, in either theme"
           + ("" if a11y == {} else f" — {dict(list(a11y.items())[:3])}"))
 
+    # --- ...and at the viewports a phone and a tablet actually use ----------
+    #
+    # The sweep above runs at 1440x1000. That was a blind spot of exactly the
+    # same shape as auditing only the tab that opens by default: several WCAG
+    # rules are geometric, so they can only fail at a width where the geometry
+    # is different. Running the same pages at 390 and 768 found, immediately:
+    #
+    #   scrollable-region-focusable  Four containers that scroll horizontally
+    #                                and could not be reached from a keyboard
+    #                                at all. A mouse drags them; a keyboard had
+    #                                no way in.
+    #   target-size                  A <Link> wrapping a whole card was inline,
+    #                                so its hit box was a thin line box rather
+    #                                than the card — the clickable area was a
+    #                                fraction of what it looked like. Plus jump
+    #                                links and nav chips under 24px.
+    #
+    # State expansion is deliberately NOT repeated here. It would cube the run
+    # (surfaces x states x themes x viewports) for rules that are about
+    # geometry, and geometry does not change when a tab opens. Saying so
+    # matters: tab states at mobile width are not covered by this line.
+    VIEWPORTS = (("mobile", 390, 844), ("tablet", 768, 1024))
+    responsive = {}
+    for label, width, height in VIEWPORTS:
+        pg.set_viewport_size({"width": width, "height": height})
+        for route in AUDIT_ROUTES:
+            pg.goto(f"{BASE}{route}", wait_until="load"); pg.wait_for_timeout(220)
+            audit_here(f"{label}:{route}", responsive)
+    pg.set_viewport_size({"width": 1440, "height": 1000})
+    check(responsive == {},
+          "No WCAG A/AA violation at mobile or tablet width"
+          + ("" if responsive == {} else f" — {dict(list(responsive.items())[:3])}"))
+
+    # --- WCAG 2.2 target-size, enforced as the criterion, not as the tool ---
+    #
+    # SC 2.5.8 is met EITHER by a target being at least 24x24 CSS px OR by
+    # spacing. axe reports both routes through one `target-size` rule and words
+    # the spacing failure as "partially obscured", which reads like something is
+    # covering the control. Measured: nothing is. On /action-center the flagged
+    # buttons are 86x36 and on /onboarding the flagged link is a 358px card —
+    # all well past the 24x24 minimum, so the criterion is met by size and axe
+    # is reporting the spacing alternative it did not need.
+    #
+    # So this asserts the criterion directly: every target axe flags must be at
+    # least 24x24 in reality. That keeps the guarantee — a genuinely undersized
+    # control still fails — without an allow-list, which would have to be
+    # maintained and would hide the next real one.
+    undersized = []
+    for label, width, height in VIEWPORTS + (("desktop", 1440, 1000),):
+        pg.set_viewport_size({"width": width, "height": height})
+        for route in AUDIT_ROUTES:
+            pg.goto(f"{BASE}{route}", wait_until="load"); pg.wait_for_timeout(200)
+            pg.evaluate(axe_source)
+            report = pg.evaluate("""async () => {
+              const r = await axe.run(document, {resultTypes:['violations'],
+                runOnly:{type:'rule', values:['target-size']}});
+              const out = [];
+              for (const v of r.violations) for (const n of v.nodes) {
+                const el = document.querySelector(n.target[0]);
+                if (!el) continue;
+                const box = el.getBoundingClientRect();
+                if (box.width < 24 || box.height < 24) {
+                  out.push(`${n.target[0]} ${Math.round(box.width)}x${Math.round(box.height)}`);
+                }
+              }
+              return out;
+            }""")
+            for item in report:
+                undersized.append(f"{label}:{route} {item}")
+    pg.set_viewport_size({"width": 1440, "height": 1000})
+    check(undersized == [],
+          "Every tap target is at least 24x24 (WCAG 2.2 SC 2.5.8)"
+          + ("" if undersized == [] else f" — {undersized[:3]}"))
+
+
     # The sweep must have opened every state it found.
     #
     # Compared against what the DOM OFFERED, not against a number written here.

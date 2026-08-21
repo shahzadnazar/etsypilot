@@ -160,7 +160,21 @@ function Section({
       <p className="mt-1 max-w-[75ch] text-caption leading-relaxed text-muted-1">{note}</p>
       <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {options.map((o) => (
-          <Link key={o.key} href={o.href} className="text-left">
+          /*
+            * `block` states the intent; it does not fix a bug.
+            *
+            * Worth recording, because the first version of this comment claimed
+            * it did. An <a> is inline by default, so the reasonable assumption
+            * is that a link wrapping a card has a thin line box for a hit area.
+            * Measured in isolation, that assumption is wrong: a browser
+            * computes an inline <a> containing a block child as display:block,
+            * and both versions return the same rect and the same
+            * elementFromPoint at an empty corner of the card.
+            *
+            * So this is tidiness, and the claim that it repaired a broken tap
+            * target was mine, untested, and false.
+            */
+          <Link key={o.key} href={o.href} className="block text-left">
             <Card className="flex h-full flex-col gap-1.5 p-[14px] hover:border-brand">
               <span className="text-small font-semibold text-ink-1">{o.label}</span>
               <span className="text-caption leading-snug text-muted-1">{o.detail}</span>

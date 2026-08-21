@@ -61,14 +61,20 @@ export default function MethodologyPage() {
         </p>
       </Card>
 
-      <nav aria-label="Metrics" className="mb-4 flex flex-wrap gap-x-3 gap-y-1.5">
+      {/*
+        * py-1 is not decoration. These chips are standalone controls in a nav
+        * list, not links inside a sentence, so WCAG 2.2's 24x24 target-size
+        * applies with no inline exemption. At 15.4px tall they failed it — on
+        * a page this product built to explain itself.
+        */}
+      <nav aria-label="Metrics" className="mb-4 flex flex-wrap gap-x-3 gap-y-1">
         {entries.map((m) => {
           const anchor = anchorOf(m)
           return anchor ? (
             <a
               key={m.metric}
               href={`#${anchor}`}
-              className="text-caption font-semibold text-brand-strong underline underline-offset-2"
+              className="inline-flex min-h-[24px] items-center text-caption font-semibold text-brand-strong underline underline-offset-2"
             >
               {m.metric}
             </a>

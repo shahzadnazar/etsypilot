@@ -86,7 +86,12 @@ export function RelatedTermsTable({ terms, demo }: { terms: RelatedTerm[]; demo:
         })}
       </ul>
 
-      <Card className="hidden w-full max-w-full overflow-x-auto md:block">
+      <Card
+        tabIndex={0}
+        role="region"
+        aria-label="Related terms, scrolls horizontally"
+        className="hidden w-full max-w-full overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand md:block"
+      >
       <table className="w-full min-w-[720px] border-collapse text-body">
         <caption className="sr-only">
           Related terms with modelled demand, observed competition and a calculated

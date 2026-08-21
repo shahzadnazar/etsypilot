@@ -241,7 +241,16 @@ function Actions({ action }: { action: Action }) {
 
   if (action.status === 'COMPLETED') {
     return (
-      <div className="flex shrink-0 flex-col gap-1.5 sm:w-[180px]">
+      /*
+     * gap-2, not gap-1.5.
+     *
+     * WCAG 2.2's target-size counts the space a target has to ITSELF, so two
+     * 32px buttons six pixels apart both fail: axe reported "partially
+     * obscured, smallest space 87px by 15.5px". The buttons were never too
+     * small — they were too close, which is not a distinction anyone makes by
+     * looking at a desktop screen.
+     */
+    <div className="flex shrink-0 flex-col gap-3 sm:w-[180px]">
         <Link
           href={action.destination.href}
           className="rounded-control border border-line px-3 py-2.5 text-center text-[12px] font-semibold text-ink-2 hover:bg-surface"
@@ -258,18 +267,27 @@ function Actions({ action }: { action: Action }) {
   }
 
   return (
-    <div className="flex shrink-0 flex-col gap-1.5 sm:w-[180px]">
+    /*
+     * gap-2, not gap-1.5.
+     *
+     * WCAG 2.2's target-size counts the space a target has to ITSELF, so two
+     * 32px buttons six pixels apart both fail: axe reported "partially
+     * obscured, smallest space 87px by 15.5px". The buttons were never too
+     * small — they were too close, which is not a distinction anyone makes by
+     * looking at a desktop screen.
+     */
+    <div className="flex shrink-0 flex-col gap-3 sm:w-[180px]">
       <Link
         href={action.destination.href}
         className="rounded-control bg-brand px-3 py-2.5 text-center text-[12px] font-semibold text-brand-on hover:bg-brand-strong"
       >
         {action.destination.label}
       </Link>
-      <div className="flex gap-1.5">
-        <button className="flex-1 rounded-control border border-line px-2 py-2 text-[11px] font-semibold text-ink-2 hover:bg-canvas-soft">
+      <div className="flex gap-2">
+        <button className="min-h-[36px] flex-1 rounded-control border border-line px-2 py-2 text-[11px] font-semibold text-ink-2 hover:bg-canvas-soft">
           Snooze
         </button>
-        <button className="flex-1 rounded-control border border-line px-2 py-2 text-[11px] font-semibold text-ink-2 hover:bg-canvas-soft">
+        <button className="min-h-[36px] flex-1 rounded-control border border-line px-2 py-2 text-[11px] font-semibold text-ink-2 hover:bg-canvas-soft">
           Dismiss
         </button>
       </div>

@@ -63,7 +63,19 @@ export function BaselineChart({
         </span>
       </figcaption>
 
-      <div className="overflow-x-auto">
+      <div
+        /*
+         * Focusable, on purpose. A container that scrolls horizontally is
+         * operable with a mouse or a finger and completely unreachable from a
+         * keyboard unless it can take focus — axe calls it
+         * scrollable-region-focusable, and it only appears at a viewport narrow
+         * enough for the chart to overflow. The desktop-only sweep never saw it.
+         */
+        tabIndex={0}
+        role="region"
+        aria-label="Baseline chart, scrolls horizontally"
+        className="overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+      >
         <svg
           viewBox={`0 0 ${W} ${H}`}
           className="h-[220px] w-full min-w-[560px]"

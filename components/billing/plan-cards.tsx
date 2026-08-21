@@ -110,7 +110,10 @@ export function PlanCards({
                   </ul>
                 ) : null}
 
-                <form action={`/api/billing/change/${plan.key.toLowerCase()}`} method="post">
+                {/* mt-2: the same crowding as the action card. The button is
+                    38px tall and had 9px of clear space, which target-size
+                    counts against it. */}
+                <form className="mt-3" action={`/api/billing/change/${plan.key.toLowerCase()}`} method="post">
                   <button
                     type="submit"
                     className={cn(

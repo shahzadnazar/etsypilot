@@ -317,7 +317,8 @@ PostHog: Not configured
   bundle. An npm override does not take (the pin is hard) and audit fix --force would
   break drizzle-kit. Revisit when drizzle-kit drops @esbuild-kit.
 - Mobile top bar is functional but not yet the designed compact bar (logo, shop,
-  notifications, menu). Phase 2.
+  notifications, menu). Phase 2. Responsive QA otherwise done: zero horizontal overflow
+  and zero WCAG A/AA violations at 390 / 768 / 1440 (D56).
 ```
 
 ## 13. Decisions
@@ -677,6 +678,25 @@ Two of the three would not have occurred to anyone reasoning about it. See D55.
 
 Related: **a reference that corresponds to nothing is worse than none.** The 500 page
 invented one when Next gave no digest — quotable, and in no log anywhere (D55a).
+
+### A break that does not fail means the check is wrong OR the fix was not a fix
+
+The second is easy to miss, because the code still looks improved. Reverting an inline
+`<a>` -> `block` change failed nothing; measuring showed why: a browser computes an inline
+`<a>` containing a block child as display:block, so the hit area was never broken. The
+comment claiming it had been was mine, untested, and false (D56b).
+
+So when a deliberate break passes: measure before deciding which of the two it is.
+
+### Geometric rules need geometric coverage
+
+The a11y sweep ran only at 1440px for two phases. Several WCAG rules can only fail at a
+width where the geometry differs — running at 390 and 768 immediately found four
+scroll containers unreachable by keyboard and several sub-24px targets.
+
+The audited surface is (route, state, theme, VIEWPORT). Expanding every axis at once is
+too slow, so pick per rule type: states matter for content rules, viewports for
+geometric ones — and state the limit in the check instead of implying coverage.
 
 ## 16. Memory Update Rule
 

@@ -81,7 +81,12 @@ export function TransactionsTable({
         ) : null}
       </div>
 
-      <Card className="overflow-x-auto">
+      <Card
+        tabIndex={0}
+        role="region"
+        aria-label="Transactions, scrolls horizontally"
+        className="overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+      >
         <table className="w-full min-w-[720px] border-collapse text-body">
           <caption className="sr-only">
             Transactions for the period, with reconciliation status and how to resolve exceptions.
