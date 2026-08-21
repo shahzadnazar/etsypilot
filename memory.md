@@ -720,6 +720,18 @@ something false.** A health score of 100 over an empty set; a 0.0% margin from a
 divide-by-zero guard. **The guard against dividing by zero is where a false zero usually
 enters** — the answer is not a fallback figure, it is saying there is no figure (D57b).
 
+### Test the dev server too — the production build is not the only environment
+
+The CSP shipped correct for production and broke `next dev` completely: 34 violations,
+an unstyled page, the dev overlay showing through. Inline <style> is how the dev server
+hot-reloads, and Turbopack dev chunks carry no nonce.
+
+Nothing caught it because EVERY check runs against `npm run build && next start`. That is
+a coverage hole shaped exactly like a development environment — and `npm run dev` is the
+first command anyone who clones the repo runs (D63).
+
+When a config differs by NODE_ENV, extract it to a pure function and test both branches.
+
 ## 16. Memory Update Rule
 
 Claude must update this file:

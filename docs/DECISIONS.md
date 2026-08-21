@@ -2872,3 +2872,33 @@ The third is the one worth being firm about. A screening tool that guessed would
 read a clear result and use a registered mark. **That is worse than having no tool at all**,
 so it stays unbuilt until there is a register behind it, and the page says exactly that rather
 than implying someone simply has not got round to it.
+
+### D63 — The CSP broke `next dev`, and nothing could see it
+
+`npm run dev` served an unstyled page with the Next dev overlay showing through. **34 CSP
+violations**, two causes, both specific to the dev server:
+
+| Directive | Why it broke development |
+| --- | --- |
+| `style-src 'self'` | `next dev` injects stylesheets as **inline `<style>` elements** for hot reloading. Production emits an external `.css` file, which passes. So the correct production policy blocks every style in development |
+| `strict-dynamic` | Turbopack's dev chunks carry no nonce, and `strict-dynamic` ignores `'self'` by design (D52a) — the same bug that pushed the production build to webpack, biting where webpack is not an option |
+
+**It was invisible because every check in this project runs against a production build.** Unit
+tests, 194 browser checks, the empty-state suite, the performance budget — all against
+`npm run build && next start`. Nothing had ever loaded a page from `next dev`. The stale-build
+guard even aborts on a page with no stylesheet, and it never ran where the problem was.
+
+Worth stating plainly: the production build being the only thing under test is a **coverage
+hole shaped exactly like a development environment.** A developer cloning this repo and running
+`npm run dev` — the first command anyone runs — would have seen a broken product.
+
+The policy now comes from `cspFor({ nonce, isDev })` in `lib/security/csp.ts`, a pure function
+tested in both branches without starting either server (D28: move the logic somewhere it can be
+asserted on). Production is byte-identical to what was reviewed; only the development branch is
+looser, and that is not a compromise — the dev server binds to localhost and serves a developer
+their own code.
+
+One subtlety the tests pin: the development script policy **drops the nonce** rather than
+pairing it with `'unsafe-inline'`. A browser ignores `'unsafe-inline'` when a nonce is present,
+so sending both would look permissive and silently block every inline script — the failure being
+fixed, reintroduced by trying to keep the nonce.

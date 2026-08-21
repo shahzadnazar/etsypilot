@@ -35,6 +35,7 @@
 
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { cspFor } from '@/lib/security/csp'
 import { checkCsrf } from '@/lib/security/csrf'
 import { rateLimit } from '@/lib/security/rate-limit'
 
@@ -99,54 +100,16 @@ export function middleware(request: NextRequest) {
 
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64')
 
-  const csp = [
-    "default-src 'self'",
-    /*
-     * 'strict-dynamic' is ON, and getting it there took finding a real bug.
-     *
-     * It IGNORES 'self' by design: a <script src> is allowed only if it carries
-     * the nonce, or was loaded by a script that did. That makes it strictly
-     * better than 'self' — an attacker who can write a .js file onto this
-     * origin still cannot get it executed — but it also means one un-nonced tag
-     * breaks a page.
-     *
-     * Next 16.3.1's TURBOPACK build emits exactly one such tag. Measured, not
-     * guessed: eleven script tags per page, ten with nonce=, one without, and
-     * always the same one — the chunk the bundler split the Button component
-     * into. It surfaced on /billing and /shop-pulse only, because only there
-     * did Button land in a chunk of its own. Nothing reported it: no server
-     * error, no hydration warning, no missing markup. The page silently lost a
-     * piece of its JavaScript and only the browser console knew.
-     *
-     * The same source built with WEBPACK nonces all of them, on every page. So
-     * this is a Turbopack code path, not a policy mistake and not something our
-     * own code can fix — which chunk a component lands in is the bundler's
-     * decision, so any app-level workaround would be luck rather than a fix.
-     *
-     * package.json therefore builds with --webpack. It costs 25 seconds
-     * (19s -> 44s, measured) and buys back the strongest script directive
-     * available. Revisit when Turbopack nonces that tag: the browser checks
-     * assert every script tag carries a nonce AND that no page violates its own
-     * policy, so flipping the build back is a one-line experiment with an
-     * immediate answer.
-     */
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
-    "style-src 'self'",
-    // Style ATTRIBUTES only. See the note above: nothing else can permit them.
-    "style-src-attr 'unsafe-inline'",
-    "img-src 'self' data:",
-    "font-src 'self'",
-    "connect-src 'self'",
-    // Nothing may frame this app, and it frames nothing.
-    "frame-ancestors 'none'",
-    "frame-src 'none'",
-    "object-src 'none'",
-    // A <base> tag rewrite is how a single injected element redirects every
-    // relative URL on the page, including form actions.
-    "base-uri 'none'",
-    "form-action 'self'",
-    'upgrade-insecure-requests',
-  ].join('; ')
+  /*
+   * Built by lib/security/csp.ts, which is a pure function of (nonce,
+   * environment) and therefore testable without starting a server.
+   *
+   * It became a separate module after the production policy was applied to
+   * `next dev` as well, where Turbopack's un-nonced chunks and Next's inline
+   * dev styles produced 34 violations and an unstyled page. Every check in this
+   * project runs against a production build, so nothing saw it (D63).
+   */
+  const csp = cspFor({ nonce, isDev: process.env.NODE_ENV !== 'production' })
 
   /*
    * The nonce goes on the REQUEST headers twice, for two different readers.
