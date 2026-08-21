@@ -35,7 +35,8 @@
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
-import { EtsyClient, redact } from '@/lib/etsy/http'
+import { EtsyClient } from '@/lib/etsy/http'
+import { log } from '@/lib/observability/logger'
 import { exchangeCode, statesMatch } from '@/lib/etsy/oauth'
 import { getTokenStore } from '@/lib/etsy/tokens'
 import { clearFlowCookie, FLOW_COOKIE, outcomeUrl, readFlowCookie, type ConnectOutcome } from '../_flow'
@@ -124,7 +125,9 @@ export async function GET(request: Request) {
      * this is the belt to that pair of braces. The cost of being wrong once is
      * a key in a log aggregator forever.
      */
-    console.error('[etsy:callback]', redact(error instanceof Error ? error.message : error))
+    // The logger redacts; passing the error whole means its name, message AND
+    // stack all go through the same pass, rather than only the message.
+    log.error('etsy oauth callback failed', error, { path: '/api/etsy/callback' })
     return done('exchange_failed')
   }
 }

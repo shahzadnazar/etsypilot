@@ -28,6 +28,7 @@ Run against a production build:
 BASE and CHROME can be overridden by environment variable.
 """
 
+import json
 import os
 import re
 import sys
@@ -371,6 +372,38 @@ with sync_playwright() as p:
     # a total, because a total moves whenever a card is added, and the
     # honest-looking response to a number that keeps drifting is to lower it.
     # Six routes hide state today; five only trips if discovery genuinely breaks.
+
+    # --- No stack trace and no secret reaches a user ------------------------
+    #
+    # /api/leakprobe throws a string containing a credential shape AND a source
+    # path, on purpose, so this is exercised rather than reasoned about.
+    #
+    # Two things measured before any of this was written. Next in production
+    # already strips error detail, so nothing leaked to the browser — but an
+    # unhandled throw in a route handler returned 500 with an EMPTY body and no
+    # content-type, so a caller doing `.json()` got a parse error on top of the
+    # original failure. The extension is exactly such a caller.
+    probe = pg.request.get(f"{BASE}/api/leakprobe")
+    body = probe.text()
+    check(probe.status == 500, f"An unhandled route error is a 500 (was {probe.status})")
+    check("application/json" in (probe.headers.get("content-type") or ""),
+          "An unhandled route error still answers in JSON, not an empty body")
+
+    for secret in ("LEAKCANARY", "sk_live", "lib/etsy/tokens", "at Object.", ".ts:42"):
+        check(secret not in body, f"No response body carries {secret!r}")
+
+    try:
+        payload = json.loads(body).get("error", {})
+    except Exception:
+        payload = {}
+    check(bool(payload.get("message")), "The error body says what happened")
+    check(bool(payload.get("recovery")), "The error body says what to do next")
+    check(bool(payload.get("reference")), "The error body carries a quotable reference")
+    # The envelope may only ever contain the user-facing shape. A `context` or a
+    # `stack` here is a leak whether or not this particular error had one in it.
+    check(set(payload) <= {"kind", "message", "recovery", "retryable", "reference"},
+          f"The error body carries nothing but the user-facing shape (got {sorted(payload)})")
+
     check(len(routes_with_states) >= 5,
           f"The sweep still finds hidden state across the app "
           f"({offered} states on {len(routes_with_states)} routes: "

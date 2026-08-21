@@ -20,6 +20,7 @@
  */
 
 import { NextResponse } from 'next/server'
+import { log } from '@/lib/observability/logger'
 import { getBillingProvider } from '@/lib/billing'
 import { DEMO_SHOP_ID } from '@/lib/etsy/demo-dataset'
 import { AppError } from '@/lib/errors/types'
@@ -39,7 +40,10 @@ export async function POST(request: Request) {
      * the sender, so it goes to the server log and the response says only that
      * it was rejected.
      */
-    console.warn('[billing] webhook rejected:', error instanceof AppError ? error.code : 'MALFORMED')
+    log.warn('billing webhook rejected', {
+      path: '/api/billing/webhook',
+      code: error instanceof AppError ? error.code : 'MALFORMED',
+    })
     return NextResponse.json({ received: false }, { status: 400 })
   }
 
@@ -53,7 +57,12 @@ export async function POST(request: Request) {
   if (audit) {
     // Phase 11 appends this to the event store; until then it is logged so the
     // trail exists rather than being invented later.
-    console.info('[billing] audit:', audit.eventId, audit.afterValue, audit.reason)
+    log.info('billing event applied', {
+      path: '/api/billing/webhook',
+      eventId: audit.eventId,
+      afterValue: audit.afterValue,
+      reason: audit.reason,
+    })
   }
 
   // Always 200 once verified — including for duplicates and ignored types.

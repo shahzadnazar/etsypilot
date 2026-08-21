@@ -2441,3 +2441,67 @@ A unit test, not a browser check: no server, no build, no browser, so it runs in
 second and catches a broken link at the moment it is written rather than at the end of a
 phase. Broken three ways to confirm — unmark an unbuilt item, mark a built one, and point an
 href at nothing; all three caught.
+
+### D55 — What leaks was measured, not assumed
+
+A page and a route were made to throw
+`Error('LEAKCANARY sk_live_51ABCDEF… at /home/user/…/lib/etsy/tokens.ts:42')`, and the
+production build was inspected end to end. Three findings, only one of which was the one
+being looked for.
+
+**Nothing reached the user.** Next strips error detail in production. The 500 page rendered
+correctly, the string appeared nowhere in the HTML or the DOM, and the reference shown
+matched the digest in the server log. That part was already right.
+
+**The secret reached the log, in full.** stdout on a real deployment is a log aggregator
+that keeps it for a year. "Never put secrets in logs" was being kept by luck, not by
+anything in the code. Redaction existed — inside `lib/etsy/http.ts`, scoped to Etsy
+transport errors. That is the wrong shape: *a credential does not become safe because it
+reached the log by a different route.* It now lives in `lib/observability/redact.ts` and is
+applied inside the writer, to every field of every line, so no call site can forget it.
+
+**An unhandled route error returned 500 with an empty body and no content-type.** A caller
+doing `await response.json()` gets a parse error on top of the original failure and has
+nothing to show. The browser extension is exactly such a caller. Every route now answers
+with `toUserFacing()` — message, recovery, retryable, reference — and a browser check
+asserts the body contains *nothing else*, so a `stack` or a `context` cannot be added later
+without failing.
+
+Two things this does **not** claim. Next writes its own unredacted line before
+`onRequestError` runs, and that line is not ours to suppress — the structured record is what
+a log destination should be configured from. And redaction is the second line of defence,
+never the first: the first is not putting a credential in an error message, which is why
+`lib/etsy/http.ts` builds errors from status, method and path only.
+
+### D55a — A reference that corresponds to nothing is worse than none
+
+`app/error.tsx` fell back to `makeReference()` when Next supplied no digest: a fresh random
+string, labelled "Reference", shown to the user as something to quote — and present in no
+log anywhere. It sends someone into a support conversation holding evidence that does not
+exist.
+
+The digest is now printed when it exists and the line is omitted when it does not. Verified
+both ways: with a digest the value on screen is the same one in the server log
+(`digest: '3664705723'`).
+
+Server-side `makeReference()` is unaffected and correct — there the reference is generated
+*and logged* with the same value, so it does join the two.
+
+### D55b — Two copies of a status map, both with a silent default
+
+`statusFor` existed twice, in `app/api/billing/_shared.ts` and the export route, each a
+`switch` with `default: 500`. They had already drifted: neither listed `EXTERNAL_SERVICE`,
+so an Etsy failure during an export reported 500 — "we broke" — for something upstream.
+
+One `Record<ErrorKind, number>` now, which does not compile until every kind has a status
+chosen on purpose. That is not theoretical: adding it failed the build immediately over a
+missing `BACKGROUND_JOB`. Same rule as D46 — written once, read everywhere — and the
+exhaustive record is what makes it enforceable rather than aspirational.
+
+### D55c — The probe stays
+
+`/api/leakprobe` throws a string containing a credential shape and a source path, and the
+browser checks assert on the response. It is a fixture, not a leftover: without something
+that genuinely fails, the error path is reasoned about rather than exercised, and every
+finding above came from exercising it. It refuses in production unless
+`ALLOW_ERROR_PROBE=1`.

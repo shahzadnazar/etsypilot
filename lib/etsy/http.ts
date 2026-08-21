@@ -79,33 +79,17 @@ export class EtsyHttpError extends AppError {
   }
 }
 
-/**
- * Strip anything credential-shaped from a value before it is logged or
- * attached to an error.
+/*
+ * Redaction moved to lib/observability/redact.ts.
  *
- * Belt and braces: the client already keeps the key and token out of every
- * error it constructs. This runs over whatever a caller passes anyway, because
- * the cost of being wrong once is a key in a log aggregator forever.
+ * It was defined here, scoped to Etsy transport errors — which was the wrong
+ * shape. A credential does not become safe because it reached the log by a
+ * different route, so the redactor belongs at the writing end and is now
+ * applied inside the logger itself, to every field of every line.
  */
-export function redact(value: unknown): unknown {
-  if (typeof value === 'string') {
-    return value
-      .replace(/Bearer\s+[A-Za-z0-9._~+/-]+=*/gi, 'Bearer [redacted]')
-      .replace(/(x-api-key['":\s]+)[^'",\s}]+/gi, '$1[redacted]')
-      .replace(/(code_verifier=)[^&\s]+/gi, '$1[redacted]')
-      .replace(/(refresh_token['":=\s]+)[^'",&\s}]+/gi, '$1[redacted]')
-      .replace(/(access_token['":=\s]+)[^'",&\s}]+/gi, '$1[redacted]')
-  }
-  if (Array.isArray(value)) return value.map(redact)
-  if (value && typeof value === 'object') {
-    return Object.fromEntries(
-      Object.entries(value as Record<string, unknown>).map(([k, v]) =>
-        /key|secret|token|authorization|verifier/i.test(k) ? [k, '[redacted]'] : [k, redact(v)],
-      ),
-    )
-  }
-  return value
-}
+import { redact } from '@/lib/observability/redact'
+
+export { redact }
 
 export class EtsyClient {
   private readonly options: Required<Omit<EtsyClientOptions, 'apiKey' | 'accessToken'>> &

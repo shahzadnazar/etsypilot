@@ -12,9 +12,9 @@
  * trace and never an internal identifier.
  */
 
-import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
-import { AppError, Errors } from '@/lib/errors/types'
+import { errorResponse } from '@/lib/errors/api'
+import { Errors } from '@/lib/errors/types'
 import { shopContext } from '@/lib/permissions'
 import { auditExport, toCsv, transactionsExport } from '@/domain/export/csv'
 import { getAuditView } from '@/domain/audit/service'
@@ -58,17 +58,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ dat
     )
     return csvResponse(toCsv(spec, rows), spec.filename)
   } catch (error) {
-    if (error instanceof AppError) {
-      return NextResponse.json(
-        { error: { message: error.message, recovery: error.recovery, code: error.code } },
-        { status: statusFor(error) },
-      )
-    }
-    const fallback = Errors.unknown()
-    return NextResponse.json(
-      { error: { message: fallback.message, recovery: fallback.recovery, code: fallback.code } },
-      { status: 500 },
-    )
+    // Shared envelope. The local statusFor this replaces did not even list
+    // EXTERNAL_SERVICE, so an Etsy failure during an export reported 500 —
+    // "we broke" — for something upstream that is now correctly a 502.
+    return errorResponse(error, { path: `/api/export/${(await params).dataset}` })
   }
 }
 
@@ -83,19 +76,3 @@ function csvResponse(body: string, filename: string): Response {
   })
 }
 
-function statusFor(error: AppError): number {
-  switch (error.kind) {
-    case 'AUTHENTICATION':
-      return 401
-    case 'AUTHORIZATION':
-      return 403
-    case 'NOT_FOUND':
-      return 404
-    case 'VALIDATION':
-      return 400
-    case 'RATE_LIMIT':
-      return 429
-    default:
-      return 500
-  }
-}

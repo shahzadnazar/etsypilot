@@ -6,8 +6,8 @@
 ## 1. Current Status
 
 **Phase:** 12 — Quality & Production Hardening (IN PROGRESS)
-**Current task:** Phase 12. Security headers + CSP done; accessibility (WCAG A/AA, both
-themes) done. Next: error/observability hardening, then the remaining free tools and the
+**Current task:** Phase 12. Done: security headers + CSP, accessibility (WCAG A/AA both
+themes), link integrity, error/observability. Remaining: the six unbuilt free tools and the
 designed mobile top bar.
 **Current file being worked on:** None
 **Last completed task:** OAuth 2.0 + PKCE, rate-limited HTTP client, encrypted token store,
@@ -659,6 +659,24 @@ Also: **a token used as a background needs a paired "on" token.** In dark, `--br
 `--success` are LIGHT colours, so `text-white` on them is 2.98:1 and 1.92:1.
 
 Compute contrast, never eyeball it. See D53.
+
+### Measure the leak, do not reason about it
+
+Made a page and a route throw a string containing a real credential shape and a source
+path, then read the production build end to end. Of three findings, only one was the one
+being looked for:
+
+- Nothing reached the user. Next strips error detail in production — already right.
+- The secret reached the LOG in full. Redaction existed but was scoped to one module.
+  A credential does not become safe because it reached the log by a different route:
+  redact at the WRITER, over every field of every line.
+- An unhandled route throw returned 500 with an EMPTY body and no content-type. Any
+  caller doing `.json()` gets a parse error on top of the original failure.
+
+Two of the three would not have occurred to anyone reasoning about it. See D55.
+
+Related: **a reference that corresponds to nothing is worse than none.** The 500 page
+invented one when Next gave no digest — quotable, and in no log anywhere (D55a).
 
 ## 16. Memory Update Rule
 

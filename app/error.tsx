@@ -1,13 +1,18 @@
 'use client'
 
 import { useEffect } from 'react'
-import { makeReference } from '@/lib/errors/types'
 
 /*
  * The 500 surface.
  *
- * Says what happened, what it means for the user's data, and gives a reference
- * they can quote. Never a stack trace (architecture.md section 10).
+ * Says what happened, what it means for the user's data, and — when there is
+ * one — a reference they can quote. Never a stack trace (architecture.md
+ * section 10).
+ *
+ * Verified rather than assumed: a page throwing
+ * `Error('... sk_live_51ABCDEF... at /home/user/.../tokens.ts:42')` renders
+ * this screen with none of that string anywhere in the HTML or the DOM. Next
+ * strips error detail in production; this component never had access to it.
  */
 export default function ErrorBoundary({
   error,
@@ -16,13 +21,28 @@ export default function ErrorBoundary({
   error: Error & { digest?: string }
   reset: () => void
 }) {
-  const reference = error.digest ?? makeReference()
+  /*
+   * Next's digest, or nothing.
+   *
+   * This used to fall back to makeReference() — a fresh random string, shown to
+   * the user as something to quote, that appears in NO log anywhere. Verified:
+   * when the digest exists it is the same value the server logged
+   * (`digest: '3664705723'`), so it genuinely joins the two. When it does not,
+   * an invented one is worse than none: it sends someone into a support
+   * conversation holding evidence that does not exist.
+   */
+  const reference = error.digest
 
   useEffect(() => {
-    // Sentry lands in Phase 12. Until then this keeps the failure visible in
-    // the server log rather than swallowing it.
-    console.error('[etsypilot]', reference, error.message)
-  }, [error, reference])
+    /*
+     * The server already recorded this through instrumentation.ts, redacted and
+     * structured. This line is the CLIENT's view — it fires in the browser, and
+     * `error.message` here is React's minified production message, never the
+     * server's. Keeping it short and marked as such stops it being mistaken for
+     * the real record.
+     */
+    if (reference) console.warn('[etsypilot] client error boundary', reference)
+  }, [reference])
 
   return (
     <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center gap-4 px-6">
@@ -32,7 +52,9 @@ export default function ErrorBoundary({
         This is an EtsyPilot error, not a problem with your shop or your Etsy data. Nothing was
         published.
       </p>
-      <p className="tnum text-caption text-muted-1">Reference {reference}</p>
+      {reference ? (
+        <p className="tnum text-caption text-muted-1">Reference {reference}</p>
+      ) : null}
       <div>
         <button
           onClick={reset}

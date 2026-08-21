@@ -11,7 +11,8 @@
 
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
-import { AppError, Errors } from '@/lib/errors/types'
+import { errorResponse } from '@/lib/errors/api'
+import { Errors } from '@/lib/errors/types'
 import { shopContext, type ShopContext } from '@/lib/permissions'
 
 export async function withShop(
@@ -32,35 +33,17 @@ export async function withShop(
      */
     return NextResponse.redirect(new URL('/billing', request.url), 303)
   } catch (error) {
-    if (error instanceof AppError) {
-      return NextResponse.json(
-        { error: { message: error.message, recovery: error.recovery, code: error.code } },
-        { status: statusFor(error) },
-      )
-    }
-    const fallback = Errors.unknown()
-    return NextResponse.json(
-      { error: { message: fallback.message, recovery: fallback.recovery, code: fallback.code } },
-      { status: 500 },
-    )
+    /*
+     * One envelope for every route (lib/errors/api.ts), rather than a hand
+     * rolled JSON body here and a slightly different one in the export route.
+     *
+     * The local copy this replaces had a `default: 500` switch, so an ErrorKind
+     * added later silently became a 500 without anyone deciding it should. The
+     * shared map is a Record<ErrorKind, number> — it does not compile until the
+     * new kind is given a status on purpose. That is not hypothetical: adding
+     * the map immediately failed to build over a missing BACKGROUND_JOB.
+     */
+    return errorResponse(error, { path: new URL(request.url).pathname })
   }
 }
 
-export function statusFor(error: AppError): number {
-  switch (error.kind) {
-    case 'AUTHENTICATION':
-      return 401
-    case 'AUTHORIZATION':
-      return 403
-    case 'NOT_FOUND':
-      return 404
-    case 'VALIDATION':
-      return 400
-    case 'PLAN_LIMIT':
-      return 402
-    case 'RATE_LIMIT':
-      return 429
-    default:
-      return 500
-  }
-}
