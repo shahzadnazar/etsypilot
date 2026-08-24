@@ -3527,3 +3527,45 @@ It sits under Shops & data in the settings rail, which is right for
 configuration and wrong for discovery: the extension is something a seller uses
 rather than something they set up once. It is in the main sidebar's Data group
 too, pointing at the same page — one destination, two ways in.
+
+### D81 — Twenty-five buttons that did nothing
+
+A seller pressed "Schedule instead" on the bulk editor's review step and nothing
+happened. It was a `<Button>` with no `onClick`. Sweeping the source for the same
+shape found **twenty-four more**, including:
+
+- **A "Schedule instead" inside the publish confirm dialog** whose handler was
+  `() => setConfirmOpen(false)`. It closed the dialog and did nothing else — so a
+  seller who chose it believed their job was queued. That is the worst shape of
+  this bug: a dead button at least fails visibly. In a confirm dialog for a write
+  to live listings, it is the last place to leave a control that lies.
+- **"Restore" on a dismissed action card**, directly under a comment reading
+  *"Every card goes somewhere. Even a dismissed one offers Restore rather than
+  being a dead row."* The comment described the fix; Restore was the dead part.
+- **The top bar's search**, commented *"Wired in Phase 2 with the action
+  model."* It never was, and it swallowed every click for eleven phases.
+
+Each is now one of two things:
+
+- **A link**, where a destination exists — onboarding's "Continue to Etsy" (the
+  one action that step exists for) now starts the real OAuth flow, "Re-run
+  audit" points at the audit that re-runs on every request, Shop Pulse's "Review
+  N affected listings" filters the catalogue, action cards' "Roll back" opens
+  change history.
+- **A `NotYet`**, which requires a reason and cannot be rendered without one.
+
+`tests/unit/tap-targets.test.ts` now fails on any `<button>` or `<Button>`
+without a handler, a submit type or a disabled state — comments stripped first,
+because this project keeps writing checks that trip over the prose explaining
+them. Verified by re-introducing one.
+
+Scheduling is not built: there is no scheduler, no job store and no runner, and
+"Scheduled" exists only as an `EventSource` label. The Job summary beside the
+button has said "Runs: Immediately" all along.
+
+### D81a — The extension belongs beside the search, not in the sidebar
+
+Moved from the sidebar's Data group to the top bar, immediately after the search
+control. It is something a seller reaches for while working rather than
+something they configure once, and the top bar is where a persistent tool
+belongs. Same destination as the settings entry: one page, two ways in.

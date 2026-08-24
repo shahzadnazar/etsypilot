@@ -81,3 +81,42 @@ describe('the top bar avatar', () => {
     expect(Number(size![1])).toBeGreaterThanOrEqual(6)
   })
 })
+
+/*
+ * No button may do nothing when pressed.
+ *
+ * A seller clicked "Schedule instead" on the bulk editor's review step and
+ * nothing happened. There were twenty-four more like it — a dead "Restore" on a
+ * dismissed action card whose own comment claimed it "offers Restore rather
+ * than being a dead row", a search control commented "Wired in Phase 2" that
+ * never was, and a "Schedule instead" inside the publish confirm dialog whose
+ * handler closed the dialog and did nothing else. That last one is the worst
+ * shape of this bug: it did not fail visibly, so a seller believed their job
+ * was queued.
+ *
+ * A control either works or says why it cannot. NotYet exists for the second
+ * case and requires a reason. This stops the first case coming back.
+ */
+describe('every control does something', () => {
+  const files = [...walk('app'), ...walk('components')]
+
+  it('has no button without a handler, a submit type, or a disabled state', () => {
+    const dead: string[] = []
+
+    for (const file of files) {
+      // Comments first: this file's own prose describes the buttons it forbids.
+      const code = readFileSync(file, 'utf8')
+        .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+
+      for (const match of code.matchAll(/<Button\b[\s\S]*?<\/Button>|<button\b[\s\S]*?<\/button>/g)) {
+        const el = match[0]
+        const head = el.slice(0, el.indexOf('>') + 1)
+        if (/onClick|type="submit"|disabled|formAction|onSelect/.test(head)) continue
+        dead.push(`${file}: ${el.replace(/<[^>]+>/g, '').trim().slice(0, 50)}`)
+      }
+    }
+
+    expect(dead).toEqual([])
+  })
+})

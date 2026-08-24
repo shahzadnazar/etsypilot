@@ -3,9 +3,10 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { PageHeader } from '@/components/layout/page-header'
 import { ScopeList } from '@/components/connect/scope-list'
-import { Button } from '@/components/ui/button'
+import { NotYet } from '@/components/settings/not-yet'
 import { Card } from '@/components/ui/card'
 import { GOALS, ONBOARDING_STEPS, ROLES, setupChecklist } from '@/domain/connect/service'
+import { ETSY_SCOPES } from '@/domain/connect/types'
 import { getSession } from '@/lib/auth'
 import { getEtsyService } from '@/lib/etsy'
 import { cn } from '@/lib/utils/cn'
@@ -41,13 +42,26 @@ export default async function OnboardingPage({
     listingCount: shop.activeListingCount,
   })
   const done = checklist.filter((i) => i.done).length
+  /*
+   * What the consent screen marks REQUIRED or RECOMMENDED. The optional one is
+   * left to the seller — asking for a permission nobody chose is how a connect
+   * screen becomes a checkbox people stop reading. Same list as Shop
+   * connections, read from ETSY_SCOPES so the two cannot ask for different
+   * things.
+   */
+  const defaultScopeKeys = ETSY_SCOPES.filter((s) => s.requirement !== 'OPTIONAL').map((s) => s.key)
 
   return (
     <>
       <PageHeader
         title="Get started"
         subtitle={`Step ${index + 1} of ${ONBOARDING_STEPS.length} · ${active?.label ?? ''} · every step can be skipped`}
-        actions={<Button variant="secondary">Save &amp; exit</Button>}
+        actions={
+          /* Every step is skippable, and the overview is where leaving lands. */
+          <Link href="/dashboard" className="inline-flex h-11 items-center rounded-control border border-line px-3 text-[12px] font-semibold text-ink-2 hover:bg-canvas-soft md:h-[38px]">
+            Save &amp; exit
+          </Link>
+        }
       />
 
       <ol className="mb-5 flex flex-wrap gap-2" aria-label="Onboarding steps">
@@ -89,7 +103,18 @@ export default async function OnboardingPage({
         <div className="flex flex-col gap-4">
           <ScopeList />
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="primary">Continue to Etsy</Button>
+            {/*
+              * The one action this step exists for, and it was a button with
+              * no handler. A plain link, because starting OAuth is a top-level
+              * navigation and one that works with no JavaScript cannot fail to
+              * appear — the same reasoning as Shop connections.
+              */}
+            <Link
+              href={`/api/etsy/connect?scopes=${defaultScopeKeys.join(',')}`}
+              className="inline-flex h-11 items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-brand-on hover:bg-brand-strong md:h-[38px]"
+            >
+              Continue to Etsy
+            </Link>
             <Link
               href="/research/keywords"
               className="text-caption font-semibold text-brand-strong underline underline-offset-2"
@@ -112,7 +137,10 @@ export default async function OnboardingPage({
                 {done} of {checklist.length} done · this checklist disappears when complete.
               </span>
             </div>
-            <Button variant="secondary">Dismiss</Button>
+            <NotYet
+              label="Dismiss"
+              reason="Dismissing a notice needs somewhere to remember that you did."
+            />
           </div>
 
           <ul className="flex flex-col divide-y divide-line">

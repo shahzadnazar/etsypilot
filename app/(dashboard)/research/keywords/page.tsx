@@ -6,7 +6,7 @@ import { EstimateTile, RangeValue } from '@/components/provenance/estimate'
 import { ProvenanceButton } from '@/components/provenance/provenance-button'
 import { DemandChart } from '@/components/research/demand-chart'
 import { RelatedTermsTable } from '@/components/research/related-terms'
-import { Button } from '@/components/ui/button'
+import { NotYet } from '@/components/settings/not-yet'
 import { Card } from '@/components/ui/card'
 import { Numeric } from '@/components/ui/numeric'
 import { DEFAULT_TERM, getKeywordView } from '@/domain/research/service'
@@ -49,8 +49,15 @@ export default async function KeywordsPage({
         subtitle={`${term} · ${signals.market} · modelled from public marketplace signals — not official Etsy data`}
         actions={
           <>
-            <Button variant="secondary">Compare a keyword</Button>
-            <Button variant="primary">Save to list</Button>
+            <NotYet
+              label="Compare a keyword"
+              reason="Side-by-side comparison is not built. Open a second term in a new tab for now."
+            />
+            <NotYet
+              label="Save to list"
+              variant="primary"
+              reason="Saving a term needs a store behind Keyword Lists, which does not exist yet. The lists you can see are read-only."
+            />
           </>
         }
       />
@@ -131,7 +138,10 @@ export default async function KeywordsPage({
         <div className="flex flex-wrap items-center justify-between gap-2 pb-2">
           <h2 className="text-section text-ink-1">Related keywords</h2>
           <div className="flex gap-2">
-            <Button variant="secondary">Save to list</Button>
+            <NotYet
+              label="Save to list"
+              reason="Keyword Lists is read-only until saving is built."
+            />
             <Link
               href="/listings/ai-copilot"
               className="inline-flex h-11 items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-brand-on hover:bg-brand-strong md:h-[38px]"

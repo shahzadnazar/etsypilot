@@ -108,14 +108,6 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'Methodology', href: '/data/methodology' },
       { label: 'Data Sources', href: '/data/sources' },
-      /*
-       * The same destination as the settings rail's entry, not a second copy of
-       * the page. The extension is something a seller uses rather than
-       * something they configure once, and it was reachable only by opening
-       * Settings and reading down a list — which is where features go to not be
-       * found.
-       */
-      { label: 'Browser Extension', href: '/settings/extension' },
     ],
   },
 ]

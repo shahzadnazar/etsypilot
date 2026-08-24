@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/layout/page-header'
 import { EmptyState } from '@/components/ui/states'
 import { DraftReview } from '@/components/ai/draft-review'
 import { Button } from '@/components/ui/button'
+import { NotYet } from '@/components/settings/not-yet'
 import { Card } from '@/components/ui/card'
 import { Numeric } from '@/components/ui/numeric'
 import { getCopilotView } from '@/domain/ai/service'
@@ -65,7 +66,10 @@ export default async function AiCopilotPage({
         subtitle={`${draft?.listingTitle ?? rejected?.listingTitle ?? ''} · AI draft — nothing publishes without your approval · ${view.provider}`}
         actions={
           <>
-            <Button variant="secondary">Discard draft</Button>
+            <NotYet
+              label="Discard draft"
+              reason="Drafts are generated per request and nothing is stored, so there is nothing to discard yet."
+            />
             <Link
               href={draft ? `/listings/bulk-editor?draft=${draft.id}` : '/listings/audit'}
               className="inline-flex h-11 items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-brand-on hover:bg-brand-strong md:h-[38px]"
@@ -98,8 +102,15 @@ export default async function AiCopilotPage({
           </ul>
           <p className="mt-3 text-caption leading-relaxed text-muted-1">{rejected.note}</p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Button variant="primary">Try again</Button>
-            <Button variant="secondary">Edit manually</Button>
+            <NotYet
+              label="Try again"
+              variant="primary"
+              reason="Re-running a refused draft needs the request kept. Reload the page to generate a new one."
+            />
+            <NotYet
+              label="Edit manually"
+              reason="In-place editing arrives with the listing editor. The bulk editor applies changes today."
+            />
           </div>
         </Card>
       ) : null}

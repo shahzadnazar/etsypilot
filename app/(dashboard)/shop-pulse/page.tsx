@@ -1,11 +1,12 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { PageHeader } from '@/components/layout/page-header'
 import { ProvenanceButton } from '@/components/provenance/provenance-button'
 import { ProvenanceBadge } from '@/components/provenance/provenance-badge'
 import { BaselineChart } from '@/components/shop-pulse/baseline-chart'
 import { ChangesPanel } from '@/components/shop-pulse/changes-panel'
-import { Button } from '@/components/ui/button'
+import { NotYet } from '@/components/settings/not-yet'
 import { Card } from '@/components/ui/card'
 import { getShopPulse } from '@/domain/shop-pulse/service'
 import { getSession } from '@/lib/auth'
@@ -37,8 +38,18 @@ export default async function ShopPulsePage() {
         subtitle={`${period} UTC measured against this shop's own ${pulse.orders.windowDays}-day baseline · ${pulse.currency} · ${pulse.changes.length} changes detected`}
         actions={
           <>
-            <Button variant="secondary">Export evidence</Button>
-            <Button variant="primary">Review {affected} affected listings</Button>
+            <NotYet
+              label="Export evidence"
+              reason="There is no Shop Pulse export dataset yet. Each change's evidence is on its card."
+            />
+            {/*
+              * The listings a detected change touched, filtered to what the
+              * audit flagged — a real destination, where this was a dead
+              * primary button.
+              */}
+            <Link href="/listings?health=ERRORS" className="inline-flex h-11 items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-brand-on hover:bg-brand-strong md:h-[38px]">
+              Review {affected} affected listings
+            </Link>
           </>
         }
       />

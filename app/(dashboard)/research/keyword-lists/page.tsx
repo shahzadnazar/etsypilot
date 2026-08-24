@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { PageHeader } from '@/components/layout/page-header'
-import { Button } from '@/components/ui/button'
+import { NotYet } from '@/components/settings/not-yet'
 import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/states'
 import { Numeric } from '@/components/ui/numeric'
@@ -34,7 +34,13 @@ export default async function KeywordListsPage() {
       <PageHeader
         title="Keyword Lists"
         subtitle="Save terms while researching, then apply them to listings with a reviewable diff."
-        actions={<Button variant="primary">New list</Button>}
+        actions={
+          <NotYet
+            label="New list"
+            variant="primary"
+            reason="Creating a list needs a store behind this page. These lists are read-only for now."
+          />
+        }
       />
 
       {lists.length === 0 ? (
@@ -81,7 +87,10 @@ export default async function KeywordListsPage() {
                 >
                   Apply to listings
                 </Link>
-                <Button variant="secondary">Export</Button>
+                <NotYet
+                  label="Export"
+                  reason="There is no keyword-list export dataset yet. Transactions and the audit do export, from Data export."
+                />
               </div>
             </Card>
           ))}

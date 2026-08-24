@@ -1,5 +1,6 @@
 import { Check, X } from 'lucide-react'
 import Link from 'next/link'
+import { NotYet } from '@/components/settings/not-yet'
 import type { Action, ActionSeverity } from '@/domain/action-center/types'
 import { SEVERITY_LABEL } from '@/domain/action-center/types'
 import { cn } from '@/lib/utils/cn'
@@ -225,16 +226,24 @@ function Timeline({ action }: { action: Action }) {
 }
 
 /**
- * Every card goes somewhere. Even a dismissed one offers Restore rather than
- * being a dead row.
+ * Every card goes somewhere — its destination link is real, and always has been.
+ *
+ * The secondary controls were not. Restore, Snooze and Dismiss were <button>s
+ * with no handler, and the comment here used to say a dismissed card "offers
+ * Restore rather than being a dead row" while Restore was itself the dead part.
+ * All three need somewhere to remember a per-action state, which does not exist
+ * yet, so they say so instead of absorbing a click.
+ *
+ * Roll back is the exception: change history is built, so it is a link.
  */
 function Actions({ action }: { action: Action }) {
   if (action.status === 'DISMISSED') {
     return (
       <div className="shrink-0">
-        <button className="w-full rounded-control border border-line px-3 py-2 text-[11.5px] font-semibold text-ink-2 hover:bg-canvas-soft sm:w-auto">
-          Restore
-        </button>
+        <NotYet
+          label="Restore"
+          reason="Restoring needs the dismissal to have been stored, and per-action state is not built yet."
+        />
       </div>
     )
   }
@@ -257,10 +266,11 @@ function Actions({ action }: { action: Action }) {
         >
           {action.destination.label}
         </Link>
+        {/* Change history is built, so this goes there rather than nowhere. */}
         {action.rollbackAvailable ? (
-          <button className="rounded-control border border-line px-3 py-2 text-[11px] font-semibold text-ink-2 hover:bg-surface">
+          <Link href="/listings/change-history" className="rounded-control border border-line px-3 py-2 text-center text-[11px] font-semibold text-ink-2 hover:bg-surface">
             Roll back
-          </button>
+          </Link>
         ) : null}
       </div>
     )
@@ -283,11 +293,24 @@ function Actions({ action }: { action: Action }) {
       >
         {action.destination.label}
       </Link>
+      {/*
+        * Disabled with one shared reason rather than two NotYet blocks: in a
+        * 180px column two wrapped explanations would be longer than the card
+        * they sit beside. The reason is still stated, which is the rule.
+        */}
       <div className="flex gap-2">
-        <button className="min-h-[36px] flex-1 rounded-control border border-line px-2 py-2 text-[11px] font-semibold text-ink-2 hover:bg-canvas-soft">
+        <button
+          disabled
+          title="Snoozing needs somewhere to remember it until. Per-action state is not built yet."
+          className="min-h-[36px] flex-1 cursor-not-allowed rounded-control border border-line px-2 py-2 text-[11px] font-semibold text-muted-1 opacity-70"
+        >
           Snooze
         </button>
-        <button className="min-h-[36px] flex-1 rounded-control border border-line px-2 py-2 text-[11px] font-semibold text-ink-2 hover:bg-canvas-soft">
+        <button
+          disabled
+          title="Dismissing needs somewhere to remember that you did. Per-action state is not built yet."
+          className="min-h-[36px] flex-1 cursor-not-allowed rounded-control border border-line px-2 py-2 text-[11px] font-semibold text-muted-1 opacity-70"
+        >
           Dismiss
         </button>
       </div>

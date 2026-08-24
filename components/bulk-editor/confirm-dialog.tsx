@@ -16,12 +16,10 @@ import { ROLLBACK_WINDOW_DAYS } from '@/domain/bulk-editor/plan'
 export function ConfirmDialog({
   count,
   onCancel,
-  onSchedule,
   onPublish,
 }: {
   count: number
   onCancel: () => void
-  onSchedule?: () => void
   onPublish: (acknowledged: boolean) => void
 }) {
   const [acknowledged, setAcknowledged] = useState(false)
@@ -100,11 +98,20 @@ export function ConfirmDialog({
           <Button variant="quiet" onClick={onCancel}>
             Cancel
           </Button>
-          {onSchedule ? (
-            <Button variant="secondary" onClick={onSchedule}>
-              Schedule instead
-            </Button>
-          ) : null}
+          {/*
+            * "Schedule instead" is gone from this dialog entirely, and that is
+            * the fix rather than an omission.
+            *
+            * Its handler was `() => setConfirmOpen(false)` — it closed the
+            * dialog and did nothing else. So a seller who chose it believed
+            * their job was queued, and it was not: worse than the dead button
+            * on the step behind it, because a dead button at least fails
+            * visibly. This is a confirm dialog for a write to live listings,
+            * which is the last place to leave a control that lies about what it
+            * did.
+            *
+            * The unbuilt state is stated once, on the review step, by NotYet.
+            */}
           <Button
             variant="primary"
             disabled={!acknowledged}

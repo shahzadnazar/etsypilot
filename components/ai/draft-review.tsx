@@ -18,7 +18,7 @@
 
 import Link from 'next/link'
 import { ProvenanceBadge } from '@/components/provenance/provenance-badge'
-import { Button } from '@/components/ui/button'
+import { NotYet } from '@/components/settings/not-yet'
 import { Card } from '@/components/ui/card'
 import { Numeric } from '@/components/ui/numeric'
 import type { AiDraft, DraftSource } from '@/domain/ai/types'
@@ -138,8 +138,14 @@ export function DraftReview({ draft, demo }: { draft: AiDraft; demo: boolean }) 
           >
             Send to review
           </Link>
-          <Button variant="secondary">Edit before accepting</Button>
-          <Button variant="secondary">Reject</Button>
+          <NotYet
+            label="Edit before accepting"
+            reason="Editing a draft in place arrives with the listing editor. Accepting sends it to the bulk editor, where it can be changed before it is applied."
+          />
+          <NotYet
+            label="Reject"
+            reason="Nothing is stored until you accept, so a rejected draft needs no record. Leaving the page discards it."
+          />
           <span className="text-caption text-muted-1">
             “Send to review” opens the bulk editor with this change loaded. Nothing reaches Etsy
             until you have seen the diff there and confirmed it.

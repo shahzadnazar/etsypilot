@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { NotYet } from '@/components/settings/not-yet'
 import { Card } from '@/components/ui/card'
 /*
  * From ./plan, not ./service. The planning half is pure; the service half
@@ -140,7 +141,10 @@ export function BulkEditorWizard({
                   <Button variant="primary" onClick={() => setStep(4)}>
                     Continue to review
                   </Button>
-                  <Button variant="secondary">Download report</Button>
+                  <NotYet
+                    label="Download report"
+                    reason="A validation report export is not built. The findings above are the whole of it, and the audit does export from Data export."
+                  />
                 </div>
               ) : null}
             </div>
@@ -168,8 +172,22 @@ export function BulkEditorWizard({
                     {publishError}
                   </p>
                 ) : null}
-                <div className="flex flex-wrap gap-2">
-                  <Button variant="secondary">Schedule instead</Button>
+                <div className="flex flex-wrap items-start gap-2">
+                  {/*
+                    * This was a <Button> with no onClick — a control that did
+                    * nothing at all when pressed. Scheduling is not built:
+                    * there is no scheduler, no job store and no runner, and
+                    * "Scheduled" exists only as an EventSource label. The Job
+                    * summary beside this has said "Runs: Immediately" all along.
+                    *
+                    * NotYet requires a reason, which is the point: the button
+                    * stays where the design puts it and says why it cannot be
+                    * used, rather than silently absorbing a click.
+                    */}
+                  <NotYet
+                    label="Schedule instead"
+                    reason="Scheduling is not built yet. This job would run immediately, so the button is disabled rather than queuing nothing."
+                  />
                   <Button variant="primary" onClick={() => setConfirmOpen(true)}>
                     Publish to {willWrite.length} listings
                   </Button>
@@ -201,7 +219,6 @@ export function BulkEditorWizard({
         <ConfirmDialog
           count={willWrite.length}
           onCancel={() => setConfirmOpen(false)}
-          onSchedule={() => setConfirmOpen(false)}
           onPublish={() => {
             setConfirmOpen(false)
             // Demo mode cannot write. The refusal is surfaced as the product's

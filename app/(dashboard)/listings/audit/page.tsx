@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { PageHeader } from '@/components/layout/page-header'
 import { ProvenanceButton } from '@/components/provenance/provenance-button'
 import { RuleGroup } from '@/components/audit/rule-group'
-import { Button } from '@/components/ui/button'
+import { NotYet } from '@/components/settings/not-yet'
 import { Card } from '@/components/ui/card'
 import { Money, Numeric } from '@/components/ui/numeric'
 import { AssistedNote } from '@/components/ai/assisted-note'
@@ -51,8 +51,18 @@ export default async function ListingAuditPage() {
         subtitle={`${view.listingsChecked} listings checked against ${view.ruleCount} rules · ${view.errors} errors, ${view.warnings} warnings, ${view.passing} pass · last run ${formatDateTime(view.lastRunAt)}`}
         actions={
           <>
-            <Button variant="secondary">Audit settings</Button>
-            <Button variant="secondary">Re-run audit</Button>
+            <NotYet
+              label="Audit settings"
+              reason="Thresholds are EtsyPilot's defaults and are not editable yet."
+            />
+            {/*
+              * A real link, because the audit runs on every request. Loading
+              * this page IS re-running it — the button was doing nothing while
+              * describing the one thing the page already does.
+              */}
+            <Link href="/listings/audit" className="inline-flex h-11 items-center rounded-control border border-line px-3 text-[12px] font-semibold text-ink-2 hover:bg-canvas-soft md:h-[38px]">
+              Re-run audit
+            </Link>
             <Link
               href="/api/export/audit"
               className="inline-flex h-11 items-center rounded-control border border-line px-3 text-[12px] font-semibold text-ink-2 hover:bg-canvas-soft md:h-[38px]"
@@ -142,9 +152,12 @@ export default async function ListingAuditPage() {
               Rules follow Etsy’s documented listing requirements plus your own thresholds. Nothing
               here models Etsy’s ranking — no one outside Etsy can.
             </p>
-            <Button variant="secondary" className="mt-3">
-              Edit thresholds
-            </Button>
+            <span className="mt-3 inline-block">
+              <NotYet
+                label="Edit thresholds"
+                reason="The thresholds above are EtsyPilot's defaults. Editing them needs somewhere to keep yours."
+              />
+            </span>
           </Card>
 
           <Card className="flex flex-col gap-1.5 p-[18px]">
