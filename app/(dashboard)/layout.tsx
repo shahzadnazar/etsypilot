@@ -37,6 +37,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       lastSyncedAt={shop.lastSyncedAt}
       isDemo={session.isDemo}
       userInitials={initials}
+      userName={session.name}
       plan={plan.name}
       /*
        * From the shop, not from DEMO_COUNTS.

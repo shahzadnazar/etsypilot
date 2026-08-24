@@ -17,6 +17,7 @@ export function AppShell({
   lastSyncedAt,
   isDemo,
   userInitials,
+  userName,
   plan,
   usage,
   openActionCount,
@@ -27,6 +28,7 @@ export function AppShell({
   lastSyncedAt: string | null
   isDemo: boolean
   userInitials: string
+  userName: string
   plan: string
   usage: { used: number; limit: number }
   /** Drives the bell's dot on mobile. */
@@ -83,6 +85,7 @@ export function AppShell({
               lastSyncedAt={lastSyncedAt}
               isDemo={isDemo}
               userInitials={userInitials}
+              userName={userName}
             />
           </div>
           <main id="main" className="flex-1 overflow-y-auto px-4 py-5 md:px-6">

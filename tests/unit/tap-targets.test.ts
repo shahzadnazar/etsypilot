@@ -54,3 +54,30 @@ describe('WCAG 2.2 SC 2.5.8 — target size', () => {
     expect(small).toEqual([])
   })
 })
+
+/*
+ * The account avatar is a control, not a picture.
+ *
+ * It was an `aria-hidden` <span> in the top bar — the one element that looked
+ * like a control and was not: invisible to a screen reader, inert to a click,
+ * and sitting in the corner where every application puts the account.
+ */
+describe('the top bar avatar', () => {
+  const source = readFileSync('components/layout/top-bar.tsx', 'utf8')
+
+  it('is a link with a destination', () => {
+    expect(source).toMatch(/<Link[\s\S]*?href="\/settings\/profile"/)
+  })
+
+  it('carries a name a screen reader can read', () => {
+    // Initials are not an accessible name. "SR" tells nobody anything.
+    expect(source).toContain('sr-only')
+    expect(source).toContain('userName')
+  })
+
+  it('is at least 24px, like every other target', () => {
+    const size = source.match(/className="flex h-(\d+) w-(\d+) shrink-0 items-center justify-center rounded-control text-\[11px\]/)
+    expect(size).not.toBeNull()
+    expect(Number(size![1])).toBeGreaterThanOrEqual(6)
+  })
+})

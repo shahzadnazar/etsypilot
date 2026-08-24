@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
@@ -10,18 +11,43 @@ export const metadata: Metadata = { title: 'Browser Extension' }
 /*
  * Settings → Browser Extension.
  *
- * Both store buttons are disabled and say "Coming Soon", because neither
- * listing is live. A button that looks installable and is not is the same
- * "must not look built" problem D21 removed from the navigation, and the design
- * is explicit that these stay disabled until the stores go live.
+ * Neither store listing is live, so both store buttons stay disabled — a button
+ * that looks installable and is not is the "must not look built" problem D21
+ * removed from the navigation.
+ *
+ * But the page used to stop there, which made it a dead end for something that
+ * is finished and installable today: the package builds, it passes its own
+ * audit, and loading it unpacked takes four steps. "Not in a store yet" and
+ * "you cannot have it" are different sentences, and the page was printing the
+ * second while meaning the first.
  *
  * The security section is the load-bearing part of this screen: it states what
  * the extension can never do, and every line of it is enforced by the packaging
  * audit rather than by this page's good intentions.
  */
 const STORES = [
-  { key: 'chrome', name: 'Chrome', status: 'Coming soon' },
-  { key: 'firefox', name: 'Firefox', status: 'Coming soon' },
+  {
+    key: 'chrome',
+    name: 'Chrome',
+    status: 'Not in the Web Store yet',
+    steps: [
+      'Download the package below and unzip it.',
+      'Open chrome://extensions and turn on Developer mode.',
+      'Choose “Load unpacked” and pick the unzipped folder.',
+      'Open any etsy.com listing and click the EtsyPilot icon.',
+    ],
+  },
+  {
+    key: 'firefox',
+    name: 'Firefox',
+    status: 'Not on addons.mozilla.org yet',
+    steps: [
+      'Download the package below and unzip it.',
+      'Open about:debugging → This Firefox.',
+      'Choose “Load Temporary Add-on” and pick manifest.json inside the folder.',
+      'Open any etsy.com listing and click the EtsyPilot icon.',
+    ],
+  },
 ] as const
 
 const NEVER = [
@@ -49,28 +75,49 @@ export default async function ExtensionSettingsPage() {
         subtitle="EtsyPilot intelligence while you browse Etsy. Read-only, on etsy.com only."
       />
 
-      <section aria-label="Install" className="grid gap-3 sm:grid-cols-2">
+      <section aria-label="Install" className="grid gap-3 lg:grid-cols-2">
         {STORES.map((store) => (
           <Card key={store.key} className="flex flex-col gap-2 p-[18px]">
-            <h2 className="text-section text-ink-1">{store.name}</h2>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-section text-ink-1">{store.name}</h2>
+              <span className="text-caption text-muted-2">{store.status}</span>
+            </div>
             <p className="text-caption text-muted-1">
               Manifest V3, same UI and same API client on both browsers.
             </p>
-            <button
-              type="button"
-              disabled
-              aria-disabled="true"
-              className="mt-2 h-11 cursor-not-allowed rounded-control border border-line px-3 text-[12px] font-semibold text-muted-1 md:h-[38px]"
+
+            <ol className="mt-1 flex flex-col gap-1.5">
+              {store.steps.map((step, index) => (
+                <li key={step} className="flex gap-2 text-small leading-relaxed text-ink-2">
+                  <span className="tnum flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-tint text-[10px] font-semibold text-brand-strong">
+                    {index + 1}
+                  </span>
+                  {step}
+                </li>
+              ))}
+            </ol>
+
+            {/*
+              * A real link to a real file, not a store button that does nothing.
+              * The route zips the BUILD output — the artefact the packaging
+              * audit ran against — so what a seller loads is what was checked.
+              */}
+            <Link
+              href={`/api/extension/download/${store.key}`}
+              className="mt-2 inline-flex h-11 w-fit items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-brand-on hover:bg-brand-strong md:h-[38px]"
             >
-              {store.status}
-            </button>
+              Download for {store.name}
+            </Link>
           </Card>
         ))}
       </section>
 
-      <p className="mt-3 text-caption leading-relaxed text-muted-1">
-        Not yet published to either store, so both buttons stay disabled. When a listing goes live
-        this page links to it — nothing here installs anything today.
+      <p className="mt-3 max-w-prose text-caption leading-relaxed text-muted-1">
+        The extension is finished; it is only the store listings that are not. Loading it unpacked
+        gives you exactly the package a store listing would, and this page will link to the listings
+        instead once they are live. If the download reports that nothing has been packaged, run{' '}
+        <code className="font-mono">npm run extension:build</code> once — the build is what runs the
+        audit below, and a package that has not been through it is not one we hand out.
       </p>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-2">

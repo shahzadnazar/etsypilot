@@ -3474,3 +3474,56 @@ and use a registered mark — worse than having no tool at all.
 
 Both remain listed and unlinked. The roadmap is not a secret; pretending to be a
 destination was the dishonest half.
+
+### D80 — "Not in a store yet" and "you cannot have it" are different sentences
+
+The Browser Extension page's only two controls were disabled buttons reading
+"Coming soon". That was accurate about the store listings and wrong about the
+extension: it is finished, it passes its own packaging audit, and loading it
+unpacked takes four steps.
+
+So the store status stays honest — "Not in the Web Store yet", "Not on
+addons.mozilla.org yet" — and the page now offers the thing that works today:
+the four load-unpacked steps per browser, and a real download.
+
+`/api/extension/download/[browser]` zips the **build output**, never the source.
+The build is what runs the audit — no permission beyond `activeTab`, no
+forbidden API, nothing shaped like a key — so what a seller loads is the
+artefact that was checked. A missing build is reported as a missing build with
+the one command that produces it, rather than as a 500 or an empty zip. The
+browser name is validated against a closed set before it touches a path.
+
+`Errors.notFound` was not reused for an unknown browser: its recovery says "it
+may have been deleted on Etsy", which is true of a listing and nonsense about a
+browser package. A shared error is only shared where the recovery is shared too.
+
+### D80a — The avatar was a picture of a control
+
+The `SR` chip in the top bar was an `aria-hidden` `<span>`. It was the one thing
+up there that looked like a control and was not: inert to a click, invisible to
+a screen reader, and sitting in the corner where every application puts the
+account. A seller who clicks it and gets nothing learns the chrome is a drawing.
+
+It is a `<Link>` to the profile now, 36px, with the person's name as its
+accessible name — initials are not one; "SR" tells nobody anything.
+
+Its first hover style was `hover:opacity-90`, which the browser sweep rejected
+on the first run: dimming an element dims the text inside it. It is a ring.
+
+### D80b — A test that encoded the old behaviour
+
+Two browser checks asserted "both store buttons are present and disabled" — the
+dead end itself, pinned. Changing the page turned them red, which is the check
+doing its job; leaving them would have meant either reverting the fix or
+deleting the coverage.
+
+They assert the guarantee rather than the implementation now: no control claims
+a store listing that does not exist, and the thing offered instead is a real
+file — verified by fetching both downloads and checking the content type.
+
+### D80c — The extension was reachable only from Settings
+
+It sits under Shops & data in the settings rail, which is right for
+configuration and wrong for discovery: the extension is something a seller uses
+rather than something they set up once. It is in the main sidebar's Data group
+too, pointing at the same page — one destination, two ways in.

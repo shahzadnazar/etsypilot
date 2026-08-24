@@ -1107,14 +1107,25 @@ with sync_playwright() as p:
     au = pg.locator("main").inner_text()
     check("Where to start ·" in au, "The audit carries an assistant explanation for the worst rule")
 
-    # Settings → Browser Extension: both stores disabled, and the security
-    # note is on the page rather than only in a README.
+    # Settings → Browser Extension. These used to assert two disabled "Coming
+    # soon" buttons, which was the page being a dead end for something that is
+    # finished and installable. The guarantee that matters is unchanged and is
+    # what is checked now: no control claims a store listing that does not
+    # exist, and the thing offered instead is a real file.
     pg.goto(f"{BASE}/settings/extension", wait_until="domcontentloaded")
     pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(400)
     ext = pg.locator("main").inner_text()
-    check(pg.get_by_role("button", name="Coming soon").count() == 2,
-          "Both store buttons are present and disabled")
-    check(pg.locator("button[disabled]").count() >= 2, "Neither store button is clickable")
+    check("Not in the Web Store yet" in ext and "Not on addons.mozilla.org yet" in ext,
+          "The page says neither store listing is live")
+    check(pg.get_by_role("link", name="Download for Chrome").count() == 1
+          and pg.get_by_role("link", name="Download for Firefox").count() == 1,
+          "Both packages are offered as a real download")
+    for browser in ("chrome", "firefox"):
+        head = pg.request.get(f"{BASE}/api/extension/download/{browser}")
+        check(head.status == 200 and "zip" in head.headers.get("content-type", ""),
+              f"The {browser} download serves a package")
+    check(pg.get_by_role("link", name="Load unpacked").count() == 0,
+          "Nothing on the page pretends a store install is available")
     check("Ask for your Etsy password" in ext, "The page lists what the extension can never do")
     check("activeTab" in ext and "https://www.etsy.com/*" in ext,
           "The page names the exact permissions requested")
