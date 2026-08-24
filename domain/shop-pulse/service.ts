@@ -106,9 +106,36 @@ export async function getShopPulse(ctx: ShopContext): Promise<ShopPulseView> {
   }
 }
 
-/** Ordered by measured impact, so the biggest movement is read first. */
+/*
+ * UNKNOWN first, then by measured impact.
+ *
+ * The decision was recorded on 2026-08-20 — "UNKNOWN findings are never
+ * truncated, and outrank correlated ones" — and only half of it was
+ * implemented. Truncation was fixed; the SORT still ranked purely on
+ * magnitude, so the unexplained residual landed wherever its percentage put it.
+ * On the demo shop that was third, below two changes the product had already
+ * explained.
+ *
+ * The ordering is a judgement about what a seller should read first, and it is
+ * the opposite of the magnitude one. A CORRELATED row is a question already
+ * answered: here is what moved, here is the change that preceded it. An UNKNOWN
+ * row is the part of the shop nobody can account for — smaller on the page and
+ * larger in what it should prompt. Burying it under the answered ones inverts
+ * the point of the screen.
+ *
+ * RULED_OUT sits last: a hypothesis that was tested and did not hold is worth
+ * recording and is the least likely to need action.
+ */
+const DIAGNOSIS_ORDER: Record<DetectedChange['diagnosis'], number> = {
+  UNKNOWN: 0,
+  CORRELATED: 1,
+  RULED_OUT: 2,
+}
+
 function rank(c: DetectedChange): number {
-  return -Math.abs(c.ordersAfterPercent ?? 0)
+  // Magnitude still orders WITHIN a class, so the biggest unexplained movement
+  // is read before a smaller one.
+  return DIAGNOSIS_ORDER[c.diagnosis] * 1000 - Math.abs(c.ordersAfterPercent ?? 0)
 }
 
 /* ------------------------------------------------------ recorded changes */

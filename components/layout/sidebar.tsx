@@ -17,13 +17,55 @@ function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`)
 }
 
+/*
+ * The plan meter.
+ *
+ * Over the limit it says what ACTUALLY happens, which plans.ts has stated all
+ * along: new bulk jobs pause, nothing is deleted, and the seller chooses what
+ * to remove. A red number with no sentence beside it invites the fear the
+ * product spends its effort not creating — that data is about to disappear.
+ *
+ * A limit of 0 means "not offered on this plan" rather than "none allowed", so
+ * it renders as a count with no denominator instead of a division by zero.
+ */
+export function PlanUsage({ usage }: { usage: { used: number; limit: number } }) {
+  const over = usage.limit > 0 && usage.used > usage.limit
+  return (
+    <>
+      <div className={cn('tnum text-caption', over ? 'font-semibold text-danger' : 'text-muted-1')}>
+        {usage.limit > 0
+          ? `${usage.used.toLocaleString('en-US')} / ${usage.limit.toLocaleString('en-US')} listings`
+          : `${usage.used.toLocaleString('en-US')} listings`}
+      </div>
+      {over ? (
+        <p className="mt-1 text-[10.5px] leading-relaxed text-muted-1">
+          Over your plan limit. New bulk jobs pause — nothing is deleted, and you choose what to
+          remove.{' '}
+          <Link href="/billing" className="font-semibold text-brand-strong underline underline-offset-2">
+            Change plan
+          </Link>
+        </p>
+      ) : null}
+    </>
+  )
+}
+
 export function Sidebar({
   plan,
-  listingUsage,
+  usage,
   counts,
 }: {
   plan: string
-  listingUsage: string
+  /*
+   * Structured, not a pre-formatted string.
+   *
+   * It used to arrive as "412 / 200 listings" and render as grey text, so a
+   * shop 212 listings OVER its plan looked identical to one comfortably under
+   * it. The billing page had an at-limit state all along; the shell — the thing
+   * on every screen — did not, so the one number a seller sees constantly was
+   * the one that could not tell them anything was wrong.
+   */
+  usage: { used: number; limit: number }
   /*
    * Measured counts, keyed by href. Empty is a valid state and renders no
    * chip — the alternative was the literal badges this replaces, which said
@@ -131,7 +173,7 @@ export function Sidebar({
           seat meters, since neither exists in MVP. */}
       <div className="border-t border-line px-4 py-3">
         <div className="text-[11px] font-semibold text-ink-2">{plan} plan</div>
-        <div className="tnum text-caption text-muted-1">{listingUsage}</div>
+        <PlanUsage usage={usage} />
       </div>
     </nav>
   )

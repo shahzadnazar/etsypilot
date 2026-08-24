@@ -18,7 +18,7 @@ export function AppShell({
   isDemo,
   userInitials,
   plan,
-  listingUsage,
+  usage,
   openActionCount,
   counts,
 }: {
@@ -28,7 +28,7 @@ export function AppShell({
   isDemo: boolean
   userInitials: string
   plan: string
-  listingUsage: string
+  usage: { used: number; limit: number }
   /** Drives the bell's dot on mobile. */
   openActionCount: number
   /** Measured nav counts by href. Never authored — see navigation.ts. */
@@ -60,7 +60,7 @@ export function AppShell({
       {isDemo ? <DemoBanner /> : null}
 
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar plan={plan} listingUsage={listingUsage} counts={counts} />
+        <Sidebar plan={plan} usage={usage} counts={counts} />
 
         <div className="flex min-w-0 flex-1 flex-col">
           {/*

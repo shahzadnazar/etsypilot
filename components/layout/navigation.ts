@@ -107,7 +107,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Data',
     items: [
       { label: 'Methodology', href: '/data/methodology' },
-      { label: 'Data Sources', href: '/data/sources', unbuilt: true },
+      { label: 'Data Sources', href: '/data/sources' },
     ],
   },
 ]

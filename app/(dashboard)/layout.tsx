@@ -26,6 +26,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
     .slice(0, 2)
     .toUpperCase()
 
+  /*
+   * Usage is passed structured, not pre-formatted, so the shell can render an
+   * over-limit state. It read "412 / 200 listings" in flat grey before — 212
+   * listings over the plan, and visually identical to a shop comfortably under.
+   */
   return (
     <AppShell
       shopName={shop.name}
@@ -41,7 +46,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
        * catalogue it is counting, on every page. Exactly the defect the mock's
        * activeListingCount was fixed for (D57); this was the other end of it.
        */
-      listingUsage={`${shop.activeListingCount.toLocaleString('en-US')} / ${plan.limits.listings.toLocaleString('en-US')} listings`}
+      usage={{ used: shop.activeListingCount, limit: plan.limits.listings }}
       openActionCount={actions.counts.OPEN ?? 0}
       /*
        * One source for both. The sidebar chip and the bell used to disagree —
