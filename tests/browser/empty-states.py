@@ -68,7 +68,8 @@ with sync_playwright() as p:
               "/research/keyword-lists", "/settings/shops", "/settings/export",
               "/settings/costs", "/settings/audit-log", "/settings/profile", "/listings",
               "/settings/security", "/data/sources", "/data/methodology",
-              "/listings/change-history",
+              "/listings/change-history", "/analytics", "/analytics/sales-map",
+              "/analytics/experiments",
               "/tools", "/action-center", "/onboarding"]
     broke = []
     for route in ROUTES:
@@ -153,6 +154,20 @@ with sync_playwright() as p:
           "Change history has a reachable empty state")
     check("Roll back" not in history,
           "...and offers no rollback with nothing to roll back")
+
+    # --- analytics of nothing --------------------------------------------
+    pg.goto(f"{BASE}/analytics", wait_until="load"); pg.wait_for_timeout(400)
+    analytics = pg.locator("main").inner_text()
+    check("No orders in this period" in analytics,
+          "Shop analytics says there is nothing to analyse")
+    check("$0.00" not in analytics,
+          "...and reports no average order rather than an average of $0.00")
+
+    pg.goto(f"{BASE}/analytics/sales-map", wait_until="load"); pg.wait_for_timeout(400)
+    smap = pg.locator("main").inner_text()
+    check("No orders in this period" in smap, "The sales map says what is missing")
+    check("other regions" not in smap,
+          "...and does not print a suppressed-regions row with nothing in it")
     # --- and every empty state points somewhere ----------------------------
     # rules.md section 12: never fail silently. An empty state that does not say
     # what to do next is a dead end with better typography.

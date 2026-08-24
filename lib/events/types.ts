@@ -37,6 +37,17 @@ export interface DomainEvent {
   eventId: string
   shopId: string
   listingId: string | null
+  /*
+   * Set on an event that touched SEVERAL listings at once — a section
+   * deactivation, a bulk state change — where `listingId` is null because no
+   * single listing owns it.
+   *
+   * Without it a group event is invisible to anything asking "did something
+   * else happen to these listings?", which is how Shop Pulse could report a
+   * deactivation as the cause of a fall while the experiment tracker reported
+   * the seller's title change as the cause of the same fall.
+   */
+  listingIds?: string[]
   /** D20: actor_id on every row from day one, so multi-user is additive. */
   actorId: string | null
   timestamp: string

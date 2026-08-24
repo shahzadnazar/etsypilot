@@ -64,6 +64,16 @@ export interface ProfitResult {
 
 export function computeWaterfall(orders: EtsyOrder[], costs: CostInputs): ProfitResult {
   const grossRevenue = sum(orders.map((o) => o.gross))
+  /*
+   * Discounts and refunds, both from the receipt and both money the seller does
+   * not keep.
+   *
+   * They were missing entirely: the waterfall ran gross → fees → costs, so a
+   * refunded order counted as revenue and net profit was overstated by exactly
+   * the refunded amount. The design has had both lines since artboard 53.
+   */
+  const discounts = sum(orders.map((o) => o.discounts))
+  const refunds = sum(orders.map((o) => o.refunds))
   const etsyFees = sum(orders.map((o) => o.etsyFees))
   const paymentProcessing = sum(orders.map((o) => o.paymentProcessing))
   const offsiteAds = sum(orders.map((o) => o.offsiteAds))
@@ -78,7 +88,15 @@ export function computeWaterfall(orders: EtsyOrder[], costs: CostInputs): Profit
   const otherCosts = round2(costs.otherCosts)
 
   const totalCosts = round2(
-    etsyFees + paymentProcessing + offsiteAds + shipping + cogs + labour + otherCosts,
+    discounts +
+      refunds +
+      etsyFees +
+      paymentProcessing +
+      offsiteAds +
+      shipping +
+      cogs +
+      labour +
+      otherCosts,
   )
   const netProfit = round2(grossRevenue - totalCosts)
   const marginPercent = grossRevenue === 0 ? null : round1((netProfit / grossRevenue) * 100)
@@ -88,6 +106,8 @@ export function computeWaterfall(orders: EtsyOrder[], costs: CostInputs): Profit
 
   const lines: WaterfallLine[] = [
     line('gross', 'Gross revenue', round2(grossRevenue), verified(null, verifiedSource).provenance),
+    line('discounts', 'Discounts', -round2(discounts), verified(null, verifiedSource).provenance),
+    line('refunds', 'Refunds', -round2(refunds), verified(null, verifiedSource).provenance),
     line('etsyFees', 'Etsy fees', -round2(etsyFees), verified(null, verifiedSource).provenance),
     line('processing', 'Payment processing', -round2(paymentProcessing), verified(null, verifiedSource).provenance),
     line('offsiteAds', 'Offsite Ads', -round2(offsiteAds), verified(null, verifiedSource).provenance),

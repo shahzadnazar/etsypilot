@@ -82,9 +82,9 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Analytics',
     items: [
-      { label: 'Shop Analytics', href: '/analytics', unbuilt: true },
-      { label: 'Sales Map', href: '/analytics/sales-map', unbuilt: true },
-      { label: 'Experiments', href: '/analytics/experiments', unbuilt: true },
+      { label: 'Shop Analytics', href: '/analytics' },
+      { label: 'Sales Map', href: '/analytics/sales-map' },
+      { label: 'Experiments', href: '/analytics/experiments' },
     ],
   },
   {

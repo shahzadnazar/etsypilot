@@ -3250,3 +3250,126 @@ The store assigns a monotonic `seq` on insert, and the address is
 `id@at#seq`. Assigned by the store and never by the caller, because a caller
 that could choose a sequence could choose a duplicate — and safe as a key
 precisely because the store is append-only, so no sequence is ever reused.
+
+### D74 — Discounts and refunds were on the design and in neither the data nor the maths
+
+Every generated order carried `discounts: 0` and `refunds: 0` while `DEMO_TOTALS`
+declared $412 and $602. Three things followed, none of them visible until a
+screen asked:
+
+- **The profit waterfall had no discount or refund line at all.** It ran gross →
+  fees → costs, so a refunded order counted as revenue and net profit was
+  overstated by exactly what had been given back. Both lines have been on
+  artboard 53 since Phase 6.
+- Shop analytics' refund rate — "1.8% · 8 of 438 orders" — computed to zero.
+- The ledger's rows could not sum to a total the design stated.
+
+Eight orders carry a refund now, which is the 1.8% the artboard shows, and the
+amounts sum exactly to the designed totals. Net profit is **$1,014.00 lower**,
+and that is the correction, not a regression: the shop was being credited with
+money it had returned.
+
+### D75 — The mock adapter did not serve history, and said so in a comment
+
+Shop Pulse imported the demo generator directly to get its baseline, with a
+comment explaining that the adapter only served the reporting period. That made
+the adapter seam a claim rather than a fact — and it broke the first screen that
+asked the adapter for a previous window: Shop analytics' comparison came back
+empty and every change read "no previous period" for a shop with three months of
+history.
+
+A live shop's receipts do not stop at the period boundary, so neither does the
+mock. Shop Pulse reads its baseline through `getOrders` like everything else.
+
+### D76 — Every listing in the shop had the same margin
+
+`demoConfirmedCosts` set each listing's cost to a fixed fraction of its own
+price, so all 398 costed listings had a **51% margin**. Two screens exposed it
+at once:
+
+- the listings table's Margin column carried no information at all
+- Shop analytics' "best margin" insight fired on a **0.7-point spread** — noise
+  presented as a finding
+
+A download has almost no unit cost and a hand-thrown mug has a lot, which is the
+difference Profit Reality exists to show. Costs now vary by what the thing is,
+and the insight requires a **ten-point** spread before it says anything. An
+insight that fires on noise teaches the reader that the panel is decoration.
+
+### D77 — Sales map: suppression happens in the domain, not the component
+
+Countries with fewer than five orders are folded into one aggregate row **before
+the data leaves `domain/analytics/sales-map.ts`**. Suppressing them in the
+component would mean the figure had already been computed and shipped to the
+browser, where anyone can read it.
+
+Two further properties are structural:
+
+- **The row model has nowhere to put a buyer.** Six fields, none of which could
+  hold a name or an address, so no future edit to the page can start showing
+  one. A test asserts the exact key set.
+- **The aggregate row has no average order value.** A figure describing a group
+  whose members the seller cannot see is not one anybody can act on.
+
+The demo shop's country weights gained a long tail, because with six countries
+nothing ever fell below the threshold — the privacy rule the map is built around
+could not be exercised, and the artboard's "12 other regions" row was
+unreachable.
+
+**No world map is drawn**, and that is a decision rather than an omission: this
+shop sells to five countries above the threshold, a world choropleth of five
+shaded countries is mostly empty space, and the ranked table says more. The
+artboard's five-step scale is kept, applied to proportional bars.
+
+**Repeat-customer rate is not shown at all.** Computing it needs a buyer
+identifier on every receipt, and the same artboard promises buyers are "never
+shown or stored". The cheapest way to keep that promise is for the identifier
+never to enter the product — so the metric is absent, and the page says why,
+where the number would have been.
+
+### D78 — The experiment tracker is the screen most likely to lie
+
+A live Etsy shop has no control group. Seasonality, a competitor's price, an
+Etsy ranking change and the seller's own edit all land in the same numbers, so
+a verdict here is never causal — POSITIVE means "orders moved up by more than
+this shop's own variation explains", and nothing more.
+
+Four guards, in precedence order:
+
+1. **An overlapping recorded change beats everything.** Checked first, because a
+   large movement with a known other cause inside the window is the most
+   misleading thing this screen could report — the size of the number is what
+   makes it convincing.
+2. **Fewer than 14 days of post-change data → inconclusive**, whatever the
+   movement.
+3. **Movement under 15% → inconclusive.** Inside the noise of a shop this size.
+4. Every card carries what it cannot tell you. Not optional, and a test asserts
+   the reasoning uses no causal verb while the limitations always contain the
+   disclaimer.
+
+**Rates, not totals.** The artboard's own card compares "41 orders / 14 d"
+against "52 orders / 7 d" and calls it positive — but that is 2.9 a day against
+7.4, so the totals understate the movement by more than half. Both figures are
+shown so the arithmetic is visible.
+
+There is no positive result on the demo shop, and that is left alone rather than
+arranged. A tracker that always has one success on it is a tracker nobody should
+trust; the POSITIVE branch is exercised by unit test.
+
+### D78a — Two screens disagreed about one set of listings
+
+The seasonal-titles experiment read as a **31% fall** and returned NEGATIVE. The
+fall is the Aug 6 deactivation of that whole section — which Shop Pulse reports,
+correctly, as a correlated change. So the product said "the deactivation
+correlates with this fall" on one screen and "your title change did this" on
+another, about the same four listings.
+
+The cause was structural: `DEMO_EVENTS`' deactivation carries `listingId: null`
+because no single listing owns it, so a per-listing overlap check could not see
+it. `DomainEvent` gained `listingIds?: string[]` for events that touched several
+listings at once, and the experiment now downgrades to inconclusive and names
+the overlap.
+
+Without it, a group event is invisible to anything asking "did something else
+happen to these listings?" — which is exactly the question this screen exists to
+ask.

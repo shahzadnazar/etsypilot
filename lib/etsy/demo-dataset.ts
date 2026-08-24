@@ -501,13 +501,36 @@ export function buildDemoListings(): EtsyListing[] {
  * gross total is exactly the designed $18,420.65.
  * ------------------------------------------------------------------ */
 
+/*
+ * Four main markets and a long tail.
+ *
+ * The tail is not decoration. The sales map suppresses any country with fewer
+ * than five orders, and with only six countries in the data nothing ever fell
+ * below that — so the privacy rule the map is built around could not be
+ * exercised, and the "12 other regions" row the artboard shows was unreachable.
+ *
+ * Weights sum to 1.
+ */
 const COUNTRIES: ReadonlyArray<{ code: string; weight: number }> = [
-  { code: 'US', weight: 0.726 },
+  { code: 'US', weight: 0.7 },
   { code: 'CA', weight: 0.123 },
   { code: 'GB', weight: 0.071 },
   { code: 'AU', weight: 0.041 },
   { code: 'DE', weight: 0.02 },
   { code: 'FR', weight: 0.019 },
+  { code: 'NL', weight: 0.003 },
+  { code: 'IE', weight: 0.003 },
+  { code: 'NZ', weight: 0.003 },
+  { code: 'SE', weight: 0.002 },
+  { code: 'NO', weight: 0.002 },
+  { code: 'DK', weight: 0.002 },
+  { code: 'ES', weight: 0.002 },
+  { code: 'IT', weight: 0.002 },
+  { code: 'JP', weight: 0.002 },
+  { code: 'CH', weight: 0.002 },
+  { code: 'BE', weight: 0.002 },
+  { code: 'FI', weight: 0.001 },
+  { code: 'PL', weight: 0.001 },
 ]
 
 function pickCountry(rng: () => number): string {
@@ -687,7 +710,8 @@ export function buildDemoOrders(listings: EtsyListing[]): EtsyOrder[] {
 
   const orders = emits.map((e, i) => makeOrder(e, i, rng))
   orders.sort((a, b) => a.placedAt.localeCompare(b.placedAt))
-  return reconcileToTotals(orders)
+  // Adjustments last, so they are not rescaled by the reconciliation.
+  return applyDesignedAdjustments(reconcileToTotals(orders))
 }
 
 /**
@@ -777,6 +801,61 @@ function makeOrder(
   }
 }
 
+/*
+ * Discounts and refunds, put on the orders that carry them.
+ *
+ * Every generated order had `discounts: 0` and `refunds: 0` while DEMO_TOTALS
+ * declared $412 and $602. Three things followed from that, and none of them was
+ * visible until a screen asked:
+ *
+ *   - the profit waterfall had no discount or refund line at all, so gross
+ *     revenue was being treated as money kept
+ *   - Shop analytics' refund rate — "1.8% · 8 of 438 orders" — computed to zero
+ *   - the ledger's rows could not sum to a total the design stated
+ *
+ * Eight orders carry a refund, which is the 1.8% the artboard shows, and the
+ * amounts sum exactly to the designed totals. Deterministic and RNG-free: this
+ * runs after generation, so it shifts nothing.
+ */
+const REFUNDED_ORDERS = 8
+const DISCOUNTED_ORDERS = 40
+
+function applyDesignedAdjustments(orders: EtsyOrder[]): EtsyOrder[] {
+  if (orders.length === 0) return orders
+
+  const refundStep = Math.max(1, Math.floor(orders.length / REFUNDED_ORDERS))
+  const discountStep = Math.max(1, Math.floor(orders.length / DISCOUNTED_ORDERS))
+
+  const refundIds = new Set<number>()
+  for (let i = 0; refundIds.size < REFUNDED_ORDERS && i * refundStep < orders.length; i++) {
+    refundIds.add(i * refundStep)
+  }
+  const discountIds = new Set<number>()
+  for (let i = 0; discountIds.size < DISCOUNTED_ORDERS && i * discountStep < orders.length; i++) {
+    discountIds.add(i * discountStep)
+  }
+
+  // The remainder lands on the first order of each set, so the column totals
+  // are exact rather than nearly right.
+  const refundEach = round2(DEMO_TOTALS.refunds / refundIds.size)
+  const refundRemainder = round2(DEMO_TOTALS.refunds - refundEach * refundIds.size)
+  const discountEach = round2(DEMO_TOTALS.discounts / discountIds.size)
+  const discountRemainder = round2(DEMO_TOTALS.discounts - discountEach * discountIds.size)
+
+  const firstRefund = Math.min(...refundIds)
+  const firstDiscount = Math.min(...discountIds)
+
+  return orders.map((order, index) => {
+    const refunds = refundIds.has(index)
+      ? round2(refundEach + (index === firstRefund ? refundRemainder : 0))
+      : 0
+    const discounts = discountIds.has(index)
+      ? round2(discountEach + (index === firstDiscount ? discountRemainder : 0))
+      : 0
+    return { ...order, refunds, discounts }
+  })
+}
+
 function reconcileToTotals(orders: EtsyOrder[]): EtsyOrder[] {
   const rawGross = orders.reduce((sum, o) => sum + o.gross, 0)
   const scale = DEMO_TOTALS.grossRevenue / rawGross
@@ -821,13 +900,36 @@ function apportion(orders: EtsyOrder[], field: 'etsyFees' | 'paymentProcessing' 
  * costed" independently is how a screen comes to disagree with its own
  * coverage figure.
  */
+/*
+ * Per-listing costs, varied by what the thing actually is.
+ *
+ * Every listing used to cost the same fraction of its own price, so every
+ * listing in the shop had an identical margin — 51%, all 398 of them. The
+ * consequences showed up the moment a screen ranked by margin:
+ *
+ *   - the listings table's Margin column carried no information at all
+ *   - Shop analytics' "best margin" insight fired on a 0.7-point spread, which
+ *     is noise presented as a finding
+ *
+ * A download has almost no unit cost and a hand-thrown mug has a lot, which is
+ * the difference the whole Profit Reality screen exists to show. Deterministic
+ * and RNG-free, and the same listings carry a cost as before, so coverage and
+ * the reconciled totals are unchanged.
+ */
 export function demoConfirmedCosts(listings: EtsyListing[]): Map<string, number> {
-  const cogsPercent = DEMO_TOTALS.cogs / DEMO_TOTALS.grossRevenue
   return new Map(
     listings
       .filter((_, i) => i % 8 !== 0)
-      .map((l) => [l.etsyListingId, Number((l.price * cogsPercent).toFixed(2))]),
+      .map((l, i) => [l.etsyListingId, Number((l.price * costFractionFor(l, i)).toFixed(2))]),
   )
+}
+
+function costFractionFor(listing: EtsyListing, index: number): number {
+  const sku = listing.sku ?? ''
+  // A template or a download: the cost is the making of it, once.
+  if (sku.includes('DL') || sku.includes('SGN') || listing.section === 'Digital') return 0.07
+  // 24% to 58%, spread deterministically across the rest.
+  return 0.24 + ((index * 7) % 35) / 100
 }
 
 /** Orders whose supplier invoice never arrived, so they cannot be costed at all. */

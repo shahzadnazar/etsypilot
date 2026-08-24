@@ -23,6 +23,7 @@ import {
   DEMO_SHOP_ID,
   buildDemoListings,
   buildDemoOrders,
+  buildDemoPriorOrders,
 } from './demo-dataset'
 import type {
   EtsyListing,
@@ -68,9 +69,27 @@ function listings(): EtsyListing[] {
   return listingCache
 }
 
+/*
+ * The reporting period AND the 90 days before it.
+ *
+ * The adapter used to serve only the 30-day period, so any question about
+ * history had to reach around it — Shop Pulse imported the generator directly,
+ * with a comment explaining why. That made the seam a claim rather than a fact,
+ * and it silently broke the first screen that asked the adapter for a previous
+ * period: Shop analytics' comparison came back empty and every change read as
+ * "no previous data" rather than the growth the shop actually had.
+ *
+ * A live shop's receipts do not stop at the period boundary, so neither does
+ * this.
+ */
 function orders(): EtsyOrder[] {
   if (isEmptyDataset()) return []
-  if (!orderCache) orderCache = buildDemoOrders(listings())
+  if (!orderCache) {
+    const catalogue = listings()
+    orderCache = [...buildDemoPriorOrders(catalogue), ...buildDemoOrders(catalogue)].sort((a, b) =>
+      a.placedAt.localeCompare(b.placedAt),
+    )
+  }
   return orderCache
 }
 

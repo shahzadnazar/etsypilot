@@ -39,9 +39,16 @@ describe('profit waterfall', () => {
   const orders = buildDemoOrders(buildDemoListings())
   const result = computeWaterfall(orders, COSTS)
 
-  it('carries all eight cost lines plus gross and net', () => {
+  it('carries all ten cost lines plus gross and net', () => {
+    /*
+     * Discounts and refunds were absent for eleven phases, so gross revenue was
+     * treated as money kept and net profit was overstated by exactly what had
+     * been refunded. Both are on the receipt and both are VERIFIED.
+     */
     expect(result.lines.map((l) => l.key)).toEqual([
       'gross',
+      'discounts',
+      'refunds',
       'etsyFees',
       'processing',
       'offsiteAds',
@@ -97,11 +104,18 @@ describe('profit waterfall', () => {
   })
 
   it('computes net from the lines rather than asserting it', () => {
-    // The artboard states $4,938.20, but its own eight line items sum to
-    // $4,937.15 - a $1.05 rounding artifact in the design. The waterfall has to
-    // add up, so the computed figure wins and the discrepancy is recorded here.
-    expect(result.netProfit).toBeCloseTo(4937.15, 2)
-    expect(result.marginPercent).toBeCloseTo(26.8, 1)
+    /*
+     * The artboard states $4,938.20 and its own eight line items sum to
+     * $4,937.15 — a $1.05 rounding artifact in the design, recorded here
+     * because the waterfall has to add up and the computed figure wins.
+     *
+     * It is $3,923.15 now, exactly $1,014.00 lower, because Discounts ($412)
+     * and Refunds ($602) are subtracted at last. Both were on the design from
+     * artboard 53 and in neither the data nor the calculation: the shop was
+     * being credited with money it had given back.
+     */
+    expect(result.netProfit).toBeCloseTo(3923.15, 2)
+    expect(result.marginPercent).toBeCloseTo(21.3, 1)
   })
 })
 

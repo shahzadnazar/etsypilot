@@ -76,7 +76,15 @@ describe('the demo log', () => {
   })
 
   it('gives every record a unique address', () => {
-    const keys = demoAuditRecords().map(recordKey)
+    /*
+     * Read back through the store, not from the seed function.
+     *
+     * The store is what assigns the sequence that completes the address, so
+     * addressing the unseeded records would test a shape nothing renders.
+     */
+    resetAuditRecords()
+    const keys = readAuditRecords('shop-address').map(recordKey)
+    expect(keys.length).toBeGreaterThan(4)
     // BE-2291 appears twice — confirm and apply — so the id alone is not one.
     expect(new Set(keys).size).toBe(keys.length)
     expect(demoAuditRecords().filter((r) => r.id === 'BE-2291')).toHaveLength(2)

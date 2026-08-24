@@ -20,6 +20,7 @@ import { applyRollback, rollbackFingerprint, RollbackRefused, refusalFromQuery }
 import { outcomeLabel, outcomeOf, type ChangeJob } from '@/domain/change-history/types'
 import { readChangeJobs, resetChangeJobs } from '@/domain/change-history/store'
 import { readAuditRecords, resetAuditRecords } from '@/domain/audit-log/store'
+import { recordKey } from '@/domain/audit-log/service'
 import { isRefusal } from '@/domain/audit-log/types'
 import { buildDemoListings, DEMO_ACTOR_ID, DEMO_NOW, DEMO_SHOP_ID } from '@/lib/etsy/demo-dataset'
 import { shopContext, type ShopContext } from '@/lib/permissions'
@@ -179,11 +180,17 @@ describe('the rollback gate', () => {
     } catch {
       /* expected */
     }
-    const keys = readAuditRecords(DEMO_SHOP_ID).map((r) => `${r.id}@${r.at}`)
     /*
-     * Both refusals were stamped DEMO_NOW at first, so they shared an address
-     * and the log's drawer could only ever open the first of them.
+     * Through recordKey, not a hand-rolled copy of the format.
+     *
+     * The first version of this test built `id@at` itself — the address BEFORE
+     * the sequence was added — so it asserted uniqueness of a format the
+     * product no longer uses, and failed or passed depending on whether the two
+     * refusals landed in the same millisecond. A test that re-implements the
+     * thing it is testing is testing its own copy.
      */
+    const keys = readAuditRecords(DEMO_SHOP_ID).map(recordKey)
+    expect(keys.length).toBeGreaterThan(8)
     expect(new Set(keys).size).toBe(keys.length)
   })
 })

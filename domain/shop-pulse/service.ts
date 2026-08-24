@@ -18,7 +18,6 @@ import {
   PERIOD_END,
   PERIOD_START,
   buildDemoListings,
-  buildDemoPriorOrders,
   narrativeGroups,
 } from '@/lib/etsy/demo-dataset'
 import { DEMO_EVENTS } from '@/lib/etsy/demo-events'
@@ -44,11 +43,18 @@ export async function getShopPulse(ctx: ShopContext): Promise<ShopPulseView> {
     since: PERIOD_START,
     until: PERIOD_END,
   })
-  // Baseline history is read through the same adapter in live mode; the demo
-  // adapter serves it directly since it is not part of the reporting period.
-  const priorOrders = buildDemoPriorOrders(buildDemoListings()).filter(
-    (o) => o.placedAt >= BASELINE_START && o.placedAt <= BASELINE_END,
-  )
+  /*
+   * Through the adapter, like everything else.
+   *
+   * This used to import the demo generator directly, with a comment saying the
+   * adapter did not serve history. That made the seam a claim rather than a
+   * fact — and it broke the first screen that asked the adapter for a previous
+   * period. The mock serves the full modelled history now.
+   */
+  const priorOrders = await etsy.getOrders(ctx.shopId, {
+    since: BASELINE_START,
+    until: BASELINE_END,
+  })
 
   const baselineArgs = {
     priorOrders,

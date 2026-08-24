@@ -7,7 +7,17 @@
  */
 
 import type { DomainEvent } from '@/lib/events/types'
-import { DEMO_ACTOR_ID, DEMO_SHOP_ID } from './demo-dataset'
+import { buildDemoListings, DEMO_ACTOR_ID, DEMO_SHOP_ID, narrativeGroups } from './demo-dataset'
+
+/*
+ * The four listings the Aug 6 deactivation actually touched.
+ *
+ * Read from the same narrative grouping the order generator uses, so the event
+ * and the sales data it explains cannot describe different listings.
+ */
+const SEASONAL_LISTING_IDS = narrativeGroups(buildDemoListings()).seasonal.map(
+  (l) => l.etsyListingId,
+)
 
 function ev(e: Omit<DomainEvent, 'shopId'>): DomainEvent {
   return { ...e, shopId: DEMO_SHOP_ID }
@@ -102,6 +112,9 @@ export const DEMO_EVENTS: DomainEvent[] = [
   ev({
     eventId: 'EV-0007',
     listingId: null,
+    // The four it actually touched. Shop Pulse groups this event by section;
+    // the experiment tracker needs to know whether it landed on ITS listings.
+    listingIds: SEASONAL_LISTING_IDS,
     actorId: DEMO_ACTOR_ID,
     timestamp: '2026-08-06T15:41:00.000Z',
     type: 'LISTING_DEACTIVATED',
