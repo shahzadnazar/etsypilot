@@ -134,6 +134,8 @@ export async function getProfitView(ctx: ShopContext): Promise<ProfitView> {
 export function totalsFrom(orders: EtsyOrder[]): VerifiedTotals {
   return {
     grossRevenue: round2(orders.reduce((s, o) => s + o.gross, 0)),
+    discounts: round2(orders.reduce((s, o) => s + o.discounts, 0)),
+    refunds: round2(orders.reduce((s, o) => s + o.refunds, 0)),
     etsyFees: round2(orders.reduce((s, o) => s + o.etsyFees, 0)),
     paymentProcessing: round2(orders.reduce((s, o) => s + o.paymentProcessing, 0)),
     offsiteAds: round2(orders.reduce((s, o) => s + o.offsiteAds, 0)),

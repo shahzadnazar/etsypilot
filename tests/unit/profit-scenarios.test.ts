@@ -10,8 +10,8 @@ const ctx = { shopId: DEMO_SHOP_ID, actorId: 'demo-user-salman', readOnly: true 
 const view = await getProfitView(ctx)
 
 const verified: VerifiedTotals = {
-  grossRevenue: 18420.65, etsyFees: 2984.1, paymentProcessing: 622,
-  offsiteAds: 412.35, orderCount: 438,
+  grossRevenue: 18420.65, discounts: 412, refunds: 602, etsyFees: 2984.1,
+  paymentProcessing: 622, offsiteAds: 412.35, orderCount: 438,
 }
 const assumptions: SellerAssumptions = {
   shippingPerOrder: 2.6187, cogsPercent: 0.3798, labourTotal: 1020, otherCosts: 302.05,
@@ -46,6 +46,52 @@ describe('a seller can never adjust a verified figure', () => {
     const fees = (r: typeof a) => Math.abs(r.lines.find((l) => l.key === 'etsyFees')!.amount)
     expect(fees(a)).toBe(fees(b))
     expect(fees(a)).toBeCloseTo(verified.etsyFees, 2)
+  })
+})
+
+/*
+ * The screen and the other waterfall must agree.
+ *
+ * There are two waterfall implementations in this codebase: computeWaterfall,
+ * used by the dashboard, the action centre and analytics, and computeScenario,
+ * which is what Profit Reality actually renders. D74 added Discounts and
+ * Refunds to the first and missed the second, so the flagship profit screen
+ * went on overstating net profit by their sum while waterfall.test.ts passed.
+ *
+ * These lock the second one to the same receipt facts.
+ */
+describe('the rendered waterfall subtracts what the receipts say was given back', () => {
+  it('carries a Discounts and a Refunds line', () => {
+    const base = computeScenario(verified, assumptions, { scenario: 'BASE', coverage: 0.62, missingData: [] })
+    const keys = base.lines.map((l) => l.key)
+    expect(keys).toContain('discounts')
+    expect(keys).toContain('refunds')
+    // Subtracted, not added. A sign error here reads as a bigger discount.
+    expect(base.lines.find((l) => l.key === 'discounts')!.amount).toBe(-412)
+    expect(base.lines.find((l) => l.key === 'refunds')!.amount).toBe(-602)
+  })
+
+  it('reconciles: gross minus every cost line equals net', () => {
+    const base = computeScenario(verified, assumptions, { scenario: 'BASE', coverage: 0.62, missingData: [] })
+    const costs = base.lines.filter((l) => l.key !== 'gross' && l.key !== 'net')
+    const sum = costs.reduce((s, l) => s + l.amount, 0)
+    expect(base.grossRevenue + sum).toBeCloseTo(base.netProfit, 2)
+    expect(base.totalCosts).toBeCloseTo(-sum, 2)
+  })
+
+  it('reads discounts and refunds off the orders rather than assuming zero', async () => {
+    // Against the real demo dataset, not the fixture above: a totalsFrom that
+    // returned 0 for both would satisfy every assertion made from a literal.
+    expect(view.verified.refunds).toBeGreaterThan(0)
+    expect(view.verified.discounts).toBeGreaterThan(0)
+  })
+
+  it('lowers net profit by exactly the amount given back', () => {
+    const withNone = computeScenario({ ...verified, discounts: 0, refunds: 0 }, assumptions,
+      { scenario: 'BASE', coverage: 0.62, missingData: [] })
+    const withBoth = computeScenario(verified, assumptions,
+      { scenario: 'BASE', coverage: 0.62, missingData: [] })
+    expect(withNone.netProfit - withBoth.netProfit).toBeCloseTo(412 + 602, 2)
   })
 })
 

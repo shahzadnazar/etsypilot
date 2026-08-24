@@ -21,6 +21,17 @@ import type { Provenance } from '@/lib/provenance/types'
  */
 export interface VerifiedTotals {
   readonly grossRevenue: number
+  /*
+   * Money the seller gave back to buyers, and money taken off at checkout.
+   *
+   * Both are on the receipt and both reduce what the seller keeps, so both
+   * belong here beside the fees. D74 added them to computeWaterfall and missed
+   * this type, which is what Profit Reality actually renders — so the flagship
+   * screen went on overstating net profit by exactly their sum while a passing
+   * test covered the other implementation.
+   */
+  readonly discounts: number
+  readonly refunds: number
   readonly etsyFees: number
   readonly paymentProcessing: number
   readonly offsiteAds: number

@@ -51,6 +51,11 @@ export function computeScenario(
 
   // Volume scales revenue and the fees that follow from it.
   const grossRevenue = round2(verifiedTotals.grossRevenue * shape.salesMultiplier)
+  // Discounts and refunds scale with volume for the same reason the fees do:
+  // more orders means more of both. They are receipt facts, not assumptions,
+  // so they sit with the verified lines and never move with costMultiplier.
+  const discounts = round2(verifiedTotals.discounts * shape.salesMultiplier)
+  const refunds = round2(verifiedTotals.refunds * shape.salesMultiplier)
   const etsyFees = round2(verifiedTotals.etsyFees * shape.salesMultiplier)
   const paymentProcessing = round2(verifiedTotals.paymentProcessing * shape.salesMultiplier)
   const offsiteAds = round2(verifiedTotals.offsiteAds * shape.salesMultiplier)
@@ -63,7 +68,15 @@ export function computeScenario(
   const otherCosts = round2(assumptions.otherCosts * shape.costMultiplier)
 
   const totalCosts = round2(
-    etsyFees + paymentProcessing + offsiteAds + shipping + cogs + labour + otherCosts,
+    discounts +
+      refunds +
+      etsyFees +
+      paymentProcessing +
+      offsiteAds +
+      shipping +
+      cogs +
+      labour +
+      otherCosts,
   )
   const netProfit = round2(grossRevenue - totalCosts)
 
@@ -79,6 +92,8 @@ export function computeScenario(
 
   const lines: WaterfallLine[] = [
     line('gross', 'Gross revenue', grossRevenue, revenueProvenance),
+    line('discounts', 'Discounts', -discounts, revenueProvenance),
+    line('refunds', 'Refunds', -refunds, revenueProvenance),
     line('etsyFees', 'Etsy fees', -etsyFees, revenueProvenance),
     line('processing', 'Payment processing', -paymentProcessing, revenueProvenance),
     line('offsiteAds', 'Offsite Ads', -offsiteAds, revenueProvenance),

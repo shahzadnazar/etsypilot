@@ -3680,3 +3680,32 @@ The five absence checks were each verified by reintroducing what they forbid —
 provider method, a route file, a page button, a lifecycle export, a silent
 policy — and confirming all five went red. An absence check that cannot fail is
 not a check (D68).
+
+### D84 — There were two waterfalls, and D74 only fixed one
+
+Verifying that D83 had left order refunds alone turned up something worse: on
+Profit Reality itself they had never been there.
+
+This codebase has two waterfall implementations. `computeWaterfall` in
+`domain/profit/waterfall.ts` serves the dashboard, the action centre and
+analytics. `computeScenario` in `domain/profit/scenarios.ts` is what the Profit
+Reality screen actually renders — it takes `VerifiedTotals`, which had no
+`discounts` and no `refunds` field for either implementation to read.
+
+So D74 added the two lines to the first one, `waterfall.test.ts` went green, and
+the flagship profit screen went on reporting net profit of $4,937.15 when the
+receipts say $3,923.15. Overstated by exactly $1,014.00 — $412 of discounts and
+$602 of refunds the seller never kept. The test that "proved" D74 was testing
+the implementation nobody looks at.
+
+`VerifiedTotals` now carries both, `totalsFrom` sums them off the orders, and
+`computeScenario` subtracts them with the verified fee lines — scaled by
+`salesMultiplier` like the fees, never by `costMultiplier`, because a receipt
+fact is not a seller assumption.
+
+Two lessons, both already on this list and both re-learned the hard way. A fix
+applied to one of two call sites is not a fix (D81's twenty-five buttons). And a
+passing test proves only what it touches: the reconciliation check in the new
+tests recomputes net from the lines, and one of them reads the real demo dataset
+rather than a fixture, because a `totalsFrom` hardcoding zero would satisfy
+every assertion written against literals.
