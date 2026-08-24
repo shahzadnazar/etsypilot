@@ -111,6 +111,12 @@ export interface SyncState {
 export interface ConnectionState {
   step: ConnectionStep
   shopName: string | null
+  /*
+   * The shop's own listing count, so the sync screen and the setup checklist
+   * stop naming a literal. Both said "412 listings" while the catalogue held
+   * 404 (D67) — the same authored figure, in two more places.
+   */
+  listingCount: number
   grantedScopes: string[]
   connectedAt: string | null
   lastSyncedAt: string | null

@@ -173,14 +173,14 @@ describe('connecting a shop never touches a credential', () => {
   })
 
   it('computes overall sync progress from the stages rather than stating it', () => {
-    const sync = demoSyncState('Willow & Fern Studio')
+    const sync = demoSyncState('Willow & Fern Studio', 404)
     expect(sync.overallPercent).toBe(overallPercent(sync.stages))
     expect(sync.overallPercent).toBeGreaterThan(0)
     expect(sync.overallPercent).toBeLessThan(100)
   })
 
   it('explains a paused stage instead of stalling silently', () => {
-    const sync = demoSyncState('Willow & Fern Studio')
+    const sync = demoSyncState('Willow & Fern Studio', 404)
     expect(sync.pausedNotice).toContain('nothing is lost')
     const paused = sync.stages.find((s) => s.status === 'PAUSED')
     expect(paused).toBeDefined()
@@ -191,7 +191,7 @@ describe('connecting a shop never touches a credential', () => {
 
 describe('the setup checklist', () => {
   it('gives every incomplete item a reason and a destination', () => {
-    const items = setupChecklist({ hasCosts: false, hasAudit: false, hasSearch: false })
+    const items = setupChecklist({ hasCosts: false, hasAudit: false, hasSearch: false, listingCount: 404 })
     for (const item of items.filter((i) => !i.done)) {
       expect(item.href.startsWith('/')).toBe(true)
       expect(item.cta.length).toBeGreaterThan(0)
@@ -200,12 +200,12 @@ describe('the setup checklist', () => {
   })
 
   it('reports complete once every item is done, so the checklist can disappear', () => {
-    const items = setupChecklist({ hasCosts: true, hasAudit: true, hasSearch: true })
+    const items = setupChecklist({ hasCosts: true, hasAudit: true, hasSearch: true, listingCount: 404 })
     expect(checklistComplete(items)).toBe(true)
   })
 
   it('states what the costs item buys, in D34’s terms', () => {
-    const items = setupChecklist({ hasCosts: false, hasAudit: true, hasSearch: true })
+    const items = setupChecklist({ hasCosts: false, hasAudit: true, hasSearch: true, listingCount: 404 })
     const costs = items.find((i) => i.key === 'costs')
     expect(costs?.detail).toContain('default rule')
     expect(costs?.detail).not.toContain('excluded')

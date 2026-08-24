@@ -133,8 +133,13 @@ export const LIMIT_POLICY =
  * Solo rather than the top tier, deliberately: on Growth there is no upgrade
  * card, so the prorated-charge disclosure — the part of this screen most worth
  * reviewing — would never appear. On Solo the demo shows both directions, and
- * its 412 listings sit over the 200 cap, which exercises the over-limit state
- * too.
+ * the demo catalogue sits well over the 200 cap, which exercises the
+ * over-limit state too.
+ *
+ * No listing count is written here on purpose. This comment used to say "its
+ * 412 listings", which was the authored DEMO_COUNTS figure and not what the
+ * generator builds (D67). A comment that names a number it does not own goes
+ * stale the first time the number is measured.
  */
 export const DEMO_PLAN: PlanKey = 'SOLO'
 

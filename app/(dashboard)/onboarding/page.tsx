@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { GOALS, ONBOARDING_STEPS, ROLES, setupChecklist } from '@/domain/connect/service'
 import { getSession } from '@/lib/auth'
+import { getEtsyService } from '@/lib/etsy'
 import { cn } from '@/lib/utils/cn'
 
 export const metadata: Metadata = { title: 'Get started' }
@@ -30,7 +31,15 @@ export default async function OnboardingPage({
   const current = ONBOARDING_STEPS.findIndex((s) => s.key === step)
   const index = current === -1 ? 0 : current
   const active = ONBOARDING_STEPS[index]
-  const checklist = setupChecklist({ hasCosts: false, hasAudit: false, hasSearch: false })
+  // The shop's own count. "412 listings ready to check" was written down once
+  // and stopped being true the day the generator changed (D67).
+  const shop = await getEtsyService().getShop(session.shopId)
+  const checklist = setupChecklist({
+    hasCosts: false,
+    hasAudit: false,
+    hasSearch: false,
+    listingCount: shop.activeListingCount,
+  })
   const done = checklist.filter((i) => i.done).length
 
   return (

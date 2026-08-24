@@ -108,7 +108,7 @@ export default async function ShopConnectionsPage({
 
       {showSync ? (
         <div className="mb-4">
-          <SyncProgress sync={demoSyncState(state.shopName ?? 'your shop')} />
+          <SyncProgress sync={demoSyncState(state.shopName ?? 'your shop', state.listingCount)} />
         </div>
       ) : null}
 

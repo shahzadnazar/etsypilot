@@ -25,6 +25,7 @@ export async function getConnectionState(ctx: ShopContext): Promise<ConnectionSt
   return {
     step: 'CONNECTED',
     shopName: shop.name,
+    listingCount: shop.activeListingCount,
     grantedScopes: shop.grantedScopes,
     connectedAt: '2026-06-02T09:14:00.000Z',
     lastSyncedAt: shop.lastSyncedAt ?? DEMO_LAST_SYNCED,
@@ -35,12 +36,21 @@ export async function getConnectionState(ctx: ShopContext): Promise<ConnectionSt
   }
 }
 
-/** The staged sync from artboard 12, mid-flight and rate-limited. */
-export function demoSyncState(shopName: string): SyncState {
+/**
+ * The staged sync from artboard 12, mid-flight and rate-limited.
+ *
+ * `total` is the shop's own listing count rather than a literal. It read
+ * "412 of 412" for a catalogue of 404, on a screen whose entire job is to
+ * report progress accurately.
+ */
+export function demoSyncState(shopName: string, listingCount: number): SyncState {
+  // Roughly half way through the second stage, expressed as a fraction of the
+  // real total so the two stages cannot describe different catalogues.
+  const inventoryDone = Math.round(listingCount * 0.52)
   const stages: SyncStage[] = [
     { key: 'shop', label: 'Confirming shop', status: 'DONE', detail: `${shopName} · 4 s`, progress: { done: 1, total: 1 } },
-    { key: 'listings', label: 'Importing listings', status: 'DONE', detail: '412 of 412', progress: { done: 412, total: 412 } },
-    { key: 'inventory', label: 'Syncing inventory and variations', status: 'RUNNING', detail: '214 of 412', progress: { done: 214, total: 412 } },
+    { key: 'listings', label: 'Importing listings', status: 'DONE', detail: `${listingCount} of ${listingCount}`, progress: { done: listingCount, total: listingCount } },
+    { key: 'inventory', label: 'Syncing inventory and variations', status: 'RUNNING', detail: `${inventoryDone} of ${listingCount}`, progress: { done: inventoryDone, total: listingCount } },
     { key: 'orders', label: 'Loading 24 months of orders', status: 'PAUSED', detail: null, progress: null },
     { key: 'profit', label: 'Calculating profit and catalog health', status: 'QUEUED', detail: null, progress: null },
   ]
@@ -51,7 +61,7 @@ export function demoSyncState(shopName: string): SyncState {
     overallPercent: overallPercent(stages),
     pausedNotice:
       'Etsy temporarily limited requests. Order history continues automatically at 2:40 PM UTC — nothing is lost, and you can keep working.',
-    estimateNote: 'This usually takes 3–6 minutes for 412 listings. You can start using EtsyPilot now — the rest keeps syncing in the background.',
+    estimateNote: `This usually takes 3–6 minutes for ${listingCount} listings. You can start using EtsyPilot now — the rest keeps syncing in the background.`,
   }
 }
 
@@ -100,7 +110,12 @@ export interface ChecklistItem {
  * "Add a default product cost" says net profit stays incomplete until costs
  * cover your sales — the reason, not the chore.
  */
-export function setupChecklist(args: { hasCosts: boolean; hasAudit: boolean; hasSearch: boolean }): ChecklistItem[] {
+export function setupChecklist(args: {
+  hasCosts: boolean
+  hasAudit: boolean
+  hasSearch: boolean
+  listingCount: number
+}): ChecklistItem[] {
   return [
     {
       key: 'connect',
@@ -130,7 +145,7 @@ export function setupChecklist(args: { hasCosts: boolean; hasAudit: boolean; has
     {
       key: 'audit',
       label: 'Run your first listing audit',
-      detail: '412 listings ready to check.',
+      detail: `${args.listingCount} listings ready to check.`,
       done: args.hasAudit,
       href: '/listings/audit',
       cta: 'Run audit',

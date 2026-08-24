@@ -102,6 +102,25 @@ describe('internal links', () => {
     expect(broken).toEqual({})
   })
 
+  it('lets no page keep its own opinion about what is built', () => {
+    /*
+     * The Tools hub used to carry `ready: true/false` per tool, beside a list
+     * it read from NAV_GROUPS. Two answers to one question: the nav decided
+     * what to LIST and the hub decided what to LINK, and nothing would have
+     * noticed them disagreeing — a tool could say "Soon" in the sidebar and
+     * offer an "Open →" on the hub, or the reverse.
+     *
+     * That flag is gone and the hub reads `item.unbuilt`. This is what stops it
+     * coming back, here rather than in a comment nobody reads (D61a).
+     */
+    const hub = readFileSync('app/(dashboard)/tools/page.tsx', 'utf8')
+    // Comments first. A check for the absence of a string that trips over the
+    // comment explaining its absence is this project's most repeated mistake.
+    const code = hub.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+    expect(code).not.toMatch(/\bready\s*:/)
+    expect(code).toContain('tool.unbuilt')
+  })
+
   it('marks a nav item unbuilt if and only if it has no page', () => {
     /*
      * Both directions, deliberately.

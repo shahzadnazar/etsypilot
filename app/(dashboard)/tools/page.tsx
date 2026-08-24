@@ -16,45 +16,51 @@ export const metadata: Metadata = { title: 'Tools' }
  * The calculators themselves are Phase 10. The hub lists them with an honest
  * status rather than linking to pages that do not exist yet.
  */
-const TOOL_DETAIL: Record<string, { detail: string; needs: string; ready: boolean }> = {
+/*
+ * No `ready` flag here any more.
+ *
+ * It was a second answer to a question the navigation already answers. This
+ * table said `ready: true` and NAV_GROUPS said `unbuilt`, or the reverse, and
+ * nothing would have noticed: the hub reads the nav for its LIST and used its
+ * own flag to decide whether to LINK. Two sources, one question — the shape of
+ * the nav badges that said 2 and 5 for the same count (D61a).
+ *
+ * Whether a tool is built is now `!item.unbuilt`, which links.test.ts checks
+ * against the filesystem in both directions. This table describes what each
+ * tool does, and nothing else.
+ */
+const TOOL_DETAIL: Record<string, { detail: string; needs: string }> = {
   'Simple Calculator': {
     detail:
       'Percentage, discount, profit, margin, markup, fee, net revenue and break-even — with the formula shown every time.',
     needs: 'No shop needed',
-    ready: true,
   },
   'Fee Calculator': {
     detail:
       'Listing, transaction and processing fees against published rates, with the rule set and effective date stated — and every rate editable, because Etsy changes them and they differ by country.',
     needs: 'No shop needed',
-    ready: true,
   },
   'Ads ROI Calculator': {
     detail:
       'Spend against attributed revenue, from figures you enter — Etsy does not expose ads performance through the API. Leads with money kept, not the ROAS that flatters.',
     needs: 'Your own figures',
-    ready: true,
   },
   'Profit Calculator': {
     detail:
       'One product, end to end: price, fees, materials, postage and your time — costed as a line, not an option.',
     needs: 'No shop needed',
-    ready: true,
   },
   'Category Finder': {
     detail: 'Find the Etsy category and its required attributes before you list.',
     needs: 'No shop needed',
-    ready: false,
   },
   'Seasonal Calendar': {
     detail: 'When demand for a category historically moves, modelled from public signals.',
     needs: 'No shop needed',
-    ready: false,
   },
   'Trademark Screening': {
     detail: 'Check a term against public trademark registers before you use it in a title.',
     needs: 'No shop needed',
-    ready: false,
   },
 }
 
@@ -96,7 +102,7 @@ export default function ToolsPage() {
               </div>
               <p className="text-small leading-relaxed text-ink-2">{detail?.detail}</p>
               <div className="mt-auto pt-2">
-                {detail?.ready ? (
+                {!tool.unbuilt ? (
                   <Link
                     href={tool.href}
                     className="text-caption font-semibold text-brand-strong underline underline-offset-2"

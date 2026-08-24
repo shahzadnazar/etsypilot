@@ -56,7 +56,17 @@ export const METHODOLOGIES: Record<string, Methodology> = {
     metric: 'Orders',
     type: 'VERIFIED',
     source: 'Etsy Open API v3 · your order receipts',
-    method: 'A count of receipts in the period, in your shop time zone.',
+    /*
+     * UTC, like every other card on this page.
+     *
+     * This said "in your shop time zone", which was the pre-D24 answer and
+     * survived the decision that replaced it. It is the worst place for a stale
+     * claim: the Methodology page is where a seller goes to find out whether a
+     * period boundary means what they think it means, and one card quietly
+     * disagreeing with the other eleven is how they conclude nothing here is
+     * reliable.
+     */
+    method: 'A count of receipts in the period, bounded in UTC.',
     coverage: 100,
     coverageLabel: 'of orders in the period',
     readMoreHref: '/data/methodology#orders',
