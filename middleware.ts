@@ -109,7 +109,18 @@ export function middleware(request: NextRequest) {
    * dev styles produced 34 violations and an unstyled page. Every check in this
    * project runs against a production build, so nothing saw it (D63).
    */
-  const csp = cspFor({ nonce, isDev: process.env.NODE_ENV !== 'production' })
+  /*
+   * Read from the request, not from NODE_ENV. A production build served over
+   * http — every browser check in this project, and any self-hosted deployment
+   * behind a plaintext proxy — must not be told to upgrade its own requests.
+   */
+  const forwardedProto = request.headers.get('x-forwarded-proto')
+  const isHttps = (forwardedProto ?? new URL(request.url).protocol.replace(':', '')) === 'https'
+  const csp = cspFor({
+    nonce,
+    isDev: process.env.NODE_ENV !== 'production',
+    isHttps,
+  })
 
   /*
    * The nonce goes on the REQUEST headers twice, for two different readers.

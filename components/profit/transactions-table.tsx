@@ -123,7 +123,7 @@ export function TransactionsTable({
                       <span className="mt-1.5 flex flex-wrap gap-1.5">
                         {row.resolutions.map((r) => (
                           <Link
-                            key={r.href}
+                            key={`${r.kind}-${r.label}`}
                             href={r.href}
                             className={cn(
                               'rounded-control px-2 py-1 text-[11px] font-semibold',

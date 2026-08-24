@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="EtsyPilot">
+  <!--
+    The sidebar's EP mark, as the tab icon.
+
+    There was none, so every browser asked for /favicon.ico on first load and
+    got a 404 in the console — the second error on the Profit Reality page,
+    beside the duplicate key.
+
+    #B4472A literal, not a token: a favicon is rendered by the browser chrome,
+    outside the document, where CSS custom properties do not resolve. Same
+    reason the avatar and the demo banner carry literals (D1/D10).
+  -->
+  <rect width="32" height="32" rx="8" fill="#B4472A"/>
+  <text x="16" y="21.5" text-anchor="middle"
+        font-family="Inter, system-ui, -apple-system, Segoe UI, sans-serif"
+        font-size="14" font-weight="700" fill="#FFFFFF">EP</text>
+</svg>

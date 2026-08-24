@@ -40,12 +40,14 @@ export default async function AuditLogPage({
         actions={
           <>
             <Link
+              prefetch={false}
               href="/api/export/audit-log"
               className="inline-flex h-11 items-center rounded-control border border-line px-3 text-[12px] font-semibold text-ink-2 hover:bg-canvas-soft md:h-[38px]"
             >
               Export CSV
             </Link>
             <Link
+              prefetch={false}
               href="/api/export/audit-log?format=json"
               className="inline-flex h-11 items-center rounded-control border border-line px-3 text-[12px] font-semibold text-ink-2 hover:bg-canvas-soft md:h-[38px]"
             >

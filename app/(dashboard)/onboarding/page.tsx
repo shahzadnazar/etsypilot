@@ -110,6 +110,13 @@ export default async function OnboardingPage({
               * appear — the same reasoning as Shop connections.
               */}
             <Link
+              /*
+               * No prefetch. This is a route handler that redirects — Next
+               * would fetch it on hover and follow the redirect, which both
+               * starts an OAuth flow nobody asked for and, on an http origin,
+               * tripped the CSP's upgrade-insecure-requests.
+               */
+              prefetch={false}
               href={`/api/etsy/connect?scopes=${defaultScopeKeys.join(',')}`}
               className="inline-flex h-11 items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-brand-on hover:bg-brand-strong md:h-[38px]"
             >

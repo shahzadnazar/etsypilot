@@ -27,11 +27,13 @@
  */
 
 export interface CspOptions {
+  /** True when the request itself arrived over TLS. */
+  isHttps?: boolean
   nonce: string
   isDev: boolean
 }
 
-export function cspFor({ nonce, isDev }: CspOptions): string {
+export function cspFor({ nonce, isDev, isHttps }: CspOptions): string {
   /*
    * 'unsafe-eval' is required by the dev server's hot-module runtime, and
    * 'unsafe-inline' is IGNORED by a browser when a nonce is present — so the
@@ -61,6 +63,20 @@ export function cspFor({ nonce, isDev }: CspOptions): string {
     "object-src 'none'",
     "base-uri 'none'",
     "form-action 'self'",
-    'upgrade-insecure-requests',
+    /*
+     * Only where the page is already HTTPS.
+     *
+     * This directive rewrites every http:// request the page makes to https://,
+     * which is exactly right in production and breaks an http origin — and
+     * `next dev`, `next start` and every browser check in this project serve
+     * http. It surfaced as ERR_SSL_PROTOCOL_ERROR on a redirect to
+     * https://localhost:3111, from a page that had only ever asked for the
+     * http one.
+     *
+     * Same shape as D63: a header written for production, applied everywhere,
+     * breaking the environment nothing was testing. There is nothing to upgrade
+     * on a connection that is already plaintext by choice.
+     */
+    ...(isHttps ? ['upgrade-insecure-requests'] : []),
   ].join('; ')
 }

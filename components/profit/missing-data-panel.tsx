@@ -53,7 +53,7 @@ export function MissingDataPanel({
             <div className="mt-0.5 flex flex-wrap gap-2">
               {item.resolutions.map((r) => (
                 <Link
-                  key={r.href}
+                  key={`${r.kind}-${r.label}`}
                   href={r.href}
                   className={cn(
                     'rounded-control px-2.5 py-1.5 text-[11.5px] font-semibold',

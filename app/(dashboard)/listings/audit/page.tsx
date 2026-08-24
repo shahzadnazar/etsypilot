@@ -64,6 +64,7 @@ export default async function ListingAuditPage() {
               Re-run audit
             </Link>
             <Link
+              prefetch={false}
               href="/api/export/audit"
               className="inline-flex h-11 items-center rounded-control border border-line px-3 text-[12px] font-semibold text-ink-2 hover:bg-canvas-soft md:h-[38px]"
             >

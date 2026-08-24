@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { ProvenanceBadge } from '@/components/provenance/provenance-badge'
 import { Card } from '@/components/ui/card'
 import type { ProfitView } from '@/domain/profit/service'
@@ -23,8 +24,24 @@ import { WaterfallTable } from './waterfall-table'
 const TABS = ['Waterfall', 'Scenarios', 'Costs', 'Transactions'] as const
 type Tab = (typeof TABS)[number]
 
+/*
+ * `?tab=transactions` now selects the Transactions tab.
+ *
+ * It did not. The tab was client state and the query was read by nothing, so
+ * every link carrying `?tab=` — the ledger's "Resolve exceptions", the Action
+ * Center's cost prompts — resolved to /profit and landed the reader on the
+ * Waterfall, one tab away from the thing the link named. The link checker was
+ * satisfied because /profit exists, which is exactly why this survived: a
+ * broken promise that is not a broken URL.
+ */
+function tabFrom(value: string | null): Tab {
+  const match = TABS.find((t) => t.toLowerCase() === (value ?? '').toLowerCase())
+  return match ?? 'Waterfall'
+}
+
 export function ProfitTabs({ view, demo }: { view: ProfitView; demo: boolean }) {
-  const [tab, setTab] = useState<Tab>('Waterfall')
+  const params = useSearchParams()
+  const [tab, setTab] = useState<Tab>(() => tabFrom(params.get('tab')))
   const [scenario, setScenario] = useState<ScenarioKind>('BASE')
 
   /*

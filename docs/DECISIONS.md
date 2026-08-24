@@ -3569,3 +3569,73 @@ Moved from the sidebar's Data group to the top bar, immediately after the search
 control. It is something a seller reaches for while working rather than
 something they configure once, and the top bar is where a persistent tool
 belongs. Same destination as the settings entry: one page, two ways in.
+
+### D82 — A duplicate-key warning was a product defect
+
+React reported *"Encountered two children with the same key, `/settings/costs`"*
+on Profit Reality. The key was `r.href`, and two resolutions on the
+"listings without a product cost" item both pointed there:
+
+    { label: 'Add costs',          href: '/settings/costs' }
+    { label: 'Set a default rule', href: '/settings/costs' }
+
+The rule field is **on** that page, so the two buttons did the same thing. It
+had been true since Phase 6 and was invisible because the hrefs read
+`/profit?tab=costs` and `/profit?tab=costs&rule=default` — different strings,
+one destination, since the query was read by nothing. Retargeting them (D72)
+collapsed the strings, and React reported a rendering symptom of a product
+defect: two controls side by side that do the same thing.
+
+One resolution now, keys are `kind-label`, and `links.test.ts` fails on any
+resolution list offering a destination twice.
+
+### D82a — `?tab=` finally selects the tab it names
+
+The same `?tab=` that was never read is now honoured: `ProfitTabs` initialises
+from `useSearchParams`. Every link carrying it — the ledger's "Resolve
+exceptions", the Action Center's cost prompts — landed the reader on the
+Waterfall, one tab from the thing the link named. The link checker was satisfied
+because `/profit` exists, which is exactly why it survived: a broken promise
+that is not a broken URL.
+
+### D82b — The sweep watched one string
+
+`rendered-output.py` listened to the console and filtered for
+`"Content Security Policy"`, discarding everything else. So for eleven phases a
+check that *looked* like console coverage saw one class of message, and a
+reviewer found the duplicate key by opening DevTools.
+
+It now fails on any console error or warning, any page error, and any non-2xx
+response, across every discovered route. Prefetch aborts are not responses, so
+it stays quiet on ordinary navigation.
+
+It immediately found two more.
+
+### D82c — `upgrade-insecure-requests` broke every http origin
+
+The CSP carried it unconditionally. It rewrites every `http://` request a page
+makes to `https://` — right in production, and fatal anywhere the app is served
+over plaintext, which is `next dev`, `next start` and every browser check in
+this project. It surfaced as `ERR_SSL_PROTOCOL_ERROR` on a redirect to
+`https://localhost:3111` from a page that had only ever asked for the http one.
+
+Same shape as D63: a header written for production, applied everywhere, breaking
+the environment nothing was testing. It is emitted only when the request itself
+arrived over TLS, read from `x-forwarded-proto` or the request's own protocol —
+not from `NODE_ENV`, because a production build served over http behind a
+plaintext proxy must not be told to upgrade its own requests.
+
+### D82d — Ten `<Link>`s prefetched route handlers
+
+Next prefetches a `<Link>` when it enters the viewport, so every export link was
+fetching a CSV or a zip on hover, and `/api/etsy/connect` was starting an OAuth
+flow nobody asked for — which is how the CSP bug above was discovered. All ten
+carry `prefetch={false}`, and a test fails on any `<Link>` to `/api/` without it.
+
+### D82e — The app had no favicon
+
+Every browser asks for `/favicon.ico` on first load and got a 404 — the second
+console error on the page the reviewer was looking at. `app/icon.svg` carries
+the sidebar's EP mark. Its colour is a literal, not a token: a favicon is drawn
+by the browser chrome, outside the document, where custom properties do not
+resolve (D1/D10).

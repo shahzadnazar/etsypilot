@@ -155,3 +155,105 @@ describe('internal links', () => {
     expect(wrong).toEqual({})
   })
 })
+
+describe('resolutions', () => {
+  /*
+   * A resolution list must not offer the same destination twice.
+   *
+   * Profit Reality's "listings without a product cost" carried "Add costs" and
+   * "Set a default rule" as separate buttons pointing at the same page — the
+   * rule field is ON that page, so the two did the same thing. It hid behind
+   * `/profit?tab=costs` and `/profit?tab=costs&rule=default`: different
+   * strings, one destination, because the query was read by nothing.
+   *
+   * React found it, as a duplicate-key warning, once retargeting collapsed the
+   * strings. That is a rendering complaint about a product defect, and it only
+   * appears in a browser console. This is the same check where it can fail
+   * loudly.
+   */
+  it('offers no destination twice in one list', async () => {
+    const { missingDataFrom, reconcile } = await import('@/domain/profit/reconciliation')
+    const { buildDemoListings, buildDemoOrders, demoConfirmedCosts, demoUnmatchedOrderIds } =
+      await import('@/lib/etsy/demo-dataset')
+
+    const listings = buildDemoListings()
+    const orders = buildDemoOrders(listings)
+    const costs = demoConfirmedCosts(listings)
+    const summary = reconcile({
+      orders,
+      listings,
+      costs,
+      unmatchedOrderIds: demoUnmatchedOrderIds(orders),
+    })
+
+    const lists: { where: string; hrefs: string[] }[] = [
+      ...missingDataFrom({ summary, listingsWithoutCost: 38, labourRecorded: false }).map((item) => ({
+        where: item.code,
+        hrefs: item.resolutions.map((r) => r.href),
+      })),
+      ...summary.rows.map((row) => ({
+        where: `row ${row.orderId}`,
+        hrefs: row.resolutions.map((r) => r.href),
+      })),
+    ]
+
+    expect(lists.length).toBeGreaterThan(3)
+    const duplicated = lists.filter((l) => new Set(l.hrefs).size !== l.hrefs.length)
+    expect(duplicated).toEqual([])
+  })
+
+  it('keys resolutions by something that is actually unique', async () => {
+    // `key={r.href}` was the crash. The key is kind+label now, so this asserts
+    // that pair is distinct wherever a list is rendered.
+    const { missingDataFrom, reconcile } = await import('@/domain/profit/reconciliation')
+    const { buildDemoListings, buildDemoOrders, demoConfirmedCosts, demoUnmatchedOrderIds } =
+      await import('@/lib/etsy/demo-dataset')
+
+    const listings = buildDemoListings()
+    const orders = buildDemoOrders(listings)
+    const summary = reconcile({
+      orders,
+      listings,
+      costs: demoConfirmedCosts(listings),
+      unmatchedOrderIds: demoUnmatchedOrderIds(orders),
+    })
+
+    const all = [
+      ...missingDataFrom({ summary, listingsWithoutCost: 38, labourRecorded: false }).map(
+        (i) => i.resolutions,
+      ),
+      ...summary.rows.map((r) => r.resolutions),
+    ]
+    for (const list of all) {
+      const keys = list.map((r) => `${r.kind}-${r.label}`)
+      expect(new Set(keys).size).toBe(keys.length)
+    }
+  })
+})
+
+describe('links to route handlers', () => {
+  /*
+   * A <Link> to an API route is prefetched like any other, so Next fetches the
+   * CSV, the zip or the OAuth redirect the moment the link enters the viewport.
+   * For an export that is wasted work; for /api/etsy/connect it starts a flow
+   * nobody asked for, and on an http origin it tripped the CSP's
+   * upgrade-insecure-requests and surfaced as ERR_SSL_PROTOCOL_ERROR.
+   *
+   * Ten of them, none prefetch={false}, found by widening the browser sweep to
+   * report console errors other than CSP violations.
+   */
+  it('never prefetches a route handler', () => {
+    const offenders: string[] = []
+
+    for (const file of [...walk('app'), ...walk('components')]) {
+      const text = readFileSync(file, 'utf8')
+      for (const match of text.matchAll(/<Link\b[\s\S]{0,500}?>/g)) {
+        const el = match[0]
+        const isApi = el.includes('href="/api/') || el.includes('href={`/api/')
+        if (isApi && !el.includes('prefetch={false}')) offenders.push(file)
+      }
+    }
+
+    expect([...new Set(offenders)]).toEqual([])
+  })
+})

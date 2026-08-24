@@ -84,6 +84,7 @@ export default async function ShopConnectionsPage({
               * with no JavaScript running is one that cannot fail to appear.
               */}
             <Link
+              prefetch={false}
               href={`/api/etsy/connect?scopes=${defaultScopeKeys.join(',')}`}
               className="inline-flex h-11 items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-brand-on hover:bg-brand-strong md:h-[38px]"
             >

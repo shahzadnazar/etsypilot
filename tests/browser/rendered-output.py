@@ -308,6 +308,39 @@ with sync_playwright() as p:
                  "/settings/security", "/listings"):
         check(must in AUDIT_ROUTES, f"Route discovery reached {must}")
 
+    """
+    Anything the browser complains about, not only the CSP.
+
+    The listener above filters for "Content Security Policy" and drops the rest,
+    so for eleven phases the sweep watched one string and ignored every other
+    console error. Two got through and a reviewer found them by opening DevTools:
+    React's duplicate-key warning on Profit Reality — which was a real product
+    defect, two buttons offering the same destination — and a 404 for a favicon
+    the app never had.
+
+    Prefetch aborts are not responses and do not appear here, so this stays
+    quiet on ordinary navigation.
+    """
+    noise, http_errors = [], []
+    pg.on("console", lambda m: noise.append(f"{m.type}: {m.text[:110]}")
+          if m.type in ("error", "warning") else None)
+    pg.on("pageerror", lambda e: noise.append(f"pageerror: {str(e)[:110]}"))
+    cdp = pg.context.new_cdp_session(pg)
+    cdp.send("Network.enable")
+    cdp.on("Network.responseReceived",
+           lambda e: http_errors.append(f"{e['response']['status']} {e['response']['url']}")
+           if e["response"]["status"] >= 400 else None)
+
+    for route in AUDIT_ROUTES:
+        pg.goto(f"{BASE}{route}", wait_until="load"); pg.wait_for_timeout(400)
+
+    check(not noise,
+          "No console error or warning on any audited route"
+          + ("" if not noise else f" — {list(dict.fromkeys(noise))[:3]}"))
+    check(not http_errors,
+          "Every request a page makes for itself succeeds"
+          + ("" if not http_errors else f" — {list(dict.fromkeys(http_errors))[:3]}"))
+
     def audit_here(where, sink):
         pg.evaluate(axe_source)
         report = pg.evaluate("""async () => await axe.run(document, {

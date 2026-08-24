@@ -103,6 +103,7 @@ export default async function ExtensionSettingsPage() {
               * audit ran against — so what a seller loads is what was checked.
               */}
             <Link
+              prefetch={false}
               href={`/api/extension/download/${store.key}`}
               className="mt-2 inline-flex h-11 w-fit items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-brand-on hover:bg-brand-strong md:h-[38px]"
             >

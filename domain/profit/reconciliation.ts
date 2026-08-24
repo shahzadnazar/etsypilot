@@ -158,10 +158,19 @@ export function missingDataFrom(args: {
       detail:
         'Their orders fall back to your default cost rule in the waterfall, and are left blank in the ledger — no per-order profit is computed without a confirmed cost.',
       affectedValue: args.summary.excludedValue,
-      resolutions: [
-        { label: 'Add costs', href: '/settings/costs', kind: 'PRIMARY' },
-        { label: 'Set a default rule', href: '/settings/costs', kind: 'SECONDARY' },
-      ],
+      /*
+       * One resolution, not two.
+       *
+       * "Add costs" and "Set a default rule" were separate buttons pointing at
+       * the same page — the default rule field is ON the costs page, so the two
+       * did exactly the same thing. It was invisible while the hrefs read
+       * `/profit?tab=costs` and `/profit?tab=costs&rule=default`: different
+       * strings, same destination, because the query was read by nothing.
+       * Retargeting them collapsed the strings and React reported it as a
+       * duplicate key, which is a rendering complaint about a product defect —
+       * two controls side by side that do the same thing.
+       */
+      resolutions: [{ label: 'Add costs', href: '/settings/costs', kind: 'PRIMARY' }],
     })
   }
 
