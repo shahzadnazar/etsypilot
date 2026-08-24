@@ -33,6 +33,8 @@ function listing(overrides: Partial<EtsyListing>): EtsyListing {
     photoCount: 6,
     renewsAt: null,
     lastChangedAt: '2026-08-01T00:00:00.000Z',
+    hasVariations: false,
+    variationSummary: null,
     ...overrides,
   }
 }

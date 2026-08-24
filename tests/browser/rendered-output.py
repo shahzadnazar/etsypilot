@@ -299,11 +299,14 @@ with sync_playwright() as p:
     AUDIT_ROUTES = discover_routes()
     # A discovery that finds nothing passes everything. Same vacuous-pass shape
     # as D51a and D53b.
+    # check() prefixes PASS/FAIL, so the message has to read correctly under
+    # both. "PASS route discovery found only 26 routes" was the failure wording
+    # printed over a success.
     check(len(AUDIT_ROUTES) >= 20,
-          f"route discovery found only {len(AUDIT_ROUTES)} routes")
+          f"Route discovery found {len(AUDIT_ROUTES)} routes to audit")
     for must in ("/settings/audit-log", "/settings/costs", "/settings/profile",
-                 "/settings/security"):
-        check(must in AUDIT_ROUTES, f"route discovery missed {must}")
+                 "/settings/security", "/listings"):
+        check(must in AUDIT_ROUTES, f"Route discovery reached {must}")
 
     def audit_here(where, sink):
         pg.evaluate(axe_source)

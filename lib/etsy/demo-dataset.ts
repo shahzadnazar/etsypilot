@@ -161,17 +161,30 @@ export const PERIOD_DAYS = 30
  */
 const CATALOGUE_SHAPE = { nonDraft: 412, drafts: 38 } as const
 
-let countsCache: { active: number; drafts: number; withoutCost: number } | null = null
+interface MeasuredCounts {
+  active: number
+  drafts: number
+  withoutCost: number
+  expiringSoon: number
+}
 
-function measuredCounts(): { active: number; drafts: number; withoutCost: number } {
+let countsCache: MeasuredCounts | null = null
+
+function measuredCounts(): MeasuredCounts {
   if (countsCache) return countsCache
   const listings = buildDemoListings()
   const costs = demoConfirmedCosts(listings)
   const active = listings.filter((l) => l.state === 'ACTIVE')
+  const now = Date.parse(DEMO_NOW)
   countsCache = {
     active: active.length,
     drafts: listings.filter((l) => l.state === 'DRAFT').length,
     withoutCost: active.filter((l) => !costs.has(l.etsyListingId)).length,
+    expiringSoon: active.filter((l) => {
+      if (!l.renewsAt) return false
+      const days = (Date.parse(l.renewsAt) - now) / 86_400_000
+      return days >= 0 && days <= 7
+    }).length,
   }
   return countsCache
 }
@@ -195,7 +208,9 @@ export const DEMO_COUNTS = {
   get drafts(): number {
     return measuredCounts().drafts
   },
-  expiringWithin7Days: 6,
+  get expiringWithin7Days(): number {
+    return measuredCounts().expiringSoon
+  },
   get listingsWithoutCost(): number {
     return measuredCounts().withoutCost
   },
@@ -301,9 +316,115 @@ const FEATURED: ReadonlyArray<Partial<EtsyListing> & { title: string; sku: strin
   },
 ]
 
+/*
+ * Variations, deterministically.
+ *
+ * A digital listing has none — there is nothing to vary. Everything else gets a
+ * size or colour set from the seeded RNG, so the same shop always has the same
+ * variations and the listings table is stable across runs.
+ *
+ * `variationSummary` is null when `hasVariations` is false, and the two say
+ * different things: false/null is "no variations", true/null would be "it has
+ * some and we did not load them". The live adapter produces the second.
+ */
+const VARIATION_SETS = ['3 sizes', '2 colors', '4 finishes', '2 lengths', '3 scents'] as const
+
+/*
+ * Deliberately NOT drawn from the seeded RNG.
+ *
+ * Consuming a random number here would shift the sequence for every listing
+ * generated afterwards — different prices, different states, a different order
+ * total — and the demo shop's figures are reconciled to exact designed values.
+ * A pure function of the index gives the same determinism at no cost to the
+ * catalogue that already exists.
+ */
+function variationsFor(
+  sku: string,
+  index: number,
+): { hasVariations: boolean; variationSummary: string | null } {
+  // Nothing to vary on a download.
+  const digital = sku.includes('DL') || sku.includes('SGN')
+  if (digital || index % 5 < 2) return { hasVariations: false, variationSummary: null }
+  return {
+    hasVariations: true,
+    variationSummary: VARIATION_SETS[index % VARIATION_SETS.length]!,
+  }
+}
+
 const TITLE_NOUNS = ['necklace', 'mug', 'table runner', 'apron', 'print', 'candle', 'tote bag', 'earrings', 'coaster set', 'napkin set', 'wall hanging', 'keychain'] as const
 const TITLE_ADJECTIVES = ['Handmade', 'Personalized', 'Stonewashed', 'Hand-thrown', 'Minimalist', 'Vintage-style', 'Custom', 'Rustic'] as const
 const TITLE_QUALIFIERS = ['for her', 'gift set', 'natural linen', 'gold filled', 'made to order', 'housewarming gift', 'wedding favour'] as const
+
+/*
+ * Renewal dates, spread across a quarter.
+ *
+ * Every active listing used to renew on exactly 2026-10-04, which had two
+ * consequences nobody noticed until a screen tried to use the date. "Expiring
+ * within 7 days" was always ZERO — the count beside it said 6, authored — and
+ * the audit's RENEWS_SOON rule could never fire on any listing, so one of the
+ * fourteen rules was permanently unreachable.
+ *
+ * Deterministic and RNG-free, for the same reason as the variations above: a
+ * random draw here would shift every listing generated afterwards.
+ */
+/*
+ * Descriptions and tags, varied on purpose.
+ *
+ * Every generated listing used to carry the SAME 96-character description and
+ * tags of the form "mug tag 3", shared by every listing with that noun. The
+ * consequences only surfaced when a screen tried to grade a listing:
+ *
+ *   SHORT_DESCRIPTION  fired on 450 of 450 listings
+ *   DUPLICATE_TAGS     fired on 444 of 450
+ *   health = "Good"    was unreachable — not one listing in the shop was clean
+ *
+ * None of that was a finding about the demo seller; all of it was one string
+ * written once. A demo shop in which every listing has a problem overstates
+ * what the product finds, and an unreachable state is a state nobody has read.
+ *
+ * Both are pure functions of the index, so no RNG is consumed and the rest of
+ * the catalogue is untouched.
+ */
+const LONG_DESCRIPTION =
+  'Made to order in small batches in our studio, finished by hand and checked before it ships. Materials, dimensions and care instructions are listed below, and every order goes out in recyclable packaging within three working days.'
+
+function descriptionFor(noun: string, index: number): string {
+  // Roughly one in six is genuinely thin, which is what the rule is for.
+  if (index % 6 === 0) return `A ${noun} made to order.`
+  return LONG_DESCRIPTION
+}
+
+/*
+ * Tag phrases, written against the rules they will be graded by.
+ *
+ * The first attempt used the bare noun as tag one, which put a tag inside the
+ * title of all 450 listings and tripped TAG_TOO_BROAD on a third of them —
+ * trading three rules that fired on everything for two more that did. A demo
+ * catalogue has to be graded to a spread, not to a corner.
+ *
+ * So: multi-word phrases that do not appear verbatim in the title, four shared
+ * category tags every sixth listing (DUPLICATE_TAGS needs four), and a bare
+ * broad word on every ninth.
+ */
+const SHARED_TAGS = ['small batch studio', 'made in vermont', 'eco packaging', 'gift wrapped']
+
+function tagsFor(noun: string, qualifier: string, count: number, index: number): string[] {
+  const head = noun.split(' ')[0] ?? noun
+  const tags: string[] = []
+  if (index % 6 === 0) tags.push(...SHARED_TAGS)
+  if (index % 9 === 0) tags.push(head)
+  for (let t = tags.length; t < count; t++) {
+    tags.push(`${head} ${qualifier} ${index}${t}`)
+  }
+  return tags.slice(0, count)
+}
+
+const RENEWAL_ANCHOR = Date.parse('2026-08-13T00:00:00.000Z')
+
+function renewalFor(index: number): string {
+  const days = 3 + ((index * 11) % 110)
+  return new Date(RENEWAL_ANCHOR + days * 86_400_000).toISOString()
+}
 
 export function buildDemoListings(): EtsyListing[] {
   const rng = mulberry32(20260812)
@@ -323,8 +444,17 @@ export function buildDemoListings(): EtsyListing[] {
       attributes: f.attributes ?? {},
       requiredAttributes: f.requiredAttributes ?? [],
       photoCount: f.photoCount ?? 5,
-      renewsAt: '2026-09-02T00:00:00.000Z',
+      /*
+       * Null unless the listing is active.
+       *
+       * This was a fixed date on every featured listing whatever its state, so
+       * the listings table printed "Expired · Renews Sep 2" and "Draft ·
+       * Renews Sep 2" side by side — a row contradicting itself across two
+       * columns. Etsy has no renewal date for a listing that is not live.
+       */
+      renewsAt: (f.state ?? 'ACTIVE') === 'ACTIVE' ? '2026-09-02T00:00:00.000Z' : null,
       lastChangedAt: '2026-08-10T09:00:00.000Z',
+      ...variationsFor(f.sku ?? '', i),
     })
   })
 
@@ -336,13 +466,17 @@ export function buildDemoListings(): EtsyListing[] {
     const qualifier = pick(rng, TITLE_QUALIFIERS)
     const price = round2(9 + rng() * 65)
     const state: ListingState = isDraft ? 'DRAFT' : rng() < 0.015 ? 'EXPIRED' : 'ACTIVE'
-    const tagCount = 5 + Math.floor(rng() * 9)
+    // 8–16, so a real share of the catalogue reaches the 13-tag threshold and
+    // a real share does not. It was 5–13, which put 403 of 450 listings under
+    // it — a rule firing on 90% of a shop is a property of the generator, not
+    // a finding about the seller.
+    const tagCount = 8 + Math.floor(rng() * 9)
 
     listings.push({
       etsyListingId: `${DEMO_LISTING_ID_BASE + i}`,
       title: `${adjective} ${noun}, ${qualifier}`,
-      description: 'Made to order in small batches. Materials and dimensions are listed below.',
-      tags: Array.from({ length: tagCount }, (_, t) => `${noun.split(' ')[0]} tag ${t + 1}`),
+      description: descriptionFor(noun, i),
+      tags: tagsFor(noun, qualifier, tagCount, i),
       price,
       quantity: state === 'ACTIVE' ? Math.floor(rng() * 60) : 0,
       state,
@@ -351,8 +485,9 @@ export function buildDemoListings(): EtsyListing[] {
       attributes: {},
       requiredAttributes: rng() < 0.034 ? ['Primary material'] : [],
       photoCount: 1 + Math.floor(rng() * 9),
-      renewsAt: state === 'ACTIVE' ? '2026-10-04T00:00:00.000Z' : null,
+      renewsAt: state === 'ACTIVE' ? renewalFor(i) : null,
       lastChangedAt: '2026-07-30T12:00:00.000Z',
+      ...variationsFor(`WF-${i}`, i),
     })
   }
 

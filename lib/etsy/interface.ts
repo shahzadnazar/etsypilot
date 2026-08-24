@@ -51,6 +51,17 @@ export interface EtsyListing {
   photoCount: number
   renewsAt: string | null
   lastChangedAt: string
+  /**
+   * Etsy reports this on the listing itself, so every adapter can fill it.
+   */
+  hasVariations: boolean
+  /**
+   * "3 sizes". Null when the adapter did not load inventory — that is a
+   * separate call per listing, and null here means "not loaded", never "none".
+   * A listing with no variations has hasVariations false and a null summary,
+   * and the difference is the caller's to render.
+   */
+  variationSummary: string | null
 }
 
 export interface EtsyOrderItem {

@@ -66,7 +66,7 @@ with sync_playwright() as p:
     ROUTES = ["/dashboard", "/billing", "/profit", "/shop-pulse", "/listings/audit",
               "/listings/bulk-editor", "/listings/ai-copilot", "/research/keywords",
               "/research/keyword-lists", "/settings/shops", "/settings/export",
-              "/settings/costs", "/settings/audit-log", "/settings/profile",
+              "/settings/costs", "/settings/audit-log", "/settings/profile", "/listings",
               "/settings/security", "/data/sources", "/data/methodology",
               "/tools", "/action-center", "/onboarding"]
     broke = []
@@ -135,6 +135,15 @@ with sync_playwright() as p:
     flat = " ".join(log.split())
     check("All · 0" in flat and "Refused only · 0" in flat,
           "Both filter counts read zero rather than being hidden")
+
+    # --- three zeros describe nothing ---------------------------------------
+    pg.goto(f"{BASE}/listings", wait_until="load"); pg.wait_for_timeout(400)
+    listings = pg.locator("main").inner_text()
+    check("0 active" not in listings,
+          "The listings header does not report a catalogue of zeros as a summary")
+    check("No listings yet" in listings, "All Listings says what is missing")
+    check("Search title, tag or SKU" not in listings,
+          "...and offers no filter bar over nothing to filter")
     # --- and every empty state points somewhere ----------------------------
     # rules.md section 12: never fail silently. An empty state that does not say
     # what to do next is a dead end with better typography.

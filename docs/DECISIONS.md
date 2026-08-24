@@ -3099,3 +3099,80 @@ Routes are discovered from the rendered navigation now, seeded from three pages 
 read, with the two genuinely unlinked routes named explicitly and a floor of twenty so a
 discovery that finds nothing cannot pass. Same correction as the hidden-state survey (D53a): **an
 audit whose scope is typed out covers what somebody remembered, not what a seller can reach.**
+
+### D72 — All Listings, and the demo shop that could not score "Good"
+
+Artboard 36 at `/listings`. Three columns are derived rather than stored, and
+each was a chance to say something false:
+
+**Status.** "Expiring" is not an Etsy state — it is ACTIVE plus a renewal inside
+seven days. Building it exposed two defects in the demo data:
+
+- Every featured listing carried a fixed renewal date *whatever its state*, so
+  the table printed "Expired · Renews Sep 2" and "Draft · Renews Sep 2" — a row
+  contradicting itself across two columns. A listing that is not live has no
+  renewal date.
+- Every active listing renewed on exactly one date, so "expiring within 7 days"
+  was permanently **zero** while `DEMO_COUNTS` asserted **6**, and the audit's
+  `RENEWS_SOON` rule could never fire on anything. One of fourteen rules was
+  unreachable, and nobody had noticed because nothing rendered the count.
+
+**SEO health** runs the same `AUDIT_RULES` as the Listing Audit, so the two
+screens cannot grade one listing differently. A test asserts the error counts
+match.
+
+**Margin** is null wherever no confirmed cost exists — never the default rule's
+figure. The Costs page already names that an assumption; printing it in a column
+headed "Margin" would launder it into a fact. It is CALCULATED, not verified:
+Etsy has charged nothing on an unsold listing, so the fees are what the recorded
+rate set produces (D49).
+
+There is no Views column. Etsy does not expose per-listing views, and 404 rows of
+dashes would be an accusation pointed at the wrong party — the footnote says it
+once instead.
+
+Selection and bulk actions are on the artboard and deliberately not built here.
+The Safe Bulk Editor owns that flow end to end, and a second half-implemented
+selection surface beside it is a way to skip steps that exist to stop mistakes.
+
+### D72a — Every listing in the demo shop had a problem
+
+Grading the catalogue for the first time produced **0 listings scoring "Good"**,
+out of 450.
+
+Not a finding about the demo seller — a property of the generator. Every
+generated listing carried the *same* 96-character description and tags of the
+form "mug tag 3", shared by every listing with that noun:
+
+| Rule | Fired on |
+| --- | --- |
+| `SHORT_DESCRIPTION` | 450 of 450 |
+| `DUPLICATE_TAGS` | 444 of 450 |
+| `FEW_TAGS` | 403 of 450 |
+
+Three rules firing on ~100% of a shop, and the health column's "Good" state
+unreachable. A demo in which everything is broken overstates what the product
+finds, and an unreachable state is one nobody has read.
+
+The first fix traded one corner for another: using the bare noun as the first
+tag put a tag inside the title of **all 450** listings and tripped
+`TAG_TOO_BROAD` on a third of them. A demo catalogue has to be graded to a
+spread, not to a corner. It now reads **67 good · 351 needs work · 32 with
+errors**, with every rule firing on a realistic minority.
+
+Both generators are pure functions of the listing index. Drawing from the seeded
+RNG would have shifted every listing generated afterwards — different prices,
+different states, a different order total — and the demo shop's figures are
+reconciled to exact designed values.
+
+### D72b — `hasVariations` and `variationSummary` are two different questions
+
+The artboard's Variations column shows "3 sizes" and "None". Etsy reports *that*
+a listing has variations on the listing itself, and *what they are* only from the
+inventory endpoint — one call per listing.
+
+So `EtsyListing` carries both, and null means "not loaded" rather than "none":
+`hasVariations: false` with a null summary is a listing with no variations;
+`hasVariations: true` with a null summary is the live adapter, which does not
+spend a call per row on a table the seller may only be scrolling. The column
+renders "None", the summary, or "Yes" — and never invents a label.

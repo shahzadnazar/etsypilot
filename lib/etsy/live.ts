@@ -385,6 +385,17 @@ export function toListing(payload: EtsyListingPayload): EtsyListing {
     photoCount: 0,
     renewsAt: iso(payload.ending_timestamp),
     lastChangedAt: iso(payload.last_modified_timestamp) ?? new Date(0).toISOString(),
+    hasVariations: payload.has_variations ?? false,
+    /*
+     * Null, and it means "not loaded" rather than "none".
+     *
+     * Etsy reports THAT a listing has variations on the listing itself, and
+     * WHAT they are only from the inventory endpoint — one call per listing.
+     * Spending that on a table the seller may only be scrolling is the same
+     * trade the attributes above make, so the summary stays null and the
+     * listings table renders `hasVariations` instead of inventing a label.
+     */
+    variationSummary: null,
   }
 }
 
