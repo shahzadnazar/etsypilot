@@ -266,13 +266,44 @@ with sync_playwright() as p:
     # ships, without anyone remembering this file exists.
     axe_source = open("node_modules/axe-core/axe.min.js").read()
 
-    AUDIT_ROUTES = ("/dashboard", "/billing", "/profit", "/shop-pulse",
-                    "/listings/audit", "/listings/bulk-editor",
-                    "/listings/ai-copilot", "/research/keywords",
-                    "/research/keyword-lists", "/settings/shops", "/tools",
-                    "/tools/etsy-seller-calculator", "/onboarding",
-                    "/action-center", "/settings/export", "/data/methodology",
-                    "/tools/fee-calculator", "/tools/ads-roi", "/tools/profit-calculator")
+    # Routes are DISCOVERED, not listed.
+    #
+    # This was a hand-written tuple, and it went stale the moment a screen
+    # shipped: four new settings pages were reachable from the settings rail and
+    # audited by nothing, because nobody remembered to add them here. It is the
+    # same defect as the hidden-state survey two paragraphs up — an audit whose
+    # scope is typed out covers what somebody remembered, not what a seller can
+    # reach.
+    #
+    # Both rails are read: the main sidebar, and the settings rail, which is only
+    # rendered on a settings page. The seeds below are unions, not the answer.
+    SEEDS = ("/dashboard", "/settings/shops", "/tools")
+    # Reachable but not linked from any nav — the OAuth landing and the public
+    # calculator. Discovery cannot find these, so they stay named.
+    UNLINKED = ("/onboarding", "/tools/etsy-seller-calculator")
+
+    def discover_routes():
+        found = set(UNLINKED)
+        for seed in SEEDS:
+            pg.goto(f"{BASE}{seed}", wait_until="load")
+            hrefs = pg.eval_on_selector_all(
+                "nav a[href^='/']",
+                "els => els.map(e => e.getAttribute('href'))",
+            )
+            for href in hrefs:
+                if not href or href.startswith("/api"):
+                    continue
+                found.add(href.split("?")[0].split("#")[0].rstrip("/") or "/")
+        return tuple(sorted(found))
+
+    AUDIT_ROUTES = discover_routes()
+    # A discovery that finds nothing passes everything. Same vacuous-pass shape
+    # as D51a and D53b.
+    check(len(AUDIT_ROUTES) >= 20,
+          f"route discovery found only {len(AUDIT_ROUTES)} routes")
+    for must in ("/settings/audit-log", "/settings/costs", "/settings/profile",
+                 "/settings/security"):
+        check(must in AUDIT_ROUTES, f"route discovery missed {must}")
 
     def audit_here(where, sink):
         pg.evaluate(axe_source)
@@ -282,6 +313,55 @@ with sync_playwright() as p:
         })""")
         for v in report["violations"]:
             sink.setdefault(v["id"], []).append(f"{where}({len(v['nodes'])})")
+
+    # --- No hover style dims text -------------------------------------------
+    #
+    # `hover:opacity-80` on the provenance button faded the whole badge,
+    # including its label. The Demo chip is 10px muted-1 on canvas-soft: 5.6:1
+    # at rest, 3.66:1 once something multiplies it by 0.8. So hovering the
+    # control put its own text below AA, in both themes.
+    #
+    # Every contrast sweep missed it for eleven phases, because a sweep audits
+    # a page nobody is touching. It surfaced only when the mouse happened to be
+    # resting on one of these after a click on the previous route - found by
+    # accident, which is not a strategy.
+    #
+    # Reading the stylesheets is the deterministic version of that accident.
+    # Tailwind emits a rule only for a class something actually uses, so this
+    # sees exactly the hover styles that exist, and will see the next one too.
+    pg.goto(f"{BASE}/dashboard", wait_until="load")
+    hover_rules = pg.evaluate(r"""() => {
+      const dimming = [], seen = [];
+      const walk = (list) => {
+        for (const rule of list) {
+          // CSS Nesting gives every CSSStyleRule a cssRules list, empty or
+          // not, so `if (rule.cssRules) continue` skipped every style rule in
+          // the sheet and the check reported nothing. It reported nothing
+          // with the defect still in place, which is the only reason this was
+          // caught: the deliberate break did not fail.
+          if (rule.cssRules && rule.cssRules.length) walk(rule.cssRules);
+          const selector = rule.selectorText;
+          if (!selector || !selector.includes(":hover")) continue;
+          seen.push(selector);
+          const op = rule.style && rule.style.getPropertyValue("opacity");
+          if (op && parseFloat(op) < 1) dimming.push(selector + " {opacity:" + op + "}");
+        }
+      };
+      for (const sheet of document.styleSheets) {
+        let rules;
+        try { rules = sheet.cssRules } catch { continue }
+        walk(rules);
+      }
+      return { dimming, seen: seen.length };
+    }""")
+    dimming = hover_rules["dimming"]
+    # The floor. A walk that finds no hover rules at all cannot find a bad one,
+    # and would pass forever.
+    check(hover_rules["seen"] >= 5,
+          f"The hover sweep found {hover_rules['seen']} hover rules to inspect")
+    check(dimming == [],
+          "No hover style dims an element, which would dim its text with it"
+          + ("" if dimming == [] else f" - {dimming[:3]}"))
 
     a11y, audited = {}, 0
     # Per (theme, route): how many hidden states the DOM offered, and how many
@@ -293,6 +373,13 @@ with sync_playwright() as p:
     for theme in ("light", "dark"):
         for route in AUDIT_ROUTES:
             pg.goto(f"{BASE}{route}", wait_until="load")
+            # The mouse stays where the last click left it, and a navigation
+            # does not move it - so "base state" was whatever the pointer
+            # happened to be hovering on the new page. That is how the
+            # provenance button's dimmed hover was found, and equally how it
+            # could have gone on being missed. Park the pointer so this line
+            # audits the state it claims to.
+            pg.mouse.move(0, 0)
             pg.evaluate(f"document.documentElement.setAttribute('data-theme','{theme}')")
             pg.wait_for_timeout(200)
             audit_here(f"{theme}:{route}", a11y); audited += 1

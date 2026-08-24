@@ -732,6 +732,61 @@ first command anyone who clones the repo runs (D63).
 
 When a config differs by NODE_ENV, extract it to a pure function and test both branches.
 
+### A resolving link is not an arriving link
+
+Nine "Add costs" buttons pointed at `/profit?tab=costs`. The link checker passed — `/profit`
+exists. The tab is client state and `?tab=costs` was read by nothing, so every one of them
+put the seller back on the page they had just left.
+
+**A query parameter no code reads is a 404 the checker cannot spell.** When a link carries
+state, check that something consumes the state, not just that the path resolves (D65).
+
+### Hover, focus and the pointer's resting place are states too
+
+A hover style faded the provenance badge to 3.66:1 — its own label, below AA, on every screen,
+for eleven phases. Every contrast sweep missed it because **a sweep audits a page nobody is
+touching.**
+
+Two lessons. Park the pointer before auditing a "base state", or the base state is whatever the
+last click left under the mouse. And **opacity is never the right hover affordance for anything
+containing text** — it degrades contrast by construction (D68).
+
+### Derive the label from the data, don't store it beside the data
+
+The audit log's `reached` is a union carrying `{succeeded, attempted}`; "Yes" versus "Partly" is
+computed from them, and `isRefusal` is `kind === 'NOTHING_SENT'`. So a row cannot say "Yes" over
+8 of 9, and the "Refused only" filter cannot disagree with the column it filters on.
+
+A second stored field that answers the same question is two answers waiting to diverge — the nav
+badges said 2 and 5 for one count (D61a); this is the same defect where it would cost most (D66).
+
+### A demo constant is wrong the day after it is written
+
+`DEMO_COUNTS` said 412 active listings, 38 drafts, 38 without a cost. The generator built 404,
+39 and 52. The Action Center printed "38 of 412" beside a ledger that left 52 rows blank.
+
+Demo data should be **measured from the generated shop**, never written down beside it. And a
+literal between two measured numbers is the worst place for one: it inherits their credibility
+and none of their accuracy (D67).
+
+### Zero out of zero is not completeness
+
+Costs & fees told a shop with no listings that "every active listing has a cost". True, vacuous,
+and it reads as a shop in good order — the same shape as a health score of 100/100 above "covers
+0% of your listings".
+
+Absence and completeness look identical from a count of zero. They are told apart by **what the
+zero is out of**, so pass that in (D69).
+
+### If a control cannot work yet, disable it and say why
+
+Security draws Change password, Turn on two-step, Sign out everywhere else. None has a backend.
+Rendered live they would be worse than absent: someone who clicks "Sign out everywhere else"
+stops looking for the real answer.
+
+`NotYet` takes a required `reason`, so there is no way to render one of these without saying why
+it cannot be used (D70).
+
 ## 16. Memory Update Rule
 
 Claude must update this file:

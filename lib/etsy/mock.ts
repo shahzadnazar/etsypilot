@@ -18,6 +18,7 @@ import {
 import type { Provenanced } from '@/lib/provenance/types'
 import {
   DEMO_COUNTS,
+  isEmptyDataset,
   DEMO_LAST_SYNCED,
   DEMO_SHOP_ID,
   buildDemoListings,
@@ -46,9 +47,16 @@ import type {
  * seam, not a feature: it changes no behaviour anywhere else, and the browser
  * checks drive it to prove the empty states are real rather than assumed.
  */
-function isEmptyDataset(): boolean {
-  return process.env.DEMO_DATASET === 'empty'
-}
+/*
+ * Re-exported, not defined here.
+ *
+ * It moved to demo-dataset.ts when a second demo store needed it, because
+ * importing it from this file made that store an importer of MockEtsyService —
+ * and the architecture test caught it immediately. The mock adapter must stay a
+ * one-file swap, so nothing outside lib/etsy/index.ts may reach into it, not
+ * even for a two-line env read.
+ */
+export { isEmptyDataset }
 
 /* Built once per process. Deterministic, so this is safe to memoise. */
 let listingCache: EtsyListing[] | null = null

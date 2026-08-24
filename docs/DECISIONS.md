@@ -2902,3 +2902,200 @@ One subtlety the tests pin: the development script policy **drops the nonce** ra
 pairing it with `'unsafe-inline'`. A browser ignores `'unsafe-inline'` when a nonce is present,
 so sending both would look permissive and silently block every inline script — the failure being
 fixed, reintroduced by trying to keep the nonce.
+
+### D64 — The settings rail existed as a table and was rendered by nothing
+
+`SETTINGS_NAV` was written in Phase 4 and never mounted. Every settings page was reachable only
+through the sidebar's single "Settings" entry, so a seller who landed on Shop connections had no
+way to discover that Costs & fees, the Audit log or Data permissions existed at all.
+
+It was also **unchecked**, because `tests/unit/links.test.ts` only asserted against the tables
+that something rendered — and two of its hrefs pointed at pages that did not exist. A route
+table nothing renders is a route table nothing verifies.
+
+The rail now renders on every settings page, follows artboard 109 exactly (Account, then Shops &
+data), and is in the link test alongside the others.
+
+`Integrations` is listed and not linked. It is on the artboard's rail and has no design anywhere,
+which is precisely what the `unbuilt` flag is for (D54a).
+
+### D65 — Costs & fees, and the link that resolved without arriving
+
+Profit Reality has said "38 listings do not have a product cost · Add costs →" since Phase 6.
+Every one of those buttons pointed at `/profit?tab=costs`.
+
+That href **resolved** — `/profit` exists — so the link checker was satisfied. It was still a
+broken promise: the tab is client state, `?tab=costs` was read by nothing, and a seller who
+clicked "Add a cost for this listing" arrived back on the waterfall they had just left. Nine
+resolutions, one primary CTA, and the Action Center's "Continue cost setup" all landed nowhere.
+
+A resolving link is not an arriving link. The link test cannot see the difference, so this one
+is worth remembering rather than automating: **a query parameter no code reads is a 404 the
+checker cannot spell.**
+
+`/settings/costs` is now the destination. Cost inputs are editable there, saved through a plain
+form POST (no JavaScript required to record what your materials cost), validated server-side
+against the same `COST_FIELDS` table the form is built from.
+
+Two properties of the form worth stating:
+
+- **`adSpend` is nullable and blank means unknown.** Etsy exposes no ads endpoint, so nobody can
+  verify what a seller spent. Storing a blank as `0` would improve every profit figure
+  downstream while looking like a default.
+- **Percent is entered as 0–100 and stored as 0–1 in one place.** The alternative is a conversion
+  in the form and another in the route, which agree until one of them is edited.
+
+There is no demo-mode lock on it, deliberately. Demo mode blocks **writes to Etsy**; a cost rule
+is not one. Locking it would teach the wrong lesson about what demo mode protects.
+
+### D66 — The audit log is built around refusals
+
+A log that records only what succeeded cannot answer the question a dispute asks — "did
+EtsyPilot change my listing?" — because the useful answer is usually *no*, and an absent record
+proves nothing.
+
+`reached` is a discriminated union, not a status string:
+
+| Value | Renders | Means |
+| --- | --- | --- |
+| `SENT { succeeded, attempted }` | `Yes · 12 of 12` / `Partly · 8 of 9` | A request went to Etsy |
+| `NOTHING_SENT` | `No · nothing sent` | It meant to go, and nothing did |
+| `NOT_APPLICABLE { reason }` | `— authorisation` / `— EtsyPilot only` / `— read only` | It was never going to go |
+
+Two consequences fall out of the shape rather than out of discipline:
+
+1. **"Yes" cannot be written over 8 of 9.** The word is derived from the counts.
+2. **`isRefusal` is `reached.kind === 'NOTHING_SENT'`.** The "Refused only" filter and the
+   Reached Etsy column read one field, so they can never disagree about whether something was
+   refused. A `refused: boolean` stored beside the union would be two answers to one question —
+   the defect that made the nav badges say 2 and 5 (D61a), in the surface where it would cost the
+   most.
+
+The refusal chip is an outline, not red. Refusing is the product working.
+
+Records are append-only **by construction**: the store has no update and no delete. "This record
+cannot be edited or removed" describes the code, not an intention.
+
+Retention is read from `PLANS`, so the block cannot state a number the billing page contradicts.
+
+The cost-settings route appends a real record on every save, which is why row four of the
+artboard — "Cost rule changed · Shop-wide · — EtsyPilot only" — is now something that *happens*
+rather than something that was typed.
+
+### D67 — Three counts of one thing, and all three were wrong
+
+`DEMO_COUNTS` held `activeListings: 412`, `drafts: 38`, `listingsWithoutCost: 38`. The generator
+actually builds **404 active, 39 drafts, and 52 listings with no confirmed cost.**
+
+So the product said, on adjacent surfaces:
+
+| Surface | Claim | Truth |
+| --- | --- | --- |
+| Dashboard | 412 active listings, 38 drafts | 404, 39 |
+| Action Center | "38 of 412 active listings have no cost rule" | 52 of 404 |
+| Profit Reality | "38 listings do not have a product cost" | its own ledger left 52 blank |
+| Plan meter | 412 / 200 | 404 / 200 |
+
+Every one of those numbers was authored once and never true again — including on the same screen
+as the measurement that contradicted it. `DEMO_COUNTS` now counts the catalogue it describes.
+The generator's inputs moved to a separate `CATALOGUE_SHAPE`, because *how many listings to make*
+and *how many came out active* are different questions and were being answered by one constant.
+
+The Action Center's `formatCurrency(6998)` went the same way. **A literal between two measured
+numbers is the worst place for one:** it inherits their credibility and none of their accuracy.
+
+### D68 — A hover state that put its own label below AA
+
+`ProvenanceButton` faded on hover, its text with it. The Demo chip is 10px `muted-1` on
+`canvas-soft`: **5.6:1 at rest, 3.66:1 once something multiplies it by 0.8.** Hovering the
+control dropped its own label below AA, in both themes, on every screen in the product.
+
+Opacity is the wrong affordance for anything containing text — it degrades contrast by
+construction. It is a ring now.
+
+**How it survived 222 contrast fixes and every sweep since: a sweep audits a page nobody is
+touching.** It was found because the mouse happened to be resting on one of these after a click
+on the previous route — by accident.
+
+Two fixes, because the accident is not repeatable:
+
+1. The sweep now parks the pointer before each base-state audit, so "base state" means base
+   state rather than "whatever the pointer was over".
+2. A new check reads `document.styleSheets` for **any `:hover` rule that lowers opacity**.
+   Tailwind emits a rule only for a class something uses, so it sees exactly what exists and
+   will see the next one too.
+
+### D68a — The new check passed with the defect still in place
+
+The deliberate break did not fail, for the fourth time in this project and the first with a
+genuinely new cause: **CSS Nesting gives every `CSSStyleRule` a `cssRules` list, empty or not.**
+The walk read `if (rule.cssRules) { recurse; continue }` and therefore skipped every style rule
+in the sheet. It reported "no dimming hover styles" across 499 rules containing eight `:hover`
+rules, one of which was the defect.
+
+The walk now recurses on `cssRules.length` and inspects every rule, and the check carries a floor
+— *it must find at least five `:hover` rules to inspect*. A walk that finds nothing cannot find
+something bad, and would have passed forever.
+
+### D68b — And the comment about it recreated it
+
+With the class removed from the code, the check still failed: **Tailwind scans source text, not
+JSX**, so writing `hover:` + `opacity-80` in the explanatory comment re-emitted the rule.
+
+Fifth instance of a comment promising the absence of a thing bringing the thing back. The comment
+now describes the utility without naming it, and says why.
+
+### D69 — Two empty states that were still unreachable
+
+`DEMO_DATASET=empty` was added in Phase 11 and found four defects immediately. Two more were
+hiding behind surfaces that did not exist yet or did not honour the seam:
+
+- **Costs & fees congratulated an empty catalogue.** With no listings at all it rendered "Every
+  active listing has a cost" — vacuously true, and it reads as a shop in good order. The panel
+  now distinguishes three states: nothing to cost, everything costed, and a search that found
+  nothing. *Zero out of zero is not completeness.* Same shape as the health score reading 100/100
+  above "covers 0% of your listings" (D57a).
+- **The audit log seeded its demo records regardless of the dataset**, so its own empty state
+  could not be rendered at all. An empty state nobody can reach is an empty state nobody has
+  read.
+
+Moving `isEmptyDataset` out of `lib/etsy/mock.ts` was forced by the architecture test the moment
+the audit-log store imported it: the mock adapter must stay a one-file swap, and nothing outside
+`lib/etsy/index.ts` may reach into it — not even for a two-line environment read.
+
+### D70 — A security page with no security backend
+
+Profile, Security and the settings rail are account surfaces, and this product has no accounts
+yet. The artboards draw live controls: Change password, Turn on two-step, Sign out everywhere
+else, Revoke, Delete account.
+
+Every one of them is rendered **disabled with its reason attached**, through a `NotYet` component
+whose `reason` prop is required — there is no way to render one without saying why it cannot be
+used.
+
+The precedent is Export & deletion, which carries no delete button because there is no repository
+behind it: "a button that appears to delete your data while doing nothing is the single worst
+thing this page could contain." On a security page the argument is stronger, not weaker. **"Sign
+out everywhere else" that signs nothing out is worse than no button at all**, because someone who
+clicks it stops looking for the real answer.
+
+The same treatment was applied to Shop connections' "Disconnect shop", which had been a
+live-looking button with no handler since Phase 4.
+
+What *is* real on Profile: the name and the audit-log display name save through a form POST and
+are read back by the audit-log event builder — so "how you appear in the audit log" is literally
+true rather than decorative. Language and time zone are **stated, not offered**: there is one of
+each, and a select listing four zones that changed nothing is exactly the control this product
+spends its effort not shipping. The sentence D24 needs — *changing a display setting changes how
+times are printed, never how numbers are computed* — survives without the control, and is more
+clearly true beside a fixed value.
+
+### D71 — The a11y sweep audited a list somebody typed
+
+`AUDIT_ROUTES` was a hand-written tuple. Four new settings pages shipped, were reachable from the
+rail, and were audited by nothing — because nobody remembered to add them.
+
+Routes are discovered from the rendered navigation now, seeded from three pages so both rails are
+read, with the two genuinely unlinked routes named explicitly and a floor of twenty so a
+discovery that finds nothing cannot pass. Same correction as the hidden-state survey (D53a): **an
+audit whose scope is typed out covers what somebody remembered, not what a seller can reach.**

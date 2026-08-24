@@ -13,6 +13,7 @@
 import { computeWaterfall } from '@/domain/profit/waterfall'
 import { getShopPulse } from '@/domain/shop-pulse/service'
 import { getEtsyService } from '@/lib/etsy'
+import type { EtsyOrder } from '@/lib/etsy/interface'
 import {
   DEMO_ACTOR_ID,
   DEMO_COST_INPUTS,
@@ -44,7 +45,7 @@ export async function getActions(ctx: ShopContext): Promise<ActionCenterView> {
   const actions = [
     ...pulseActions(ctx, pulse),
     belowCost(ctx),
-    missingCosts(ctx, profit.coveragePercent),
+    missingCosts(ctx, profit.coveragePercent, uncoveredValue(orders, profit.coveragePercent)),
     renewalsFixed(ctx),
     seasonalWindow(ctx),
   ].sort(compareActions)
@@ -142,7 +143,20 @@ function belowCost(ctx: ShopContext): Action {
 
 /* --------------------------------------------------------- IN_PROGRESS */
 
-function missingCosts(ctx: ShopContext, coveragePercent: number): Action {
+/*
+ * Order value with no confirmed cost behind it.
+ *
+ * Derived from the same orders and the same coverage figure the rest of the
+ * action reads. It used to be `formatCurrency(6998)` — a literal sitting
+ * between two measured numbers, which is the worst place for one: it inherits
+ * their credibility and none of their accuracy.
+ */
+function uncoveredValue(orders: EtsyOrder[], coveragePercent: number): number {
+  const gross = orders.reduce((sum, o) => sum + o.gross, 0)
+  return Math.round(gross * ((100 - coveragePercent) / 100))
+}
+
+function missingCosts(ctx: ShopContext, coveragePercent: number, uncovered: number): Action {
   const covered = 12
   const total = DEMO_COUNTS.listingsWithoutCost
   return {
@@ -153,11 +167,11 @@ function missingCosts(ctx: ShopContext, coveragePercent: number): Action {
     title: `${total} listings have no product cost`,
     explanation: `${coveragePercent}% of order value has a confirmed cost. The other ${100 - coveragePercent}% falls back to your default rule, so profit for those ${total} listings rests on an assumption you set rather than a cost you confirmed.`,
     evidence: {
-      summary: `${total} of ${DEMO_COUNTS.activeListings} active listings have no cost rule · ${formatCurrency(6998)} of order value uncovered`,
+      summary: `${total} of ${DEMO_COUNTS.activeListings} active listings have no cost rule · ${formatCurrency(uncovered)} of order value uncovered`,
       provenance: 'CALCULATED',
       source: 'your cost setup',
     },
-    destination: { label: 'Continue cost setup', href: '/profit' },
+    destination: { label: 'Continue cost setup', href: '/settings/costs' },
     status: 'IN_PROGRESS',
     progress: { current: covered, total },
     createdAt: '2026-08-06T09:20:00.000Z',

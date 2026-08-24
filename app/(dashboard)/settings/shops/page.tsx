@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { PageHeader } from '@/components/layout/page-header'
 import { ScopeList } from '@/components/connect/scope-list'
 import { SyncProgress } from '@/components/connect/sync-progress'
-import { Button } from '@/components/ui/button'
+import { NotYet } from '@/components/settings/not-yet'
 import { Card } from '@/components/ui/card'
 import { demoSyncState, getConnectionState } from '@/domain/connect/service'
 import { CONNECT_OUTCOMES, connectOutcome, ETSY_SCOPES } from '@/domain/connect/types'
@@ -68,7 +68,16 @@ export default async function ShopConnectionsPage({
             >
               View sync details
             </Link>
-            <Button variant="secondary">Disconnect shop</Button>
+            {/*
+              * Disabled, not inert. This was a live-looking button with no
+              * handler — the same defect Export & deletion refuses to ship a
+              * delete button for. Revoking access genuinely works today, from
+              * Etsy's own account page, and the panel below says so.
+              */}
+            <NotYet
+              label="Disconnect shop"
+              reason="Revoke from your Etsy account today — see below."
+            />
             {/*
               * A plain link, not a button with a handler. Starting an OAuth
               * flow is a top-level navigation by nature, and one that works

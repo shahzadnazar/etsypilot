@@ -26,7 +26,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { MOBILE_TABS, NAV_FOOTER, NAV_GROUPS } from '@/components/layout/navigation'
+import { MOBILE_TABS, NAV_FOOTER, NAV_GROUPS, SETTINGS_NAV } from '@/components/layout/navigation'
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
@@ -114,8 +114,18 @@ describe('internal links', () => {
      * Neither can survive this, because the filesystem is the authority and the
      * flag is only a claim about it.
      */
-    const items = [...NAV_GROUPS.flatMap((g) => g.items), ...NAV_FOOTER, ...MOBILE_TABS]
-    expect(items.length).toBeGreaterThan(20)
+    /*
+     * SETTINGS_NAV was missing from this list until the settings rail was
+     * built. It had been a route table nothing rendered, so nothing checked it
+     * either — and two of its hrefs pointed at pages that did not exist.
+     */
+    const items = [
+      ...NAV_GROUPS.flatMap((g) => g.items),
+      ...SETTINGS_NAV.flatMap((g) => g.items),
+      ...NAV_FOOTER,
+      ...MOBILE_TABS,
+    ]
+    expect(items.length).toBeGreaterThan(30)
 
     const wrong: Record<string, string> = {}
     for (const item of items) {

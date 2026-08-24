@@ -114,17 +114,26 @@ export function reconcile(args: ReconcileArgs): ReconciliationSummary {
   }
 }
 
+/*
+ * Every one of these used to point at `/profit?tab=costs`.
+ *
+ * That href resolved — /profit exists — so the link checker was satisfied, and
+ * it was still a broken promise: the tab is client state, `?tab=costs` was read
+ * by nothing, and a seller who clicked "Add a cost for this listing" arrived on
+ * the waterfall they had just left. Cost setup now has a page, and these point
+ * at it. `q` is the listing id, which the table matches as well as the title.
+ */
 function partialResolutions(listingId: string): Resolution[] {
   return [
-    { label: 'Add a cost for this listing', href: `/profit?tab=costs&listing=${listingId}`, kind: 'PRIMARY' },
-    { label: 'Apply the default cost rule', href: '/profit?tab=costs', kind: 'SECONDARY' },
+    { label: 'Add a cost for this listing', href: `/settings/costs?q=${listingId}`, kind: 'PRIMARY' },
+    { label: 'Apply the default cost rule', href: '/settings/costs', kind: 'SECONDARY' },
   ]
 }
 
 function unmatchedResolutions(listingId: string): Resolution[] {
   return [
-    { label: 'Import supplier invoice', href: '/profit?tab=costs&import=pod', kind: 'PRIMARY' },
-    { label: 'Enter the cost manually', href: `/profit?tab=costs&listing=${listingId}`, kind: 'SECONDARY' },
+    { label: 'Import supplier invoice', href: '/settings/costs', kind: 'PRIMARY' },
+    { label: 'Enter the cost manually', href: `/settings/costs?q=${listingId}`, kind: 'SECONDARY' },
   ]
 }
 
@@ -150,8 +159,8 @@ export function missingDataFrom(args: {
         'Their orders fall back to your default cost rule in the waterfall, and are left blank in the ledger — no per-order profit is computed without a confirmed cost.',
       affectedValue: args.summary.excludedValue,
       resolutions: [
-        { label: 'Add costs', href: '/profit?tab=costs', kind: 'PRIMARY' },
-        { label: 'Set a default rule', href: '/profit?tab=costs&rule=default', kind: 'SECONDARY' },
+        { label: 'Add costs', href: '/settings/costs', kind: 'PRIMARY' },
+        { label: 'Set a default rule', href: '/settings/costs', kind: 'SECONDARY' },
       ],
     })
   }
@@ -162,7 +171,7 @@ export function missingDataFrom(args: {
       title: 'No labour minutes recorded per product',
       detail: 'Labour is applied as a period total rather than per unit, so per-listing margin excludes it.',
       resolutions: [
-        { label: 'Set a labour rate', href: '/profit?tab=costs&rule=labour', kind: 'PRIMARY' },
+        { label: 'Set a labour rate', href: '/settings/costs', kind: 'PRIMARY' },
       ],
     })
   }

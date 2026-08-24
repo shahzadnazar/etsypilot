@@ -66,6 +66,8 @@ with sync_playwright() as p:
     ROUTES = ["/dashboard", "/billing", "/profit", "/shop-pulse", "/listings/audit",
               "/listings/bulk-editor", "/listings/ai-copilot", "/research/keywords",
               "/research/keyword-lists", "/settings/shops", "/settings/export",
+              "/settings/costs", "/settings/audit-log", "/settings/profile",
+              "/settings/security", "/data/sources", "/data/methodology",
               "/tools", "/action-center", "/onboarding"]
     broke = []
     for route in ROUTES:
@@ -102,6 +104,37 @@ with sync_playwright() as p:
     check("Validate 0 listings" not in bulk, "The bulk editor does not offer to validate nothing")
     check("No listings to edit yet" in bulk, "The bulk editor says what is missing")
 
+
+    # --- an absence is not an achievement ----------------------------------
+    #
+    # Costs & fees had the same shape of defect the health score had: with no
+    # listings at all it reported "Every active listing has a cost", which is
+    # vacuously true and reads as a shop in good order. Zero out of zero is not
+    # completeness; it is nothing to be complete about.
+    pg.goto(f"{BASE}/settings/costs", wait_until="load"); pg.wait_for_timeout(400)
+    costs = pg.locator("main").inner_text()
+    check("Every active listing has a cost" not in costs,
+          "An empty catalogue is not congratulated on its cost coverage")
+    check("No listings to cost yet" in costs, "Costs & fees says what is missing")
+    check("of 0 active listings" not in costs,
+          "The coverage card does not report a count out of zero as a fact")
+
+    # --- a log of nothing is empty, not seeded -----------------------------
+    #
+    # The demo records were seeded whatever the dataset, so the audit log's own
+    # empty state could not be reached at all - and an empty state nobody can
+    # render is an empty state nobody has read.
+    pg.goto(f"{BASE}/settings/audit-log", wait_until="load"); pg.wait_for_timeout(400)
+    log = pg.locator("main").inner_text()
+    check("Nothing has happened on this shop yet" in log,
+          "The audit log has a reachable empty state")
+    check("Apply refused" not in log,
+          "...and an empty shop is not shown another shop's records")
+    # `or "Refused only" in log` would have made this pass on the label alone,
+    # which is present whatever the count. The count is the claim.
+    flat = " ".join(log.split())
+    check("All · 0" in flat and "Refused only · 0" in flat,
+          "Both filter counts read zero rather than being hidden")
     # --- and every empty state points somewhere ----------------------------
     # rules.md section 12: never fail silently. An empty state that does not say
     # what to do next is a dead end with better typography.

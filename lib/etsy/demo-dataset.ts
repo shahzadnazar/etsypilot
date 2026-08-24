@@ -138,15 +138,68 @@ export const DEMO_BASELINE = {
   windowDays: 90,
 } as const
 
+/*
+ * The empty-dataset seam.
+ *
+ * DEMO_DATASET=empty serves the same shop with nothing in it, so the empty
+ * states can be driven rather than assumed. It lives here rather than in the
+ * mock adapter because demo STORES need it too — the audit log's records, for
+ * one — and lib/etsy/mock.ts is the file nothing outside the selector may
+ * import.
+ */
+export function isEmptyDataset(): boolean {
+  return process.env.DEMO_DATASET === 'empty'
+}
+
 /** Length of the reporting period, in whole days. */
 export const PERIOD_DAYS = 30
 
+/*
+ * How many listings the generator MAKES. Inputs to the catalogue, not claims
+ * about it — the loop below draws states from the RNG, so some of the non-draft
+ * slots come out EXPIRED and the two numbers are not the same question.
+ */
+const CATALOGUE_SHAPE = { nonDraft: 412, drafts: 38 } as const
+
+let countsCache: { active: number; drafts: number; withoutCost: number } | null = null
+
+function measuredCounts(): { active: number; drafts: number; withoutCost: number } {
+  if (countsCache) return countsCache
+  const listings = buildDemoListings()
+  const costs = demoConfirmedCosts(listings)
+  const active = listings.filter((l) => l.state === 'ACTIVE')
+  countsCache = {
+    active: active.length,
+    drafts: listings.filter((l) => l.state === 'DRAFT').length,
+    withoutCost: active.filter((l) => !costs.has(l.etsyListingId)).length,
+  }
+  return countsCache
+}
+
+/*
+ * Counted from the catalogue, not written down beside it.
+ *
+ * These were three literals — 412 active, 38 drafts, 38 without a cost — and
+ * all three were wrong about the shop the generator actually builds: 404, 39
+ * and 52. The dashboard said 412 active listings, the Action Center said "38 of
+ * 412 have no cost rule", the plan meter said 412 / 200, and Profit Reality's
+ * own ledger left 52 listings blank on the same screen that announced 38.
+ *
+ * Nothing here is a constant any more, so the demo shop cannot describe itself
+ * incorrectly (D34, D61a).
+ */
 export const DEMO_COUNTS = {
-  activeListings: 412,
-  drafts: 38,
+  get activeListings(): number {
+    return measuredCounts().active
+  },
+  get drafts(): number {
+    return measuredCounts().drafts
+  },
   expiringWithin7Days: 6,
-  listingsWithoutCost: 38,
-} as const
+  get listingsWithoutCost(): number {
+    return measuredCounts().withoutCost
+  },
+}
 
 /* ------------------------------------------------------------------ *
  * Deterministic PRNG (mulberry32). Same seed, same shop, every time.
@@ -275,9 +328,9 @@ export function buildDemoListings(): EtsyListing[] {
     })
   })
 
-  const total = DEMO_COUNTS.activeListings + DEMO_COUNTS.drafts
+  const total = CATALOGUE_SHAPE.nonDraft + CATALOGUE_SHAPE.drafts
   for (let i = listings.length; i < total; i++) {
-    const isDraft = i >= DEMO_COUNTS.activeListings
+    const isDraft = i >= CATALOGUE_SHAPE.nonDraft
     const noun = pick(rng, TITLE_NOUNS)
     const adjective = pick(rng, TITLE_ADJECTIVES)
     const qualifier = pick(rng, TITLE_QUALIFIERS)

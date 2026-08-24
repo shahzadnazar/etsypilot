@@ -35,7 +35,28 @@ export function ProvenanceButton({
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-expanded={open}
-        className="rounded-full transition-opacity hover:opacity-80"
+        /*
+         * A ring on hover, not opacity.
+         *
+         * This used to fade the whole badge on hover, its text with it. The
+         * Demo chip is 10px muted-1 on canvas-soft: 5.6:1 at rest, 3.66:1 once
+         * something multiplies it by 0.8. So hovering the control put its own
+         * label below AA, in both themes. Opacity is the wrong affordance for
+         * anything containing text - it degrades contrast by construction.
+         *
+         * Every contrast sweep missed it for eleven phases, because a sweep
+         * audits a page nobody is touching. It surfaced only because the mouse
+         * happened to be resting on one of these after a click on the previous
+         * route. tests/browser/rendered-output.py now reads the stylesheets for
+         * any hover rule that lowers opacity, which is the deterministic
+         * version of that accident.
+         *
+         * The offending utility class is deliberately NOT written out anywhere
+         * in this file. Tailwind scans source text, not JSX, so naming it in a
+         * comment re-emits the rule and fails that check - the fifth time a
+         * comment promising the absence of a thing has recreated the thing.
+         */
+        className="rounded-full transition-shadow hover:ring-2 hover:ring-brand/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
       >
         <ProvenanceBadge type={type} demo={demo} />
         <span className="sr-only">

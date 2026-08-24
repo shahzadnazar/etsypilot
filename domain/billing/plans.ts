@@ -28,6 +28,16 @@ export interface Plan {
     aiGenerations: number
     rollbackDays: number | null
     pulseHistoryMonths: number | null
+    /*
+     * How long the audit log keeps this shop's records. Null on Free, which
+     * connects no shop and therefore has no shop records to keep.
+     *
+     * It lives here rather than in the audit-log domain because the retention
+     * block on that page is a statement about the seller's plan, and a second
+     * copy of "90 days on Solo" written next to the table is a copy that gets
+     * left behind the day the plan changes.
+     */
+    auditRetentionDays: number | null
   }
   /** Shown only where the absence is a real difference between tiers. */
   excludes: string[]
@@ -51,7 +61,7 @@ export const PLANS: Plan[] = [
      * turned an upgrade from Free into a warning that bulk jobs would pause.
      * An ambiguous null in a limits table is a bug waiting for a reader.
      */
-    limits: { listings: 0, aiGenerations: 5, rollbackDays: null, pulseHistoryMonths: null },
+    limits: { listings: 0, aiGenerations: 5, rollbackDays: null, pulseHistoryMonths: null, auditRetentionDays: null },
     excludes: ['No shop connection, profit or bulk editing'],
   },
   {
@@ -67,7 +77,7 @@ export const PLANS: Plan[] = [
       'Shop Pulse with 90-day baseline and weekly digest',
       '60 AI generations / month',
     ],
-    limits: { listings: 200, aiGenerations: 60, rollbackDays: 30, pulseHistoryMonths: 3 },
+    limits: { listings: 200, aiGenerations: 60, rollbackDays: 30, pulseHistoryMonths: 3, auditRetentionDays: 90 },
     // D22 consequence 3: do not advertise the absence of something no tier has.
     excludes: ['One shop'],
   },
@@ -85,7 +95,7 @@ export const PLANS: Plan[] = [
       'Full data export (CSV and JSON)',
       'Priority sync and support',
     ],
-    limits: { listings: 2000, aiGenerations: 500, rollbackDays: 90, pulseHistoryMonths: 12 },
+    limits: { listings: 2000, aiGenerations: 500, rollbackDays: 90, pulseHistoryMonths: 12, auditRetentionDays: 365 },
     excludes: [],
   },
 ]

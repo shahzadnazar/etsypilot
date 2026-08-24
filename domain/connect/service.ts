@@ -124,7 +124,7 @@ export function setupChecklist(args: { hasCosts: boolean; hasAudit: boolean; has
       label: 'Add a default product cost',
       detail: 'Until costs cover your sales, part of net profit rests on a default rule rather than a confirmed cost.',
       done: args.hasCosts,
-      href: '/profit?tab=costs',
+      href: '/settings/costs',
       cta: 'Set up COGS',
     },
     {

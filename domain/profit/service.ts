@@ -8,7 +8,6 @@
 import { getEtsyService } from '@/lib/etsy'
 import {
   DEMO_COST_INPUTS,
-  DEMO_COUNTS,
   demoConfirmedCosts,
   demoUnmatchedOrderIds,
   PERIOD_END,
@@ -68,13 +67,23 @@ export async function getProfitView(ctx: ShopContext): Promise<ProfitView> {
   // One resolver supplies the confirmed-cost set everywhere it is needed, so
   // the coverage figure and the ledger can never describe different sets.
   const costs = demoConfirmedCosts(listings)
-  const withCost = listings.filter((l) => costs.has(l.etsyListingId))
+  /*
+   * Counted here, from the same catalogue the ledger below is built from.
+   *
+   * This used to read DEMO_COUNTS.listingsWithoutCost, which said 38 while the
+   * ledger on the same screen left 52 listings blank. DEMO_COUNTS measures now
+   * too, so the two agree — but the count still belongs here, because it is a
+   * fact about the listings this request loaded, not about the demo dataset.
+   */
+  const activeListings = listings.filter((l) => l.state === 'ACTIVE')
+  const withCost = activeListings.filter((l) => costs.has(l.etsyListingId))
+  const listingsMissingCost = activeListings.length - withCost.length
   const unmatchedOrderIds = demoUnmatchedOrderIds(orders)
 
   const reconciliation = reconcile({ orders, listings, costs, unmatchedOrderIds })
   const missingData = missingDataFrom({
     summary: reconciliation,
-    listingsWithoutCost: DEMO_COUNTS.listingsWithoutCost,
+    listingsWithoutCost: listingsMissingCost,
     labourRecorded: false,
   })
 
@@ -94,8 +103,8 @@ export async function getProfitView(ctx: ShopContext): Promise<ProfitView> {
     reconciliation,
     costSetup: {
       coveragePercent: reconciliation.coveragePercent,
-      listingsCovered: DEMO_COUNTS.activeListings - DEMO_COUNTS.listingsWithoutCost,
-      listingsMissing: DEMO_COUNTS.listingsWithoutCost,
+      listingsCovered: withCost.length,
+      listingsMissing: listingsMissingCost,
       defaultRule: {
         label: `${(assumptions.cogsPercent * 100).toFixed(0)}% of price`,
         detail: 'Applies where no specific cost exists.',

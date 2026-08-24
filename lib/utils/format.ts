@@ -42,6 +42,24 @@ export function formatSignedCurrency(
   return `${signed < 0 ? '\u2212' : ''}${formatCurrency(Math.abs(signed), currency)}`
 }
 
+/**
+ * The currency's own symbol, for use as an input prefix.
+ *
+ * Derived from Intl rather than a hand-written map, so a shop in GBP or EUR
+ * gets its own symbol instead of a dollar sign in front of pounds. Formatting
+ * zero and stripping the digits is the supported way to ask Intl this question;
+ * a currency it does not know falls back to the code itself, which is still
+ * true, just less pretty.
+ */
+export function currencySymbol(currency = 'USD'): string {
+  const parts = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: 0,
+  }).formatToParts(0)
+  return parts.find((p) => p.type === 'currency')?.value ?? currency
+}
+
 export function formatNumber(value: number): string {
   return new Intl.NumberFormat('en-US').format(value)
 }

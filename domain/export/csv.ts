@@ -84,6 +84,41 @@ export function toCsv<T>(spec: ExportSpec<T>, rows: T[]): string {
   return lines.join('\r\n')
 }
 
+/**
+ * The same export, as JSON.
+ *
+ * Built from the same ExportSpec as the CSV, deliberately. Two exports of one
+ * dataset written independently is two exports that disagree the first time a
+ * column is added — and the disagreement surfaces in a dispute, where it is
+ * worth the most damage.
+ *
+ * The context and excludes travel too. A JSON file that dropped them would be a
+ * file whose numbers have no period, no currency and no statement of what is
+ * missing, which is the failure the header block exists to prevent.
+ */
+export function toJson<T>(spec: ExportSpec<T>, rows: T[]): string {
+  return JSON.stringify(
+    {
+      title: spec.title,
+      context: spec.context,
+      excludes: spec.excludes,
+      rows: rows.map((row) => {
+        const out: Record<string, string | number | null> = {}
+        for (const column of spec.columns) {
+          const value = column.value(row)
+          out[column.header] = value
+          if (column.provenance) {
+            out[`${column.header} — source`] = value === null ? 'Unavailable' : column.provenance(row)
+          }
+        }
+        return out
+      }),
+    },
+    null,
+    2,
+  )
+}
+
 /* --------------------------------------------------------------- specs */
 
 import type { TransactionRow } from '@/domain/profit/types'
@@ -151,6 +186,55 @@ export function auditExport(args: { healthScore: number; coveragePercent: number
         provenance: () => 'VERIFIED',
       },
       { header: 'Suggested value', value: (r) => r.suggestedValue ?? null, provenance: () => 'CALCULATED' },
+    ],
+  }
+}
+
+import type { AuditRecord } from '@/domain/audit-log/types'
+import { reachedLabel, SOURCE_LABEL } from '@/domain/audit-log/types'
+
+/**
+ * The audit log as a file.
+ *
+ * The Reached Etsy column travels, and it travels as the same derived string
+ * the screen shows. A dispute is argued from the export, not from the page, so
+ * a file that dropped the one column the log is built around would be a file
+ * that cannot answer the question the log exists to answer.
+ *
+ * No provenance columns. Nothing here is a metric — every cell is a record of
+ * something that happened, which is a different kind of claim, and appending
+ * "VERIFIED" to a timestamp would dilute the word everywhere else it is used.
+ */
+export function auditLogExport(args: {
+  retentionDays: number | null
+  planName: string
+}): ExportSpec<AuditRecord> {
+  return {
+    filename: 'etsypilot-audit-log.csv',
+    title: 'EtsyPilot — audit log',
+    context: [
+      'Every action taken on this shop through EtsyPilot, including the ones that were refused.',
+      'All times are UTC.',
+      args.retentionDays === null
+        ? `Plan ${args.planName} connects no shop, so no shop records are kept.`
+        : `Records are kept for ${args.retentionDays} days on ${args.planName}.`,
+    ],
+    excludes: [
+      'Changes made directly on Etsy are not recorded here. They appear as differences at the next sync.',
+      'A refusal means nothing was sent to Etsy. There is no corresponding change on the listing.',
+      '"— authorisation", "— EtsyPilot only" and "— read only" mean the action never intended to reach Etsy.',
+    ],
+    columns: [
+      { header: 'Timestamp (UTC)', value: (r) => r.at },
+      { header: 'Operation', value: (r) => r.id },
+      { header: 'Actor', value: (r) => r.actor.name },
+      { header: 'Role', value: (r) => r.actor.role },
+      { header: 'Action', value: (r) => r.action },
+      { header: 'Detail', value: (r) => r.detail },
+      { header: 'Target', value: (r) => r.target },
+      { header: 'Source', value: (r) => SOURCE_LABEL[r.source] },
+      { header: 'Reached Etsy', value: (r) => reachedLabel(r.reached) },
+      { header: 'Why', value: (r) => r.explanation ?? null },
     ],
   }
 }

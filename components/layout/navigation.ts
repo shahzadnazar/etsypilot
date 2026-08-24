@@ -115,10 +115,11 @@ export const NAV_GROUPS: NavGroup[] = [
 /** Billing and Settings sit below the groups, without a heading. */
 export const NAV_FOOTER: NavItem[] = [
   { label: 'Billing', href: '/billing' },
-  // Retargeted, not disabled. "Settings" pointed at /settings/profile, which
-  // does not exist; Shop connections does, and is what a seller opening
-  // Settings is looking for. Where a real destination matches the intent,
-  // pointing at it beats a "Soon" label on a whole section.
+  // Shop connections, not Profile, and now by choice rather than by necessity.
+  // It was retargeted here when /settings/profile was a 404; that page exists
+  // now, and this still points at Shop connections, because what a seller opens
+  // Settings to do in this product is check the connection, its scopes and the
+  // last sync. The settings rail offers Profile one click away.
   { label: 'Settings', href: '/settings/shops' },
 ]
 
@@ -153,8 +154,8 @@ export const SETTINGS_NAV: NavGroup[] = [
   {
     label: 'Account',
     items: [
-      { label: 'Profile', href: '/settings/profile', unbuilt: true },
-      { label: 'Security', href: '/settings/security', unbuilt: true },
+      { label: 'Profile', href: '/settings/profile' },
+      { label: 'Security', href: '/settings/security' },
       { label: 'Notifications', href: '/settings/notifications', unbuilt: true },
       { label: 'Billing & plan', href: '/billing' },
     ],
@@ -164,13 +165,16 @@ export const SETTINGS_NAV: NavGroup[] = [
     items: [
       { label: 'Shop connections', href: '/settings/shops' },
       { label: 'Data permissions', href: '/settings/data-permissions', unbuilt: true },
-      { label: 'Audit log', href: '/settings/audit-log', unbuilt: true },
-      { label: 'Costs & fees', href: '/settings/costs', unbuilt: true },
-      { label: 'Export & deletion', href: '/settings/export' },
+      { label: 'Audit log', href: '/settings/audit-log' },
+      { label: 'Costs & fees', href: '/settings/costs' },
+      /*
+       * Integrations has no design anywhere, so it is listed and not linked.
+       * It is on the artboard's settings rail (109), which is why it appears at
+       * all; D21 is what stops it becoming a destination before it is one.
+       */
+      { label: 'Integrations', href: '/settings/integrations', unbuilt: true },
+      { label: 'Browser extension', href: '/settings/extension' },
+      { label: 'Data export & deletion', href: '/settings/export' },
     ],
-  },
-  {
-    label: 'Integrations',
-    items: [{ label: 'Browser Extension', href: '/settings/extension' }],
   },
 ]

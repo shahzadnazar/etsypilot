@@ -16,18 +16,19 @@ import { getSession } from '@/lib/auth'
 import { errorResponse } from '@/lib/errors/api'
 import { Errors } from '@/lib/errors/types'
 import { shopContext } from '@/lib/permissions'
-import { auditExport, toCsv, transactionsExport } from '@/domain/export/csv'
+import { auditExport, auditLogExport, toCsv, toJson, transactionsExport } from '@/domain/export/csv'
 import { getAuditView } from '@/domain/audit/service'
+import { getAuditLogView } from '@/domain/audit-log/service'
 import { getProfitView } from '@/domain/profit/service'
 
-const DATASETS = ['transactions', 'audit'] as const
+const DATASETS = ['transactions', 'audit', 'audit-log'] as const
 type Dataset = (typeof DATASETS)[number]
 
 function isDataset(value: string): value is Dataset {
   return (DATASETS as readonly string[]).includes(value)
 }
 
-export async function GET(_request: Request, { params }: { params: Promise<{ dataset: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ dataset: string }> }) {
   try {
     const session = await getSession()
     if (!session) throw Errors.notAuthenticated()
@@ -48,6 +49,27 @@ export async function GET(_request: Request, { params }: { params: Promise<{ dat
       return csvResponse(toCsv(spec, view.reconciliation.rows), spec.filename)
     }
 
+    if (dataset === 'audit-log') {
+      const log = await getAuditLogView(ctx)
+      const spec = auditLogExport({
+        retentionDays: log.retentionDays,
+        planName: log.plan.name,
+      })
+      /*
+       * The whole log, not the filtered view. An export named "audit log" that
+       * silently dropped the rows the reader had filtered out would be the most
+       * dangerous kind of truncation: complete-looking and short.
+       */
+      if (new URL(request.url).searchParams.get('format') === 'json') {
+        return fileResponse(
+          toJson(spec, log.records),
+          spec.filename.replace(/\.csv$/, '.json'),
+          'application/json',
+        )
+      }
+      return csvResponse(toCsv(spec, log.records), spec.filename)
+    }
+
     const view = await getAuditView(ctx)
     const spec = auditExport({
       healthScore: view.healthScore.value ?? 0,
@@ -66,9 +88,13 @@ export async function GET(_request: Request, { params }: { params: Promise<{ dat
 }
 
 function csvResponse(body: string, filename: string): Response {
+  return fileResponse(body, filename, 'text/csv; charset=utf-8')
+}
+
+function fileResponse(body: string, filename: string, contentType: string): Response {
   return new Response(body, {
     headers: {
-      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Type': contentType,
       'Content-Disposition': `attachment; filename="${filename}"`,
       // A shop's own financial data. Never cached by a shared proxy.
       'Cache-Control': 'private, no-store',
