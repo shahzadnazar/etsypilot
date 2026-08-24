@@ -143,20 +143,28 @@ async function ownListing(
 
 async function otherListing(etsyListingId: string): Promise<ListingIntelligence> {
   const signals = getSignalsService()
-  const competitor = await signals.getCompetitor('this shop')
+  /*
+   * getCompetitor returns null for a shop the model has not observed, which is
+   * the ordinary case for a listing the seller happens to be looking at. The
+   * extension then reports UNAVAILABLE rather than a modelled figure for a shop
+   * nothing is known about.
+   */
+  const competitor = await signals.getCompetitor('Aurelia Made')
   const term = 'birth flower necklace'
   const keyword = await signals.getKeyword(term, 'United States')
 
-  const salesRange = competitor.monthlySales.value
+  const salesRange = competitor?.monthlySales.value ?? null
   const monthlySales: ExtensionMetric = {
     label: 'Estimated monthly sales',
     display: salesRange ? `${salesRange.min}–${salesRange.max}` : null,
-    provenance: competitor.monthlySales.provenance.type,
-    ...(competitor.monthlySales.provenance.confidence
+    provenance: competitor ? competitor.monthlySales.provenance.type : 'UNAVAILABLE',
+    ...(competitor?.monthlySales.provenance.confidence
       ? { confidence: competitor.monthlySales.provenance.confidence }
       : {}),
-    methodology: competitor.monthlySales.provenance.methodology,
-    ...(competitor.monthlySales.provenance.limitations
+    methodology:
+      competitor?.monthlySales.provenance.methodology ??
+      'This shop has not been observed often enough to model.',
+    ...(competitor?.monthlySales.provenance.limitations
       ? { limitations: competitor.monthlySales.provenance.limitations }
       : {}),
   }
@@ -174,7 +182,7 @@ async function otherListing(etsyListingId: string): Promise<ListingIntelligence>
   return {
     etsyListingId,
     title: 'Listing on another shop',
-    shopName: competitor.name,
+    shopName: competitor?.name ?? 'Another shop',
     isOwnListing: false,
     /*
      * No health score for someone else's listing. The audit weighs rules

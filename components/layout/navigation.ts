@@ -63,9 +63,9 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Research',
     items: [
       { label: 'Keywords', href: '/research/keywords' },
-      { label: 'Opportunities', href: '/research/opportunities', unbuilt: true },
-      { label: 'Niche Research', href: '/research/niche', unbuilt: true },
-      { label: 'Competitors', href: '/research/competitors', unbuilt: true },
+      { label: 'Opportunities', href: '/research/opportunities' },
+      { label: 'Niche Research', href: '/research/niche' },
+      { label: 'Competitors', href: '/research/competitors' },
       { label: 'Keyword Lists', href: '/research/keyword-lists' },
     ],
   },
@@ -99,7 +99,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: 'Ads ROI Calculator', href: '/tools/ads-roi' },
       { label: 'Profit Calculator', href: '/tools/profit-calculator' },
       { label: 'Category Finder', href: '/tools/category-finder', unbuilt: true },
-      { label: 'Seasonal Calendar', href: '/tools/seasonal-calendar', unbuilt: true },
+      { label: 'Seasonal Calendar', href: '/tools/seasonal-calendar' },
       { label: 'Trademark Screening', href: '/tools/trademark-screening', unbuilt: true },
     ],
   },
@@ -156,7 +156,7 @@ export const SETTINGS_NAV: NavGroup[] = [
     items: [
       { label: 'Profile', href: '/settings/profile' },
       { label: 'Security', href: '/settings/security' },
-      { label: 'Notifications', href: '/settings/notifications', unbuilt: true },
+      { label: 'Notifications', href: '/settings/notifications' },
       { label: 'Billing & plan', href: '/billing' },
     ],
   },
@@ -164,7 +164,7 @@ export const SETTINGS_NAV: NavGroup[] = [
     label: 'Shops & data',
     items: [
       { label: 'Shop connections', href: '/settings/shops' },
-      { label: 'Data permissions', href: '/settings/data-permissions', unbuilt: true },
+      { label: 'Data permissions', href: '/settings/data-permissions' },
       { label: 'Audit log', href: '/settings/audit-log' },
       { label: 'Costs & fees', href: '/settings/costs' },
       /*
@@ -172,7 +172,7 @@ export const SETTINGS_NAV: NavGroup[] = [
        * It is on the artboard's settings rail (109), which is why it appears at
        * all; D21 is what stops it becoming a destination before it is one.
        */
-      { label: 'Integrations', href: '/settings/integrations', unbuilt: true },
+      { label: 'Integrations', href: '/settings/integrations' },
       { label: 'Browser extension', href: '/settings/extension' },
       { label: 'Data export & deletion', href: '/settings/export' },
     ],

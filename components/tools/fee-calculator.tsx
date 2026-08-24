@@ -102,7 +102,7 @@ export function FeeCalculator() {
             type="checkbox"
             checked={offsiteAd}
             onChange={(e) => setOffsiteAd(e.target.checked)}
-            className="h-4 w-4 accent-[var(--brand)]"
+            className="h-6 w-6 accent-[var(--brand)]"
           />
           <span className="text-small text-ink-2">This sale came from an Etsy ad</span>
         </label>

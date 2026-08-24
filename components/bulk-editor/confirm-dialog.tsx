@@ -89,7 +89,7 @@ export function ConfirmDialog({
             type="checkbox"
             checked={acknowledged}
             onChange={(e) => setAcknowledged(e.target.checked)}
-            className="mt-0.5 h-4 w-4 accent-[var(--brand)]"
+            className="mt-0.5 h-6 w-6 accent-[var(--brand)]"
           />
           <span className="text-small text-ink-2">
             I understand this updates {count} live Etsy listing{count === 1 ? '' : 's'}.

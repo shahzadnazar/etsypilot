@@ -102,7 +102,7 @@ export function BulkEditorWizard({
                   type="checkbox"
                   checked={skipBelowCostFloor}
                   onChange={(e) => setSkipBelowCostFloor(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 accent-[var(--brand)]"
+                  className="mt-0.5 h-6 w-6 accent-[var(--brand)]"
                 />
                 Skip listings that would fall below my cost floor
               </label>

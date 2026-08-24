@@ -3373,3 +3373,104 @@ the overlap.
 Without it, a group event is invisible to anything asking "did something else
 happen to these listings?" — which is exactly the question this screen exists to
 ask.
+
+### D79 — The last of the SOON screens
+
+Opportunities (21), Competitors (34), Niche research (102), Seasonal calendar
+(99), Notifications (74–75, 104), Data permissions (72–73) and Integrations.
+Every SOON in the navigation is gone except the two held on purpose.
+
+Three methods were added to `MarketSignalsService` rather than a new adapter:
+`findProducts`, `listCompetitors` and `getNiche`. The seam is the same one
+Keywords already uses, and it stays out of `EtsyService` for the reason that
+interface's comment gives — putting modelled figures behind the Etsy adapter
+makes them look like Etsy data one refactor later.
+
+### D79a — `getCompetitor` answered any string with the same figures
+
+It returned one hard-coded shop whatever name it was handed, so a typo produced
+a confident profile — median price, review velocity, revenue band — for a shop
+that does not exist. It returns `CompetitorShop | null` now, and the page has a
+state for "not observed".
+
+Revenue is derived from the sales range and the observed median price rather
+than written beside them, so the two cannot drift apart.
+
+### D79b — A sales floor belongs on the bottom of the range
+
+"Est. sales 30+" has to mean *at least 30 even on the pessimistic reading*.
+Applied to the upper bound, a 5–40 band passes a filter the seller set to
+exclude exactly that. A product the model cannot size is excluded rather than
+kept: the filter asks for a number, and "unknown" is not one.
+
+The matching sort rule is subtler and worth stating. Unmodelled rows sort last
+under **estimate-keyed** orders (opportunity, revenue) because a row with no
+estimate cannot be ranked by one — sorting it as zero would say it is the worst,
+which is a claim nobody made. Under **observation-keyed** orders (age, reviews)
+they rank normally. NEWEST is what makes the distinction necessary: the newest
+listings are exactly the ones too new to model, and pinning them to the bottom
+would empty the one order they should lead.
+
+### D79c — Niche research states conditions, never a recommendation
+
+EtsyPilot will not tell a seller to enter a niche. A recommendation is a claim
+about a future this product cannot see; a condition is a statement about the
+figures on the screen. So each one carries a number that came off this page and
+names the figure it came from, and a test asserts every condition contains a
+digit and none of them says "you should".
+
+The cost ceiling is computed through the same fee engine the calculators use, so
+this figure and the Fee Calculator's cannot disagree.
+
+An unsampled term takes **everything** down together — demand, listings,
+crowding, price band, concentration and all four conditions. Crowding without
+demand, or a price band without listings, is a confident-looking row built on
+nothing.
+
+### D79d — The seasonal calendar measured lift over months the shop never lived through
+
+The demo shop has four months of order history. The first version divided
+orders-in-window by orders-outside-it without checking whether the window's
+months were inside that history at all, and reported a **"0.1× lift"** for a
+November window the shop has never seen. That is arithmetic on absence, and it
+reads as a measured finding.
+
+A window's lift is now null unless the history covers at least half its months,
+and such a window can never rate better than LOW confidence whatever the order
+count elsewhere in the year says.
+
+This is why the screen could ship on thin history at all, exactly as the design
+argued: `basis` is required on every window, so a confidence with no reason
+behind it does not typecheck. All three demo windows read LOW and each says
+precisely why.
+
+### D79e — Every checkbox in the product was a 16px tap target
+
+The browser sweep found two, on `/settings/notifications`, and reported those
+two. All six in the codebase were 16×16 — the sweep only visits some routes at
+mobile width, and the bulk editor's sits three wizard steps behind a crawler.
+
+Fixing the two the sampler caught would have left the same defect in four
+places. `tests/unit/tap-targets.test.ts` reads every `<input type="checkbox">`
+in the source instead, because a source-level check sees the controls a crawler
+never reaches. Verified by breaking one deliberately.
+
+### D79f — Integrations had no artboard, so it was built from the adapters
+
+The one item on the settings rail with nothing drawn behind it. Rather than
+invent a layout, it renders the same source list Data Sources uses, each row's
+status read from its own adapter at request time.
+
+That constraint is what makes the page honest: a row exists because an adapter
+exists. There is no seed list of "integrations coming soon" to go stale.
+
+### D79g — What stays SOON, and why
+
+**Category Finder** needs Etsy's category taxonomy and its per-category required
+attributes, which Etsy publishes through the API only for a connected shop.
+**Trademark Screening** needs a trademark register. Neither is a matter of build
+time, and a screening tool that guessed would let a seller read a clear result
+and use a registered mark — worse than having no tool at all.
+
+Both remain listed and unlinked. The roadmap is not a secret; pretending to be a
+destination was the dishonest half.

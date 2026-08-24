@@ -92,11 +92,85 @@ export interface CompetitorShop {
   observedAt: string
 }
 
+/*
+ * A product observed on the marketplace (artboard 21).
+ *
+ * Everything publicly visible — title, shop, price, reviews, favourites, age —
+ * is a plain value, because it is observation rather than estimation. Sales and
+ * revenue are Provenanced<EstimatedRange> for the same reason every other
+ * modelled figure is: a range cannot be rendered as a single confident number
+ * by accident.
+ *
+ * `opportunity` is null wherever sales are unavailable. A score computed over a
+ * missing input is a number invented to fill a column.
+ */
+export interface ProductSignals {
+  id: string
+  title: string
+  shop: string
+  /** "Jewelry · Necklaces · personalized" — as the marketplace files it. */
+  category: string
+  price: number
+  reviews: number
+  favorites: number
+  /** Months since the listing first appeared in observation. */
+  ageMonths: number
+  digital: boolean
+  monthlySales: Provenanced<EstimatedRange>
+  monthlyRevenue: Provenanced<EstimatedRange>
+  opportunity: Provenanced<number> | null
+  observedAt: string
+}
+
+/** What the Opportunities screen can filter on, all optional. */
+export interface ProductQuery {
+  term: string
+  market: string
+  minPrice?: number
+  maxPrice?: number
+  /** Minimum modelled monthly sales, applied to the range's LOWER bound. */
+  minSales?: number
+  maxAgeMonths?: number
+  digital?: boolean
+}
+
+/** A sub-segment of a niche (artboard 102). */
+export interface SubNiche {
+  name: string
+  demand: Provenanced<EstimatedRange>
+  listings: number
+  priceBand: Provenanced<EstimatedRange> | null
+  crowding: Provenanced<CompetitionBand> | null
+}
+
+export interface NicheSignals {
+  term: string
+  market: string
+  demand: Provenanced<EstimatedRange>
+  /** Listings observed, with the sampling error stated. */
+  listings: Provenanced<number>
+  /** Listings per search. CALCULATED from the two above. */
+  crowding: Provenanced<CompetitionBand> | null
+  /** Middle 50% of observed listing prices. */
+  priceBand: Provenanced<EstimatedRange> | null
+  /** Top ten shops' share of observed listings, 0-100. */
+  concentration: Provenanced<number> | null
+  history: TrendPoint[]
+  subNiches: SubNiche[]
+  observedAt: string
+}
+
 export interface MarketSignalsService {
   readonly mode: 'MOCK' | 'LIVE'
   getKeyword(term: string, market: string): Promise<KeywordSignals>
   getRelated(term: string, market: string): Promise<RelatedTerm[]>
-  getCompetitor(shopName: string): Promise<CompetitorShop>
+  getCompetitor(shopName: string): Promise<CompetitorShop | null>
+  /** Shops this account is tracking. Observation only — no private data. */
+  listCompetitors(): Promise<CompetitorShop[]>
+  /** Products matching a query. Empty is a real answer, not an error. */
+  findProducts(query: ProductQuery): Promise<ProductSignals[]>
+  /** Whether a niche is worth entering. Every figure is modelled. */
+  getNiche(term: string, market: string): Promise<NicheSignals>
   /** Terms the model has enough observation to report on at all. */
   suggest(prefix: string, market: string): Promise<string[]>
 }

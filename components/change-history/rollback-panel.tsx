@@ -114,7 +114,7 @@ export function RollbackPanel({ view }: { view: ChangeHistoryView }) {
               name="acknowledge"
               value="yes"
               required
-              className="mt-0.5 h-4 w-4 shrink-0 accent-[color:var(--brand)]"
+              className="mt-0.5 h-6 w-6 shrink-0 accent-[color:var(--brand)]"
             />
             <span>
               I understand{' '}

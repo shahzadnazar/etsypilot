@@ -69,7 +69,10 @@ with sync_playwright() as p:
               "/settings/costs", "/settings/audit-log", "/settings/profile", "/listings",
               "/settings/security", "/data/sources", "/data/methodology",
               "/listings/change-history", "/analytics", "/analytics/sales-map",
-              "/analytics/experiments",
+              "/analytics/experiments", "/research/opportunities",
+              "/research/competitors", "/research/niche", "/tools/seasonal-calendar",
+              "/settings/notifications", "/settings/data-permissions",
+              "/settings/integrations",
               "/tools", "/action-center", "/onboarding"]
     broke = []
     for route in ROUTES:
@@ -168,6 +171,14 @@ with sync_playwright() as p:
     check("No orders in this period" in smap, "The sales map says what is missing")
     check("other regions" not in smap,
           "...and does not print a suppressed-regions row with nothing in it")
+
+    # --- a calendar with no history behind it ------------------------------
+    pg.goto(f"{BASE}/tools/seasonal-calendar", wait_until="load"); pg.wait_for_timeout(400)
+    cal = pg.locator("main").inner_text()
+    check("No seasonal windows yet" in cal,
+          "The seasonal calendar draws no windows with nothing to draw them from")
+    check("High confidence" not in cal,
+          "...and claims no confidence it has not earned")
     # --- and every empty state points somewhere ----------------------------
     # rules.md section 12: never fail silently. An empty state that does not say
     # what to do next is a dead end with better typography.

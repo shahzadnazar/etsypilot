@@ -75,8 +75,6 @@ const TOOL_DETAIL: Record<string, { detail: string; needs: string }> = {
 const BLOCKED_BY: Record<string, string> = {
   'Category Finder':
     'Needs Etsy’s category taxonomy and its per-category required attributes. Etsy publishes these through the API only for a connected shop, so this arrives with live mode.',
-  'Seasonal Calendar':
-    'Needs several years of category demand history. EtsyPilot models demand from public signals sampled weekly and has been sampling for months, not years — a seasonal claim on this much data would be a guess with a chart around it.',
   'Trademark Screening':
     'Needs a trademark register. Not a matter of build time: a screening tool that guessed would let a seller read a clear result and use a registered mark, which is worse than having no tool at all.',
 }
