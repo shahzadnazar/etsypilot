@@ -1,11 +1,11 @@
 /*
- * Subscription lifecycle: upgrade, downgrade, cancel, resume, refund.
+ * Subscription lifecycle: upgrade, downgrade, cancel, resume.
  *
  * Phase 8's acceptance criterion is "billing is transparent and has no dark
  * patterns". That is a claim about behaviour, so this file tries to make the
  * behaviour impossible to get wrong rather than merely documented.
  *
- * Four guarantees, each enforced by something other than good intentions:
+ * Three guarantees, each enforced by something other than good intentions:
  *
  *  1. CANCELLING IS NEVER HARDER THAN SUBSCRIBING.
  *     Both flows are declared as step lists, and the module refuses to load if
@@ -21,14 +21,14 @@
  *     `downgradeEffects` enumerates what pauses. There is no delete anywhere in
  *     the billing domain to enumerate.
  *
- *  4. THE REFUND WINDOW IS COMPUTED, NEVER STATED.
- *     From the charge date, so a seller reading "3 days left" can check it
- *     against the invoice line above.
+ * There is no fourth guarantee about refunds, because there are no refunds.
+ * This product does not refund a subscription charge, and the honest way to
+ * hold that is CANCELLATION_TERMS on the billing screen — not a window that
+ * exists in the code and nowhere the seller can reach.
  */
 
-import { disclose, type DisclosedCharge, type Invoice, type Subscription } from '@/lib/billing/interface'
-import { Errors } from '@/lib/errors/types'
-import { planOf, REFUND_WINDOW_DAYS, type Plan, type PlanKey } from './plans'
+import { disclose, type DisclosedCharge, type Subscription } from '@/lib/billing/interface'
+import { planOf, type Plan, type PlanKey } from './plans'
 
 /* ------------------------------------------------------- flow symmetry (1) */
 
@@ -150,11 +150,8 @@ export function planChange(args: {
         `${fromPlan.name} → ${toPlan.name}, effective today`,
         `$${difference} per month more, charged for the ${days} days left in this period — $${amountDue.toFixed(2)} today, not a full month`,
         `Your next full charge is $${toPlan.priceMonthly} on ${subscription.currentPeriodEnd}`,
+        'This charge is not refundable. Downgrading later stops the next renewal and keeps this period.',
       ],
-      refundWindow: {
-        days: REFUND_WINDOW_DAYS,
-        until: addDays(today, REFUND_WINDOW_DAYS),
-      },
     }),
     gains: toPlan.includes.filter((line) => !fromPlan.includes.includes(line)),
     pauses: [],
@@ -211,82 +208,23 @@ export function downgradeEffects(from: Plan, to: Plan): string[] {
 export interface Cancellation {
   /** Access continues to here. Cancelling never takes the paid period away. */
   accessUntil: string
-  /** Refundable right now, if any, computed from the last charge. */
-  refundable: RefundEligibility | null
   effects: string[]
   /** Always available, at the same cost as cancelling: one click. */
   resumeLabel: string
 }
 
-export function planCancellation(args: {
-  subscription: Subscription
-  invoices: Invoice[]
-  today: string
-}): Cancellation {
-  const { subscription, invoices, today } = args
+export function planCancellation(args: { subscription: Subscription }): Cancellation {
+  const { subscription } = args
 
   return {
     accessUntil: subscription.currentPeriodEnd,
-    refundable: refundEligibility(invoices, today),
     effects: [
       `You keep everything until ${subscription.currentPeriodEnd} — the period you have already paid for.`,
       'After that your account moves to Free. Your shop data, history and exports stay.',
       'Nothing is deleted by cancelling, now or later.',
+      'The charge for this period is not refunded. Cancelling stops the next one.',
     ],
     resumeLabel: 'Resume plan',
-  }
-}
-
-/* --------------------------------------------------------- refunds (4) */
-
-export interface RefundEligibility {
-  invoiceId: string
-  amount: number
-  currency: string
-  chargedOn: string
-  /** Computed from the charge date, so the seller can check it themselves. */
-  daysLeft: number
-  until: string
-}
-
-/**
- * The most recent paid charge, if it is still inside the refund window.
- *
- * Returns null rather than a zero-day eligibility: "not refundable" and
- * "refundable for zero more days" are different statements and only one of them
- * is true.
- */
-export function refundEligibility(invoices: Invoice[], today: string): RefundEligibility | null {
-  const paid = invoices
-    .filter((i) => i.kind === 'CHARGE' && i.status === 'PAID')
-    .sort((a, b) => b.date.localeCompare(a.date))
-  const latest = paid[0]
-  if (!latest) return null
-
-  const alreadyRefunded = invoices.some((i) => i.kind === 'REFUND' && i.id === `rf_${latest.id}`)
-  if (alreadyRefunded) return null
-
-  const elapsed = daysBetween(latest.date, today)
-  const daysLeft = REFUND_WINDOW_DAYS - elapsed
-  if (daysLeft <= 0) return null
-
-  return {
-    invoiceId: latest.id,
-    amount: latest.amount,
-    currency: latest.currency,
-    chargedOn: latest.date,
-    daysLeft,
-    until: addDays(latest.date, REFUND_WINDOW_DAYS),
-  }
-}
-
-export function assertRefundable(invoices: Invoice[], invoiceId: string, today: string): void {
-  const eligibility = refundEligibility(invoices, today)
-  if (!eligibility || eligibility.invoiceId !== invoiceId) {
-    throw Errors.validation(
-      'That charge is outside the refund window.',
-      `Refunds are available for ${REFUND_WINDOW_DAYS} days from the charge. Cancelling still stops the next renewal, and the current period runs to its end.`,
-    )
   }
 }
 

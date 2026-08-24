@@ -4,8 +4,7 @@
  * A form on any website can POST to this app, and the browser attaches the
  * seller's cookies. Verified before this existed: a POST to
  * /api/billing/cancel carrying `Origin: https://evil.example` returned 303 —
- * a successful cancellation. Also /resume, /change/[plan] and
- * /refund/[invoiceId].
+ * a successful cancellation. Also /resume and /change/[plan].
  *
  * It was not exploitable at the time, for a reason that is not a defence:
  * demo mode returns a fixed session and reads no auth cookie, so there was no

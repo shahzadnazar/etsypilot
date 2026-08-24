@@ -2,9 +2,9 @@
  * Billing view.
  *
  * Reads the subscription and the ledger through the provider seam, counts usage
- * from the shop, and computes everything else — the trial countdown, the refund
- * window, the proration, the plan-change effects. Nothing on this screen is a
- * constant that could drift away from what the seller was actually charged.
+ * from the shop, and computes everything else — the trial countdown, the
+ * proration, the plan-change effects. Nothing on this screen is a constant that
+ * could drift away from what the seller was actually charged.
  *
  * Two usage meters only, Listings and AI generations (D22 consequence 1).
  * Connected shops and Team seats came out with multi-user: a meter for a
@@ -21,11 +21,10 @@ import {
   AGENCY_NOTE,
   DEMO_PLAN,
   LIMIT_POLICY,
+  CANCELLATION_TERMS,
   PLANS,
   planOf,
   nextPlanAfter,
-  REFUND_TERMS,
-  REFUND_WINDOW_DAYS,
   TRIAL_TERMS,
   type Plan,
   type PlanKey,
@@ -33,14 +32,11 @@ import {
 import {
   CANCEL_FLOW,
   SUBSCRIBE_FLOW,
-  assertRefundable,
   planCancellation,
   planChange,
-  refundEligibility,
   trialState,
   type Cancellation,
   type PlanChange,
-  type RefundEligibility,
   type TrialState,
 } from './lifecycle'
 import { buildMeters, enforce, pressureWarning, type LimitDecision, type MetricKey, type UsageMeter } from './usage'
@@ -57,14 +53,12 @@ export interface BillingView {
   pressure: UsageMeter | null
   invoices: Invoice[]
   trial: TrialState | null
-  refundable: RefundEligibility | null
   cancellation: Cancellation
   /** One entry per other plan, priced and explained. */
   changes: PlanChange[]
   agencyNote: string
   limitPolicy: string
-  refundTerms: string
-  refundWindowDays: number
+  cancellationTerms: string
   trialTerms: typeof TRIAL_TERMS
   currency: string
   /** Rendered on the page so the symmetry is visible, not just true. */
@@ -103,8 +97,7 @@ export async function getBillingView(ctx: ShopContext): Promise<BillingView> {
     pressure: pressureWarning(meters),
     invoices,
     trial: trialState(subscription, today),
-    refundable: refundEligibility(invoices, today),
-    cancellation: planCancellation({ subscription, invoices, today }),
+    cancellation: planCancellation({ subscription }),
     changes: PLANS.filter((p) => p.key !== subscription.plan).map((p) =>
       planChange({
         from: subscription.plan,
@@ -116,8 +109,7 @@ export async function getBillingView(ctx: ShopContext): Promise<BillingView> {
     ),
     agencyNote: AGENCY_NOTE,
     limitPolicy: LIMIT_POLICY,
-    refundTerms: REFUND_TERMS,
-    refundWindowDays: REFUND_WINDOW_DAYS,
+    cancellationTerms: CANCELLATION_TERMS,
     trialTerms: TRIAL_TERMS,
     currency: shop.currency,
     flows: { subscribe: SUBSCRIBE_FLOW, cancel: CANCEL_FLOW },
@@ -138,7 +130,7 @@ export async function getBillingView(ctx: ShopContext): Promise<BillingView> {
  * Blocking it made the cancellation flow unwalkable, which matters because
  * "cancelling is one click" is this phase's central promise and an unwalkable
  * promise is an unverifiable one. It also failed with "Demo mode cannot publish
- * to Etsy", which is not what a refund request does.
+ * to Etsy", which is not what cancelling a subscription does.
  *
  * So the invariant is stated where it actually bites: a read-only context may
  * never reach a LIVE provider. The adapter selector already refuses to build one
@@ -189,16 +181,6 @@ export async function resumePlan(ctx: ShopContext): Promise<Subscription> {
   const billing = getBillingProvider()
   assertBillingWritable(ctx, billing)
   return billing.resume(ctx.shopId)
-}
-
-export async function requestRefund(ctx: ShopContext, invoiceId: string): Promise<Invoice> {
-  const billing = getBillingProvider()
-  assertBillingWritable(ctx, billing)
-  const invoices = await billing.listInvoices(ctx.shopId)
-  // Checked here as well as in the provider: the window is a product promise,
-  // not a provider capability.
-  assertRefundable(invoices, invoiceId, BILLING_NOW)
-  return billing.refund(ctx.shopId, invoiceId)
 }
 
 /**

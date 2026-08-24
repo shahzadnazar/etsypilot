@@ -1012,7 +1012,12 @@ with sync_playwright() as p:
     check("no retention call" in bill, "The page says there is no retention call")
     check("Cancelling takes 1 step" in bill and "subscribing takes 2" in bill,
           "The page prints both step counts so the symmetry is visible")
-    check("email" not in bill.lower().split("refunds and cancellation")[-1][:400],
+    # Anchored on the heading that is actually rendered. When this said
+    # "refunds and cancellation" and the heading became "Cancellation", the
+    # split found nothing, returned the whole page, and silently measured its
+    # first 400 characters instead — a check that had stopped checking.
+    check("cancellation" in bill.lower(), "The cancellation card is on the page")
+    check("email" not in bill.lower().split("cancellation")[-1][:400],
           "Cancelling never asks the seller to send an email")
 
     # Every plan change prices itself before its button.
@@ -1023,10 +1028,15 @@ with sync_playwright() as p:
     check("nothing is removed for you" in bill,
           "The listing cap says the seller chooses what to remove")
 
-    # Refunds are self-serve with a computed window.
-    check("more days" in bill, "The refund window shows days remaining, computed")
-    check(pg.get_by_role("button", name="Request refund").count() == 1,
-          "Requesting a refund is a button, not an email address")
+    # There are no refunds, and the page says so rather than staying quiet.
+    # An unstated "no refunds" is a dark pattern too — the seller finds out
+    # after cancelling, which is exactly the moment it is no use to them.
+    check("not refunded" in bill.lower(),
+          "The billing page states that charges are not refunded")
+    check(pg.get_by_role("button", name="Request refund").count() == 0,
+          "No refund control, because there is no refund")
+    check("refundable" not in bill.lower().replace("not refundable", ""),
+          "Nothing on the page offers a refund window")
 
     # A declined charge stays in the history.
     check("Card declined" in bill, "A failed payment is shown, not hidden")

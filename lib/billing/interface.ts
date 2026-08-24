@@ -5,7 +5,7 @@
  * credentials, and a Stripe implementation selected by env. Nothing above this
  * file knows which is running.
  *
- * Two absences are deliberate and load-bearing:
+ * Three absences are deliberate and load-bearing:
  *
  *   1. There is no `charge()` that takes an amount. The only charging method
  *      takes a DisclosedCharge — a branded type produced solely by disclosing
@@ -16,6 +16,10 @@
  *   2. There is no `deleteShopData()` and no delete of any kind on a plan
  *      change. Downgrading keeps your data. A function that could remove it
  *      would make that promise a convention rather than a fact.
+ *
+ *   3. There is no `refund()`. Subscription charges are not refunded, and the
+ *      billing screen says so in one sentence. No method, no invoice kind, no
+ *      REFUNDED status — a capability nothing can reach is not a capability.
  *
  * Secrets never leave the server. The Stripe implementation reads its key from
  * process.env at call time and this interface has no field that could carry one
@@ -47,15 +51,21 @@ export interface Subscription {
   cancelledOn: string | null
 }
 
-export type InvoiceStatus = 'PAID' | 'REFUNDED' | 'DECLINED' | 'OPEN'
+export type InvoiceStatus = 'PAID' | 'DECLINED' | 'OPEN'
 
 export interface Invoice {
   id: string
   date: string
   description: string
-  /** Always positive. `kind` says which direction it went. */
+  /**
+   * Always positive, and always money taken.
+   *
+   * There is no direction field, because there is only one direction. This
+   * used to carry `kind: 'CHARGE' | 'REFUND'` beside a REFUNDED status; with
+   * subscription refunds removed nothing can produce either, and a ledger that
+   * can still render a credit it can never issue is a screen waiting to lie.
+   */
   amount: number
-  kind: 'CHARGE' | 'REFUND'
   status: InvoiceStatus
   /** Null where no receipt exists — a declined charge has none. */
   receiptUrl: string | null
@@ -79,14 +89,14 @@ export interface ChargeDisclosure {
   onDate: string
   /** Plain-language account of what changes, shown verbatim. */
   whatChanges: string[]
-  /** What the seller gets back if they change their mind, and by when. */
-  refundWindow: { days: number; until: string }
 }
 
 export type DisclosedCharge = ChargeDisclosure & { readonly [disclosed]: true }
 
 export function disclose(args: ChargeDisclosure): DisclosedCharge {
-  if (args.amountDue < 0) throw new Error('A charge cannot be negative. Refunds go through refund().')
+  if (args.amountDue < 0) {
+    throw new Error('A charge cannot be negative. There is no path in this domain that returns money.')
+  }
   if (args.whatChanges.length === 0) {
     throw new Error('A charge must state what changes. An unexplained charge is not disclosed.')
   }
@@ -117,8 +127,11 @@ export interface BillingProvider {
 
   changePlan(shopId: string, plan: PlanKey, charge: DisclosedCharge | null): Promise<Subscription>
 
-  /** Self-serve within the refund window. Returns the refund invoice line. */
-  refund(shopId: string, invoiceId: string): Promise<Invoice>
+  /*
+   * There is deliberately no refund(). See the Invoice comment above: this
+   * product does not refund a subscription charge, and the absence of the
+   * method is what makes that true rather than a paragraph of terms.
+   */
 
   /**
    * Verify a webhook signature and parse the event.

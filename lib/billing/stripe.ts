@@ -90,12 +90,6 @@ export class StripeBillingProvider implements BillingProvider {
     throw notWired()
   }
 
-  async refund(shopId: string, invoiceId: string): Promise<Invoice> {
-    void shopId
-    void invoiceId
-    throw Errors.validation('Live billing is not wired yet.', 'Demo mode is unaffected.')
-  }
-
   /**
    * Verify `Stripe-Signature` over the raw body.
    *

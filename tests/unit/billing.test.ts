@@ -1,23 +1,24 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createHmac } from 'node:crypto'
+import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import * as lifecycle from '@/domain/billing/lifecycle'
 import {
   CANCEL_FLOW,
   SUBSCRIBE_FLOW,
   addDays,
-  assertRefundable,
   classifyChange,
   daysBetween,
   downgradeEffects,
   planCancellation,
   planChange,
-  refundEligibility,
   trialState,
 } from '@/domain/billing/lifecycle'
-import { planOf, PLANS, REFUND_WINDOW_DAYS } from '@/domain/billing/plans'
+import { CANCELLATION_TERMS, planOf, PLANS } from '@/domain/billing/plans'
 import { buildMeters, enforce, pressureWarning } from '@/domain/billing/usage'
 import { HANDLED_EVENTS, billingAuditEvent, handleWebhook } from '@/domain/billing/webhooks'
 import { disclose } from '@/lib/billing/interface'
-import type { Invoice, Subscription } from '@/lib/billing/interface'
+import type { Subscription } from '@/lib/billing/interface'
 import {
   BILLING_NOW,
   MockBillingProvider,
@@ -25,7 +26,6 @@ import {
   resetMockBilling,
 } from '@/lib/billing/mock'
 import { verifyStripeSignature } from '@/lib/billing/signature'
-import { AppError } from '@/lib/errors/types'
 
 const SHOP = 'shop_test'
 
@@ -39,20 +39,6 @@ const SUB: Subscription = {
   trialEndsOn: null,
   paymentMethod: { brand: 'Visa', last4: '4242' },
   cancelledOn: null,
-}
-
-function invoice(over: Partial<Invoice> = {}): Invoice {
-  return {
-    id: 'in_1',
-    date: '2026-08-12',
-    description: 'Solo · monthly',
-    amount: 15,
-    kind: 'CHARGE',
-    status: 'PAID',
-    receiptUrl: '/r/in_1',
-    currency: 'USD',
-    ...over,
-  }
 }
 
 beforeEach(() => {
@@ -81,7 +67,7 @@ describe('leaving is never harder than joining', () => {
   })
 
   it('keeps the paid period and deletes nothing', () => {
-    const plan = planCancellation({ subscription: SUB, invoices: [invoice()], today: BILLING_NOW })
+    const plan = planCancellation({ subscription: SUB })
     expect(plan.accessUntil).toBe(SUB.currentPeriodEnd)
     expect(plan.effects.join(' ')).toContain('Nothing is deleted')
     expect(plan.effects.join(' ')).toContain('moves to Free')
@@ -96,24 +82,22 @@ describe('no charge without disclosure', () => {
         currency: 'USD',
         onDate: '2026-08-20',
         whatChanges: [],
-        refundWindow: { days: 14, until: '2026-09-03' },
       }),
     ).toThrow(/what changes/)
   })
 
-  it('refuses a negative charge rather than treating it as a refund', () => {
+  it('refuses a negative charge rather than quietly returning money', () => {
     expect(() =>
       disclose({
         amountDue: -5,
         currency: 'USD',
         onDate: '2026-08-20',
         whatChanges: ['x'],
-        refundWindow: { days: 14, until: '2026-09-03' },
       }),
     ).toThrow(/negative/)
   })
 
-  it('states the amount, the date, the proration and the refund window on an upgrade', () => {
+  it('states the amount, the date, the proration and the no-refund term on an upgrade', () => {
     const change = planChange({
       from: 'SOLO',
       to: 'GROWTH',
@@ -132,7 +116,14 @@ describe('no charge without disclosure', () => {
     expect(charge.whatChanges.join(' ')).toContain('10 days left')
     expect(charge.whatChanges.join(' ')).toContain('not a full month')
     expect(charge.whatChanges.join(' ')).toContain('$29 on 2026-08-31')
-    expect(charge.refundWindow.days).toBe(REFUND_WINDOW_DAYS)
+    /*
+     * The disclosure carries the refund term because the seller is agreeing to
+     * a charge, and "not refundable" is part of what they are agreeing to. It
+     * used to carry a refundWindow object instead; removing the feature without
+     * replacing this line would have quietly dropped the fact from the one
+     * screen where money changes hands.
+     */
+    expect(charge.whatChanges.join(' ')).toContain('not refundable')
   })
 
   it('charges nothing on a downgrade and says what happens instead', () => {
@@ -179,49 +170,59 @@ describe('a downgrade pauses, it never deletes', () => {
   })
 })
 
-/* ----------------------------------------------------------------- refunds */
+/* -------------------------------------------------------- refunds: absent */
 
-describe('the refund window is computed, never stated', () => {
-  it('offers a refund inside the window with the days left derived from the charge', () => {
-    const eligibility = refundEligibility([invoice({ date: '2026-08-12' })], '2026-08-20')
-    expect(eligibility).not.toBeNull()
-    expect(eligibility!.daysLeft).toBe(REFUND_WINDOW_DAYS - 8)
-    expect(eligibility!.until).toBe(addDays('2026-08-12', REFUND_WINDOW_DAYS))
+/*
+ * These are absence checks, and an absence check that cannot fail is worthless.
+ * Each one names something a reintroduced refund feature would have to bring
+ * back: an exported eligibility function, a provider method, a route file, a
+ * button on the page. Every assertion below fails the moment one reappears.
+ *
+ * The last check is the opposite kind and the important one: the policy has to
+ * be STATED. Deleting the feature and saying nothing would leave a seller to
+ * discover after cancelling that this period's charge does not come back, which
+ * is the dark pattern the removal was supposed to avoid, wearing a new hat.
+ */
+describe('subscription charges are not refunded, and nothing pretends otherwise', () => {
+  const root = join(__dirname, '..', '..')
+
+  it('exports no refund eligibility or assertion from the lifecycle domain', () => {
+    expect(Object.keys(lifecycle)).not.toContain('refundEligibility')
+    expect(Object.keys(lifecycle)).not.toContain('assertRefundable')
   })
 
-  it('returns null outside the window rather than zero days left', () => {
-    // "Not refundable" and "refundable for zero more days" are different claims.
-    expect(refundEligibility([invoice({ date: '2026-07-01' })], '2026-08-20')).toBeNull()
+  it('gives the billing provider no way to move money back', () => {
+    const provider = new MockBillingProvider()
+    expect('refund' in provider).toBe(false)
+    expect(Object.getOwnPropertyNames(MockBillingProvider.prototype)).not.toContain('refund')
   })
 
-  it('ignores a declined charge — no money moved, so none returns', () => {
-    expect(refundEligibility([invoice({ status: 'DECLINED' })], '2026-08-13')).toBeNull()
+  it('serves no refund route', () => {
+    expect(existsSync(join(root, 'app/api/billing/refund'))).toBe(false)
   })
 
-  it('does not offer the same charge twice', () => {
-    const charge = invoice({ id: 'in_9', date: '2026-08-18' })
-    const refunded = invoice({ id: 'rf_in_9', kind: 'REFUND', status: 'REFUNDED', date: '2026-08-19' })
-    expect(refundEligibility([charge, refunded], '2026-08-20')).toBeNull()
+  it('renders no refund control on the billing page', () => {
+    const page = readFileSync(join(root, 'app/(dashboard)/billing/page.tsx'), 'utf8')
+    expect(page).not.toContain('Request refund')
+    expect(page).not.toContain('/api/billing/refund')
   })
 
-  it('refuses a refund outside the window and says what still works', () => {
-    try {
-      assertRefundable([invoice({ date: '2026-07-01' })], 'in_1', '2026-08-20')
-      throw new Error('should have thrown')
-    } catch (error) {
-      expect(error).toBeInstanceOf(AppError)
-      expect((error as AppError).recovery).toContain('stops the next renewal')
+  it('issues no invoice the ledger would have to render as a credit', async () => {
+    const ledger = await new MockBillingProvider().listInvoices(SHOP)
+    expect(ledger.length).toBeGreaterThan(0)
+    for (const line of ledger) {
+      expect(line.amount).toBeGreaterThanOrEqual(0)
+      expect(line.status).not.toBe('REFUNDED')
     }
   })
 
-  it('actually issues the refund through the provider', async () => {
-    const provider = new MockBillingProvider()
-    const refund = await provider.refund(SHOP, 'in_2026_08')
-    expect(refund.kind).toBe('REFUND')
-    expect(refund.amount).toBe(15)
+  it('states the policy instead of leaving it as an absence', () => {
+    expect(CANCELLATION_TERMS).toMatch(/not refunded/)
+    // And the fair half, so the sentence is a policy rather than a warning.
+    expect(CANCELLATION_TERMS).toContain('already paid for')
 
-    const ledger = await provider.listInvoices(SHOP)
-    expect(ledger[0]?.id).toBe('rf_in_2026_08')
+    const cancellation = planCancellation({ subscription: SUB })
+    expect(cancellation.effects.join(' ')).toContain('not refunded')
   })
 })
 
@@ -408,17 +409,32 @@ describe('webhooks are verified, idempotent and allow-listed', () => {
 
   it('writes an audit line for anything it applied, with no invented actor', () => {
     const outcome = handleWebhook(
-      { id: 'evt_ref', type: 'charge.refunded', payload: {}, receivedAt: BILLING_NOW },
+      { id: 'evt_sub', type: 'customer.subscription.updated', payload: {}, receivedAt: BILLING_NOW },
       SHOP,
     )
-    const audit = billingAuditEvent({ eventId: 'evt_ref', shopId: SHOP, outcome, now: '2026-08-20T00:00:00.000Z' })
+    const audit = billingAuditEvent({ eventId: 'evt_sub', shopId: SHOP, outcome, now: '2026-08-20T00:00:00.000Z' })
     expect(audit).not.toBeNull()
     expect(audit!.actorId).toBeNull()
     expect(audit!.source).toBe('SYSTEM')
   })
 
-  it('acts on exactly the five event types it lists', () => {
-    expect(HANDLED_EVENTS).toHaveLength(5)
+  it('acts on exactly the four event types it lists', () => {
+    expect(HANDLED_EVENTS).toHaveLength(4)
+  })
+
+  it('ignores an inbound refund event rather than inventing a history line', () => {
+    /*
+     * Stripe can still send charge.refunded — a refund issued by hand in their
+     * dashboard, say. This product has no refund of its own, so it acknowledges
+     * the event and applies it to nothing rather than writing a billing-history
+     * row it cannot substantiate.
+     */
+    const outcome = handleWebhook(
+      { id: 'evt_ref', type: 'charge.refunded', payload: {}, receivedAt: BILLING_NOW },
+      SHOP,
+    )
+    expect(outcome.kind).toBe('IGNORED')
+    expect(billingAuditEvent({ eventId: 'evt_ref', shopId: SHOP, outcome, now: '2026-08-20T00:00:00.000Z' })).toBeNull()
   })
 })
 

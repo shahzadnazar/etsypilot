@@ -113,11 +113,19 @@ export const TRIAL_TERMS = {
     'No card on file. Nothing is charged when the trial ends — your account moves to Free and your data stays. Add a card only when you decide to continue.',
 } as const
 
-/** D17. The window is a number so it can be computed against, never restated. */
-export const REFUND_WINDOW_DAYS = 14
-
-export const REFUND_TERMS =
-  `Refunds within ${REFUND_WINDOW_DAYS} days of a charge, from this page. Cancel any time; access continues to the end of the paid period.`
+/**
+ * What happens when you stop paying, stated where the seller will read it.
+ *
+ * There is no refund. That is the whole policy, and it is written here in one
+ * sentence rather than left as an absence for a seller to discover after
+ * clicking Cancel — an unstated "no refunds" is a dark pattern whether or not
+ * anyone intended it as one.
+ *
+ * The second half is the part that makes it fair: cancelling never takes back
+ * the period already paid for.
+ */
+export const CANCELLATION_TERMS =
+  'Charges are not refunded. Cancel any time — access continues to the end of the period you have already paid for, and nothing is deleted when it ends.'
 
 /** What happens at a limit. Nothing is deleted, and the seller chooses. */
 export const LIMIT_POLICY =

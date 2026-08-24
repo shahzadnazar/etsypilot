@@ -5,7 +5,6 @@ import { BillingHistory } from '@/components/billing/billing-history'
 import { PlanCards } from '@/components/billing/plan-cards'
 import { UsageMeters } from '@/components/billing/usage-meters'
 import { Card } from '@/components/ui/card'
-import { Money, Numeric } from '@/components/ui/numeric'
 import { getBillingView } from '@/domain/billing/service'
 import { getSession } from '@/lib/auth'
 import { shopContext } from '@/lib/permissions'
@@ -16,8 +15,8 @@ export const metadata: Metadata = { title: 'Billing & plan' }
 /*
  * Dynamic, not prerendered.
  *
- * This page reads a subscription that the cancel, resume, refund and plan-change
- * routes mutate. Prerendered, it kept serving the state from build time: the
+ * This page reads a subscription that the cancel, resume and plan-change routes
+ * mutate. Prerendered, it kept serving the state from build time: the
  * routes returned 303, the ledger changed, and the screen showed the old plan —
  * a cancellation that silently appears not to work is worse than one that
  * refuses, which is the whole failure this phase exists to avoid.
@@ -36,8 +35,8 @@ export const dynamic = 'force-dynamic'
  *   - Every plan card prices its own change before its button, including the
  *     proration on an upgrade and the "nothing is charged, nothing is deleted"
  *     on a downgrade.
- *   - The refund control appears whenever a charge is inside its window, with
- *     the days remaining computed from the charge date above it.
+ *   - Charges are not refunded, and the card says so in a sentence rather than
+ *     leaving it as an absence for a seller to find out after cancelling.
  *   - Declined charges stay in the history.
  */
 export default async function BillingPage() {
@@ -64,9 +63,9 @@ export default async function BillingPage() {
       {view.isDemo ? (
         <Card className="mb-4 p-4 text-small leading-relaxed text-ink-2">
           <strong className="font-semibold text-ink-1">This is a demo subscription.</strong>{' '}
-          Cancelling, resuming, changing plan and requesting a refund all work here and are
-          reversible — they run against the demo billing service, so no card is charged and no real
-          money moves. The flows are real; the money is not.
+          Cancelling, resuming and changing plan all work here and are reversible — they run
+          against the demo billing service, so no card is charged and no real money moves. The
+          flows are real; the money is not.
         </Card>
       ) : null}
 
@@ -129,34 +128,14 @@ export default async function BillingPage() {
 
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
         <Card className="flex flex-col gap-3 p-[18px]">
-          <h2 className="text-section text-ink-1">Refunds and cancellation</h2>
+          <h2 className="text-section text-ink-1">Cancellation</h2>
 
-          {view.refundable ? (
-            <div className="flex flex-col gap-2 rounded-card border border-line p-3">
-              <span className="text-small leading-relaxed text-ink-2">
-                Your <Money value={view.refundable.amount} currency={view.refundable.currency} />{' '}
-                charge on {formatCalendarDate(view.refundable.chargedOn)} is refundable in full for{' '}
-                <Numeric className="font-semibold text-ink-1">
-                  {view.refundable.daysLeft} more days
-                </Numeric>{' '}
-                — until {formatCalendarDate(view.refundable.until)}.
-              </span>
-              <form action={`/api/billing/refund/${view.refundable.invoiceId}`} method="post">
-                <button
-                  type="submit"
-                  className="h-11 rounded-control border border-line px-3 text-[12px] font-semibold text-ink-2 hover:bg-canvas-soft md:h-[38px]"
-                >
-                  Request refund
-                </button>
-              </form>
-            </div>
-          ) : (
-            <p className="text-small leading-relaxed text-ink-2">
-              No charge is currently inside the {view.refundWindowDays}-day refund window.
-              Cancelling still stops the next renewal, and the period you have paid for runs to its
-              end.
-            </p>
-          )}
+          {/*
+            Stated up front, above the button that makes it matter. A seller
+            deciding whether to cancel should not have to click to find out
+            that this period's charge does not come back.
+          */}
+          <p className="text-small leading-relaxed text-ink-2">{view.cancellationTerms}</p>
 
           <ul className="flex flex-col gap-1.5">
             {view.cancellation.effects.map((line) => (
@@ -201,7 +180,6 @@ export default async function BillingPage() {
 
           <h3 className="mt-2 text-section text-ink-1">If you exceed a limit</h3>
           <p className="text-small leading-relaxed text-ink-2">{view.limitPolicy}</p>
-          <p className="text-caption leading-relaxed text-muted-1">{view.refundTerms}</p>
         </Card>
       </div>
     </>

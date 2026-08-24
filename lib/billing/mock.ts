@@ -2,7 +2,7 @@
  * Mock billing.
  *
  * Deterministic and credential-free, so the whole billing surface — trial,
- * history, a declined charge, a refund, cancel and resume — is walkable and
+ * history, a declined charge, cancel and resume — is walkable and
  * testable with nothing configured.
  *
  * State lives in a module-level map keyed by shop. That is enough for the demo
@@ -45,7 +45,6 @@ function baseInvoices(): Invoice[] {
       date: '2026-08-12',
       description: 'Solo · monthly · Aug 12 – Sep 12',
       amount: 15,
-      kind: 'CHARGE',
       status: 'PAID',
       receiptUrl: '/api/billing/receipt/in_2026_08',
       currency: 'USD',
@@ -55,19 +54,8 @@ function baseInvoices(): Invoice[] {
       date: '2026-07-12',
       description: 'Solo · monthly · Jul 12 – Aug 12',
       amount: 15,
-      kind: 'CHARGE',
       status: 'PAID',
       receiptUrl: '/api/billing/receipt/in_2026_07',
-      currency: 'USD',
-    },
-    {
-      id: 'rf_2026_06',
-      date: '2026-06-28',
-      description: 'Refund · Growth trial overlap',
-      amount: 14,
-      kind: 'REFUND',
-      status: 'REFUNDED',
-      receiptUrl: '/api/billing/receipt/rf_2026_06',
       currency: 'USD',
     },
     {
@@ -80,7 +68,6 @@ function baseInvoices(): Invoice[] {
       date: '2026-06-12',
       description: 'Solo · monthly · Jun 12 – Jul 12',
       amount: 15,
-      kind: 'CHARGE',
       status: 'DECLINED',
       receiptUrl: null,
       currency: 'USD',
@@ -90,7 +77,6 @@ function baseInvoices(): Invoice[] {
       date: '2026-05-12',
       description: 'Solo · monthly · May 12 – Jun 12',
       amount: 15,
-      kind: 'CHARGE',
       status: 'PAID',
       receiptUrl: '/api/billing/receipt/in_2026_05',
       currency: 'USD',
@@ -190,7 +176,6 @@ export class MockBillingProvider implements BillingProvider {
       date: charge.onDate,
       description: charge.whatChanges[0] ?? 'Plan change',
       amount: charge.amountDue,
-      kind: 'CHARGE',
       status: 'PAID',
       receiptUrl: `/api/billing/receipt/in_${charge.onDate.replace(/-/g, '')}`,
       currency: charge.currency,
@@ -234,31 +219,6 @@ export class MockBillingProvider implements BillingProvider {
     const next: Subscription = { ...stateFor(shopId), plan }
     store().subscriptions.set(shopId, next)
     return { ...next }
-  }
-
-  async refund(shopId: string, invoiceId: string): Promise<Invoice> {
-    const ledger = ledgerFor(shopId)
-    const original = ledger.find((i) => i.id === invoiceId)
-    if (!original) throw Errors.notFound('invoice')
-    if (original.kind !== 'CHARGE' || original.status !== 'PAID') {
-      throw Errors.validation(
-        'Only a paid charge can be refunded.',
-        'A declined charge took no money, so there is nothing to return.',
-      )
-    }
-
-    const refund: Invoice = {
-      id: `rf_${original.id}`,
-      date: BILLING_NOW,
-      description: `Refund · ${original.description}`,
-      amount: original.amount,
-      kind: 'REFUND',
-      status: 'REFUNDED',
-      receiptUrl: `/api/billing/receipt/rf_${original.id}`,
-      currency: original.currency,
-    }
-    ledger.unshift(refund)
-    return { ...refund }
   }
 
   verifyWebhook(rawBody: string, signatureHeader: string | null): WebhookEvent {

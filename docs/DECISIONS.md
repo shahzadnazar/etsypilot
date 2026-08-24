@@ -3639,3 +3639,44 @@ console error on the page the reviewer was looking at. `app/icon.svg` carries
 the sidebar's EP mark. Its colour is a literal, not a token: a favicon is drawn
 by the browser chrome, outside the document, where custom properties do not
 resolve (D1/D10).
+
+### D83 — Subscription refunds removed; order refunds untouched
+
+"Refund" named two unrelated things in this codebase, and only one of them was
+asked to go.
+
+**Removed — the subscription refund.** Money EtsyPilot would return to a seller
+for a plan charge: `REFUND_WINDOW_DAYS`, `REFUND_TERMS`, `refundEligibility()`,
+`assertRefundable()`, `requestRefund()`, `BillingProvider.refund()` in both
+adapters, `POST /api/billing/refund/[invoiceId]`, the "Request refund" button
+and the refund half of the billing card, the demo `REFUNDED` invoice, and the
+`charge.refunded` webhook handler.
+
+**Kept — the order refund.** Money the SELLER returned to a BUYER:
+`EtsyOrder.refunds`, the Refunds line in `computeWaterfall`, the refund-rate KPI
+on Shop analytics, and the refund columns in the exports. These are receipt
+facts, not billing policy. Removing them would have overstated net profit by
+exactly the refunded amount — which is D74, the bug fixed four commits ago.
+
+Three consequences worth naming:
+
+`Invoice.kind` and the `REFUNDED` status are gone, not merely unused. Nothing
+can produce a credit any more, and a ledger that can still render one is a
+screen waiting to lie. `ChargeDisclosure.refundWindow` went the same way; the
+disclosure now carries "This charge is not refundable" as a `whatChanges` line,
+because a seller agreeing to a charge is agreeing to that too.
+
+`charge.refunded` is no longer handled, so an inbound one falls through to
+IGNORED. Stripe can still send it — a refund issued by hand in their dashboard.
+Acknowledging it without writing a billing-history row is right: this product
+has no record to reconcile it against.
+
+The policy is now STATED. `CANCELLATION_TERMS` sits above the Cancel button and
+in the cancellation effects. Deleting the feature and saying nothing would have
+left a seller to discover after cancelling that the charge does not come back —
+the same dark pattern the removal was meant to avoid, wearing a new hat.
+
+The five absence checks were each verified by reintroducing what they forbid — a
+provider method, a route file, a page button, a lifecycle export, a silent
+policy — and confirming all five went red. An absence check that cannot fail is
+not a check (D68).

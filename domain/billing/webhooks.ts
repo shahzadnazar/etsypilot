@@ -21,13 +21,19 @@ import { alreadyHandled, markHandled } from '@/lib/billing/mock'
 import type { WebhookEvent } from '@/lib/billing/interface'
 import type { DomainEvent } from '@/lib/events/types'
 
-/** The only event types this product acts on. */
+/**
+ * The only event types this product acts on.
+ *
+ * `charge.refunded` is not among them. This product issues no subscription
+ * refund, so an inbound refund event is something it has no record of and no
+ * screen for — it falls through to IGNORED, which acknowledges it without
+ * inventing a billing-history line to match.
+ */
 export const HANDLED_EVENTS = [
   'invoice.paid',
   'invoice.payment_failed',
   'customer.subscription.updated',
   'customer.subscription.deleted',
-  'charge.refunded',
 ] as const
 
 export type HandledEvent = (typeof HANDLED_EVENTS)[number]
@@ -117,19 +123,6 @@ function apply(type: HandledEvent, payload: Record<string, unknown>, shopId: str
           title: 'Your plan has ended',
           body: 'Your account is now on Free. Your listings, history and exports are all still here — nothing was deleted. Research and the calculators keep working.',
           action: { label: 'See plans', href: '/billing' },
-        },
-      }
-
-    case 'charge.refunded':
-      return {
-        kind: 'APPLIED',
-        type,
-        summary: 'Recorded the refund in billing history.',
-        notify: {
-          severity: 'INFO',
-          title: 'Your refund is on its way',
-          body: 'It appears in your billing history now and reaches your card in five to ten days, depending on your bank.',
-          action: { label: 'View billing history', href: '/billing' },
         },
       }
   }

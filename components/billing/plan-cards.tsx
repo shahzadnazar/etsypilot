@@ -11,7 +11,6 @@ import { Card } from '@/components/ui/card'
 import { Money, Numeric } from '@/components/ui/numeric'
 import type { PlanChange } from '@/domain/billing/lifecycle'
 import type { Plan } from '@/domain/billing/plans'
-import { formatCalendarDate } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
 
 export function PlanCards({
@@ -88,10 +87,6 @@ export function PlanCards({
                         </li>
                       ))}
                     </ul>
-                    <span className="text-caption leading-snug text-muted-1">
-                      Full refund within {change.charge.refundWindow.days} days — until{' '}
-                      {formatCalendarDate(change.charge.refundWindow.until)}, from this page.
-                    </span>
                   </>
                 ) : (
                   <>
