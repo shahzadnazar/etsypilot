@@ -39,7 +39,10 @@ function recordsFor(shopId: string): AuditRecord[] {
    * how a health score of 100/100 came to sit above "covers 0% of your
    * listings" for eleven phases.
    */
-  const seeded = isEmptyDataset() ? [] : demoAuditRecords()
+  const seeded = (isEmptyDataset() ? [] : demoAuditRecords()).map((record, seq) => ({
+    ...record,
+    seq,
+  }))
   store().set(shopId, seeded)
   return seeded
 }
@@ -57,7 +60,10 @@ export function readAuditRecords(shopId: string): AuditRecord[] {
  * happening rather than by being written down.
  */
 export function appendAuditRecord(shopId: string, record: AuditRecord): void {
-  recordsFor(shopId).push(record)
+  const records = recordsFor(shopId)
+  // The sequence is assigned here, never by the caller. A caller that could
+  // choose one could choose a duplicate.
+  records.push({ ...record, seq: records.length })
 }
 
 /** Test helper. Not exported through the service. */

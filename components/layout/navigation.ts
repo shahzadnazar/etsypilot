@@ -76,7 +76,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: 'Listing Audit', href: '/listings/audit' },
       { label: 'AI Copilot', href: '/listings/ai-copilot' },
       { label: 'Bulk Editor', href: '/listings/bulk-editor' },
-      { label: 'Change History', href: '/listings/change-history', unbuilt: true },
+      { label: 'Change History', href: '/listings/change-history' },
     ],
   },
   {

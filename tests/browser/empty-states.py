@@ -68,6 +68,7 @@ with sync_playwright() as p:
               "/research/keyword-lists", "/settings/shops", "/settings/export",
               "/settings/costs", "/settings/audit-log", "/settings/profile", "/listings",
               "/settings/security", "/data/sources", "/data/methodology",
+              "/listings/change-history",
               "/tools", "/action-center", "/onboarding"]
     broke = []
     for route in ROUTES:
@@ -144,6 +145,14 @@ with sync_playwright() as p:
     check("No listings yet" in listings, "All Listings says what is missing")
     check("Search title, tag or SKU" not in listings,
           "...and offers no filter bar over nothing to filter")
+
+    # --- an immutable trail of nothing is empty ----------------------------
+    pg.goto(f"{BASE}/listings/change-history", wait_until="load"); pg.wait_for_timeout(400)
+    history = pg.locator("main").inner_text()
+    check("Nothing has been changed yet" in history,
+          "Change history has a reachable empty state")
+    check("Roll back" not in history,
+          "...and offers no rollback with nothing to roll back")
     # --- and every empty state points somewhere ----------------------------
     # rules.md section 12: never fail silently. An empty state that does not say
     # what to do next is a dead end with better typography.

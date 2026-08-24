@@ -98,6 +98,18 @@ export interface AuditRecord {
   /** The operation id. BE-2288, OP-9102, SY-4410. */
   id: string
   at: string
+  /*
+   * Assigned by the store on insert, and part of the record's address.
+   *
+   * `id@at` was the address, and it collided: two rollback refusals a moment
+   * apart carried the same operation id and the same millisecond, so the log's
+   * drawer could only ever open the first of them. A record that cannot be
+   * addressed cannot be read, which is most of what a log is for.
+   *
+   * Monotonic within a shop, and safe as a key precisely because the store is
+   * append-only — nothing is ever removed, so no sequence is ever reused.
+   */
+  seq?: number
   actor: AuditActor
   action: string
   /** The second line of the Action cell: id and what changed. */

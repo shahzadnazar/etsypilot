@@ -98,7 +98,10 @@ export async function getAuditLogView(
  * The operation id alone is not one: BE-2291 appears twice in the demo shop,
  * once for the confirmation and once for the apply, and opening the drawer on
  * "BE-2291" would show whichever came first.
+ *
+ * Nor is id plus timestamp. Two rollback refusals on the same job land in the
+ * same millisecond, so the store's own sequence completes the address.
  */
 export function recordKey(record: AuditRecord): string {
-  return `${record.id}@${record.at}`
+  return `${record.id}@${record.at}#${record.seq ?? 0}`
 }

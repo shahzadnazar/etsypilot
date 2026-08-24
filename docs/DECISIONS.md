@@ -3176,3 +3176,77 @@ So `EtsyListing` carries both, and null means "not loaded" rather than "none":
 `hasVariations: true` with a null summary is the live adapter, which does not
 spend a call per row on a table the seller may only be scrolling. The column
 renders "None", the summary, or "Yes" — and never invents a label.
+
+### D73 — Change history, and the gate that makes rollback safe
+
+Artboards 44–45 at `/listings/change-history`. Distinct from the Audit log,
+which records every action **including refusals** (D66). This lists only jobs
+that WROTE something, because a rollback needs a before-value to restore and a
+refusal has none. They do not merge.
+
+Everything on a row is derived:
+
+- **Status** is counted from the job's items, so a row cannot say "Complete"
+  over a job with a failure in it. A failure is named before anything else — an
+  AI-assisted job that partly failed reads "1 failed", not "Approved", because
+  "Approved" answers a question nobody asked while hiding the one they did.
+- **Rollback availability** is re-planned against the LIVE catalogue on every
+  render, never read from something recorded at apply time. A rollback point
+  that was valid when the job ran says nothing about whether restoring it today
+  would discard an edit somebody made since.
+- **The window** comes from `plan.limits.rollbackDays` — 30 on Solo, 90 on
+  Growth — so "Available · 28 d" counts down from the plan the shop is on.
+
+Four rollback states, not two:
+
+| State | Means |
+| --- | --- |
+| `AVAILABLE · N d` | in the window, and the listings still hold this job's values |
+| `WINDOW_CLOSED` | time, and nothing else. The record stays readable |
+| `NOTHING_TO_RESTORE` | the catalogue moved, or the job never landed |
+| `NOT_ON_PLAN` | Free keeps history readable but not reversible |
+
+As a boolean, "expired" and "somebody edited these listings" would both be a
+greyed-out link. Only one of them means the change is permanent.
+
+**The confirmation is a real gate.** The button's count, the sentence above it
+and the acknowledgement text all come from ONE drift report, so they cannot
+disagree. The fingerprint of the confirmed set travels with the form, and the
+server re-plans and re-fingerprints before writing: if the catalogue moved in
+between, the rollback is **refused** rather than applied to whatever is left.
+That is the same gate that refused BE-2288 in artboard 109 — and it is now a
+code path with tests, rather than an illustration.
+
+Nothing from the form is trusted except the job id and the fingerprint. A count
+posted from a browser is a count an attacker can choose, and a rollback that
+believed one would overwrite exactly as many listings as it was told to.
+
+The demo shop refuses at the same gate and **the audit log records that it
+did** — so artboard 109's "Write refused — demo mode" row is a real behaviour
+too. A rollback appends a new job rather than deleting the one it reverses.
+
+### D73a — The demo data made the design's own arithmetic visible
+
+The artboard reads 122 listings, "1 failed", and "Roll back 119" — that is
+122 − 3 drifted, ignoring the failure. A job item that failed never landed, so
+it has nothing to restore. Measured, the answer is 122 − 1 failed − 3 drifted =
+**118**, and every number on the panel is derived from the same report, so they
+cannot drift apart the way the drawing's did.
+
+The three "changed on Etsy since" listings are real drift: the demo job records
+an `after` value that genuinely does not match what the catalogue holds now, and
+the planner finds it by comparison. Nothing flags them. If the recorded values
+were invented, "3 listings have changed" would be a sentence rather than a
+measurement.
+
+### D73b — `id@at` was not an address
+
+Two rollback refusals on the same job land in the same millisecond, so both
+carried the address `4821-R@…14:06:00.000Z` — and the audit log's drawer opens a
+record BY that address. The second refusal existed in the log and could not be
+opened.
+
+The store assigns a monotonic `seq` on insert, and the address is
+`id@at#seq`. Assigned by the store and never by the caller, because a caller
+that could choose a sequence could choose a duplicate — and safe as a key
+precisely because the store is append-only, so no sequence is ever reused.
