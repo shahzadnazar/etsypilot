@@ -20,6 +20,26 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   typedRoutes: false,
   /*
+   * Next's own dev overlay, off.
+   *
+   * It is the floating panel that reads "Route: Dynamic · Bundler: Turbopack ·
+   * Route Info · Preferences". It is not EtsyPilot UI, it only ever renders
+   * under `next dev`, and it defaults to the top-left — directly over the demo
+   * banner, the logo and the first sidebar group, which is the part of the
+   * screen a reviewer needs most.
+   *
+   * It cannot be moved into Settings, because it is not ours: it belongs to the
+   * framework and has no equivalent in a production build. So the choice is
+   * where it sits or whether it appears, and what it reports — whether a route
+   * is static or dynamic — is available from `next build --debug` when it is
+   * actually wanted.
+   *
+   * Next still surfaces compile and runtime errors with this off; only the
+   * route indicator goes away. Set it back to `{ position: 'bottom-right' }` to
+   * have it without it covering anything.
+   */
+  devIndicators: false,
+  /*
    * Headers that do not vary per request. The CSP is NOT here — it carries a
    * nonce, so it is built in middleware.ts.
    */
