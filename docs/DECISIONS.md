@@ -3709,3 +3709,47 @@ passing test proves only what it touches: the reconciliation check in the new
 tests recomputes net from the lines, and one of them reads the real demo dataset
 rather than a fixture, because a `totalsFrom` hardcoding zero would satisfy
 every assertion written against literals.
+
+### D85 — The extension download 404'd, and answered a person with JSON
+
+Reported from the running app: clicking "Download for Chrome" produced
+
+    {"error":{"kind":"NOT_FOUND","message":"The extension has not been packaged yet."...}}
+
+as raw text in the browser window. Three defects behind one click.
+
+**The package was never built.** `extension/build/` is gitignored — correctly,
+it is an artefact — but nothing produced it. `npm run build` built the app and
+not the extension, so every fresh checkout served a 404 until someone happened
+to know about `npm run extension:build`. A download that depends on an
+undocumented second command is not a download. `prebuild` now runs the packaging
+build, and `predev` runs it with a new `--if-missing` flag that exits in 50ms
+when a package is already there. The artefact is now a product of the ordinary
+build rather than a thing to remember.
+
+**A person was answered in a machine's format.** This route has two audiences:
+the extension, which wants the JSON envelope, and a seller doing a top-level
+navigation, who wants the product. It served JSON to both. Failures are now
+answered in the format the caller asked for — `Sec-Fetch-Mode: navigate` (set by
+the browser, unforgeable by fetch) redirects back to Settings → Browser
+Extension carrying the error CODE, and the page renders it from a closed map.
+The code selects a message written in the page; nothing from the query string is
+echoed, because that string is attacker-controlled and the page is signed in.
+
+Both paths log the same line through the new `logFailure()`. A failure that
+disappears from the logs whenever the caller was a browser is a blind spot
+exactly where the real sellers are.
+
+**`zip` was assumed, not depended on.** The route shelled out to the `zip`
+binary, which does not exist on Windows, in slim images, or in any serverless
+runtime; where it is missing `execFileSync` throws ENOENT and the seller gets an
+unexplained 500. `lib/extension/zip.ts` writes the archive in-process — stored
+entries, no compression, fixed DOS timestamp so the bytes are deterministic and
+the package stays hashable. The temp file is gone too; the archive never touches
+disk.
+
+The zip tests hand the output to `unzip -t`, an independent implementation,
+rather than asserting the bytes start `PK`. The browser checks were each proved
+by reverting the fix: two went red, and the suite then aborted looking for
+`<main>` in a JSON document — which is the reported bug, reproduced by its own
+guard. That abort is now a reported failure rather than a crash.

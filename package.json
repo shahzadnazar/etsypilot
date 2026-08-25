@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node extension/build.mjs --if-missing",
     "dev": "next dev",
+    "prebuild": "node extension/build.mjs",
     "build": "next build --webpack",
     "start": "next start",
     "lint": "next lint",

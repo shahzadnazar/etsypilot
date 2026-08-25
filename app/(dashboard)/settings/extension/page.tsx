@@ -64,9 +64,41 @@ const CAN = [
   'Open the matching screen in EtsyPilot',
 ] as const
 
-export default async function ExtensionSettingsPage() {
+/*
+ * What a failed download says, keyed by the code the route redirects with.
+ *
+ * Keyed rather than passed as free text: a message travelling through a query
+ * string is a message an attacker can rewrite, and this one is rendered on a
+ * signed-in page. The code selects from a closed set written here; anything
+ * unrecognised falls back to the generic line rather than being echoed.
+ */
+const DOWNLOAD_FAILURES: Record<string, { title: string; detail: string }> = {
+  EXTENSION_NOT_BUILT: {
+    title: 'The extension has not been packaged on this server yet.',
+    detail:
+      'The package is built from source and is not committed, so a fresh checkout does not have one. Run `npm run extension:build` once and the buttons below will work — `npm run build` and `npm run dev` now do it for you.',
+  },
+  EXTENSION_UNKNOWN_BROWSER: {
+    title: 'There is no package for that browser.',
+    detail: 'The extension is packaged for Chrome and Firefox. Both are below.',
+  },
+}
+
+const GENERIC_FAILURE = {
+  title: 'The download could not be prepared.',
+  detail: 'Nothing was installed and nothing changed. Try again, and quote the reference below if it keeps happening.',
+}
+
+export default async function ExtensionSettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ download?: string; ref?: string }>
+}) {
   const session = await getSession()
   if (!session) redirect('/login')
+
+  const { download, ref } = await searchParams
+  const failure = download ? (DOWNLOAD_FAILURES[download] ?? GENERIC_FAILURE) : null
 
   return (
     <>
@@ -74,6 +106,25 @@ export default async function ExtensionSettingsPage() {
         title="Browser Extension"
         subtitle="EtsyPilot intelligence while you browse Etsy. Read-only, on etsy.com only."
       />
+
+      {failure ? (
+        <div
+          role="alert"
+          className="mb-4 flex flex-col gap-1 rounded-card border p-4"
+          style={{
+            background: 'var(--warning-surface)',
+            borderColor: 'var(--warning-border)',
+            color: 'var(--warning-ink)',
+          }}
+        >
+          <strong className="text-small font-semibold">{failure.title}</strong>
+          <span className="max-w-prose text-small leading-relaxed">{failure.detail}</span>
+          {/* Only ever a reference, never the underlying error. */}
+          {ref ? (
+            <span className="tnum text-caption opacity-80">Reference {ref}</span>
+          ) : null}
+        </div>
+      ) : null}
 
       <section aria-label="Install" className="grid gap-3 lg:grid-cols-2">
         {STORES.map((store) => (

@@ -15,7 +15,11 @@
  *   - nothing that looks like a key or a secret in any shipped file
  *   - no request to any host except the app origin
  *
- * Run: node extension/build.mjs [--zip]
+ * Run: node extension/build.mjs [--zip] [--if-missing]
+ *
+ * `--if-missing` exits immediately when a package is already present. It exists
+ * so `predev` and `prebuild` can guarantee the package without paying for a tsc
+ * run on every single start.
  */
 
 import { createHash } from 'node:crypto'
@@ -179,6 +183,24 @@ function build() {
   console.log(`\n✓ extension audit passed · app origin ${APP_ORIGIN}`)
   for (const r of results) {
     console.log(`  ${r.browser}: ${r.files} files · sha256 ${r.sha256} · ${path.relative(root, r.out)}`)
+  }
+}
+
+/*
+ * The download route serves extension/build/<browser>, and that directory is
+ * gitignored — it is a build artefact, not source. So a fresh checkout has no
+ * package, and "Download for Chrome" answered with NOT_FOUND until someone
+ * happened to know about `npm run extension:build`.
+ *
+ * predev and prebuild now call this with --if-missing, which makes the package
+ * a guaranteed product of the ordinary build rather than a second command a
+ * seller has to be told about.
+ */
+if (process.argv.includes('--if-missing')) {
+  const built = BROWSERS.every((b) => fs.existsSync(path.join(here, 'build', b.name, 'manifest.json')))
+  if (built) {
+    console.log('extension: package already present, skipping (--if-missing)')
+    process.exit(0)
   }
 }
 

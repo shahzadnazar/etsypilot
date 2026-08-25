@@ -51,7 +51,16 @@ export function statusFor(error: AppError): number {
  * written for a seller. The original is logged, never returned: the caller
  * learns that it failed and what to do, and learns nothing about our internals.
  */
-export function errorResponse(error: unknown, fields: { path?: string } = {}): NextResponse {
+/**
+ * Normalise anything thrown, and record it.
+ *
+ * Separate from errorResponse because not every failure is answered with the
+ * JSON envelope — a browser navigation is answered with a redirect back to the
+ * page it came from. That path must still produce a log line, and it must be
+ * the SAME line: a failure that is invisible in the logs whenever the caller
+ * happened to be a browser is a blind spot precisely where real sellers are.
+ */
+export function logFailure(error: unknown, fields: { path?: string } = {}): AppError {
   const app = error instanceof AppError ? error : Errors.unknown()
   const reference = app.reference || makeReference()
 
@@ -61,6 +70,13 @@ export function errorResponse(error: unknown, fields: { path?: string } = {}): N
   void import('@/lib/observability/logger').then(({ log }) =>
     log.error('request failed', error, { reference, ...fields, code: app.code }),
   )
+
+  return app
+}
+
+export function errorResponse(error: unknown, fields: { path?: string } = {}): NextResponse {
+  const app = logFailure(error, fields)
+  const reference = app.reference || makeReference()
 
   return NextResponse.json(
     { error: { ...app.toUserFacing(), reference } },

@@ -1167,6 +1167,50 @@ with sync_playwright() as p:
         head = pg.request.get(f"{BASE}/api/extension/download/{browser}")
         check(head.status == 200 and "zip" in head.headers.get("content-type", ""),
               f"The {browser} download serves a package")
+        # A real archive, not just bytes with a zip content-type. "PK\x03\x04"
+        # is the local file header every reader looks for first.
+        check(head.body()[:4] == b"PK\x03\x04",
+              f"The {browser} package is a readable zip archive")
+
+    # A SELLER CLICKING A LINK IS NEVER SHOWN AN ERROR ENVELOPE.
+    #
+    # This was reported from the running app: the download answered a top-level
+    # browser navigation with {"error":{"kind":"NOT_FOUND"...}} rendered as raw
+    # text in the window. The route has two audiences and used to serve JSON to
+    # both. Whatever the outcome, a navigation must end in a package or back on
+    # the page — never in an envelope.
+    nav = pg.request.get(f"{BASE}/api/extension/download/chrome",
+                         headers={"Sec-Fetch-Mode": "navigate", "Accept": "text/html"})
+    ok = "zip" in nav.headers.get("content-type", "") or "/settings/extension" in nav.url
+    check(ok, "A browser navigation to the download ends in a file or on the page")
+    check(b'{"error"' not in nav.body()[:200],
+          "A browser navigation never receives a raw error envelope")
+
+    # An unknown browser is the failure path that is reachable without breaking
+    # the build, so it is the one that proves the redirect actually fires.
+    bad = pg.request.get(f"{BASE}/api/extension/download/safari",
+                         headers={"Sec-Fetch-Mode": "navigate", "Accept": "text/html"})
+    check("/settings/extension" in bad.url and "download=" in bad.url,
+          "An unavailable package sends the seller back to the page with a reason")
+    check(b'{"error"' not in bad.body()[:200],
+          "...and not to a JSON blob")
+    # The page must actually render that reason rather than swallow the param.
+    #
+    # Guarded: when this regresses, bad.url is a JSON document with no <main>,
+    # and an unguarded wait_for_selector would abort the whole suite instead of
+    # reporting the failure alongside the others.
+    if "/settings/extension" in bad.url:
+        pg.goto(bad.url, wait_until="domcontentloaded")
+        pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(300)
+        check(pg.locator("main [role=alert]").count() == 1,
+              "The page shows an alert explaining why the download did not happen")
+    else:
+        check(False, "The page shows an alert explaining why the download did not happen "
+                     "(not reached: the download did not redirect)")
+    pg.goto(f"{BASE}/settings/extension", wait_until="domcontentloaded")
+    pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(300)
+    check(pg.locator("main [role=alert]").count() == 0,
+          "...and shows no alert when nothing failed")
     check(pg.get_by_role("link", name="Load unpacked").count() == 0,
           "Nothing on the page pretends a store install is available")
     check("Ask for your Etsy password" in ext, "The page lists what the extension can never do")
