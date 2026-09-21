@@ -19,3 +19,6 @@ drizzle/
 # Extension build output. Rebuilt by `npm run extension:build`.
 extension/dist/
 extension/build/
+
+#check-db.mjs is a local utility script that connects to the database and checks for connectivity. It should not be committed to version control.
+check-db.mjs

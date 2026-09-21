@@ -131,7 +131,17 @@ function audit(packageDir, manifest) {
 function build() {
   const dist = path.join(here, 'dist')
   fs.rmSync(dist, { recursive: true, force: true })
-  execFileSync('npx', ['tsc', '-p', path.join(here, 'tsconfig.json')], { cwd: root, stdio: 'inherit' })
+  /*
+   * tsc is invoked through the running Node binary, not through npx.
+   *
+   * npx is a shell script on POSIX and npx.cmd on Windows. Node refuses to
+   * spawn a .cmd without `shell: true` (CVE-2024-27980), and `shell: true`
+   * would then re-split this project's own path on any space in it. Calling
+   * TypeScript's entry point with process.execPath avoids the shell entirely,
+   * so argument boundaries survive on every platform.
+   */
+  const tsc = path.join(root, 'node_modules', 'typescript', 'bin', 'tsc')
+  execFileSync(process.execPath, [tsc, '-p', path.join(here, 'tsconfig.json')], { cwd: root, stdio: 'inherit' })
 
   const results = []
 
@@ -161,7 +171,7 @@ function build() {
       for (const failure of failures) console.error(`  - ${failure}`)
       console.error(
         '\nThis extension ships to every seller who installs it, and to two stores.\n' +
-          'Nothing here is worth shipping a credential for.\n',
+        'Nothing here is worth shipping a credential for.\n',
       )
       process.exit(1)
     }
