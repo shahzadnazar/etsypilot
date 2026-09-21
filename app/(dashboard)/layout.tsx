@@ -19,10 +19,21 @@ export default async function DashboardLayout({ children }: { children: React.Re
     getActions(ctx),
   ])
 
-  const initials = session.name
-    .split(' ')
-    .map((p) => p[0] ?? '')
-    .join('')
+  /*
+   * Initials from whatever label the session has.
+   *
+   * `users.name` is null for every provisioned account, so session.name is the
+   * local part of the email — one word, no space. Splitting on spaces and
+   * taking first letters would then yield a SINGLE character, where the demo
+   * user's "Salman R." gave two. Falling back to the first two characters
+   * keeps the avatar the same shape for both.
+   */
+  const words = session.name.trim().split(/\s+/).filter(Boolean)
+  const initials = (
+    words.length > 1
+      ? words.map((w) => w[0] ?? '').join('')
+      : (words[0] ?? session.email).slice(0, 2)
+  )
     .slice(0, 2)
     .toUpperCase()
 
@@ -38,6 +49,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
       isDemo={session.isDemo}
       userInitials={initials}
       userName={session.name}
+      /* The one identifier that is never derived — see UserMenu. */
+      userEmail={session.email}
       plan={plan.name}
       /*
        * From the shop, not from DEMO_COUNTS.

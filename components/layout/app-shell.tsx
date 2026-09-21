@@ -18,6 +18,7 @@ export function AppShell({
   isDemo,
   userInitials,
   userName,
+  userEmail,
   plan,
   usage,
   openActionCount,
@@ -29,6 +30,7 @@ export function AppShell({
   isDemo: boolean
   userInitials: string
   userName: string
+  userEmail: string
   plan: string
   usage: { used: number; limit: number }
   /** Drives the bell's dot on mobile. */
@@ -86,6 +88,7 @@ export function AppShell({
               isDemo={isDemo}
               userInitials={userInitials}
               userName={userName}
+              userEmail={userEmail}
             />
           </div>
           <main id="main" className="flex-1 overflow-y-auto px-4 py-5 md:px-6">

@@ -8,8 +8,15 @@
  * Authorization is NOT delegated to the provider - see lib/permissions.
  */
 
+import { cache } from 'react'
 import { cookies } from 'next/headers'
 import { DEMO_ACTOR_ID, DEMO_SHOP_ID } from '@/lib/etsy/demo-dataset'
+import { provisionAccount } from '@/domain/auth/provision'
+import { isDatabaseConfigured } from '@/lib/db'
+import { logFailure } from '@/lib/errors/api'
+import { readOnlyAccountStore, withAccountStore, type ShopRow } from '@/lib/repositories/accounts'
+import { createSupabaseServerClient } from './supabase'
+import { supabaseCredentials } from './supabase-config'
 
 /**
  * Is authentication still the fixed demo session?
@@ -52,29 +59,152 @@ const DEMO_SESSION: Session = {
 }
 
 /**
- * Server-only. Returns null when signed out.
+ * A display label for an account with no name.
  *
- * Phase 11 swaps the demo branch for a Supabase session read; the signature
- * does not change.
+ * `users.name` is null for every provisioned account — sign-up collects an
+ * email and a password, and no screen sets a display name. Session.name is
+ * typed `string`, so something has to go there, and the choice is between
+ * inventing a name and deriving one.
  *
- * The `cookies()` read is not decoration and it is not a trick. A session is
- * per-request by definition, so a page whose content depends on WHO is asking
- * cannot be prerendered — and touching the request's cookies is how Next is
- * told that. Without it, demo mode returned a constant session, every dashboard
- * page was prerendered at build time, and the shell went on showing the plan it
- * had been built with after the seller changed it: /billing said "412 / 2,000"
- * while /dashboard said "412 / 200".
- *
- * Doing it here rather than sprinkling `export const dynamic` across the pages
- * means the property holds for every page that exists today AND every page
- * added later, without anyone remembering (D47).
+ * The local part of the address it is, then. Derived, never invented: it is
+ * the seller's own text, it is stable, and it cannot be mistaken for a name
+ * the product was told. The menu shows the full address underneath, so the
+ * abbreviation is never the only thing on screen.
  */
-export async function getSession(): Promise<Session | null> {
-  // Read, deliberately unused in demo mode: Phase 11 reads the auth cookie here.
-  await cookies()
-  if (isDemoAuth()) return DEMO_SESSION
-  return null
+function displayName(user: { name: string | null; email: string }): string {
+  if (user.name && user.name.trim()) return user.name.trim()
+  const local = user.email.split('@')[0] ?? ''
+  return local || user.email
 }
+
+/**
+ * Find this account's shop, provisioning one if it somehow has none.
+ *
+ * A signed-in user with no shop is the one state that cannot be allowed to
+ * reach the layout. Returning null for it would redirect to /login while the
+ * cookie is still valid, and /onboarding is not an escape either — it calls
+ * getShop(session.shopId), so it needs the very row that is missing.
+ *
+ * So it is REPAIRED rather than reported. Provisioning is idempotent and
+ * already runs on sign-up and sign-in, which makes this the third caller of one
+ * function rather than a new path with its own rules. It costs one extra write
+ * attempt exactly once, for an account that should never have existed in this
+ * state.
+ */
+async function resolveShop(userId: string, email: string): Promise<ShopRow | null> {
+  const store = readOnlyAccountStore()
+  const existing = await store.findShopByOwnerId(userId)
+  if (existing) return existing
+
+  try {
+    await withAccountStore((tx) => provisionAccount(tx, { userId, email }))
+  } catch (error) {
+    // Logged, never surfaced. The caller decides what a shopless session means.
+    logFailure(error, { path: 'getSession/provision' })
+    return null
+  }
+  return store.findShopByOwnerId(userId)
+}
+
+/**
+ * Read the signed-in session, or null when signed out.
+ *
+ * `cache()` wraps this because the body now makes NETWORK CALLS: one to
+ * Supabase to revalidate the token and one or two to Postgres. The dashboard
+ * layout calls getSession(), and so does nearly every page inside it, so an
+ * uncached read would repeat that work several times per page view. React's
+ * cache is per-request, so this dedupes within one render and never across
+ * users — the distinction that matters, since the thing being cached is who is
+ * asking.
+ */
+export const getSession = cache(async function getSession(): Promise<Session | null> {
+  /*
+   * The `cookies()` read is not decoration and it is not a trick. A session is
+   * per-request by definition, so a page whose content depends on WHO is asking
+   * cannot be prerendered — and touching the request's cookies is how Next is
+   * told that. Without it, demo mode returned a constant session, every
+   * dashboard page was prerendered at build time, and the shell went on showing
+   * the plan it had been built with after the seller changed it: /billing said
+   * "412 / 2,000" while /dashboard said "412 / 200".
+   *
+   * Doing it here rather than sprinkling `export const dynamic` across the
+   * pages means the property holds for every page that exists today AND every
+   * page added later, without anyone remembering (D47).
+   */
+  const jar = await cookies()
+  if (isDemoAuth()) return DEMO_SESSION
+
+  /*
+   * Live auth with nothing configured is a misconfiguration, not a signed-out
+   * visitor. Returning null would send every seller to a sign-in form that
+   * cannot work; saying so in the log and refusing is more useful than a
+   * silent redirect nobody can diagnose.
+   */
+  if (!supabaseCredentials() || !isDatabaseConfigured()) {
+    logFailure(
+      new Error('AUTH_MODE=live needs both Supabase credentials and DATABASE_URL'),
+      { path: 'getSession' },
+    )
+    return null
+  }
+
+  const supabase = createSupabaseServerClient({
+    getAll: () => jar.getAll().map((c) => ({ name: c.name, value: c.value })),
+    /*
+     * A no-op, and correct rather than lazy: a Server Component cannot set a
+     * cookie. Rotated tokens are written by the middleware refresh, which runs
+     * on every request and CAN write to the response.
+     */
+    setAll: () => {},
+  })
+
+  /*
+   * getUser(), never getSession().
+   *
+   * getUser revalidates the token with Supabase. getSession decodes whatever
+   * cookie the browser supplied and believes it — which is precisely the thing
+   * a session check exists to defend against. The names are one word apart and
+   * the difference is the whole security property.
+   */
+  const { data, error } = await supabase.auth.getUser()
+  if (error || !data.user) return null
+
+  const email = data.user.email ?? ''
+  const shop = await resolveShop(data.user.id, email)
+  if (!shop) {
+    /*
+     * Signed in, and we could not give them a shop. Null sends them to /login,
+     * which renders (it is public, so there is no loop) and whose sign-in
+     * attempt runs provisioning again and ends at the `setup_failed` message.
+     * A terminating path with an explanation, rather than a silent bounce.
+     */
+    return null
+  }
+
+  const stored = await readOnlyAccountStore().findUserById(data.user.id)
+  const user = stored ?? { id: data.user.id, email, name: null }
+
+  return {
+    userId: user.id,
+    email: user.email || email,
+    name: displayName(user),
+    shopId: shop.id,
+    /*
+     * FROM THE SHOP, not from the auth mode.
+     *
+     * isDemo drives the demo banner, the D11 provenance override and readOnly
+     * in shopContext — every one of which is a statement about the SHOP: is
+     * this data real, may it be written to Etsy. Deriving it from how someone
+     * signed in would make a real connected shop read as demo the moment auth
+     * changed, and a demo shop read as real the moment it did not.
+     *
+     * Every account has a demo shop today, so every live session is still a
+     * demo session. That is correct, and stays true until an Etsy connection
+     * exists to flip the column.
+     */
+    isDemo: shop.isDemo,
+  }
+})
 
 export async function requireSession(): Promise<Session> {
   const session = await getSession()

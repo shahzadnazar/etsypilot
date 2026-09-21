@@ -30,7 +30,7 @@ function memoryStore(): AccountStore & { users: UserRow[]; shops: ShopRow[]; mem
     async createUser(user) {
       const existing = users.find((u) => u.id === user.id)
       if (existing) return existing // mirrors onConflictDoNothing on the id
-      const row = { id: user.id, email: user.email }
+      const row = { id: user.id, email: user.email, name: null }
       users.push(row)
       return row
     },
@@ -59,7 +59,7 @@ describe('a new account gets a user, a demo shop and a membership', () => {
     const result = await provisionAccount(store, ACCOUNT)
 
     expect(result.created).toBe(true)
-    expect(store.users).toEqual([{ id: 'sb-user-1', email: 'seller@example.com' }])
+    expect(store.users).toEqual([{ id: 'sb-user-1', email: 'seller@example.com', name: null }])
     expect(store.shops).toHaveLength(1)
     expect(store.memberships).toEqual([
       { userId: 'sb-user-1', shopId: result.shopId, role: 'OWNER' },

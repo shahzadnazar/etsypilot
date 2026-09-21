@@ -3973,3 +3973,73 @@ Observed: the message sat over a still-populated form with its Create account
 button intact, so a successful sign-up read as a failed one — the screen saying
 "done" and "try again" at once. Only that outcome is terminal; everything else
 is a correctable error and keeps the form.
+
+### D89 — getSession() reads the real session
+
+The demo branch stays; the other branch stopped returning null. `getUser()`, never
+`getSession()` — the first revalidates the token with Supabase, the second decodes
+whatever cookie the browser supplied and believes it. One word apart, and the
+difference is the whole property. A test asserts the source calls one and not the
+other.
+
+**`isDemo` comes from the shop row, not from the auth mode.** It drives the demo
+banner, the D11 provenance override and `readOnly` in `shopContext` — every one of
+those is a statement about the SHOP: is this data real, may it be written to Etsy.
+Deriving it from how someone signed in would make a connected shop read as demo
+the moment auth changed, and a demo shop read as real the moment it did not. Every
+account has a demo shop today, so every live session is still a demo session, and
+that stays true until an Etsy connection exists to flip the column.
+
+**A shopless signed-in user is repaired, not reported.** Returning null would
+redirect to `/login` with a valid cookie still in hand, and `/onboarding` is not an
+escape either — it calls `getShop(session.shopId)`, the very row that is missing.
+So `getSession()` calls the same idempotent `provisionAccount()` that sign-up and
+sign-in already use: the third caller of one function rather than a fourth path
+with its own rules. Only if that also fails does it return null, which lands on
+`/login` — public, so it renders — whose sign-in attempt provisions again and ends
+at the `setup_failed` message. A terminating path with an explanation.
+
+**Half-configured live auth refuses rather than falling back.** `AUTH_MODE=live`
+with no Supabase project or no `DATABASE_URL` logs the misconfiguration and returns
+null. Falling back to the demo session would be the worst outcome available:
+someone who asked for real accounts would silently get a fabricated one, and every
+seller would share it.
+
+**`cache()` wraps it, because the body now makes network calls.** One to Supabase
+and one or two to Postgres, and the dashboard layout plus nearly every page inside
+it calls `getSession()`. React's cache is per-request, so it dedupes within one
+render and never across users — the distinction that matters when the cached thing
+is who is asking.
+
+#### The avatar became the way out
+
+There was no sign-out anywhere in the product. The session ended when the cookie
+expired, or never. The avatar linked to Profile.
+
+It is now `<details>`/`<summary>`: it opens, closes, takes focus and responds to
+the keyboard with **no JavaScript at all** — verified in a browser with scripting
+disabled, 36×36, menu open, `method="post"`. Sign-out is a form POST and never a
+link, because a GET sign-out fires on a link prefetch, a preview unfurl or an
+`<img>` on a hostile page.
+
+The tap-target tests that pinned the old `<Link>` were **rewritten, not deleted**.
+Every property they defended still has a check and Profile is still reachable from
+inside the menu. A test updated because the shape changed is fine; a test deleted
+because it went red is how a property quietly stops holding.
+
+#### What the shell shows when there is no name
+
+`users.name` is null for every provisioned account — sign-up collects an email and
+a password, and no screen sets a display name. `Session.name` is typed `string`,
+so the choice was between inventing a name and deriving one.
+
+It shows **the local part of the email address**, with the full address directly
+under it in the menu. Derived, never invented: it is the seller's own text, it is
+stable, and it cannot be mistaken for something the product was told. The stored
+`name` column is read first, so the day anything populates it the shell switches
+over with no further change.
+
+Initials needed fixing for the same reason. "Salman R." gave two letters by
+splitting on the space; an email local part is one word and gave one. A single-word
+label now takes its first two characters, so the avatar is the same shape either
+way.

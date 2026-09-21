@@ -25,6 +25,15 @@ import { getDb, schema } from '@/lib/db'
 export interface UserRow {
   id: string
   email: string
+  /**
+   * Null for every provisioned account today.
+   *
+   * The column exists and nothing populates it — sign-up collects an email and
+   * a password, and there is no screen that sets a display name. Read anyway,
+   * with the caller falling back, so the day something does populate it the
+   * shell starts using it without another change here.
+   */
+  name: string | null
 }
 
 export interface ShopRow {
@@ -70,7 +79,7 @@ export function postgresAccountStore(db: Queryable): AccountStore {
   return {
     async findUserById(id) {
       const [row] = await db
-        .select({ id: schema.users.id, email: schema.users.email })
+        .select({ id: schema.users.id, email: schema.users.email, name: schema.users.name })
         .from(schema.users)
         .where(eq(schema.users.id, id))
         .limit(1)
@@ -88,7 +97,7 @@ export function postgresAccountStore(db: Queryable): AccountStore {
          * not an error.
          */
         .onConflictDoNothing({ target: schema.users.id })
-        .returning({ id: schema.users.id, email: schema.users.email })
+        .returning({ id: schema.users.id, email: schema.users.email, name: schema.users.name })
 
       // onConflictDoNothing returns nothing when it skipped, so read back.
       if (row) return row
@@ -152,4 +161,15 @@ export function postgresAccountStore(db: Queryable): AccountStore {
  */
 export async function withAccountStore<T>(work: (store: AccountStore) => Promise<T>): Promise<T> {
   return getDb().transaction(async (tx) => work(postgresAccountStore(tx)))
+}
+
+/**
+ * A store for reads, outside any transaction.
+ *
+ * getSession() runs on every request and only ever reads — wrapping that in a
+ * transaction would open and close one per page view for two indexed selects.
+ * Writes still go through withAccountStore().
+ */
+export function readOnlyAccountStore(): AccountStore {
+  return postgresAccountStore(getDb())
 }

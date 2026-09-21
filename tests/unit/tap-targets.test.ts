@@ -61,22 +61,37 @@ describe('WCAG 2.2 SC 2.5.8 — target size', () => {
  * It was an `aria-hidden` <span> in the top bar — the one element that looked
  * like a control and was not: invisible to a screen reader, inert to a click,
  * and sitting in the corner where every application puts the account.
+ *
+ * It then became a <Link> to Profile, which these tests pinned. It is now a
+ * <summary> opening the account menu, because the product had no sign-out at
+ * all and that corner is where one belongs. THE ASSERTIONS WERE REWRITTEN, NOT
+ * DELETED: every property they defended — interactive, named, big enough to
+ * hit — still has a check, and Profile is still reachable, now from inside the
+ * menu. A test updated because the shape changed is fine; a test deleted
+ * because it went red is how a property quietly stops holding.
  */
 describe('the top bar avatar', () => {
-  const source = readFileSync('components/layout/top-bar.tsx', 'utf8')
+  const menu = readFileSync('components/layout/user-menu.tsx', 'utf8')
+  const topBar = readFileSync('components/layout/top-bar.tsx', 'utf8')
 
-  it('is a link with a destination', () => {
-    expect(source).toMatch(/<Link[\s\S]*?href="\/settings\/profile"/)
+  it('is an interactive control, not a decorative span', () => {
+    expect(topBar).toContain('<UserMenu')
+    // <summary> is focusable and activatable by keyboard with no JavaScript.
+    expect(menu).toMatch(/<summary[\s\S]*?className=/)
+  })
+
+  it('still reaches Profile, now from inside the menu', () => {
+    expect(menu).toMatch(/href="\/settings\/profile"/)
   })
 
   it('carries a name a screen reader can read', () => {
     // Initials are not an accessible name. "SR" tells nobody anything.
-    expect(source).toContain('sr-only')
-    expect(source).toContain('userName')
+    expect(menu).toContain('sr-only')
+    expect(menu).toContain('userEmail')
   })
 
   it('is at least 24px, like every other target', () => {
-    const size = source.match(/className="flex h-(\d+) w-(\d+) shrink-0 items-center justify-center rounded-control text-\[11px\]/)
+    const size = menu.match(/className="flex h-(\d+) w-(\d+) cursor-pointer list-none/)
     expect(size).not.toBeNull()
     expect(Number(size![1])).toBeGreaterThanOrEqual(6)
   })
