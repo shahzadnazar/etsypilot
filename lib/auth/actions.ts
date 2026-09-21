@@ -8,11 +8,17 @@
  * IS the act of setting a cookie, so the one place in this codebase that must
  * write one is the one place that uses an action.
  *
- * THIS STEP CREATES SUPABASE ACCOUNTS ONLY. getSession() still returns the demo
- * session while AUTH_MODE is unset, and nothing here writes a row to `users` or
- * `shops` — joining a Supabase account to an EtsyPilot shop is the next step.
- * So a successful sign-in today sets a cookie that nothing yet reads. That is
- * the intended half-built state, not an oversight.
+ * WHAT THIS DOES AND DOES NOT DO. Signing up now creates a Supabase account AND
+ * provisions our own rows: a `users` row, a demo `shops` row and the
+ * `memberships` joining them. What it still does not do is connect any of that
+ * to the request — getSession() is untouched and returns the demo session while
+ * AUTH_MODE is unset. So a successful sign-in today sets a cookie that nothing
+ * yet reads, against rows nothing yet queries. That is the intended half-built
+ * state, not an oversight.
+ *
+ * (This comment used to say nothing here wrote a row, which stopped being true
+ * the moment provisioning landed. A file that misdescribes itself is the same
+ * defect as a figure that misdescribes its source.)
  *
  * Failures redirect back with an outcome KEY, never a message. The page renders
  * from the closed map in domain/auth/outcomes.ts, so a Supabase wording change
@@ -29,6 +35,10 @@ import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from './supabase'
 import { supabaseCredentials } from './supabase-config'
 import { outcomeForAuthError, type AuthOutcomeKey } from '@/domain/auth/outcomes'
+import { provisionAccount } from '@/domain/auth/provision'
+import { isDatabaseConfigured } from '@/lib/db'
+import { logFailure } from '@/lib/errors/api'
+import { withAccountStore } from '@/lib/repositories/accounts'
 
 /** Where a failed attempt lands: back on the form, with a reason. */
 function back(path: '/login' | '/signup', outcome: AuthOutcomeKey): never {
@@ -71,6 +81,59 @@ function readCredentials(form: FormData): { email: string; password: string } | 
   return { email, password }
 }
 
+/**
+ * Give this account its user row, demo shop and membership.
+ *
+ * Returns true when the account is ready. On failure it reports the problem
+ * and returns false; the caller decides what the seller sees, because that
+ * differs between signing up (half-success) and signing in (already had one).
+ *
+ * Idempotent all the way down, so calling it on EVERY sign-in is not waste —
+ * it is what makes the setup_failed copy's "signing in will finish it" true
+ * rather than a hopeful sentence.
+ */
+async function provisionSignedInAccount(
+  supabaseUserId: string,
+  email: string,
+  path: '/login' | '/signup',
+): Promise<boolean> {
+  /*
+   * No database means nothing can be provisioned. Reported rather than
+   * skipped: an auth account with no shop is precisely the silent partial
+   * success this path exists to avoid, and it would surface much later as a
+   * redirect loop with nothing pointing back to here.
+   */
+  if (!isDatabaseConfigured()) {
+    logFailure(
+      new Error('AUTH provisioning ran with no DATABASE_URL configured'),
+      { path },
+    )
+    return false
+  }
+
+  try {
+    await withAccountStore((store) =>
+      provisionAccount(store, { userId: supabaseUserId, email }),
+    )
+    return true
+  } catch (error) {
+    // Logged with a reference the seller can quote. The error itself never
+    // reaches the page — same rule as every other failure on these screens.
+    logFailure(error, { path })
+    return false
+  }
+}
+
+/** Drop a session we are not going to honour, ignoring any failure doing so. */
+async function discardSession(): Promise<void> {
+  try {
+    const supabase = createSupabaseServerClient(await actionCookies())
+    await supabase.auth.signOut()
+  } catch {
+    // Best effort. The seller is being sent back to a form either way.
+  }
+}
+
 export async function signIn(form: FormData): Promise<void> {
   const path = '/login' as const
   if (!supabaseCredentials()) back(path, 'not_configured')
@@ -79,8 +142,24 @@ export async function signIn(form: FormData): Promise<void> {
   if (!fields) back(path, 'missing_fields')
 
   const supabase = createSupabaseServerClient(await actionCookies())
-  const { error } = await supabase.auth.signInWithPassword(fields)
+  const { data, error } = await supabase.auth.signInWithPassword(fields)
   if (error) back(path, outcomeForAuthError(error))
+
+  /*
+   * Provision on sign-in too, not only sign-up.
+   *
+   * This is the repair path. A sign-up whose provisioning failed leaves an auth
+   * account with no shop, and the setup_failed copy tells that seller to sign
+   * in to finish. Because provisioning is idempotent, the ordinary case costs
+   * one indexed read by owner and changes nothing.
+   */
+  if (data.user) {
+    const ready = await provisionSignedInAccount(data.user.id, data.user.email ?? fields.email, path)
+    if (!ready) {
+      await discardSession()
+      back(path, 'setup_failed')
+    }
+  }
 
   /*
    * Outside the try/catch shape on purpose: redirect() works by throwing, so
@@ -102,17 +181,50 @@ export async function signUp(form: FormData): Promise<void> {
   if (fields.password.length < 8) back(path, 'weak_password')
 
   const supabase = createSupabaseServerClient(await actionCookies())
-  const { error } = await supabase.auth.signUp(fields)
+  const { data, error } = await supabase.auth.signUp(fields)
   if (error) back(path, outcomeForAuthError(error))
 
   /*
-   * Always "check your email", never "account created" — and never a redirect
-   * to /dashboard. With email confirmation on, sign-up does NOT produce a
-   * session, so sending them to the dashboard would bounce them straight back
-   * and look broken. It is also the same copy an already-registered address
-   * gets, which is what keeps this form from answering "does this person have
-   * an account".
+   * BOTH Supabase configurations have to work, because this project has "Confirm
+   * email" off today and will turn it back on before launch.
+   *
+   *   confirmation OFF  signUp returns a session — the person is signed in this
+   *                     instant. Telling them to check their email and leaving
+   *                     them on the form reads as a failure, which is what was
+   *                     observed.
+   *   confirmation ON   signUp returns a user and NO session. Redirecting to
+   *                     the dashboard would bounce straight back out.
+   *
+   * So the response decides, rather than an assumption about the setting.
+   *
+   * ON THE ENUMERATION PROPERTY, precisely. With confirmation ON it holds: a new
+   * address and a registered one both end at check_email, indistinguishable.
+   * With confirmation OFF it CANNOT hold, and no code here can restore it — a
+   * new address is signed in and lands on the dashboard, a registered one comes
+   * back to the form. Signing the new seller in IS the observable difference.
+   * That is a consequence of the Supabase setting, not of this branch, and
+   * turning confirmation back on restores the property. Said plainly here
+   * because a comment claiming a guarantee the code does not provide is worse
+   * than no comment.
    */
+  if (data.session && data.user) {
+    const ready = await provisionSignedInAccount(data.user.id, data.user.email ?? fields.email, path)
+    if (!ready) {
+      /*
+       * The half-success, handled rather than hidden. Supabase holds an
+       * account; we hold no shop for it. The session is discarded so nobody is
+       * left half-signed-in in a state the next step would loop on, and the
+       * seller is told the account exists and that signing in finishes it —
+       * which provisionSignedInAccount() on the sign-in path makes true.
+       */
+      await discardSession()
+      back(path, 'setup_failed')
+    }
+    redirect('/dashboard')
+  }
+
+  // No session: confirmation is on, or the address was already registered.
+  // Same copy either way.
   back(path, 'check_email')
 }
 

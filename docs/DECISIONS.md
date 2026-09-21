@@ -3883,3 +3883,93 @@ spread first and ours second, so the library cannot loosen them.
 successful sign-in today sets a cookie that nothing yet reads, because
 `getSession()` is untouched. That is the intended half-built state: this step
 creates Supabase accounts, the next joins one to a shop.
+
+### D88 — The first repository, and a demo shop per account
+
+`lib/db/index.ts` had exposed `getDb()` since Phase 1 with **no caller**. Twenty-four
+tables, nothing reading or writing one. Signing up now provisions three rows:
+a `users` row keyed by the Supabase user id, a demo `shops` row owned by it, and
+the `memberships` joining them. Nothing else — listings and orders come from the
+Etsy adapter, and seeding them would create a second source for data the mock
+already owns.
+
+**Where it lives.** Architecture section 3 puts repositories below domain
+services and above Postgres, and this codebase keeps infrastructure in `lib/`
+(`lib/db`, `lib/etsy`, `lib/billing`) with business logic in `domain/`. So rows
+live in `lib/repositories/accounts.ts` and the policy — *what* a new account gets
+— lives in `domain/auth/provision.ts`. "A new seller gets a demo shop called X in
+USD" will change; "insert a row" will not.
+
+**The store is an interface, and that is not ceremony.** The idempotency rules
+are the part that must not be wrong, and behind a concrete Drizzle call they
+could only be tested against a live Postgres — which this suite deliberately
+does not require. With a seam they run in-memory and the SQL stays thin.
+
+**Idempotency is keyed on the SHOP, by owner — never on the user.** A previous
+attempt that failed partway can leave a user row with no shop. Keying off "does
+the user exist" would then skip the shop forever and strand that account. There
+is a test for exactly that state, and it fails when the key is moved.
+
+#### The mock's shop guard had to go, and what replaced it
+
+`MockEtsyService` asserted `shopId !== DEMO_SHOP_ID → crossShop`, under the
+comment *"a user must never be able to operate on another shop's data"*. With a
+demo shop per account, that check refuses **every** request: it stops being a
+boundary and becomes an outage.
+
+**This is not D50e.** That decision records a cache that DROPPED a shopId, so one
+shop was served another shop's credentials — an identifier vanished from a keyed
+lookup and an authorization boundary became a coincidence. Nothing of that shape
+here: the mock holds no per-shop state and no per-shop credential, just one
+static fictional catalogue identical for every caller. There is no shop A data
+for shop B to receive, so a dropped identifier leaks nothing.
+
+The property was never enforced there anyway. `shopContext()` in lib/permissions
+throws when `session.shopId` is not the shop requested, and every domain function
+takes that context rather than a bare id. Untouched, and now with tests that fail
+if it stops refusing — including one proving the OLD guard would have waved
+through a cross-shop read whenever the target happened to be the demo constant.
+
+**The assertion was replaced, not deleted.** It now fails when the mock is asked
+to serve data while `ETSY_MODE=live`. Fictional listings presented as a real
+shop's is a worse failure than any the old check prevented.
+
+#### The half-success, handled
+
+Supabase can create an account and provisioning can then fail, leaving an auth
+identity with no shop — the state that becomes a redirect loop the moment
+`getSession()` goes live. Chosen behaviour: log it with a reference, **discard
+the session** so nobody is left half-signed-in, and send the seller back with
+`setup_failed`: *the account exists, do not sign up again, signing in will finish
+it.*
+
+That last clause is a promise, so `signIn` provisions too. Because provisioning
+is idempotent the ordinary case costs one indexed read by owner. A recovery
+instruction that does not recover is worse than admitting there is none.
+
+A missing `DATABASE_URL` takes the same path rather than being skipped: an auth
+account with no shop is precisely the silent partial success this exists to
+avoid.
+
+#### Sign-up stopped assuming email confirmation
+
+`signUp()` ended unconditionally with `check_email`, discarding the response.
+With confirmation **off** — how this project is configured today — Supabase
+returns a real session and the person is signed in, yet was shown "check your
+email" and left on the form. The response now decides: session → provision and
+go to `/dashboard`; no session → `check_email`.
+
+**The enumeration property, stated precisely rather than assumed.** With
+confirmation ON it holds: a new address and a registered one both end at
+`check_email`, indistinguishable. With confirmation OFF it **cannot** hold, and
+no code here can restore it — a new address is signed in and lands on the
+dashboard, a registered one returns to the form. Signing the new seller in *is*
+the observable difference. That is a consequence of the Supabase setting, and
+turning confirmation back on restores it. Written down because a comment
+claiming a guarantee the code does not provide is worse than no comment.
+
+And `check_email` now **replaces** the form rather than rendering above it.
+Observed: the message sat over a still-populated form with its Create account
+button intact, so a successful sign-up read as a failed one — the screen saying
+"done" and "try again" at once. Only that outcome is terminal; everything else
+is a correctable error and keeps the form.

@@ -78,6 +78,22 @@ export const AUTH_OUTCOMES = {
     detail:
       'If that address can be registered, a confirmation link is on its way. Open it to finish setting up, then sign in.',
   },
+  setup_failed: {
+    tone: 'danger',
+    /*
+     * The honest half-success. The Supabase account EXISTS; its shop does not.
+     * Saying "sign-up failed" would be a lie that sends people round in circles
+     * re-registering an address that is already taken, and saying nothing would
+     * leave them to discover it as a redirect loop later.
+     *
+     * "Sign in to finish" is a promise, so provisioning also runs on sign-in
+     * and is idempotent. A recovery instruction that does not actually recover
+     * is worse than admitting there is none.
+     */
+    title: 'Your account was created, but its shop was not',
+    detail:
+      'The account exists — do not sign up again with that address. Signing in will finish setting it up. If it keeps failing, send us the reference from this page.',
+  },
   not_configured: {
     tone: 'danger',
     title: 'Sign-in is not switched on yet',

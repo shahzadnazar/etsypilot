@@ -180,7 +180,46 @@ export class MockEtsyService implements EtsyService {
   }
 }
 
-/** A user must never be able to operate on another shop's data. */
+/**
+ * The mock serves its one fictional catalogue to whatever shop asks.
+ *
+ * This used to be `if (shopId !== DEMO_SHOP_ID) throw crossShop(shopId)`, under
+ * the comment "a user must never be able to operate on another shop's data".
+ * That property is real and still holds. This check was never what enforced it.
+ *
+ * WHY IT HAD TO GO. Every account now gets its own demo shop, so the product is
+ * explorable before an Etsy key exists. Those shops have real, distinct ids, so
+ * a test against one hardcoded constant refuses every single request — it stops
+ * being a boundary and becomes an outage.
+ *
+ * WHY THIS IS NOT D50e. That decision records a cache that DROPPED a shopId, so
+ * one shop was served another shop's credentials: the identifier vanished from
+ * a keyed lookup and an authorization boundary became a coincidence. Nothing of
+ * the sort happens here. This adapter holds no per-shop state and no per-shop
+ * credential — one static fictional catalogue, identical for every caller.
+ * There is no shop A data for shop B to receive, so there is nothing for a
+ * dropped identifier to leak.
+ *
+ * WHERE THE BOUNDARY ACTUALLY LIVES. `shopContext()` in lib/permissions throws
+ * `crossShop` when `session.shopId` is not the shop being requested, and every
+ * domain function takes that context rather than a bare id. That is the check
+ * that stops a seller reading someone else's shop, and it is untouched — with a
+ * test that fails if it ever stops refusing.
+ *
+ * WHAT REPLACES IT. Not nothing. The assertion now guards the invariant that is
+ * still true and still worth failing on: this adapter must never serve data
+ * while the product believes it is live. Fictional listings presented as a real
+ * shop's is a worse failure than any this file could otherwise produce, and the
+ * selector in lib/etsy/index.ts is a second guard on the same property rather
+ * than the only one.
+ */
 function assertDemoShop(shopId: string): void {
-  if (shopId !== DEMO_SHOP_ID) throw Errors.crossShop(shopId)
+  if (process.env.ETSY_MODE === 'live') {
+    throw Errors.validation(
+      'The demo catalogue was asked to serve a live shop.',
+      `EtsyPilot is configured for live Etsy data, so shop ${shopId} must be read through the ` +
+        'live adapter. No demo figures were returned — showing invented listings as a real shop ' +
+        'is the one failure this adapter must never produce.',
+    )
+  }
 }

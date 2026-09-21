@@ -49,6 +49,18 @@ export function AuthForm({
 }) {
   const isSignUp = mode === 'signup'
   const banner = outcome ? AUTH_OUTCOMES[outcome] : null
+  /*
+   * A finished sign-up REPLACES the form; it does not sit above it.
+   *
+   * Observed: "Check your email" rendered over a still-populated form with its
+   * Create account button intact, so a successful sign-up read as a failed one
+   * — the screen was simultaneously saying "done" and "try again". An outcome
+   * that ends the flow has to end the screen too.
+   *
+   * Only check_email. Every other outcome is something to correct and retry, so
+   * those keep the form, with the message above it.
+   */
+  const isTerminal = outcome === 'check_email'
 
   return (
     <div className="mx-auto w-full max-w-[420px] py-6">
@@ -77,6 +89,7 @@ export function AuthForm({
         </div>
       ) : null}
 
+      {isTerminal ? null : (
       <Card className="mt-4 p-[18px]">
         <form action={action} className="flex flex-col gap-3.5">
           <label className="flex flex-col gap-1">
@@ -124,14 +137,19 @@ export function AuthForm({
           </Button>
         </form>
       </Card>
+      )}
 
       <p className="mt-3.5 text-small text-ink-2">
-        {isSignUp ? 'Already have an account? ' : 'No account yet? '}
+        {isTerminal
+          ? 'Once your email is confirmed, '
+          : isSignUp
+            ? 'Already have an account? '
+            : 'No account yet? '}
         <Link
-          href={isSignUp ? '/login' : '/signup'}
+          href={isTerminal || isSignUp ? '/login' : '/signup'}
           className="font-semibold text-brand-strong underline underline-offset-2"
         >
-          {isSignUp ? 'Sign in' : 'Create one'}
+          {isTerminal ? 'sign in here' : isSignUp ? 'Sign in' : 'Create one'}
         </Link>
       </p>
 
