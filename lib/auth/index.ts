@@ -10,7 +10,29 @@
 
 import { cookies } from 'next/headers'
 import { DEMO_ACTOR_ID, DEMO_SHOP_ID } from '@/lib/etsy/demo-dataset'
-import { isDemoMode } from '@/lib/etsy'
+
+/**
+ * Is authentication still the fixed demo session?
+ *
+ * AUTH_MODE, not ETSY_MODE. These answer different questions — "is a real
+ * person signed in" and "where does Etsy data come from" — and one flag cannot
+ * express the state we are actually in: real sellers signing in while the shop
+ * data stays the demo catalogue, because the Etsy key has not arrived. Under
+ * one flag, turning auth on would have silently switched the Etsy adapter to
+ * live and broken every screen.
+ *
+ * Read from the environment rather than by importing isDemoMode from
+ * '@/lib/etsy'. That import looks tidier and is the exact mistake D59b records:
+ * it drags LiveEtsyService, and with it node:crypto, into any bundle that
+ * touches auth — which the Edge runtime cannot load. Auth has no reason to know
+ * an Etsy adapter exists.
+ *
+ * Not exported. Nothing outside this module should branch on how auth is
+ * configured; callers branch on whether getSession() returned a session.
+ */
+function isDemoAuth(): boolean {
+  return process.env.AUTH_MODE !== 'live'
+}
 
 export interface Session {
   userId: string
@@ -50,7 +72,7 @@ const DEMO_SESSION: Session = {
 export async function getSession(): Promise<Session | null> {
   // Read, deliberately unused in demo mode: Phase 11 reads the auth cookie here.
   await cookies()
-  if (isDemoMode()) return DEMO_SESSION
+  if (isDemoAuth()) return DEMO_SESSION
   return null
 }
 

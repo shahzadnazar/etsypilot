@@ -3753,3 +3753,57 @@ rather than asserting the bytes start `PK`. The browser checks were each proved
 by reverting the fix: two went red, and the suite then aborted looking for
 `<main>` in a JSON document — which is the reported bug, reproduced by its own
 guard. That abort is now a reported failure rather than a crash.
+
+### D86 — AUTH_MODE, separate from ETSY_MODE
+
+`lib/auth/index.ts` decided whether a session was real by calling `isDemoMode()`
+from `@/lib/etsy`, which reads `ETSY_MODE`. One flag was answering two unrelated
+questions: *is a real person signed in* and *where does Etsy data come from*.
+
+That cannot express the state this project is actually in. The Etsy API key has
+not arrived, so shop data must stay the demo catalogue — but real sellers need
+to sign in before it does. Under one flag, turning authentication on would have
+switched the Etsy adapter to live at the same instant and broken every screen
+that reads a listing, an order or a fee.
+
+So `AUTH_MODE` now gates the session and `ETSY_MODE` keeps its existing meaning
+for the adapter alone. Anything other than `live` is demo, so an unset or
+misspelled value fails toward the demo session rather than toward a null one.
+
+It is read from `process.env` directly, and the helper is **not exported**. Both
+are deliberate:
+
+Reading the environment rather than importing `isDemoMode` is D59b's lesson,
+applied before it bit. That import drags `LiveEtsyService` and `node:crypto`
+into any bundle touching the module, which the Edge runtime cannot load — it
+already broke the build once from `lib/telemetry`. `lib/auth` now reaches
+`lib/etsy` only for `demo-dataset`, which imports one *type* and nothing at
+runtime. Auth has no reason to know an Etsy adapter exists.
+
+Not exporting it keeps the question unaskable from outside. Callers branch on
+whether `getSession()` returned a session, never on how auth is configured.
+
+The pairing that does not work is `AUTH_MODE=mock` with `ETSY_MODE=live`: live
+Etsy data attributed to a fabricated demo user. Nothing enforces it yet because
+neither live path is wired; `.env.example` records it so the ordering is a
+decision rather than a discovery.
+
+`lib/auth/supabase.ts` lands alongside as plumbing that nothing calls, so the
+dependency, the cookie contract and the `server-only` boundary can be reviewed
+apart from the change that switches auth on. It joins the closed list in the
+server-only guard — it holds no secret of its own, the anon key being public,
+but it builds a client over the *request's cookies*, which has no business in a
+browser bundle. Deliberately no JWT decoding: Supabase now issues
+`sb_publishable_…` keys, and code that read a `.`-separated payload would work
+on the old format and throw on the new one, to learn something the server
+already knows.
+
+**Verified unchanged, not asserted.** With `AUTH_MODE` unset, seven rendered
+pages were captured from a build of the previous commit and from this one and
+compared byte for byte. The first comparison reported all seven differing — on
+the per-request CSP nonce, which is random by design. The second still reported
+seven, on the same nonce escaped inside the RSC flight payload where the first
+regex could not see it, plus the Next build id, which changes every build.
+Normalising exactly those two: all seven identical, 47KB to 187KB apiece. A
+diff that flags noise is not a check, and it took two passes to find out which
+was which.
