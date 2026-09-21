@@ -42,6 +42,7 @@ export const users = pgTable('users', {
 
 export const shops = pgTable('shops', {
   id: text('id').primaryKey(),
+  ownerId: text('owner_id').references(() => users.id),
   etsyShopId: text('etsy_shop_id'),
   name: text('name').notNull(),
   currency: text('currency').notNull().default('USD'),
