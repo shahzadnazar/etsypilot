@@ -231,6 +231,66 @@ describe('resolutions', () => {
   })
 })
 
+/*
+ * Every redirect() target must be a real route.
+ *
+ * This is the same defect class as a broken href, one layer deeper and rather
+ * more serious. app/(dashboard)/layout.tsx and about twenty pages run
+ * `if (!session) redirect('/login')`, and for the whole life of the project
+ * there was NO /login page. Nothing failed, because nothing took that branch:
+ * getSession() returns the demo session while AUTH_MODE is unset. The first
+ * time real auth was switched on, every screen in the product would have
+ * redirected to a 404 — the entire app, unreachable, from one missing file.
+ *
+ * A redirect to a missing route is invisible in exactly the way a bad href is:
+ * valid TypeScript, valid at build, wrong only when someone takes the branch.
+ */
+describe('redirect targets', () => {
+  const sources = [...walk('app'), ...walk('lib'), ...walk('domain'), ...walk('components')]
+  const targets = new Map<string, string>()
+  let callSites = 0
+
+  for (const file of sources) {
+    const text = readFileSync(file, 'utf8')
+    // redirect('/x') and redirect(`/x`), internal paths only. A template
+    // literal carrying ${...} is skipped: its value is not knowable here.
+    for (const match of text.matchAll(/redirect\(\s*['"`](\/[^'"`$]*)['"`]/g)) {
+      callSites += 1
+      const raw = match[1]!
+      // Drop any query string — /settings/extension?download=x is /settings/extension.
+      const path = raw.split('?')[0]!.replace(/\/$/, '') || '/'
+      if (!targets.has(path)) targets.set(path, file)
+    }
+  }
+
+  it('finds the redirects it is meant to be checking', () => {
+    /*
+     * The floor is on CALL SITES, not on distinct paths.
+     *
+     * Worth writing down, because the first version of this check asserted
+     * `targets.size > 5` and failed — there are only TWO distinct redirect
+     * targets in the whole product, /login and /dashboard. But /login is
+     * reached from 34 separate places. Counting the deduplicated set measured
+     * something real and irrelevant; the number that says discovery is working
+     * is how many calls were seen.
+     */
+    expect(callSites).toBeGreaterThan(20)
+    expect(targets.size).toBeGreaterThan(1)
+  })
+
+  it('points every redirect at a page or route that exists', () => {
+    const broken = [...targets.entries()].filter(([path]) => !resolves(path))
+    expect(broken.map(([path, file]) => `${path} (${file})`)).toEqual([])
+  })
+
+  it('serves the sign-in page every signed-out branch sends people to', () => {
+    // Named explicitly rather than left to the sweep above, because this is
+    // the one whose absence would take the whole product down.
+    expect(ROUTES.has('/login')).toBe(true)
+    expect(ROUTES.has('/signup')).toBe(true)
+  })
+})
+
 describe('links to route handlers', () => {
   /*
    * A <Link> to an API route is prefetched like any other, so Next fetches the

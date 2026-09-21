@@ -20,6 +20,7 @@ import 'server-only'
  */
 
 import { createServerClient } from '@supabase/ssr'
+import { supabaseCredentials } from './supabase-config'
 
 /**
  * Both key formats this project may be issued.
@@ -35,8 +36,12 @@ import { createServerClient } from '@supabase/ssr'
  * something the server already knows.
  */
 function credentials(): { url: string; key: string } {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  /*
+   * Read through supabase-config so middleware and this module cannot disagree
+   * about which project they are talking to. That module carries no
+   * `server-only` marker precisely so the Edge runtime can reach it.
+   */
+  const found = supabaseCredentials()
 
   /*
    * Fail here, named, rather than letting the SDK throw something generic on
@@ -49,13 +54,13 @@ function credentials(): { url: string; key: string } {
    * surface at all). A session read runs as the signed-in user or it is not a
    * session read.
    */
-  if (!url || !key) {
+  if (!found) {
     throw new Error(
       'AUTH_MODE=live requires NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY. ' +
         'Set both in .env.local, or leave AUTH_MODE unset to keep the demo session.',
     )
   }
-  return { url, key }
+  return found
 }
 
 /** What this module needs from the request's cookie jar. */

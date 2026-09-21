@@ -33,8 +33,10 @@
  * fails on any off-origin request is what keeps this list at 'self'.
  */
 
+import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { AUTH_COOKIE_OPTIONS, isLiveAuth, supabaseCredentials } from '@/lib/auth/supabase-config'
 import { cspFor } from '@/lib/security/csp'
 import { checkCsrf } from '@/lib/security/csrf'
 import { rateLimit } from '@/lib/security/rate-limit'
@@ -58,7 +60,7 @@ function callerKey(request: NextRequest): string {
   return request.headers.get('x-real-ip') ?? 'unknown'
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const url = new URL(request.url)
 
   /*
@@ -145,7 +147,77 @@ export function middleware(request: NextRequest) {
 
   const response = NextResponse.next({ request: { headers } })
   response.headers.set('Content-Security-Policy', csp)
+
+  /*
+   * Session refresh — LAST, and deliberately so.
+   *
+   * It sits AFTER the CSRF check, not before it. docs/SECURITY-REVIEW.md
+   * records that the billing mutation routes were forgeable and are inert today
+   * only because no auth cookie exists for a forged request to ride. THIS STEP
+   * CREATES THAT COOKIE. Refreshing before the origin check would mint the
+   * cookie for a request that is about to be refused — doing work for an
+   * attacker and, worse, extending a session on their say-so. Nothing above
+   * this line was reordered, relaxed or exempted.
+   *
+   * It also runs on every path including /login and /signup, and must: a
+   * refresh is not a redirect. This middleware sends nobody anywhere, so a
+   * signed-out seller can always reach the sign-in form. The moment this file
+   * grows a redirect, that stops being true by accident.
+   */
+  await refreshSession(request, response)
   return response
+}
+
+/**
+ * Keep a Supabase session alive across requests.
+ *
+ * Supabase access tokens are short-lived. A Server Component cannot set a
+ * cookie, so if nothing refreshed here, a seller would be signed out whenever
+ * their token expired mid-visit. getUser() revalidates with Supabase and writes
+ * any rotated cookies onto the RESPONSE, which is the one place in a request
+ * that can carry them back to the browser.
+ *
+ * Three guards, all of which must hold before a single network call is made:
+ * auth has to be live, the project credentials have to exist, and the request
+ * must actually carry a Supabase cookie. Without the last one every anonymous
+ * page view — the marketing calculator, the sign-in form itself — would make a
+ * round trip to Supabase to be told nobody is signed in.
+ *
+ * Failures are swallowed on purpose. Supabase being unreachable must not turn
+ * every page in the product into a 500; the seller's existing cookie simply
+ * stays as it is until the next request.
+ */
+async function refreshSession(request: NextRequest, response: NextResponse): Promise<void> {
+  if (!isLiveAuth()) return
+  const credentials = supabaseCredentials()
+  if (!credentials) return
+  if (!request.cookies.getAll().some((c) => c.name.startsWith('sb-'))) return
+
+  try {
+    const supabase = createServerClient(credentials.url, credentials.key, {
+      cookies: {
+        getAll: () => request.cookies.getAll().map((c) => ({ name: c.name, value: c.value })),
+        setAll: (list) => {
+          for (const cookie of list) {
+            /*
+             * Supabase's options first, ours second, so httpOnly, sameSite and
+             * secure cannot be loosened by whatever the library passes. lax
+             * rather than strict: strict drops the cookie on the return leg of
+             * Etsy's OAuth callback (D87).
+             */
+            response.cookies.set({ ...cookie.options, ...AUTH_COOKIE_OPTIONS, name: cookie.name, value: cookie.value })
+          }
+        },
+      },
+    })
+
+    // getUser(), never getSession(): getUser revalidates the token with
+    // Supabase, while getSession trusts a cookie the browser handed over —
+    // which is the thing being defended against.
+    await supabase.auth.getUser()
+  } catch {
+    // Deliberately silent. See above.
+  }
 }
 
 export const config = {

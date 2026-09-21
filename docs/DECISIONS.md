@@ -3807,3 +3807,79 @@ regex could not see it, plus the Next build id, which changes every build.
 Normalising exactly those two: all seven identical, 47KB to 187KB apiece. A
 diff that flags noise is not a check, and it took two passes to find out which
 was which.
+
+### D87 — Sign-in, sign-up, sign-out — and the 404 that was waiting
+
+`app/(dashboard)/layout.tsx` and every guarded page run
+`if (!session) redirect('/login')`. **There was no /login page.** Thirty-four
+call sites, measured, all pointing at a route that did not exist.
+
+Nothing failed, because nothing took that branch: `getSession()` returns the
+demo session while `AUTH_MODE` is unset (D86). The first time real auth was
+switched on, every screen in the product would have redirected to a 404 — the
+whole app unreachable, from one missing file. That is the defect this step
+fixes, and a unit test now walks every `redirect('/…')` in the tree and fails on
+any that does not resolve.
+
+Worth recording how the guard was got wrong first. It asserted
+`targets.size > 5` and failed: there are only **two** distinct redirect targets
+in the entire product, `/login` and `/dashboard`. Deduplicating measured
+something real and irrelevant. The floor belongs on call sites — 36 of them —
+not on the set.
+
+**Under `(public)`.** Putting the sign-in page inside the dashboard group would
+have made signing in require being signed in, and the symptom would have been a
+redirect loop rather than anything readable.
+
+**Server actions, which this codebase otherwise does not use.** The reason is
+narrow and decides it: a Server Component cannot set a cookie and a server
+action can. Authentication *is* setting a cookie. The forms are still plain
+`<form action={...}>` in Server Components, with no `'use client'` anywhere —
+they submit and report failure with JavaScript disabled. A sign-in screen that
+needs a hydrated bundle to say "wrong password" is one that fails closed on a
+bad connection.
+
+**Failures redirect with a KEY, never a message.** `domain/auth/outcomes.ts` is
+a closed map, the same shape as `CONNECT_OUTCOMES`. A Supabase wording change
+cannot become our copy, and no provider detail reaches a signed-out page.
+
+Two entries are deliberately vague, and it is a security property:
+
+  - `invalid` says "email **and** password", never which. Naming one half turns
+    the form into an account-existence oracle — submit an address with a junk
+    password, read the wording, learn whether that person is a seller here.
+    Supabase returns one error for both cases; this copy must not undo that.
+  - `check_email` is shown for a successful sign-up **and** for an address
+    already registered. Supabase distinguishes them; this screen must not.
+
+**The refresh sits after the CSRF check, and that ordering is the point.**
+`docs/SECURITY-REVIEW.md` records that the billing mutation routes were
+forgeable and are inert today only because no auth cookie exists for a forged
+request to ride. *This step creates that cookie.* Refreshing before the origin
+check would mint it for a request about to be refused — work done for an
+attacker, and a session extended on their say-so. Verified live: a POST to
+`/api/auth/signout` and to `/api/billing/cancel` with `Origin: evil.example`
+both still return 403.
+
+The refresh is guarded three ways before any network call — auth live,
+credentials present, and a `sb-` cookie actually on the request. Without the
+last, every anonymous page view would make a round trip to Supabase to be told
+nobody is signed in. Failures are swallowed: Supabase being unreachable must not
+turn every page into a 500.
+
+**`lib/auth/supabase-config.ts` exists because of the runtime split.**
+`server-only` resolves to a module that throws unless the `react-server`
+condition is set, and **middleware does not set it** — it is a separate Edge
+bundle. A middleware importing the server-only factory would throw at import, on
+every request, for every route. Same shape as D59b. Configuration lives in a
+module both runtimes can read; the cookie-bound factory stays server-only.
+
+Cookies are `httpOnly`, `sameSite: 'lax'`, `secure` in production. Lax, never
+strict: strict drops the cookie on the return leg of a cross-site redirect,
+which is exactly how Etsy's OAuth callback arrives. Supabase's own options are
+spread first and ours second, so the library cannot loosen them.
+
+**Nothing here writes a row.** No repository, no `users`, no `shops`. A
+successful sign-in today sets a cookie that nothing yet reads, because
+`getSession()` is untouched. That is the intended half-built state: this step
+creates Supabase accounts, the next joins one to a shop.
