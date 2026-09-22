@@ -95,7 +95,13 @@ describe('the Edge check: what middleware can decide without a database', () => 
 const session = vi.hoisted(() => ({
   current: null as null | { userId: string; email: string; isDemo: boolean },
 }))
-const db = vi.hoisted(() => ({ configured: false, storedRole: null as string | null }))
+const db = vi.hoisted(() => ({
+  configured: false,
+  storedRole: null as string | null,
+  /** null = no row at all, which resolves to the defaults. */
+  storedPermissions: null as string[] | null,
+  permissionsThrow: false,
+}))
 const auth = vi.hoisted(() => ({ live: true }))
 const notFoundCalls = vi.hoisted(() => ({ count: 0 }))
 
@@ -104,6 +110,12 @@ vi.mock('@/lib/db', () => ({ isDatabaseConfigured: () => db.configured }))
 vi.mock('@/lib/auth/supabase-config', () => ({ isLiveAuth: () => auth.live }))
 vi.mock('@/lib/repositories/admin-reads-every-shop', () => ({
   adminReadStoredPlatformRole: async () => db.storedRole,
+}))
+vi.mock('@/lib/repositories/admin-permissions', () => ({
+  readStoredPermissions: async () => {
+    if (db.permissionsThrow) throw new Error('permissions table unreadable')
+    return db.storedPermissions
+  },
 }))
 vi.mock('next/navigation', () => ({
   notFound: () => {
@@ -122,6 +134,8 @@ beforeEach(() => {
   session.current = null
   db.configured = false
   db.storedRole = null
+  db.storedPermissions = null
+  db.permissionsThrow = false
   auth.live = true
   notFoundCalls.count = 0
   delete process.env.SUPER_ADMIN_EMAILS
@@ -250,5 +264,138 @@ describe('the Node check: a non-admin gets 404 from /admin', () => {
 
     session.current = { userId: 'u6', email: 'boss@etsypilot.app', isDemo: false }
     expect((await getAdminAccess())?.role).toBe('SUPER_ADMIN')
+  })
+})
+
+/* ────────────────── enforcement reads the store, not the defaults ────────── */
+
+/*
+ * THE PROPERTY THE WHOLE MATRIX RESTS ON.
+ *
+ * A permission screen that changes nothing is worse than no permission screen:
+ * it tells an operator they have revoked something when they have not. These
+ * ask the gate itself — the object every page and every action checks against
+ * — whether it follows the store.
+ */
+describe('the stored set decides, not DEFAULT_ROLE_PERMISSIONS', () => {
+  beforeEach(() => {
+    db.configured = true
+    auth.live = true
+    process.env.ADMIN_EMAILS = 'ops@etsypilot.app'
+  })
+
+  it('takes a MANAGER’s panel away when their last box is unticked', async () => {
+    /*
+     * The headline requirement. MANAGER's only default is users.view, so
+     * unticking it leaves an empty set — and an empty set must mean /admin
+     * does not exist for them, not an empty shell they can still load.
+     */
+    db.storedRole = 'MANAGER'
+    db.storedPermissions = []
+    session.current = { userId: 'm1', email: 'manager@x.com', isDemo: false }
+
+    expect(await getAdminAccess()).toBeNull()
+    await expect(requireAdmin('users.view')).rejects.toThrow('NEXT_NOT_FOUND')
+  })
+
+  it('gives it back when the box is re-ticked', async () => {
+    db.storedRole = 'MANAGER'
+    db.storedPermissions = ['users.view']
+    session.current = { userId: 'm1', email: 'manager@x.com', isDemo: false }
+
+    const access = await getAdminAccess()
+    expect(access?.role).toBe('MANAGER')
+    expect(access?.can('users.view')).toBe(true)
+    await expect(requireAdmin('users.view')).resolves.toMatchObject({ role: 'MANAGER' })
+  })
+
+  it('REVOKES from an ADMIN who holds it by default', async () => {
+    /*
+     * The direction that proves the store is read rather than merged with the
+     * defaults. ADMIN's default is all seven; the stored set says one.
+     */
+    db.storedPermissions = ['users.view']
+    session.current = { userId: 'a1', email: 'ops@etsypilot.app', isDemo: false }
+
+    const access = await getAdminAccess()
+    expect(access?.role).toBe('ADMIN')
+    expect(access?.can('users.view')).toBe(true)
+    for (const permission of ['users.detail', 'subscriptions.view', 'usage.view', 'ai.view', 'etsy.view', 'operations.view'] as const) {
+      expect(access?.can(permission), permission).toBe(false)
+    }
+    expect(access?.permissions).toEqual(['users.view'])
+  })
+
+  it('GRANTS a MANAGER something the defaults never gave them', async () => {
+    db.storedRole = 'MANAGER'
+    db.storedPermissions = ['users.view', 'subscriptions.view']
+    session.current = { userId: 'm1', email: 'manager@x.com', isDemo: false }
+
+    const access = await getAdminAccess()
+    expect(access?.can('subscriptions.view')).toBe(true)
+  })
+
+  it('falls back to the defaults only when there is NO ROW', async () => {
+    /*
+     * null and [] are different answers. A fresh database must behave exactly
+     * as A1 did; a deliberately emptied set must not be helpfully refilled.
+     */
+    db.storedRole = 'MANAGER'
+    db.storedPermissions = null
+    session.current = { userId: 'm1', email: 'manager@x.com', isDemo: false }
+    expect((await getAdminAccess())?.permissions).toEqual(['users.view'])
+
+    session.current = { userId: 'a1', email: 'ops@etsypilot.app', isDemo: false }
+    expect((await getAdminAccess())?.permissions).toHaveLength(7)
+  })
+
+  it('never lets the store touch SUPER_ADMIN', async () => {
+    /*
+     * The lock-out guard. Whatever the ADMIN and MANAGER rows say — and even
+     * if a SUPER_ADMIN row were somehow inserted — the person who can repair
+     * the matrix keeps the screen that repairs it.
+     */
+    process.env.SUPER_ADMIN_EMAILS = 'boss@etsypilot.app'
+    db.storedPermissions = []
+    session.current = { userId: 's1', email: 'boss@etsypilot.app', isDemo: false }
+
+    const access = await getAdminAccess()
+    expect(access?.role).toBe('SUPER_ADMIN')
+    expect(access?.permissions).toHaveLength(7)
+    expect(access?.can('users.view')).toBe(true)
+    expect(access?.canSuperAdminOnly('roles.write')).toBe(true)
+  })
+
+  it('grants nothing from a row containing a non-delegatable capability', async () => {
+    /*
+     * The last of three barriers. The matrix cannot render them and the parser
+     * cannot accept them; this is what holds if a row acquires one anyway, by
+     * a direct UPDATE or a bad migration.
+     */
+    db.storedRole = 'MANAGER'
+    db.storedPermissions = ['users.view', 'roles.write', 'audit.view']
+    session.current = { userId: 'm1', email: 'manager@x.com', isDemo: false }
+
+    const access = await getAdminAccess()
+    expect(access?.permissions).toEqual(['users.view'])
+    expect(access?.canSuperAdminOnly('roles.write')).toBe(false)
+    expect(access?.canSuperAdminOnly('audit.view')).toBe(false)
+  })
+
+  it('fails CLOSED when the permission store cannot be read', async () => {
+    // Falling back to the defaults would silently re-grant something an
+    // operator had deliberately revoked.
+    db.permissionsThrow = true
+    session.current = { userId: 'a1', email: 'ops@etsypilot.app', isDemo: false }
+    expect(await getAdminAccess()).toBeNull()
+  })
+
+  it('still lets a SUPER_ADMIN in when the permission store is broken', async () => {
+    // Break-glass survives a broken database, exactly as it survives a broken
+    // promotion UI.
+    process.env.SUPER_ADMIN_EMAILS = 'boss@etsypilot.app'
+    db.permissionsThrow = true
+    session.current = { userId: 's1', email: 'boss@etsypilot.app', isDemo: false }
+    expect((await getAdminAccess())?.permissions).toHaveLength(7)
   })
 })

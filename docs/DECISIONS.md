@@ -4385,3 +4385,146 @@ Demo mode is unchanged: with `AUTH_MODE` unset all four `/admin` paths 404 and
 217 rendered-output, 29 empty-state, 12 popup and 15 admin-hidden checks pass.
 A cross-origin POST to the role action is refused 403 by the CSRF check, which
 still runs before everything.
+
+---
+
+### D93 — Editable permissions, and the audit gap A2 left
+
+Two things: the seven permission keys became a matrix a SUPER_ADMIN can edit,
+and the role change stopped being able to happen without a record.
+
+#### The gap, first
+
+A2 applied a role change as two separate writes — the `UPDATE`, then the audit
+`INSERT` — with the audit failure deliberately swallowed so a logging problem
+could not report a successful change as failed. The cost was written down at the
+time and it was the wrong trade: a database that accepted the first and rejected
+the second left a privilege change **nobody recorded**, in the one log whose
+entire purpose is that no privilege change goes unrecorded.
+
+Both writes now run in one transaction. A failed record takes the change down
+with it, and the operator is told "could not be recorded, so it was rolled
+back" — which is true. `setStoredPlatformRole()` was deleted rather than left
+unused: an exported function that changes a privilege without recording it is
+what the next person reaches for, and "remember to write the audit row too" is
+not a guarantee. There is now exactly one exported write and it carries its own
+record.
+
+What it costs, plainly: a broken audit table now blocks role changes entirely.
+That is the correct direction. A panel refusing to promote anyone until its log
+works is visible and diagnosable; a promotion with no record is neither.
+
+#### Where the sets live
+
+`admin_role_permissions`, one row per editable role, seeded by migration 0005
+with the A1 defaults so first deploy behaves unchanged. **SUPER_ADMIN has no
+row and must never get one** — its set is always all seven and is never read
+from the store. A super admin who could empty their own set would lock
+themselves out of the only screen that would restore it, and the way back is an
+environment variable and a restart.
+
+`null` (no row) and `[]` (a row holding nothing) are deliberately different
+answers. No row means nobody configured the role, so the defaults apply — which
+is what keeps first deploy correct even if the seed never ran. An empty array
+means somebody configured it to nothing, and refilling that from the defaults
+would make every revocation silently undo itself.
+
+#### Keeping the non-delegatable pair out
+
+Three independent barriers, because one would be a convention:
+
+1. **The matrix cannot render them.** It iterates `PERMISSIONS`, and
+   `audit.view` / `roles.write` are `SUPER_ADMIN_ONLY` — a separate type. They
+   also have no entry in `PERMISSION_LABELS`, which is keyed by `Permission`,
+   so a checkbox for one could not be drawn even by hand.
+2. **The parser refuses them.** `parsePermissionKeys()` returns null on an
+   unrecognised key rather than dropping it. Dropping would answer a tampered
+   request with a cheerful success and a record that never mentioned the
+   attempt; refusing puts it in the log as a refusal.
+3. **The resolver filters them.** The stored value is filtered through
+   `PERMISSIONS` on the way out, so a row that acquires one by a direct UPDATE
+   or a bad migration grants nothing by it.
+
+#### Enforcement reads the store
+
+`DEFAULT_ROLE_PERMISSIONS` is the constant's new name, and the rename is the
+point: `ROLE_PERMISSIONS[role]` reads like the answer to "what may this role
+do", and once the sets are editable it is not.
+
+Every check in the panel — `requireAdmin()` in each page, `access.can()` in the
+navigation, the `roles.write` gate — goes through the one `AdminAccess` built in
+`domain/admin/access.ts`, so making that read the store made all of them read
+it. A sweep asserts the constant is reachable from exactly two places (the seed
+and the no-row fallback) and that nothing else constructs an `AdminAccess`.
+
+The old gate was `hasAnyAdminAccess(role)`, which reads the constant. That was
+fine while the sets were constants and is exactly wrong now: it answers yes for
+a MANAGER whose every box is unticked. The gate is now `permissions.length === 0
+→ no panel`.
+
+Fails closed: an unreadable permission store denies an ADMIN or MANAGER rather
+than handing them the defaults, because falling back would re-grant something an
+operator had deliberately revoked. SUPER_ADMIN never queries the store, so
+break-glass survives a broken database exactly as it survives a broken UI.
+
+#### One rule for sensitive actions
+
+Changing permissions reuses A2's step-up path unchanged — the same isolated
+Supabase client, the same `scope: 'local'` revocation, the same budget keyed per
+operator. One budget, not two, because the attacker at an unlocked laptop does
+not care which of the two forms they guess through.
+
+Permission records go in their own append-only table. `admin_audit_events`'s
+subject is an ACCOUNT — `target_email` is NOT NULL and means a person — and a
+permission change's subject is a ROLE. Writing `'ADMIN'` into an email column
+would be a value that misdescribes its own source, and relaxing the column is
+not available (additive only). The two stores merge by timestamp in the reader,
+so the audit page is still one log.
+
+#### Tests, and the ones that were wrong
+
+802 tests / 48 files, up from 731 / 47.
+
+Twenty deliberate breaks, nineteen caught first time. The twentieth — deleting
+`isEditableRole()` from the editor page — broke nothing, and was not an
+escalation: the submit is still refused by the domain. What it was is quieter
+and worse. `/admin/permissions/SUPER_ADMIN` would have rendered a full set of
+checkboxes and a Save button that could only ever refuse, on the one screen
+where a reader is deciding who may do what. There is now a test for it.
+
+Three assertions in the new suite failed against correct code, all the same
+shape — `indexOf` finding the first match rather than the one meant. The sweep
+for non-delegatable capabilities on the permission screens matched the page's
+own `canSuperAdminOnly('roles.write')` GATE; the transaction check matched
+`readStoredPermissions()` and then, once bounded at the start, matched
+`appendPermissionAuditEvent()`, which uses the pooled connection quite correctly
+because a refusal has nothing to roll back. Each is now bounded to the function
+it is about.
+
+#### Verified against a running server
+
+39 checks with a real Postgres and the fake GoTrue, and the two that cannot be
+unit tested at all:
+
+**Enforcement.** Unticking MANAGER's last box in one browser session takes
+`/admin/users` away from a different person in a different session on their very
+next request, and re-ticking gives it back with no sign-out. Read back across
+two server restarts: unticked → 404 from a fresh process, re-ticked → 200 from
+another. The same for ADMIN's own set, which is editable and bites.
+
+**The rollback.** A trigger is installed that makes `admin_audit_events` reject
+every insert. A promotion is then attempted through the UI; it reports "could
+not be recorded", and `platform_role` read straight out of Postgres is
+unchanged. The trigger is dropped and the same change applies, so what was being
+measured was the rollback and not the request.
+
+One harness bug worth recording, because it looked like a product failure: the
+check began doing twelve privileged actions in a row and started getting
+`RATE_LIMITED` partway through. That is the step-up budget working — 10 per 15
+minutes, shared between both forms, in-process. The script now does eight, each
+one numbered, and aborts with an explanation rather than a wall of false
+negatives if the budget runs out.
+
+Demo mode is unchanged: all seven `/admin` paths 404 with `AUTH_MODE` unset, and
+217 rendered-output, 29 empty-state, 12 popup, 15 admin-hidden and 43
+role-change checks pass.

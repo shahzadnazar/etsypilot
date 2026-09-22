@@ -7,7 +7,7 @@ import {
   hasAnyAdminAccess,
   PERMISSIONS,
   resolvePlatformRole,
-  ROLE_PERMISSIONS,
+  DEFAULT_ROLE_PERMISSIONS,
   SUPER_ADMIN_ONLY,
 } from '@/domain/admin/roles'
 
@@ -163,8 +163,8 @@ describe('a SHOP role grants no PLATFORM access', () => {
 
 describe('permissions', () => {
   it('gives SUPER_ADMIN and ADMIN all seven', () => {
-    expect(ROLE_PERMISSIONS.SUPER_ADMIN).toHaveLength(7)
-    expect(ROLE_PERMISSIONS.ADMIN).toHaveLength(7)
+    expect(DEFAULT_ROLE_PERMISSIONS.SUPER_ADMIN).toHaveLength(7)
+    expect(DEFAULT_ROLE_PERMISSIONS.ADMIN).toHaveLength(7)
     for (const permission of PERMISSIONS) {
       expect(can('SUPER_ADMIN', permission), permission).toBe(true)
       expect(can('ADMIN', permission), permission).toBe(true)
@@ -172,14 +172,14 @@ describe('permissions', () => {
   })
 
   it('gives MANAGER users.view and nothing else', () => {
-    expect(ROLE_PERMISSIONS.MANAGER).toEqual(['users.view'])
+    expect(DEFAULT_ROLE_PERMISSIONS.MANAGER).toEqual(['users.view'])
     expect(can('MANAGER', 'users.view')).toBe(true)
     expect(can('MANAGER', 'subscriptions.view')).toBe(false)
     expect(can('MANAGER', 'users.detail')).toBe(false)
   })
 
   it('gives USER none, and no admin access at all', () => {
-    expect(ROLE_PERMISSIONS.USER).toEqual([])
+    expect(DEFAULT_ROLE_PERMISSIONS.USER).toEqual([])
     expect(hasAnyAdminAccess('USER')).toBe(false)
     for (const permission of PERMISSIONS) {
       expect(can('USER', permission), permission).toBe(false)
@@ -194,7 +194,7 @@ describe('the two non-delegatable capabilities', () => {
     for (const capability of SUPER_ADMIN_ONLY) {
       expect(PERMISSIONS as readonly string[]).not.toContain(capability)
       for (const role of ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'USER'] as const) {
-        expect(ROLE_PERMISSIONS[role] as readonly string[], role).not.toContain(capability)
+        expect(DEFAULT_ROLE_PERMISSIONS[role] as readonly string[], role).not.toContain(capability)
       }
     }
   })

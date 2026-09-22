@@ -84,9 +84,9 @@ describe('SUPER_ADMIN and ADMIN cannot be granted from the panel', () => {
      * setStoredPlatformRole(id, 'SUPER_ADMIN') compile, and it fails here.
      */
     const source = code('lib/repositories/admin-writes-platform-role.ts')
-    expect(source).toContain('role: AssignableRole')
-    expect(source).not.toContain('role: PlatformRole')
-    expect(source).not.toContain('role: string')
+    expect(source).toContain('to: AssignableRole')
+    expect(source).not.toContain('to: PlatformRole')
+    expect(source).not.toContain('to: string')
     // And the elevated names appear nowhere in the write path's code at all.
     expect(source).not.toContain('SUPER_ADMIN')
     expect(source).not.toContain("'ADMIN'")
@@ -267,30 +267,61 @@ describe('the audit store has no way to change history', () => {
   })
 })
 
-describe('the role write touches one column and nothing else', () => {
+describe('the role write touches one column, and carries its own audit record', () => {
   const FILE = 'lib/repositories/admin-writes-platform-role.ts'
+
+  it('exports exactly one write, so there is no unaudited way in', () => {
+    /*
+     * A2 exported a bare setStoredPlatformRole() beside the audited path. It
+     * was deleted rather than left unused: an exported function that changes a
+     * privilege without recording it is what the next person reaches for, and
+     * "remember to write the audit row too" is not a guarantee.
+     */
+    const source = code(FILE)
+    expect(source.match(/export async function/g) ?? []).toHaveLength(1)
+    expect(source).toContain('export async function applyPlatformRoleChange')
+    expect(source).not.toContain('export async function setStoredPlatformRole')
+  })
+
+  it('runs the role change and the audit insert in ONE transaction', () => {
+    /*
+     * THE GAP A2 LEFT. Two separate awaits meant a database that accepted the
+     * UPDATE and rejected the INSERT left a privilege change nobody recorded.
+     * Both writes must be inside the same transaction callback.
+     */
+    const source = code(FILE)
+    expect(source).toContain('getDb().transaction(')
+    const begin = source.indexOf('transaction(')
+    expect(source.indexOf('.update(schema.users)')).toBeGreaterThan(begin)
+    expect(source.indexOf('.insert(schema.adminAuditEvents)')).toBeGreaterThan(begin)
+    // Every write in the file goes through the transaction handle, never the
+    // pooled connection, or it would not be in the transaction at all.
+    expect(source).not.toContain('getDb().update(')
+    expect(source).not.toContain('getDb().insert(')
+  })
 
   it('cannot insert or delete an account', () => {
     const source = code(FILE)
-    expect(source).not.toContain('.insert(')
+    expect(source).not.toContain('insert(schema.users)')
     expect(source).not.toContain('.delete(')
   })
 
   it('sets platformRole and nothing else', () => {
     const source = code(FILE)
-    expect(source).toContain('.set({ platformRole: role })')
+    expect(source).toContain('.set({ platformRole: input.to })')
     expect(source.match(/\.set\(/g) ?? []).toHaveLength(1)
     for (const forbidden of ['schema.orders', 'schema.listings', 'schema.shops', 'schema.memberships']) {
       expect(source, forbidden).not.toContain(forbidden)
     }
   })
 
-  it('reports whether a row actually changed', () => {
-    // Returning void would mean writing "promoted to manager" into the log for
-    // an account that vanished between render and submit.
+  it('writes no audit record when the update matched no row', () => {
+    // "Promoted to manager" for a row that was never touched is exactly the
+    // false record this log must not hold.
     const source = code(FILE)
-    expect(source).toContain('Promise<boolean>')
-    expect(source).toContain('.returning(')
+    const guard = source.indexOf('if (updated.length !== 1) return false')
+    expect(guard).toBeGreaterThan(-1)
+    expect(guard).toBeLessThan(source.indexOf('.insert(schema.adminAuditEvents)'))
   })
 })
 
@@ -430,6 +461,7 @@ const calls = vi.hoisted(() => ({
   writes: [] as { userId: string; role: string }[],
   audit: [] as Record<string, unknown>[],
   writeSucceeds: true,
+  writeThrows: false,
   verifyResult: { ok: true } as { ok: boolean; reason?: string },
   order: [] as string[],
 }))
@@ -452,10 +484,35 @@ vi.mock('@/lib/repositories/admin-reads-every-shop', () => ({
   adminReadAccount: async () => calls.account,
 }))
 vi.mock('@/lib/repositories/admin-writes-platform-role', () => ({
-  setStoredPlatformRole: async (userId: string, role: string) => {
+  /*
+   * ONE call now does both writes, because in the real thing they are one
+   * transaction. The mock mirrors that: it records a write AND the audit
+   * record together, and when it throws it records neither — which is what a
+   * rollback looks like from the caller's side.
+   */
+  applyPlatformRoleChange: async (input: {
+    target: { id: string; email: string }
+    from: string
+    to: string
+    actor: { id: string; email: string; role: string }
+  }) => {
+    if (calls.writeThrows) {
+      calls.order.push('write-rolled-back')
+      throw new Error('audit insert failed; transaction rolled back')
+    }
     calls.order.push('write')
-    calls.writes.push({ userId, role })
-    return calls.writeSucceeds
+    calls.writes.push({ userId: input.target.id, role: input.to })
+    if (!calls.writeSucceeds) return false
+    calls.order.push('audit')
+    calls.audit.push({
+      actorId: input.actor.id,
+      actorEmail: input.actor.email,
+      actorRole: input.actor.role,
+      targetId: input.target.id,
+      targetEmail: input.target.email,
+      outcome: { kind: 'APPLIED', from: input.from, to: input.to },
+    })
+    return true
   },
 }))
 vi.mock('@/lib/repositories/admin-audit-log', () => ({
@@ -488,6 +545,7 @@ function freshState(): void {
   calls.audit = []
   calls.order = []
   calls.writeSucceeds = true
+  calls.writeThrows = false
   calls.verifyResult = { ok: true }
   asRole('SUPER_ADMIN')
 }
@@ -511,8 +569,11 @@ describe('who may change a platform role', () => {
       targetEmail: 'target@x.com',
       outcome: { kind: 'APPLIED', from: 'USER', to: 'MANAGER' },
     })
-    // Verified, then written, then recorded. A record claiming a change that
-    // failed is worse than a change with a late record.
+    /*
+     * Verified, then written and recorded IN ONE STEP. The write and the audit
+     * insert are a single transaction now, so there is no window in which one
+     * has happened and the other has not.
+     */
     expect(calls.order).toEqual(['verify', 'write', 'audit'])
   })
 
@@ -680,6 +741,48 @@ describe('the other refusals, each of them written down', () => {
     expect(result).toEqual({ ok: false, reason: 'TARGET_NOT_FOUND' })
     expect(calls.audit).toHaveLength(1)
     expect(calls.audit[0]).toMatchObject({ outcome: { kind: 'REFUSED' } })
+    // No APPLIED record anywhere: the transaction returned false before
+    // inserting one.
+    expect(calls.audit.some((row) => (row.outcome as { kind: string }).kind === 'APPLIED')).toBe(
+      false,
+    )
+  })
+
+  it('rolls the role change back when the audit write fails, and says so', async () => {
+    /*
+     * THE GAP A2 LEFT, now closed. The old path did the UPDATE and the audit
+     * INSERT as two separate awaits with the audit failure swallowed, so a
+     * database that accepted the first and rejected the second left a
+     * privilege change nobody recorded.
+     *
+     * The transaction makes that state unreachable: a failed record takes the
+     * role change down with it. What the operator is told — "could not be
+     * recorded, so it was rolled back" — is then TRUE, which is the point. The
+     * alternative, reporting success, would have them believe a promotion
+     * happened that the log has no memory of.
+     */
+    calls.writeThrows = true
+    const result = await changePlatformRole(PROMOTE)
+
+    expect(result).toEqual({ ok: false, reason: 'NOT_RECORDED' })
+    // Nothing was applied: the mock throws before recording either write, the
+    // way a rollback looks from out here.
+    expect(calls.writes).toEqual([])
+    expect(calls.order).toContain('write-rolled-back')
+    // And the refusal itself is still recorded, through the separate
+    // non-transactional path that has nothing to roll back.
+    expect(calls.audit.at(-1)).toMatchObject({
+      outcome: { kind: 'REFUSED', reason: 'NOT_RECORDED' },
+    })
+  })
+
+  it('never reports success when the change was not recorded', async () => {
+    // The property stated on its own, because it is the one that matters: no
+    // input produces ok:true without an APPLIED record beside it.
+    calls.writeThrows = true
+    const result = await changePlatformRole(PROMOTE)
+    expect(result.ok).toBe(false)
+    expect(calls.audit.filter((r) => (r.outcome as { kind: string }).kind === 'APPLIED')).toEqual([])
   })
 
   it('stops checking passwords once the limit is spent, and records that too', async () => {

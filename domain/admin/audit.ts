@@ -25,7 +25,8 @@
  *    role in it, because there is nowhere to write it.
  */
 
-import type { AssignableRole, PlatformRole } from './roles'
+import { PERMISSIONS, type AssignableRole, type Permission, type PlatformRole } from './roles'
+import type { EditableRole } from './permissions'
 
 /* --------------------------------------------------------------- refusals */
 
@@ -54,6 +55,21 @@ export const REFUSAL_REASONS = [
   'TARGET_NOT_FOUND',
   /** Step-up is impossible because auth is not configured. */
   'AUTH_UNAVAILABLE',
+  /*
+   * The change was rolled back because it could not be recorded.
+   *
+   * A2 shipped the role change as two separate writes — the UPDATE, then the
+   * audit INSERT — so a database that accepted the first and rejected the
+   * second left a role change nobody recorded. Both now run in one
+   * transaction, and this is what the operator is told when it rolls back: a
+   * failure that is TRUE. There is deliberately no path where the change
+   * stands and the record does not.
+   */
+  'NOT_RECORDED',
+  /** The submitted role is not one whose permissions may be edited. */
+  'ROLE_NOT_EDITABLE',
+  /** A submitted permission key was not one of the seven. */
+  'INVALID_PERMISSION',
 ] as const
 export type RefusalReason = (typeof REFUSAL_REASONS)[number]
 
@@ -66,6 +82,9 @@ export const REFUSAL_COPY: Record<RefusalReason, string> = {
   INVALID_ROLE: 'Role was not one the panel may assign',
   TARGET_NOT_FOUND: 'Account not found',
   AUTH_UNAVAILABLE: 'Authentication is not configured',
+  NOT_RECORDED: 'Could not be recorded, so it was rolled back',
+  ROLE_NOT_EDITABLE: 'That role\u2019s permissions are not editable',
+  INVALID_PERMISSION: 'A submitted permission was not one this panel may grant',
 }
 
 export function isRefusalReason(value: unknown): value is RefusalReason {
@@ -102,6 +121,137 @@ export interface AdminAuditEvent {
   targetId: string | null
   targetEmail: string
   outcome: AdminAuditOutcome
+}
+
+/* ------------------------------------------------- permission changes */
+
+/*
+ * The SECOND kind of operator record, kept in its own store.
+ *
+ * The role log's subject is an ACCOUNT; this one's subject is a ROLE. They are
+ * separate tables because admin_audit_events.target_email is NOT NULL and
+ * means a person — writing 'ADMIN' into it would be a value misdescribing its
+ * own source, and relaxing the column is not on the table (additive only).
+ * The audit page merges them by timestamp and renders one log.
+ *
+ * Same discipline as the role log: the outcome is a union, so an APPLIED
+ * record CARRIES the before and after sets and "granted Accounts" cannot be
+ * written over a record with no new set in it.
+ */
+export type PermissionOutcome =
+  | { kind: 'APPLIED'; from: readonly Permission[]; to: readonly Permission[] }
+  | { kind: 'REFUSED'; reason: RefusalReason; attempted: readonly Permission[] | null }
+
+export interface AdminPermissionAuditEvent {
+  id: string
+  at: Date
+  actorId: string
+  actorEmail: string
+  actorRole: PlatformRole
+  /** Whose permissions. A role, never a person. */
+  subjectRole: EditableRole
+  outcome: PermissionOutcome
+}
+
+export function flattenPermissionOutcome(outcome: PermissionOutcome): {
+  outcomeKind: string
+  fromPermissions: string[] | null
+  toPermissions: string[] | null
+  refusalReason: string | null
+} {
+  if (outcome.kind === 'APPLIED') {
+    return {
+      outcomeKind: 'APPLIED',
+      fromPermissions: [...outcome.from],
+      toPermissions: [...outcome.to],
+      refusalReason: null,
+    }
+  }
+  return {
+    outcomeKind: 'REFUSED',
+    fromPermissions: null,
+    toPermissions: outcome.attempted ? [...outcome.attempted] : null,
+    refusalReason: outcome.reason,
+  }
+}
+
+/**
+ * Rebuild a permission outcome, or null when the row cannot be one.
+ *
+ * Unknown keys are DROPPED on the way out, not preserved and not fatal. A row
+ * listing a capability that is not a Permission describes something that could
+ * not have been granted, and rendering it would put "roles.write" on the audit
+ * screen as though it had been. The row is still shown; that key is not.
+ */
+export function rebuildPermissionOutcome(row: {
+  outcomeKind: string
+  fromPermissions: string[] | null
+  toPermissions: string[] | null
+  refusalReason: string | null
+}): PermissionOutcome | null {
+  const keep = (values: string[] | null): readonly Permission[] =>
+    PERMISSIONS.filter((permission) => (values ?? []).includes(permission))
+
+  if (row.outcomeKind === 'APPLIED') {
+    if (row.fromPermissions === null || row.toPermissions === null) return null
+    return { kind: 'APPLIED', from: keep(row.fromPermissions), to: keep(row.toPermissions) }
+  }
+  if (row.outcomeKind === 'REFUSED') {
+    if (!isRefusalReason(row.refusalReason)) return null
+    return {
+      kind: 'REFUSED',
+      reason: row.refusalReason,
+      attempted: row.toPermissions === null ? null : keep(row.toPermissions),
+    }
+  }
+  return null
+}
+
+/** How a permission record reads. Derived from the sets, never stored. */
+export function describePermissionOutcome(outcome: PermissionOutcome): string {
+  if (outcome.kind === 'REFUSED') return REFUSAL_COPY[outcome.reason]
+  const added = outcome.to.filter((p) => !outcome.from.includes(p)).length
+  const removed = outcome.from.filter((p) => !outcome.to.includes(p)).length
+  if (added && removed) return `Granted ${added}, revoked ${removed}`
+  if (added) return added === 1 ? 'Granted 1 permission' : `Granted ${added} permissions`
+  if (removed) return removed === 1 ? 'Revoked 1 permission' : `Revoked ${removed} permissions`
+  return 'No change'
+}
+
+/* ------------------------------------------------------- the merged log */
+
+/**
+ * One list, two stores.
+ *
+ * The audit page shows role changes and permission changes together, because
+ * "what did operators do" is one question. The union keeps them distinguishable
+ * so neither has to be flattened into the other's shape.
+ */
+export type AdminAuditEntry =
+  | { kind: 'ROLE'; at: Date; id: string; event: AdminAuditEvent }
+  | { kind: 'PERMISSIONS'; at: Date; id: string; event: AdminPermissionAuditEvent }
+
+export function mergeAuditEntries(
+  roles: readonly AdminAuditEvent[],
+  permissions: readonly AdminPermissionAuditEvent[],
+): AdminAuditEntry[] {
+  const entries: AdminAuditEntry[] = [
+    ...roles.map((event) => ({ kind: 'ROLE' as const, at: event.at, id: event.id, event })),
+    ...permissions.map((event) => ({
+      kind: 'PERMISSIONS' as const,
+      at: event.at,
+      id: event.id,
+      event,
+    })),
+  ]
+  // Newest first. The id breaks ties so the order is stable across renders
+  // rather than depending on how the two queries happened to interleave.
+  return entries.sort((a, b) => b.at.getTime() - a.at.getTime() || a.id.localeCompare(b.id))
+}
+
+/** Did this entry refuse? Same one-field rule, whichever store it came from. */
+export function entryIsRefusal(entry: AdminAuditEntry): boolean {
+  return entry.event.outcome.kind === 'REFUSED'
 }
 
 /** Did this record refuse? One field decides, so nothing can disagree. */

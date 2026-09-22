@@ -548,6 +548,78 @@ export const adminAuditEvents = pgTable(
   ],
 )
 
+/* --------------------------------------------- editable permission matrix */
+
+/**
+ * What each editable platform role may do. One row per role.
+ *
+ * SUPER_ADMIN HAS NO ROW AND MUST NEVER GET ONE. Its set is always all seven
+ * and is never read from here (domain/admin/permissions.ts). A super admin who
+ * could remove their own capabilities could lock themselves out of the only
+ * screen that would restore them, and there is no second super admin to undo
+ * it — the way back is editing an environment variable and restarting.
+ *
+ * NO ROW AT ALL means "never configured" and resolves to the defaults, which
+ * is what keeps first deploy behaving as it did. A row holding an EMPTY array
+ * means "configured to nothing" and resolves to nothing. Those are different
+ * answers on purpose; see resolvePermissions().
+ *
+ * No updatedBy or updatedAt column, deliberately. Who changed this and when is
+ * in admin_permission_audit_events, which cannot be edited — storing it here
+ * as well would be the same fact in two places, and the copy without the
+ * actor's role and the before-set is the one that would go stale (D92).
+ */
+export const adminRolePermissions = pgTable('admin_role_permissions', {
+  /** 'ADMIN' | 'MANAGER'. Primary key: one row per role, no duplicates. */
+  role: text('role').primaryKey(),
+  /**
+   * The granted keys. Filtered through PERMISSIONS on read, so a row that
+   * somehow contains a non-delegatable capability grants nothing by it.
+   */
+  permissions: text('permissions').array().notNull(),
+})
+
+/**
+ * Every attempt to change the permission matrix. Successes AND refusals.
+ *
+ * A SECOND TABLE rather than more columns on admin_audit_events, and the
+ * reason is the honesty rule this codebase keeps applying to figures. That
+ * table's subject is an ACCOUNT: `target_email` is NOT NULL and means a
+ * person. A permission change has no account — its subject is a ROLE — and
+ * putting "ADMIN" in a column called target_email would be a value that
+ * misdescribes its own source. Relaxing that column to nullable is not an
+ * option either: existing columns are not modified.
+ *
+ * So the two logs are separate stores with the same shape of guarantee, merged
+ * by timestamp when the audit page renders them. Append-only by construction
+ * here too: one insert, no update, no delete.
+ */
+export const adminPermissionAuditEvents = pgTable(
+  'admin_permission_audit_events',
+  {
+    id: text('id').primaryKey(),
+    at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
+
+    actorId: text('actor_id').notNull(),
+    actorEmail: text('actor_email').notNull(),
+    /** Their role AT THE TIME. A later demotion must not rewrite history. */
+    actorRole: text('actor_role').notNull(),
+
+    /** Whose permissions were to change. A ROLE, not a person. */
+    subjectRole: text('subject_role').notNull(),
+
+    /** 'APPLIED' | 'REFUSED'. The union's discriminant. */
+    outcomeKind: text('outcome_kind').notNull(),
+    /** Set on APPLIED only: the set as it was. */
+    fromPermissions: text('from_permissions').array(),
+    /** The new set on APPLIED, the attempted one on REFUSED. */
+    toPermissions: text('to_permissions').array(),
+    /** Set on REFUSED only. A closed list, never free text. */
+    refusalReason: text('refusal_reason'),
+  },
+  (table) => [index('admin_permission_audit_at_idx').on(table.at)],
+)
+
 export const bulkOperationsRelations = relations(bulkOperations, ({ many }) => ({
   items: many(bulkOperationItems),
 }))

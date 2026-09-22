@@ -1,8 +1,17 @@
 import { notFound } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { requireAdmin } from '@/domain/admin/access'
-import { describeOutcome, isRefusal, type AdminAuditEvent } from '@/domain/admin/audit'
-import { readAdminAuditLog } from '@/lib/repositories/admin-audit-log'
+import {
+  describeOutcome,
+  describePermissionOutcome,
+  entryIsRefusal,
+  mergeAuditEntries,
+  type AdminAuditEntry,
+  type AdminAuditEvent,
+  type AdminPermissionAuditEvent,
+} from '@/domain/admin/audit'
+import { PERMISSION_LABELS } from '@/domain/admin/permissions'
+import { readAdminAuditLog, readPermissionAuditLog } from '@/lib/repositories/admin-audit-log'
 
 /*
  * Every attempt to change a platform role. SUPER_ADMIN only.
@@ -30,8 +39,19 @@ export default async function AdminAuditPage() {
   // 404, never 403. An ADMIN learns nothing about whether this page exists.
   if (!access.canSuperAdminOnly('audit.view')) notFound()
 
-  const { events, unreadable } = await readAdminAuditLog()
-  const refusals = events.filter(isRefusal).length
+  /*
+   * TWO STORES, ONE LOG. Role changes and permission changes are recorded
+   * separately — their subjects are a person and a role, and the role log's
+   * target_email is NOT NULL — but "what did operators do" is one question, so
+   * they are merged by timestamp here rather than shown as two screens.
+   */
+  const [roleLog, permissionLog] = await Promise.all([
+    readAdminAuditLog(),
+    readPermissionAuditLog(),
+  ])
+  const entries = mergeAuditEntries(roleLog.events, permissionLog.events)
+  const unreadable = roleLog.unreadable + permissionLog.unreadable
+  const refusals = entries.filter(entryIsRefusal).length
 
   return (
     <>
@@ -42,8 +62,8 @@ export default async function AdminAuditPage() {
           Audit log
         </h1>
         <p className="max-w-prose text-small leading-relaxed text-muted-1">
-          Every platform role change and every refused attempt. {events.length}{' '}
-          {events.length === 1 ? 'record' : 'records'}
+          Every platform role change, every permission change and every refused attempt.{' '}
+          {entries.length} {entries.length === 1 ? 'record' : 'records'}
           {refusals > 0 ? `, ${refusals} refused` : ''} · newest first. These records cannot be
           edited or removed — the store has no update and no delete.
         </p>
@@ -71,10 +91,10 @@ export default async function AdminAuditPage() {
         </Card>
       ) : null}
 
-      {events.length === 0 ? (
+      {entries.length === 0 ? (
         <Card className="p-[18px] text-small leading-relaxed text-ink-2">
-          Nothing has been attempted yet. Rows appear here when a platform role is changed — or
-          when a change is refused, which is recorded just the same.
+          Nothing has been attempted yet. Rows appear here when a platform role or a role&rsquo;s
+          permissions are changed — or when a change is refused, which is recorded just the same.
         </Card>
       ) : (
         <Card
@@ -85,36 +105,49 @@ export default async function AdminAuditPage() {
         >
           <table className="w-full min-w-[900px] border-collapse text-body">
             <caption className="sr-only">
-              Every platform role change and refused attempt, newest first.
+              Every platform role change, permission change and refused attempt, newest first.
             </caption>
             <thead>
               <tr className="bg-canvas-soft text-left text-label text-muted-1">
                 <th scope="col" className="px-4 py-2.5 font-semibold">When</th>
                 <th scope="col" className="px-3 py-2.5 font-semibold">Operator</th>
-                <th scope="col" className="px-3 py-2.5 font-semibold">Account</th>
+                <th scope="col" className="px-3 py-2.5 font-semibold">Subject</th>
                 <th scope="col" className="px-3 py-2.5 font-semibold">Change</th>
                 <th scope="col" className="px-4 py-2.5 font-semibold">Outcome</th>
               </tr>
             </thead>
             <tbody>
-              {events.map((event) => (
-                <tr key={event.id} className="border-t border-line align-top">
+              {entries.map((entry) => (
+                <tr key={`${entry.kind}:${entry.id}`} className="border-t border-line align-top">
                   <td className="tnum whitespace-nowrap px-4 py-3 text-small text-ink-2">
-                    {event.at.toISOString().slice(0, 16).replace('T', ' ')}
+                    {entry.at.toISOString().slice(0, 16).replace('T', ' ')}
                     <span className="block text-caption text-muted-1">UTC</span>
                   </td>
                   <td className="px-3 py-3 text-small text-ink-2">
-                    {event.actorEmail}
+                    {entry.event.actorEmail}
                     <span className="block text-caption text-muted-1">
-                      {event.actorRole.replace('_', ' ').toLowerCase()} at the time
+                      {entry.event.actorRole.replace('_', ' ').toLowerCase()} at the time
                     </span>
                   </td>
-                  <td className="px-3 py-3 text-small text-ink-2">{event.targetEmail}</td>
                   <td className="px-3 py-3 text-small text-ink-2">
-                    <Change event={event} />
+                    {entry.kind === 'ROLE' ? (
+                      entry.event.targetEmail
+                    ) : (
+                      <>
+                        {entry.event.subjectRole.toLowerCase()}
+                        <span className="block text-caption text-muted-1">role, not a person</span>
+                      </>
+                    )}
+                  </td>
+                  <td className="px-3 py-3 text-small text-ink-2">
+                    {entry.kind === 'ROLE' ? (
+                      <Change event={entry.event} />
+                    ) : (
+                      <PermissionChange event={entry.event} />
+                    )}
                   </td>
                   <td className="px-4 py-3">
-                    <OutcomeChip event={event} />
+                    <OutcomeChip entry={entry} />
                   </td>
                 </tr>
               ))}
@@ -162,8 +195,8 @@ function Change({ event }: { event: AdminAuditEvent }) {
  * on the seller log. A refusal is usually the product working, and a wall of
  * red trains people to skim past the one that matters.
  */
-function OutcomeChip({ event }: { event: AdminAuditEvent }) {
-  const refused = isRefusal(event)
+function OutcomeChip({ entry }: { entry: AdminAuditEntry }) {
+  const refused = entryIsRefusal(entry)
   return (
     <span
       className="inline-flex items-center whitespace-nowrap rounded-[6px] border px-2 py-0.5 text-[11px] font-semibold"
@@ -177,7 +210,56 @@ function OutcomeChip({ event }: { event: AdminAuditEvent }) {
             }
       }
     >
-      {describeOutcome(event.outcome)}
+      {entry.kind === 'ROLE'
+        ? describeOutcome(entry.event.outcome)
+        : describePermissionOutcome(entry.event.outcome)}
+    </span>
+  )
+}
+
+/**
+ * The permissions that came and went, from the union.
+ *
+ * Named rather than counted, because "granted 2" tells an investigator nothing
+ * about which two — and which two is the entire question a permission audit is
+ * asked. The counted form is the chip; this is the detail beside it.
+ */
+function PermissionChange({ event }: { event: AdminPermissionAuditEvent }) {
+  // Bound once: narrowing a property does not survive into the closures below.
+  const outcome = event.outcome
+  if (outcome.kind === 'REFUSED') {
+    if (!outcome.attempted) return <span aria-hidden className="text-muted-2">—</span>
+    return (
+      <span className="text-muted-1">
+        attempted{' '}
+        {outcome.attempted.length === 0
+          ? 'none'
+          : outcome.attempted.map((p) => PERMISSION_LABELS[p].title).join(', ')}
+      </span>
+    )
+  }
+
+  const added = outcome.to.filter((p) => !outcome.from.includes(p))
+  const removed = outcome.from.filter((p) => !outcome.to.includes(p))
+  if (added.length === 0 && removed.length === 0) {
+    return <span className="text-muted-1">no change</span>
+  }
+  return (
+    <span className="flex flex-col gap-0.5">
+      {added.length > 0 ? (
+        <span>
+          <span aria-hidden className="text-brand">+</span>
+          <span className="sr-only">granted</span>{' '}
+          {added.map((p) => PERMISSION_LABELS[p].title).join(', ')}
+        </span>
+      ) : null}
+      {removed.length > 0 ? (
+        <span className="text-muted-1">
+          <span aria-hidden>−</span>
+          <span className="sr-only">revoked</span>{' '}
+          {removed.map((p) => PERMISSION_LABELS[p].title).join(', ')}
+        </span>
+      ) : null}
     </span>
   )
 }

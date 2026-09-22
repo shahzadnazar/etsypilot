@@ -115,6 +115,14 @@ export default async function AdminLayout({ children }: { children: ReactNode })
               </Link>
             </>
           ) : null}
+          {access.canSuperAdminOnly('roles.write') ? (
+            <Link
+              href="/admin/permissions"
+              className="rounded-control px-2.5 py-1.5 text-[12.5px] font-medium text-ink-2 hover:bg-canvas-soft"
+            >
+              Permissions
+            </Link>
+          ) : null}
           {access.canSuperAdminOnly('audit.view') ? (
             <Link
               href="/admin/audit"

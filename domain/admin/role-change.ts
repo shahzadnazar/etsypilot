@@ -49,7 +49,7 @@ import { parseAssignableRole, roleSource, type AssignableRole, type PlatformRole
 import type { AdminAuditOutcome, RefusalReason } from './audit'
 import { appendAdminAuditEvent } from '@/lib/repositories/admin-audit-log'
 import { adminReadAccount } from '@/lib/repositories/admin-reads-every-shop'
-import { setStoredPlatformRole } from '@/lib/repositories/admin-writes-platform-role'
+import { applyPlatformRoleChange } from '@/lib/repositories/admin-writes-platform-role'
 import { verifyPassword } from '@/lib/auth/step-up'
 import { rateLimit, stepUpKey, STEP_UP_PATH } from '@/lib/security/rate-limit'
 import { logFailure } from '@/lib/errors/api'
@@ -131,31 +131,46 @@ export async function changePlatformRole(request: RoleChangeRequest): Promise<Ro
     )
   }
 
-  // 7. Write, then record what actually happened.
-  const changed = await setStoredPlatformRole(target.id, role)
+  /*
+   * 7. Write AND record, in one transaction.
+   *
+   * A2 did these as two awaits with the audit failure swallowed, so a database
+   * that accepted the UPDATE and rejected the INSERT left a privilege change
+   * nobody recorded. Now a failed record rolls the change back and the
+   * operator is told it did not happen — which is true.
+   */
+  let changed: boolean
+  try {
+    changed = await applyPlatformRoleChange({
+      target: identified,
+      from: target.resolvedRole,
+      to: role,
+      actor: { id: access.userId, email: access.email, role: access.role },
+    })
+  } catch (error) {
+    /*
+     * The transaction rolled back, so platform_role is untouched. Reported as
+     * NOT_RECORDED rather than a generic failure, because "we could not write
+     * the log, so we did not make the change" is the actual reason and the
+     * operator can act on it.
+     */
+    logFailure(error, { path: 'admin/role-change' })
+    return refuse('NOT_RECORDED', identified, role)
+  }
   if (!changed) return refuse('TARGET_NOT_FOUND', identified, role)
 
-  await record(access, identified, {
-    kind: 'APPLIED',
-    from: target.resolvedRole,
-    to: role,
-  })
   return { ok: true, to: role, targetEmail: target.email }
 }
 
 /**
- * Append the record, and never let a logging failure decide the outcome.
+ * Append a REFUSAL record. Refusals only — successes go through the transaction.
  *
- * DELIBERATE, and it cuts against the instinct to fail closed. On the refusal
- * paths there is nothing to undo, so throwing would only replace a clear
- * refusal with a server error. On the success path the row is already written,
- * and throwing here would tell the operator the change failed when it did not
- * — which is a worse lie than a missing log line, and would have them try
- * again. The failure is logged with a reference either way.
- *
- * The honest cost: a database that accepts an UPDATE and rejects an INSERT
- * leaves a change with no record. That is a narrow window, it is reported, and
- * the alternative is worse.
+ * A logging failure is swallowed here and that is still right, because on a
+ * refusal there is nothing to roll back: no write happened, and throwing would
+ * replace a clear refusal with a server error. The success path no longer uses
+ * this function at all, which is what closed A2's gap — that path could not
+ * swallow anything even if it wanted to, because the record and the change are
+ * the same transaction.
  */
 async function record(
   access: { userId: string; email: string; role: PlatformRole },

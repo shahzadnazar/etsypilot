@@ -163,8 +163,20 @@ export type Permission = (typeof PERMISSIONS)[number]
 export const SUPER_ADMIN_ONLY = ['audit.view', 'roles.write'] as const
 export type SuperAdminOnlyCapability = (typeof SUPER_ADMIN_ONLY)[number]
 
-/** Defaults. SUPER_ADMIN and ADMIN differ only in what they may delegate. */
-export const ROLE_PERMISSIONS: Record<PlatformRole, readonly Permission[]> = {
+/**
+ * THE DEFAULTS. Not what is in force.
+ *
+ * Renamed from ROLE_PERMISSIONS the moment the sets became editable, and the
+ * rename is the point: `ROLE_PERMISSIONS[role]` reads like the answer to "what
+ * may this role do", and after the matrix exists it is not — it is the answer
+ * to "what could they do before anyone configured anything".
+ *
+ * These are used in exactly two places. They seed the store in migration 0005,
+ * so first deploy behaves as it did, and they are the fallback for a role with
+ * NO ROW AT ALL (see resolvePermissions in ./permissions). Enforcement reads
+ * the store; a test asserts access.ts does not read this constant.
+ */
+export const DEFAULT_ROLE_PERMISSIONS: Record<PlatformRole, readonly Permission[]> = {
   SUPER_ADMIN: PERMISSIONS,
   ADMIN: PERMISSIONS,
   // Promoted sellers. They see WHO exists and nothing about anyone's money.
@@ -172,9 +184,17 @@ export const ROLE_PERMISSIONS: Record<PlatformRole, readonly Permission[]> = {
   USER: [],
 }
 
-/** Does this role hold this permission? */
+/**
+ * Does this role hold this permission BY DEFAULT?
+ *
+ * Not the enforcement path. Enforcement goes through AdminAccess.can(), which
+ * is built from the stored set in domain/admin/access.ts. This answers a
+ * question about the defaults and is kept because the defaults are still a
+ * real thing — they seed the store and they are the fallback for an
+ * unconfigured role.
+ */
 export function can(role: PlatformRole, permission: Permission): boolean {
-  return ROLE_PERMISSIONS[role].includes(permission)
+  return DEFAULT_ROLE_PERMISSIONS[role].includes(permission)
 }
 
 /**
@@ -191,9 +211,16 @@ export function canSuperAdminOnly(
   return role === 'SUPER_ADMIN'
 }
 
-/** Any platform access at all. Used to decide whether /admin exists for you. */
+/**
+ * Would this role have any access under the DEFAULTS?
+ *
+ * No longer the gate. getAdminAccess() decides from the stored set, because a
+ * MANAGER whose every box is unticked must lose the panel — and this function
+ * would still say yes. Kept because "what do the defaults give this role" is a
+ * question the matrix screen and the seed both ask.
+ */
 export function hasAnyAdminAccess(role: PlatformRole): boolean {
-  return ROLE_PERMISSIONS[role].length > 0
+  return DEFAULT_ROLE_PERMISSIONS[role].length > 0
 }
 
 /* -------------------------------------------------------------- resolution */

@@ -39,9 +39,12 @@ import { getDb, schema } from '@/lib/db'
 import {
   flattenOutcome,
   rebuildOutcome,
+  rebuildPermissionOutcome,
   type AdminAuditEvent,
   type AdminAuditOutcome,
+  type AdminPermissionAuditEvent,
 } from '@/domain/admin/audit'
+import type { EditableRole } from '@/domain/admin/permissions'
 import type { PlatformRole } from '@/domain/admin/roles'
 
 /** What the caller supplies. `id` and `at` are ours — see below. */
@@ -182,6 +185,56 @@ function collect(rows: (typeof schema.adminAuditEvents.$inferSelect)[]): AdminAu
     const event = toEvent(row)
     if (event) events.push(event)
     else unreadable += 1
+  }
+  return { events, unreadable }
+}
+
+/* --------------------------------------------- the permission log, merged */
+
+/**
+ * Permission-change records, newest first.
+ *
+ * A separate table from the role log because their subjects differ — a person
+ * against a role — and admin_audit_events.target_email is NOT NULL and means a
+ * person. Merging them into one list is the READER's job, in
+ * mergeAuditEntries(), so neither store has to be bent into the other's shape.
+ *
+ * Append-only here too: this module has no update and no delete for either
+ * table, and the only insert for this one lives in admin-permissions.ts,
+ * inside the transaction that also writes the change.
+ */
+export async function readPermissionAuditLog(
+  options: { limit?: number } = {},
+): Promise<{ events: AdminPermissionAuditEvent[]; unreadable: number }> {
+  const limit = Math.min(Math.max(options.limit ?? 200, 1), 1000)
+  const rows = await getDb()
+    .select()
+    .from(schema.adminPermissionAuditEvents)
+    .orderBy(desc(schema.adminPermissionAuditEvents.at))
+    .limit(limit)
+
+  const events: AdminPermissionAuditEvent[] = []
+  let unreadable = 0
+  for (const row of rows) {
+    const outcome = rebuildPermissionOutcome(row)
+    /*
+     * A row whose subject is not an editable role cannot be rendered honestly
+     * — there is no such matrix row to describe — so it is counted as
+     * unreadable rather than shown as though it were one.
+     */
+    if (!outcome || (row.subjectRole !== 'ADMIN' && row.subjectRole !== 'MANAGER')) {
+      unreadable += 1
+      continue
+    }
+    events.push({
+      id: row.id,
+      at: row.at,
+      actorId: row.actorId,
+      actorEmail: row.actorEmail,
+      actorRole: row.actorRole as PlatformRole,
+      subjectRole: row.subjectRole as EditableRole,
+      outcome,
+    })
   }
   return { events, unreadable }
 }

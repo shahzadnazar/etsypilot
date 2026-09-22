@@ -55,18 +55,18 @@ import 'server-only'
  * Written down here so it stays a decision rather than becoming a discovery.
  */
 
+import { cache } from 'react'
 import { notFound } from 'next/navigation'
 import { getSession } from '@/lib/auth'
 import { isLiveAuth } from '@/lib/auth/supabase-config'
 import { isDatabaseConfigured } from '@/lib/db'
 import { logFailure } from '@/lib/errors/api'
 import { adminReadStoredPlatformRole } from '@/lib/repositories/admin-reads-every-shop'
+import { readStoredPermissions } from '@/lib/repositories/admin-permissions'
+import { resolvePermissions } from './permissions'
 import {
-  can,
   canSuperAdminOnly,
-  hasAnyAdminAccess,
   resolvePlatformRole,
-  ROLE_PERMISSIONS,
   type Permission,
   type PlatformRole,
   type SuperAdminOnlyCapability,
@@ -85,9 +85,15 @@ export interface AdminAccess {
  * Resolve the caller's platform access, or null when they have none.
  *
  * Returns null rather than throwing so a caller can decide what "none" means.
- * The only two callers today both turn it into a 404.
+ * Every caller today turns it into a 404.
+ *
+ * WRAPPED IN cache() for the same reason getSession() is: it now makes a
+ * database read, and within one request the layout, the page and — on a
+ * submit — the domain action all ask. Three identical queries for one answer
+ * is waste, and worse, three reads that could disagree if a write landed
+ * between them. One request sees one answer.
  */
-export async function getAdminAccess(): Promise<AdminAccess | null> {
+export const getAdminAccess = cache(async function getAdminAccess(): Promise<AdminAccess | null> {
   const session = await getSession()
   if (!session) return null
 
@@ -135,15 +141,78 @@ export async function getAdminAccess(): Promise<AdminAccess | null> {
   }
 
   const role = resolvePlatformRole({ email: session.email, storedRole })
-  if (!hasAnyAdminAccess(role)) return null
+
+  /*
+   * USER short-circuits here, before any permission read.
+   *
+   * Deliberately a check on the ROLE and not on the defaults. The previous
+   * version asked `hasAnyAdminAccess(role)`, which reads
+   * DEFAULT_ROLE_PERMISSIONS — a constant. That was fine while the sets were
+   * constants and is exactly wrong now: it would answer yes for a MANAGER
+   * whose every box has been unticked, and the whole point of the matrix is
+   * that unticking the last box removes the panel.
+   */
+  if (role === 'USER') return null
+
+  /*
+   * ── ENFORCEMENT READS THE STORE, NOT THE DEFAULTS ──────────────────────
+   *
+   * This is the only place an AdminAccess is built, and every check in the
+   * operator panel goes through the object it returns — requireAdmin() in each
+   * page, access.can() in the layout's navigation, the roles.write check in
+   * the role editor. So making THIS read the store makes all of them read it,
+   * and there is no second path to keep in step.
+   *
+   * SUPER_ADMIN never reaches the store: resolvePermissions() returns all
+   * seven for it without a query. That is what makes the matrix safe to edit —
+   * whatever an operator does to the ADMIN and MANAGER rows, the person who
+   * can fix it still has the screen that fixes it.
+   */
+  const permissions = await permissionsFor(role)
+
+  /*
+   * No permissions means no panel, for the same reason as above: a role
+   * configured to nothing must not still be able to load /admin and find an
+   * empty shell. It has to 404 like any other URL they may not have.
+   */
+  if (permissions.length === 0) return null
 
   return {
     userId: session.userId,
     email: session.email,
     role,
-    permissions: ROLE_PERMISSIONS[role],
-    can: (permission) => can(role, permission),
+    permissions,
+    can: (permission) => permissions.includes(permission),
     canSuperAdminOnly: (capability) => canSuperAdminOnly(role, capability),
+  }
+})
+
+/**
+ * The set in force for a role.
+ *
+ * FAILS CLOSED, with one exception that is not an exception. A database that
+ * cannot be read yields null-as-in-error, and an ADMIN or MANAGER is refused
+ * rather than handed the defaults — falling back would silently re-grant a
+ * permission an operator had deliberately revoked, which is the one outcome a
+ * permission screen must never produce.
+ *
+ * SUPER_ADMIN is unaffected because it never gets here with a query, so the
+ * break-glass route survives a broken database exactly as it survives a broken
+ * promotion UI.
+ *
+ * A MISSING ROW is different from a failed read and is handled inside
+ * resolvePermissions(): no row means nobody has configured the role, so the
+ * defaults apply and first deploy behaves as it always did.
+ */
+async function permissionsFor(role: PlatformRole): Promise<readonly Permission[]> {
+  if (role === 'SUPER_ADMIN') return resolvePermissions(role, null)
+  if (!isDatabaseConfigured()) return resolvePermissions(role, null)
+
+  try {
+    return resolvePermissions(role, await readStoredPermissions(role))
+  } catch (error) {
+    logFailure(error, { path: 'admin/access' })
+    return []
   }
 }
 
