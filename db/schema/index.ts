@@ -32,7 +32,20 @@ const createdAt = () => timestamp('created_at', { withTimezone: true }).notNull(
 export const users = pgTable('users', {
   id: text('id').primaryKey(),
   email: text('email').notNull().unique(),
+  /** Their full name, as entered at sign-up or on Settings → Profile. */
   name: text('name'),
+  /**
+   * The shorter name beside every action in the audit log.
+   *
+   * A second column rather than a derivation. Profile edits full name and
+   * display name as separate fields, and the audit log reads THIS one — so
+   * collapsing them would silently remove a capability the screen offers, and
+   * deriving "first word of full name" would overwrite whatever a seller chose
+   * the next time they corrected a typo in the other field.
+   *
+   * Nullable, because every row that exists predates it.
+   */
+  displayName: text('display_name'),
   /** Role selected during onboarding: handmade / pod / digital / consultant. */
   sellerType: text('seller_type'),
   primaryGoal: text('primary_goal'),

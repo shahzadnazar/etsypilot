@@ -43,7 +43,7 @@ export async function POST(request: Request) {
         listings,
         confirmedFingerprint: fingerprint,
         acknowledged,
-        actor: getProfile(session).displayName,
+        actor: (await getProfile(session)).displayName,
         now: DEMO_NOW,
       })
     } catch (error) {

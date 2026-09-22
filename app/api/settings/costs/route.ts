@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       const record = costChangeRecord({
         before,
         after,
-        actor: getProfile(session).displayName,
+        actor: (await getProfile(session)).displayName,
         currency: shop.currency,
       })
       if (record) appendAuditRecord(ctx.shopId, record)

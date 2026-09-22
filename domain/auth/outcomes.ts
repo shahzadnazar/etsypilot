@@ -61,6 +61,19 @@ export const AUTH_OUTCOMES = {
     title: 'That does not look like an email address',
     detail: 'Check for a typo and try again. Nothing was sent and no account was created.',
   },
+  missing_name: {
+    tone: 'warn',
+    /*
+     * Required rather than optional, for consistency with a rule the product
+     * already enforces: saveProfile() refuses a blank name because the audit
+     * log must never answer "who did this?" with nothing. Letting sign-up
+     * through without one would start every account in the state the profile
+     * screen forbids.
+     */
+    title: 'We need a name for your account',
+    detail:
+      'It greets you and signs your actions in the audit log, so it cannot be blank. Up to 80 characters. It is never sent to Etsy.',
+  },
   missing_fields: {
     tone: 'warn',
     title: 'Both fields are needed',

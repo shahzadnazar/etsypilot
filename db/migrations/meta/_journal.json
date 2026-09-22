@@ -15,6 +15,13 @@
       "when": 1789991382212,
       "tag": "0001_sturdy_rumiko_fujikawa",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790071785788,
+      "tag": "0002_nifty_zzzax",
+      "breakpoints": true
     }
   ]
 }

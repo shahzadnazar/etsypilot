@@ -81,6 +81,28 @@ function readCredentials(form: FormData): { email: string; password: string } | 
   return { email, password }
 }
 
+/** Longest name the users table and the profile screen both accept. */
+const MAX_NAME = 80
+
+/**
+ * The name from the sign-up form, validated here and not only in the browser.
+ *
+ * `required` on the input is a convenience; a form can be posted without one.
+ * Server-side is where a rule becomes a rule.
+ *
+ * REQUIRED, not optional, and the deciding argument is consistency with a rule
+ * this product already enforces: saveProfile() REFUSES a blank name, because
+ * the audit log must never answer "who did this?" with nothing. Accepting a
+ * blank one at sign-up would mean every new account starts in exactly the state
+ * the profile screen forbids — and the greeting falls back to the email's local
+ * part, which is the defect this change exists to remove.
+ */
+function readName(form: FormData): string | null {
+  const name = String(form.get('name') ?? '').trim()
+  if (!name || name.length > MAX_NAME) return null
+  return name
+}
+
 /**
  * Give this account its user row, demo shop and membership.
  *
@@ -96,6 +118,8 @@ async function provisionSignedInAccount(
   supabaseUserId: string,
   email: string,
   path: '/login' | '/signup',
+  /** Known at sign-up only. Sign-in must not pass one — see provisionAccount. */
+  name?: string,
 ): Promise<boolean> {
   /*
    * No database means nothing can be provisioned. Reported rather than
@@ -113,7 +137,7 @@ async function provisionSignedInAccount(
 
   try {
     await withAccountStore((store) =>
-      provisionAccount(store, { userId: supabaseUserId, email }),
+      provisionAccount(store, { userId: supabaseUserId, email, ...(name ? { name } : {}) }),
     )
     return true
   } catch (error) {
@@ -176,6 +200,8 @@ export async function signUp(form: FormData): Promise<void> {
 
   const fields = readCredentials(form)
   if (!fields) back(path, 'missing_fields')
+  const name = readName(form)
+  if (!name) back(path, 'missing_name')
   // Checked before the round trip so the weak-password copy is ours, not a
   // provider string that changes when a project's policy changes.
   if (fields.password.length < 8) back(path, 'weak_password')
@@ -208,7 +234,12 @@ export async function signUp(form: FormData): Promise<void> {
    * than no comment.
    */
   if (data.session && data.user) {
-    const ready = await provisionSignedInAccount(data.user.id, data.user.email ?? fields.email, path)
+    const ready = await provisionSignedInAccount(
+      data.user.id,
+      data.user.email ?? fields.email,
+      path,
+      name,
+    )
     if (!ready) {
       /*
        * The half-success, handled rather than hidden. Supabase holds an

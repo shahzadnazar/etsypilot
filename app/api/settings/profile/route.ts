@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     }
 
     try {
-      saveProfile(session.userId, {
+      await saveProfile(session.userId, {
         fullName: read('fullName'),
         displayName: read('displayName'),
       })

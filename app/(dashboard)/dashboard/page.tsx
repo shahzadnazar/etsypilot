@@ -9,6 +9,7 @@ import { ActionList } from '@/components/action-center/action-list'
 import { getActions } from '@/domain/action-center/service'
 import { getShopOverview } from '@/domain/shop/overview'
 import { getSession } from '@/lib/auth'
+import { greetingName } from '@/lib/utils/name'
 import { shopContext } from '@/lib/permissions'
 import { formatDate, formatDelta } from '@/lib/utils/format'
 
@@ -32,7 +33,7 @@ export default async function DashboardPage() {
   return (
     <>
       <PageHeader
-        title={`Good morning, ${session.name.split(' ')[0]}`}
+        title={`Good morning, ${greetingName(session.name)}`}
         subtitle={`${overview.shopName} · ${period} · all figures in ${overview.currency}`}
       />
 

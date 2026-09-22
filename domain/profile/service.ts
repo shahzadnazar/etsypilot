@@ -12,11 +12,28 @@
  * sentence — that changing a display setting never changes a calculation —
  * survives without it, and is more clearly true.
  *
- * Same globalThis store as costs and the audit log, for the same bundle-boundary
- * reason. Phase 11's `users` row replaces it.
+ * WHERE THE NAME LIVES NOW. It used to be a globalThis Map, which was correct
+ * while no repository existed: a saved name survived until the next restart and
+ * the shell never saw it at all, so the greeting stayed "Good morning,
+ * malikfarhanjamal314623". It writes to `users` through lib/repositories now.
+ *
+ * The in-memory store is KEPT, and only for the case it is still right for:
+ * demo mode, where there is no DATABASE_URL at all. Without it the profile
+ * screen would throw the moment anyone pressed Save on the demo shop. So the
+ * rule is one line — persist if there is somewhere to persist to, otherwise
+ * hold it in memory and let it die with the process, which is what demo data
+ * does anyway.
+ *
+ * TWO COLUMNS, because the screen edits two fields. `users.name` is the full
+ * name and `users.display_name` is the shorter one the audit log prints.
+ * Deriving the second from the first would overwrite whatever a seller chose
+ * the next time they fixed a typo in the other.
  */
 
 import { Errors } from '@/lib/errors/types'
+import { logFailure } from '@/lib/errors/api'
+import { isDatabaseConfigured } from '@/lib/db'
+import { readOnlyAccountStore, withAccountStore } from '@/lib/repositories/accounts'
 import { DISPLAY_TIMEZONE } from '@/lib/utils/format'
 
 export interface Profile {
@@ -46,11 +63,20 @@ function store(): Map<string, Stored> {
   return fresh
 }
 
-export function getProfile(session: { userId: string; name: string; email: string }): Profile {
-  const stored = store().get(session.userId)
+/** The first word, which is the sensible starting display name. */
+function firstWord(name: string): string {
+  return name.split(/\s+/)[0] ?? name
+}
+
+export async function getProfile(session: {
+  userId: string
+  name: string
+  email: string
+}): Promise<Profile> {
+  const stored = await readStored(session.userId)
   return {
     fullName: stored?.fullName ?? session.name,
-    displayName: stored?.displayName ?? (session.name.split(' ')[0] ?? session.name),
+    displayName: stored?.displayName ?? firstWord(session.name),
     email: session.email,
     emailVerified: true,
     language: 'English (UK)',
@@ -58,12 +84,29 @@ export function getProfile(session: { userId: string; name: string; email: strin
   }
 }
 
+/**
+ * Read the stored names, from wherever they are.
+ *
+ * A database row wins when there is a database. The two are never consulted
+ * together: mixing a persisted full name with an in-memory display name would
+ * give a profile that exists in no single place and cannot be reasoned about.
+ */
+async function readStored(userId: string): Promise<Stored | null> {
+  if (!isDatabaseConfigured()) return store().get(userId) ?? null
+
+  const user = await readOnlyAccountStore().findUserById(userId)
+  // Mirrors the write's fallback. Without this, a demo save would succeed and
+  // then vanish on reload — worse than the refusal it replaced.
+  if (!user?.name) return store().get(userId) ?? null
+  return { fullName: user.name, displayName: user.displayName ?? firstWord(user.name) }
+}
+
 const MAX_NAME = 80
 
-export function saveProfile(
+export async function saveProfile(
   userId: string,
   raw: { fullName?: string; displayName?: string },
-): Stored {
+): Promise<Stored> {
   const fullName = (raw.fullName ?? '').trim()
   const displayName = (raw.displayName ?? '').trim()
 
@@ -92,11 +135,44 @@ export function saveProfile(
   }
 
   const stored: Stored = { fullName, displayName }
-  store().set(userId, stored)
+
+  if (!isDatabaseConfigured()) {
+    // Demo mode. Held in memory and gone on restart, like every other demo
+    // edit — and the only behaviour this screen has ever had until now.
+    store().set(userId, stored)
+    return stored
+  }
+
+  const updated = await withAccountStore((tx) =>
+    // The repository speaks in column names; this service speaks in field names.
+    tx.updateUserName(userId, { name: fullName, displayName }),
+  )
+
+  if (!updated) {
+    /*
+     * No row for this user. The configuration that reaches here is a real one:
+     * a DATABASE_URL set while AUTH_MODE is unset, which is what happens the
+     * moment someone flips auth back to demo to check something. The demo
+     * session's actor has no `users` row by design, so the first version of
+     * this threw and Settings → Profile stopped saving on the demo shop. Found
+     * by running it against a real Postgres, not by reading it.
+     *
+     * So: fall back to memory rather than refuse. A live signed-in seller
+     * cannot reach here — getSession() provisions before any page renders, so
+     * their row exists by the time Settings loads — which makes "no row" mean
+     * the demo session in practice. It is logged anyway, because "in practice"
+     * is the kind of reasoning that stops being true quietly.
+     */
+    logFailure(
+      new Error(`profile save found no users row for ${userId}; kept in memory`),
+      { path: '/settings/profile' },
+    )
+    store().set(userId, stored)
+  }
   return stored
 }
 
-/** Test helper. */
+/** Test helper. Clears the in-memory store only; it never touches a database. */
 export function resetProfiles(): void {
   store().clear()
 }

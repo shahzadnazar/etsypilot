@@ -35,7 +35,7 @@ export default async function ProfilePage({
   if (!session) redirect('/login')
 
   const { saved, problem } = await searchParams
-  const profile = getProfile(session)
+  const profile = await getProfile(session)
 
   const initials = profile.fullName
     .split(' ')

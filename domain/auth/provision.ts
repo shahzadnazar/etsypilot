@@ -51,9 +51,27 @@ export interface ProvisionedAccount {
  */
 export async function provisionAccount(
   store: AccountStore,
-  account: { userId: string; email: string },
+  account: { userId: string; email: string; name?: string },
 ): Promise<ProvisionedAccount> {
-  const user = await store.createUser({ id: account.userId, email: account.email })
+  /*
+   * The name only ever lands on INSERT.
+   *
+   * Sign-up knows it; sign-in and the getSession repair path do not, and both
+   * call this function. createUser does nothing on a conflict, so a repeat
+   * cannot blank a name that is already stored — which is the property
+   * idempotency has to preserve here, not just "no second shop".
+   *
+   * The display name defaults to the first word. A seller can change it on
+   * Settings → Profile, and that edit writes both columns, so this default is
+   * a starting value rather than a derivation that keeps reasserting itself.
+   */
+  const fullName = account.name?.trim() || null
+  const user = await store.createUser({
+    id: account.userId,
+    email: account.email,
+    name: fullName,
+    displayName: fullName ? (fullName.split(/\s+/)[0] ?? fullName) : null,
+  })
 
   const existing = await store.findShopByOwnerId(user.id)
   if (existing) {

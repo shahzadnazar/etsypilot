@@ -4043,3 +4043,66 @@ Initials needed fixing for the same reason. "Salman R." gave two letters by
 splitting on the space; an email local part is one word and gave one. A single-word
 label now takes its first two characters, so the avatar is the same shape either
 way.
+
+### D90 — The name becomes real
+
+The greeting read "Good morning, malikfarhanjamal314623" because `users.name` was
+NULL and nothing could populate it. Two causes, both fixed here: sign-up never
+asked, and `saveProfile()` wrote to a `globalThis` Map that no other code read and
+that emptied on restart.
+
+**The name is REQUIRED at sign-up.** The deciding argument is consistency with a
+rule this product already enforces: `saveProfile()` refuses a blank name, because
+the audit log must never answer "who did this?" with nothing. Accepting a blank
+one at sign-up would start every account in the state the profile screen forbids.
+Validated server-side, not only by the `required` attribute — a form can be posted
+without one.
+
+**Two columns, because the screen edits two fields.** `users.name` is the full
+name; a new nullable `users.display_name` is the shorter one the audit log prints.
+Collapsing them would silently remove a capability the screen offers, and deriving
+the second from the first would overwrite whatever a seller chose the next time
+they fixed a typo in the other. Migration `0002` is one additive line and no
+existing column or migration was touched.
+
+**Idempotency had a second property to preserve.** Not just "no second shop" — a
+repeat call must not BLANK a stored name. Sign-in and the `getSession()` repair
+path both call `provisionAccount()` with no name, so an upsert would have erased
+the name signed up with and the greeting would silently revert. The name lands on
+INSERT only; `onConflictDoNothing` does the rest.
+
+**`saveProfile()` keeps the in-memory store, for the one case it is still right
+for**: demo mode, where there is no `DATABASE_URL` at all.
+
+#### Three defects found by running it, not reading it
+
+The first two came from executing the shell's own expressions over real name
+shapes. Both had survived review.
+
+  - `"O'Brien"` put an apostrophe in the avatar. The one-word branch took the
+    first two CHARACTERS rather than the first two letters.
+  - `"  Jo Ann"` greeted nobody: `split(' ')[0]` on a leading space is the empty
+    string, so the header read "Good morning, " and stopped.
+
+Both now go through `lib/utils/name.ts`, one module so the avatar and the greeting
+cannot disagree about where a name ends. Unicode-aware, because `[A-Za-z]` would
+have blanked the avatar for any seller with an accented or non-Latin name. Writing
+`greetingName` with `??` rather than `||` reproduced the empty-greeting bug inside
+the fix itself; its own test caught it immediately.
+
+The third came from running against a **real Postgres** — 16 is installed in the
+dev image, so all three migrations were applied to a scratch database and the
+whole path exercised rather than reasoned about. With `DATABASE_URL` set and
+`AUTH_MODE` unset — which is what happens the moment someone flips auth back to
+demo — the demo actor has no `users` row, so the new persist branch THREW and
+Settings → Profile stopped saving on the demo shop. It now falls back to memory
+and logs, and the read mirrors the write, because a save that succeeds and then
+vanishes on reload is worse than the refusal it replaced.
+
+Verified end to end on that database: provisioning wrote the name, a sign-in
+re-provision left it alone, `saveProfile` persisted it, and a FRESH PROCESS read
+back `Anne-Marie O'Brien` / `Annie`, greeting "Anne-Marie", initials "AO".
+
+**The shell needed no change to prefer a stored name** — `getSession()` already
+reads `users.name` first — which was confirmed rather than assumed. What did need
+changing was the two rendering expressions above.

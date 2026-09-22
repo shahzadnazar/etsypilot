@@ -26,14 +26,15 @@ export interface UserRow {
   id: string
   email: string
   /**
-   * Null for every provisioned account today.
+   * Their full name. Null only for accounts created before sign-up asked.
    *
-   * The column exists and nothing populates it — sign-up collects an email and
-   * a password, and there is no screen that sets a display name. Read anyway,
-   * with the caller falling back, so the day something does populate it the
-   * shell starts using it without another change here.
+   * Sign-up now requires it and Settings → Profile can set it, so a null here
+   * means a row that predates both. Callers still fall back rather than
+   * assuming, because those rows exist.
    */
   name: string | null
+  /** The shorter name the audit log prints. Null on the same old rows. */
+  displayName: string | null
 }
 
 export interface ShopRow {
@@ -52,7 +53,23 @@ export interface ShopRow {
  */
 export interface AccountStore {
   findUserById(id: string): Promise<UserRow | null>
-  createUser(user: { id: string; email: string }): Promise<UserRow>
+  /**
+   * Create the row, or leave an existing one exactly as it is.
+   *
+   * `name` is optional because only sign-up knows it — sign-in and the
+   * getSession repair path do not, and must not blank what is already stored.
+   */
+  createUser(user: {
+    id: string
+    email: string
+    name?: string | null
+    displayName?: string | null
+  }): Promise<UserRow>
+  /** Set both names. Used by Settings → Profile, never by provisioning. */
+  updateUserName(
+    id: string,
+    names: { name: string; displayName: string },
+  ): Promise<UserRow | null>
   findShopByOwnerId(ownerId: string): Promise<ShopRow | null>
   createShop(shop: {
     id: string
@@ -66,7 +83,7 @@ export interface AccountStore {
 }
 
 /** Anything with the query methods we use — the db handle or a transaction. */
-type Queryable = Pick<ReturnType<typeof getDb>, 'select' | 'insert'>
+type Queryable = Pick<ReturnType<typeof getDb>, 'select' | 'insert' | 'update'>
 
 /**
  * The Postgres implementation.
@@ -79,7 +96,7 @@ export function postgresAccountStore(db: Queryable): AccountStore {
   return {
     async findUserById(id) {
       const [row] = await db
-        .select({ id: schema.users.id, email: schema.users.email, name: schema.users.name })
+        .select({ id: schema.users.id, email: schema.users.email, name: schema.users.name, displayName: schema.users.displayName })
         .from(schema.users)
         .where(eq(schema.users.id, id))
         .limit(1)
@@ -89,7 +106,15 @@ export function postgresAccountStore(db: Queryable): AccountStore {
     async createUser(user) {
       const [row] = await db
         .insert(schema.users)
-        .values({ id: user.id, email: user.email })
+        .values({
+          id: user.id,
+          email: user.email,
+          // Undefined is left to the column default (null); an explicit null is
+          // the same. Either way a REPEAT call cannot overwrite what is there,
+          // because the conflict clause below does nothing on a hit.
+          name: user.name ?? null,
+          displayName: user.displayName ?? null,
+        })
         /*
          * A retried sign-up must not fail on a row that is already correct.
          * The id is the Supabase user id and is the primary key, so a conflict
@@ -97,13 +122,22 @@ export function postgresAccountStore(db: Queryable): AccountStore {
          * not an error.
          */
         .onConflictDoNothing({ target: schema.users.id })
-        .returning({ id: schema.users.id, email: schema.users.email, name: schema.users.name })
+        .returning({ id: schema.users.id, email: schema.users.email, name: schema.users.name, displayName: schema.users.displayName })
 
       // onConflictDoNothing returns nothing when it skipped, so read back.
       if (row) return row
       const existing = await this.findUserById(user.id)
       if (!existing) throw new Error(`user ${user.id} could not be created or read back`)
       return existing
+    },
+
+    async updateUserName(id, names) {
+      const [row] = await db
+        .update(schema.users)
+        .set({ name: names.name, displayName: names.displayName })
+        .where(eq(schema.users.id, id))
+        .returning({ id: schema.users.id, email: schema.users.email, name: schema.users.name, displayName: schema.users.displayName })
+      return row ?? null
     },
 
     async findShopByOwnerId(ownerId) {

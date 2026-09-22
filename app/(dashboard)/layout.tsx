@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { AppShell } from '@/components/layout/app-shell'
 import { getSession } from '@/lib/auth'
+import { initialsFor } from '@/lib/utils/name'
 import { getEtsyService } from '@/lib/etsy'
 import { shopContext } from '@/lib/permissions'
 import { currentPlan } from '@/domain/billing/service'
@@ -20,22 +21,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
   ])
 
   /*
-   * Initials from whatever label the session has.
-   *
-   * `users.name` is null for every provisioned account, so session.name is the
-   * local part of the email — one word, no space. Splitting on spaces and
-   * taking first letters would then yield a SINGLE character, where the demo
-   * user's "Salman R." gave two. Falling back to the first two characters
-   * keeps the avatar the same shape for both.
+   * One helper, shared with the greeting, so the avatar and the header cannot
+   * disagree about where a name ends. See lib/utils/name.ts for the two defects
+   * that came out of running it over real shapes.
    */
-  const words = session.name.trim().split(/\s+/).filter(Boolean)
-  const initials = (
-    words.length > 1
-      ? words.map((w) => w[0] ?? '').join('')
-      : (words[0] ?? session.email).slice(0, 2)
-  )
-    .slice(0, 2)
-    .toUpperCase()
+  const initials = initialsFor(session.name, session.email)
 
   /*
    * Usage is passed structured, not pre-formatted, so the shell can render an

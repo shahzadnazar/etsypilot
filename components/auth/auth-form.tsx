@@ -92,6 +92,30 @@ export function AuthForm({
       {isTerminal ? null : (
       <Card className="mt-4 p-[18px]">
         <form action={action} className="flex flex-col gap-3.5">
+          {isSignUp ? (
+            <label className="flex flex-col gap-1">
+              <span className="text-caption font-semibold text-ink-2">Your name</span>
+              <span className="flex items-center rounded-control border border-line bg-surface px-2.5 focus-within:border-brand">
+                <input
+                  name="name"
+                  type="text"
+                  required
+                  autoComplete="name"
+                  maxLength={80}
+                  className="h-11 w-full bg-transparent text-body text-ink-1 outline-none md:h-[38px]"
+                />
+              </span>
+              {/*
+                * Said plainly, because a name field on a sign-up form usually
+                * means marketing. This one has one job and it is visible to
+                * nobody outside the account.
+                */}
+              <span className="text-caption text-muted-1">
+                Used to greet you and to sign your actions in the audit log. Never sent to Etsy.
+              </span>
+            </label>
+          ) : null}
+
           <label className="flex flex-col gap-1">
             <span className="text-caption font-semibold text-ink-2">Email</span>
             <span className="flex items-center rounded-control border border-line bg-surface px-2.5 focus-within:border-brand">

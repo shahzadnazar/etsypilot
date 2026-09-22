@@ -30,8 +30,20 @@ function memoryStore(): AccountStore & { users: UserRow[]; shops: ShopRow[]; mem
     async createUser(user) {
       const existing = users.find((u) => u.id === user.id)
       if (existing) return existing // mirrors onConflictDoNothing on the id
-      const row = { id: user.id, email: user.email, name: null }
+      const row: UserRow = {
+        id: user.id,
+        email: user.email,
+        name: user.name ?? null,
+        displayName: user.displayName ?? null,
+      }
       users.push(row)
+      return row
+    },
+    async updateUserName(id, names) {
+      const row = users.find((u) => u.id === id)
+      if (!row) return null
+      row.name = names.name
+      row.displayName = names.displayName
       return row
     },
     async findShopByOwnerId(ownerId) {
@@ -59,7 +71,9 @@ describe('a new account gets a user, a demo shop and a membership', () => {
     const result = await provisionAccount(store, ACCOUNT)
 
     expect(result.created).toBe(true)
-    expect(store.users).toEqual([{ id: 'sb-user-1', email: 'seller@example.com', name: null }])
+    expect(store.users).toEqual([
+      { id: 'sb-user-1', email: 'seller@example.com', name: null, displayName: null },
+    ])
     expect(store.shops).toHaveLength(1)
     expect(store.memberships).toEqual([
       { userId: 'sb-user-1', shopId: result.shopId, role: 'OWNER' },
@@ -95,6 +109,51 @@ describe('a new account gets a user, a demo shop and a membership', () => {
       'shops',
       'users',
     ])
+  })
+})
+
+describe('the name from sign-up lands on the user row', () => {
+  it('stores the full name and seeds a display name from its first word', async () => {
+    const store = memoryStore()
+    await provisionAccount(store, { ...ACCOUNT, name: 'Farhan Jamal' })
+    expect(store.users[0]!.name).toBe('Farhan Jamal')
+    expect(store.users[0]!.displayName).toBe('Farhan')
+  })
+
+  it('trims, and treats whitespace as no name at all', async () => {
+    const store = memoryStore()
+    await provisionAccount(store, { ...ACCOUNT, name: '   ' })
+    expect(store.users[0]!.name).toBeNull()
+  })
+
+  it('leaves both null when sign-in provisions, because sign-in has no name', async () => {
+    const store = memoryStore()
+    await provisionAccount(store, ACCOUNT)
+    expect(store.users[0]!.name).toBeNull()
+    expect(store.users[0]!.displayName).toBeNull()
+  })
+
+  it('NEVER blanks a stored name on a repeat call', async () => {
+    /*
+     * The idempotency property that matters here, and it is not "no second
+     * shop". Sign-in and the getSession repair path both call provisionAccount
+     * with no name; if either overwrote the row, signing in would erase the
+     * name signed up with and the greeting would silently revert.
+     */
+    const store = memoryStore()
+    await provisionAccount(store, { ...ACCOUNT, name: 'Farhan Jamal' })
+    await provisionAccount(store, ACCOUNT) // as sign-in does
+    await provisionAccount(store, { ...ACCOUNT, name: 'Someone Else' })
+
+    expect(store.users[0]!.name).toBe('Farhan Jamal')
+    expect(store.users[0]!.displayName).toBe('Farhan')
+  })
+
+  it('handles a one-word name without losing it', async () => {
+    const store = memoryStore()
+    await provisionAccount(store, { ...ACCOUNT, name: 'Prince' })
+    expect(store.users[0]!.name).toBe('Prince')
+    expect(store.users[0]!.displayName).toBe('Prince')
   })
 })
 
