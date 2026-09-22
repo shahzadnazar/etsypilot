@@ -54,6 +54,75 @@ export function isStorableRole(value: string): value is StorableRole {
   return (STORABLE_ROLES as readonly string[]).includes(value)
 }
 
+/**
+ * Roles the OPERATOR PANEL may assign. A strict subset of what a column may
+ * hold, and the narrowest of the three lists on purpose.
+ *
+ * ══════════════════════════════════════════════════════════════════════════
+ *  SUPER_ADMIN AND ADMIN ARE NOT HERE, AND NO CHECK ENFORCES THAT.
+ * ══════════════════════════════════════════════════════════════════════════
+ *
+ * The TYPE does. Every function on the write path — the repository, the domain
+ * action, the audit record's `to` field — takes `AssignableRole`, so
+ *
+ *     setPlatformRole(id, 'SUPER_ADMIN')   // ← does not compile
+ *     setPlatformRole(id, someRole)        // ← PlatformRole: does not compile
+ *
+ * are wrong at the keyboard rather than wrong in review. A runtime check would
+ * be one `if` away from being deleted by someone who could not see why it was
+ * there; a parameter type cannot be deleted without the call sites going red.
+ *
+ * WHY IT MATTERS MORE HERE THAN ANYWHERE. SUPER_ADMIN and ADMIN live in env
+ * vars precisely so that writing a row cannot mint one — a database compromise
+ * is a far lower bar than editing a deployment's environment. A panel that
+ * could write 'SUPER_ADMIN' into the column would not defeat that on its own,
+ * because resolvePlatformRole() ignores those values in the column. It would
+ * defeat something subtler: the list would start showing a role that is not in
+ * force, and the audit log would record a promotion that never happened.
+ *
+ * `satisfies readonly StorableRole[]` is the second half. Adding 'SUPER_ADMIN'
+ * here fails to compile against the storable list too, so this cannot quietly
+ * grow past what resolvePlatformRole() will honour.
+ */
+export const ASSIGNABLE_ROLES = ['MANAGER', 'USER'] as const satisfies readonly StorableRole[]
+export type AssignableRole = (typeof ASSIGNABLE_ROLES)[number]
+
+/**
+ * Parse one untrusted string into an assignable role.
+ *
+ * The boundary function. Form data is `string`, so the type guarantee above
+ * needs exactly one place where a string becomes an AssignableRole, and this is
+ * it. Anything else — including 'SUPER_ADMIN', 'ADMIN', a lower-case variant or
+ * an empty field — is null, and the caller refuses.
+ *
+ * NOT case-insensitive, unlike the email allow-lists. An email is typed by a
+ * human into an env var; this value comes from a <select> this codebase renders,
+ * so anything that does not match exactly did not come from that select.
+ */
+export function parseAssignableRole(value: unknown): AssignableRole | null {
+  if (typeof value !== 'string') return null
+  return (ASSIGNABLE_ROLES as readonly string[]).includes(value) ? (value as AssignableRole) : null
+}
+
+/**
+ * Where a person's role actually comes from.
+ *
+ * The panel needs this to decide whether to offer a control at all. Writing
+ * `platform_role = 'USER'` for someone listed in SUPER_ADMIN_EMAILS succeeds,
+ * changes the row, and changes NOTHING about their access — the env list still
+ * outranks the column. A button that does that is D70's "control that appears
+ * to work and does not", which is worse than no control, because whoever clicks
+ * it stops looking for the real answer.
+ *
+ * So an env-derived role is reported as such, the row renders an explanation
+ * instead of a control, and the domain action refuses it server-side too.
+ */
+export type RoleSource = 'ENVIRONMENT' | 'DATABASE'
+
+export function roleSource(role: PlatformRole): RoleSource {
+  return isStorableRole(role) ? 'DATABASE' : 'ENVIRONMENT'
+}
+
 /* ------------------------------------------------------------ permissions */
 
 /**

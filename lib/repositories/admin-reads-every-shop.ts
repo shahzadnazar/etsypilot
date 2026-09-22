@@ -75,6 +75,74 @@ export async function adminReadStoredPlatformRole(userId: string): Promise<strin
 }
 
 /**
+ * One account, for the role editor.
+ *
+ * Read fresh at submit time rather than trusted from the form. The list the
+ * operator is looking at was rendered at some earlier moment, and the two facts
+ * that decide whether a change is legitimate — does this account still exist,
+ * and what role does it hold now — are exactly the two that can have moved
+ * since. Taking `before` from a hidden form field would let a stale page write
+ * a false "from" value into the audit log.
+ */
+export async function adminReadAccount(
+  userId: string,
+): Promise<{ id: string; email: string; storedRole: string; resolvedRole: PlatformRole } | null> {
+  const [row] = await getDb()
+    .select({
+      id: schema.users.id,
+      email: schema.users.email,
+      platformRole: schema.users.platformRole,
+    })
+    .from(schema.users)
+    .where(eq(schema.users.id, userId))
+    .limit(1)
+  if (!row) return null
+  return {
+    id: row.id,
+    email: row.email,
+    storedRole: row.platformRole,
+    resolvedRole: resolvePlatformRole({ email: row.email, storedRole: row.platformRole }),
+  }
+}
+
+/**
+ * Everyone the COLUMN says is a manager, newest first.
+ *
+ * Reads the stored value, not the resolved one, and that is the right question
+ * here: the Managers page lists the people this panel promoted, which is a fact
+ * about the column. Someone who is SUPER_ADMIN through the environment is not a
+ * manager and must not appear, even if their row happens to say MANAGER.
+ */
+export async function adminListManagers(): Promise<AdminUserRow[]> {
+  const rows = await getDb()
+    .select({
+      id: schema.users.id,
+      email: schema.users.email,
+      name: schema.users.name,
+      storedRole: schema.users.platformRole,
+      signedUpAt: schema.users.createdAt,
+      shopId: schema.shops.id,
+      shopName: schema.shops.name,
+      shopIsDemo: schema.shops.isDemo,
+    })
+    .from(schema.users)
+    .leftJoin(schema.shops, eq(schema.shops.ownerId, schema.users.id))
+    .where(eq(schema.users.platformRole, 'MANAGER'))
+    .orderBy(desc(schema.users.createdAt))
+
+  return rows.map((row) => ({
+    id: row.id,
+    email: row.email,
+    name: row.name,
+    platformRole: resolvePlatformRole({ email: row.email, storedRole: row.storedRole }),
+    shopId: row.shopId,
+    shopName: row.shopName,
+    shopIsDemo: row.shopIsDemo,
+    signedUpAt: row.signedUpAt,
+  }))
+}
+
+/**
  * Every account, newest first.
  *
  * LEFT JOIN on shops, not INNER: an account whose provisioning failed has no

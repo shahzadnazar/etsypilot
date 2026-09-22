@@ -1,5 +1,7 @@
+import Link from 'next/link'
 import { Card } from '@/components/ui/card'
 import { requireAdmin } from '@/domain/admin/access'
+import { roleSource } from '@/domain/admin/roles'
 import { adminListUsers } from '@/lib/repositories/admin-reads-every-shop'
 import { formatCalendarDate } from '@/lib/utils/format'
 
@@ -33,9 +35,23 @@ import { formatCalendarDate } from '@/lib/utils/format'
  */
 export const dynamic = 'force-dynamic'
 
-export default async function AdminUsersPage() {
-  await requireAdmin('users.view')
+export default async function AdminUsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ changed?: string }>
+}) {
+  const access = await requireAdmin('users.view')
   const users = await adminListUsers()
+  const { changed } = await searchParams
+
+  /*
+   * The control is rendered for SUPER_ADMIN only — not disabled for everyone
+   * else, ABSENT. That was the requirement and it is the right one: a greyed
+   * out "Change role" tells an ADMIN the capability exists and that they are
+   * one promotion away from it. The confirmation page 404s them as well, which
+   * is the half that holds when someone types the URL.
+   */
+  const mayChangeRoles = access.canSuperAdminOnly('roles.write')
 
   return (
     <>
@@ -50,6 +66,25 @@ export default async function AdminUsersPage() {
           or revenue — is read to build it.
         </p>
       </div>
+
+      {changed ? (
+        <Card
+          role="status"
+          className="mb-3 p-[14px] text-small leading-relaxed"
+          style={{
+            background: 'var(--success-surface)',
+            borderColor: 'var(--success-border)',
+            color: 'var(--success-ink)',
+          }}
+        >
+          <strong className="font-semibold">Role changed</strong> for {changed}. The record is in
+          the{' '}
+          <Link href="/admin/audit" className="underline underline-offset-2">
+            audit log
+          </Link>
+          .
+        </Card>
+      ) : null}
 
       {users.length === 0 ? (
         <Card className="p-[18px] text-small leading-relaxed text-ink-2">
@@ -74,6 +109,11 @@ export default async function AdminUsersPage() {
                 <th scope="col" className="px-3 py-2.5 font-semibold">Platform role</th>
                 <th scope="col" className="px-3 py-2.5 font-semibold">Shop</th>
                 <th scope="col" className="px-4 py-2.5 font-semibold">Signed up</th>
+                {mayChangeRoles ? (
+                  <th scope="col" className="px-4 py-2.5 font-semibold">
+                    <span className="sr-only">Actions</span>
+                  </th>
+                ) : null}
               </tr>
             </thead>
             <tbody>
@@ -112,6 +152,28 @@ export default async function AdminUsersPage() {
                   <td className="tnum px-4 py-3 text-small text-ink-2">
                     {formatCalendarDate(user.signedUpAt.toISOString().slice(0, 10))}
                   </td>
+                  {mayChangeRoles ? (
+                    <td className="px-4 py-3 text-small">
+                      {roleSource(user.platformRole) === 'ENVIRONMENT' ? (
+                        /*
+                         * No link where the change would do nothing. Writing
+                         * the column for an env-derived role succeeds and
+                         * alters no access at all, so offering it would be
+                         * D70's control that appears to work and does not.
+                         * The reason is named rather than left as a blank.
+                         */
+                        <span className="text-caption text-muted-1">Set by environment</span>
+                      ) : (
+                        <Link
+                          href={`/admin/users/${encodeURIComponent(user.id)}/role`}
+                          className="font-semibold text-brand underline underline-offset-2"
+                        >
+                          Change role
+                          <span className="sr-only"> for {user.email}</span>
+                        </Link>
+                      )}
+                    </td>
+                  ) : null}
                 </tr>
               ))}
             </tbody>

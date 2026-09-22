@@ -226,10 +226,24 @@ describe('only admin code may read across shops', () => {
     return out
   }
 
+  /*
+   * COMMENTS STRIPPED, and this is the THIRD time that has turned out to
+   * matter in this file. The sweep matched the module's NAME anywhere in a
+   * file, so admin-audit-log.ts and admin-writes-platform-role.ts — which
+   * mention it in their banners to explain that they cross the same boundary
+   * for the same reason — were reported as illegal importers. A guard that
+   * fires on prose about the rule is a guard people learn to route around by
+   * deleting the prose.
+   */
+  const code = (file: string) =>
+    readFileSync(file, 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '')
+
   const importers = ['app', 'components', 'domain', 'lib']
     .flatMap((root) => walk(root))
     .filter((file) => !file.endsWith(`${MODULE}.ts`))
-    .filter((file) => readFileSync(file, 'utf8').includes(MODULE))
+    .filter((file) => code(file).includes(MODULE))
 
   it('finds the importers it is meant to be checking', () => {
     // A sweep that matches nothing passes perfectly.
@@ -321,7 +335,13 @@ describe('every operator page gates itself', () => {
     for (const file of found) {
       const source = code(file)
       const gate = source.indexOf('requireAdmin(')
-      for (const answer of ['redirect(', 'adminListUsers(']) {
+      for (const answer of [
+        'redirect(',
+        'adminListUsers(',
+        'adminReadAccount(',
+        'adminListManagers(',
+        'readAdminAuditLog(',
+      ]) {
         const at = source.indexOf(answer)
         if (at === -1) continue
         expect(gate, `${file} ${answer}`).toBeLessThan(at)

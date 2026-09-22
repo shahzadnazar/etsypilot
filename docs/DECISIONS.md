@@ -4236,3 +4236,152 @@ job an INNER JOIN would have hidden.
 680 tests, 46 files (up from 633/44). 217 rendered-output, 29 empty-state, 12
 popup and 15 admin-hidden browser checks pass. Demo mode is unchanged: with
 `AUTH_MODE` unset every screen works as before and `/admin` does not exist.
+
+---
+
+### D92 — Role promotion: the first write in the operator area
+
+`/admin` can now change one thing — `users.platform_role` — and record that it
+did. Everything else about the panel is still read-only.
+
+#### The top two roles are unreachable from the write path, by type
+
+`ASSIGNABLE_ROLES` is `['MANAGER', 'USER']`, declared
+`satisfies readonly StorableRole[]` so it cannot grow past what
+`resolvePlatformRole()` will honour. Every function on the write path — the
+repository, the domain action, the audit outcome's `to` field — takes
+`AssignableRole`, so
+
+    setStoredPlatformRole(id, 'SUPER_ADMIN')   // does not compile
+    setStoredPlatformRole(id, someRole)        // PlatformRole: does not compile
+
+are wrong at the keyboard. `parseAssignableRole()` is the single place a string
+becomes that type, which is the runtime half: the type stops a developer, the
+parse stops a request.
+
+Writing `'SUPER_ADMIN'` into the column would not actually grant it —
+`resolvePlatformRole()` ignores those values there — which is exactly why the
+type matters. It would make the account list show a role nobody holds and the
+audit log record a promotion that never happened.
+
+**An env-derived target is refused outright**, in the UI and again server-side.
+Writing the column for someone in `SUPER_ADMIN_EMAILS` succeeds and changes
+nothing, because the env list outranks it. That is D70's control that appears
+to work and does not, so the row renders "Set by environment" and the
+confirmation page explains where the change actually has to be made.
+
+#### Step-up auth that does not disturb the session
+
+The obvious implementation is the wrong one:
+
+    const supabase = createSupabaseServerClient(await actionCookies())
+    await supabase.auth.signInWithPassword({ email, password })   // NO
+
+That client is wired to the request's cookie jar, so a successful call mints a
+new session and writes it straight over the operator's cookies. A
+re-authentication that re-authenticates is not a check.
+
+`lib/auth/step-up.ts` uses an isolated `@supabase/supabase-js` client —
+deliberately not the `@supabase/ssr` helper — with `persistSession: false` and
+`autoRefreshToken: false`, given no cookie adapter. `verifyPassword()` takes no
+cookie parameter, so there is no argument through which a jar could be threaded
+in, and a sweep fails if `@supabase/ssr`, `next/headers` or `cookies` ever
+appears in that file.
+
+GoTrue has no "check this password" endpoint, so a real refresh token IS minted.
+It is revoked with `signOut({ scope: 'local' })` — **`'global'` would revoke
+every session the operator has**, signing them out of their own browser and
+every other device as a side effect of confirming a password.
+
+The email comes from the server's view of the session, never from the form.
+Taking it from the request would turn re-confirmation into an oracle for
+checking credentials against any address someone types.
+
+Rate limited through `lib/security/rate-limit.ts` rather than a second
+mechanism: a `stepUp` budget of 10 per 15 minutes, keyed `step-up:<userId>`.
+Per operator, not per IP — the attacker is at the operator's own desk. It
+counts successes too, which is a real cost and is named in the code: an
+operator promoting a dozen people at once will be asked to wait.
+
+#### The order of the checks is part of the design
+
+roles.write, then parse, then a fresh read of the target, then the env-derived
+refusal, then the rate limit, then the password, then write, then record.
+
+`roles.write` comes **before the password is looked at** so an ADMIN who
+submits the form cannot learn whether they typed their own password correctly.
+The rate limit comes **before the round trip**. The write comes **before the
+audit row**, because a record claiming a change that failed is worse than a
+change with a late record — and `setStoredPlatformRole` returns whether a row
+actually matched, so an account that vanished between render and submit is
+recorded as a refusal rather than a promotion.
+
+#### The log is built around refusals (D66)
+
+`admin_audit_events`, additive migration `0004`, one new table and no change to
+any existing column. `lib/repositories/admin-audit-log.ts` has one write and it
+is an insert: no update, no delete, so "this record cannot be edited or removed"
+describes the code. The row most worth deleting is the one recording that you
+promoted yourself, and the person best placed to delete it is the person it
+names.
+
+`outcome` is a discriminated union flattened on write and rebuilt on read, so an
+APPLIED record **carries** its before and after and "promoted to manager" is
+derived rather than stored. A row that cannot be rebuilt is reported as
+unreadable and the count is shown, because a log that quietly returns fewer rows
+than it holds cannot be told apart from a complete one.
+
+Refusals are recorded: wrong password, rate limited, not permitted, invalid
+role, env-derived target, target gone, auth unavailable. Three wrong passwords
+in a row is the most useful row this table will hold and a success-only log does
+not contain it. Callers with no admin access at all write nothing — they get
+`notFound()` first, because a log anybody can fill is a log nobody can read.
+
+`audit.view` stays a `SuperAdminOnlyCapability`, so no ADMIN can be granted it
+and no future permissions editor can render a checkbox for it. The Managers page
+reads "who promoted them" from the log rather than from a second column, because
+the copy without the timestamp and the actor's role is the one that goes stale.
+
+#### Tests, and two of them were wrong
+
+731 tests / 47 files, up from 680 / 46.
+
+Nineteen deliberate breaks, each caught by the test naming that property — but
+the first pass caught only eighteen. Widening the password check to prefer a
+form-supplied email changed **nothing**, because the test posted no email and
+asserted the session's was used. A test whose input cannot distinguish the two
+behaviours is not testing either. It now posts an attacker-chosen address.
+
+An earlier draft asserted the gates by grepping `role-change.ts`. It broke the
+moment a refusal moved into a ternary, and would have gone on passing if the
+refusal had been deleted and replaced by anything mentioning the name. Those are
+now behavioural: the repositories and the password check are mocked, and what is
+asserted is which of them get called, in what order, with what — including that
+a refused ADMIN never reaches `verifyPassword` at all.
+
+The cross-shop import sweep failed for the third time on the same defect: it
+matched the module's name inside the new files' banner comments, which mention
+it to explain that they cross the same boundary. Comments are now stripped
+there too.
+
+#### Verified against a running server
+
+`tests/browser/fake-gotrue.py` speaks GoTrue's wire protocol so the app's real
+Supabase client runs unmodified — mocking the client out would be mocking out
+the thing in question. Against it, a real Postgres with all five migrations, and
+a browser: 43 checks covering sign-in, promotion, demotion, a wrong password,
+the audit log, the managers page, and what an ADMIN and a MANAGER get by URL.
+
+The two that only exist because this runs outside the process: **the operator's
+session cookie is byte-identical before and after confirming a password**, and
+**every revocation the provider received carried `scope=local`**.
+
+Read back from a fresh process after a restart: the promotion, the managers
+entry and the audit row are all still there. The audit row records
+`actor_role = SUPER_ADMIN` while that account's own column says `USER` — the
+role in force, not the row.
+
+Demo mode is unchanged: with `AUTH_MODE` unset all four `/admin` paths 404 and
+217 rendered-output, 29 empty-state, 12 popup and 15 admin-hidden checks pass.
+A cross-origin POST to the role action is refused 403 by the CSRF check, which
+still runs before everything.

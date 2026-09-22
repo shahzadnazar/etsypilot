@@ -49,10 +49,11 @@ function credentials(): { url: string; key: string } {
    * getSession() returns the demo session and never reaches this module.
    *
    * SUPABASE_SERVICE_ROLE_KEY is NOT read here, and must not be. It bypasses
-   * row-level security, so the one place it could ever belong is a deliberate
-   * server-side admin path — of which this product has none (there is no admin
-   * surface at all). A session read runs as the signed-in user or it is not a
-   * session read.
+ * row-level security. This note used to add that no admin path existed to want
+ * one; there is now an operator panel, and it still does not want one — it
+ * queries Postgres directly through the pooled connection and never asks
+ * Supabase to act as anyone. A session read runs as the signed-in user or it is
+ * not a session read.
    */
   if (!found) {
     throw new Error(

@@ -492,6 +492,62 @@ export const ordersRelations = relations(orders, ({ many, one }) => ({
   items: many(orderItems),
 }))
 
+/* ------------------------------------------------- operator audit trail */
+
+/**
+ * Every attempt to change a PLATFORM role. Successes AND refusals.
+ *
+ * APPEND-ONLY, and not only by convention: lib/repositories/admin-audit-log.ts
+ * exports an append and two reads and has no update or delete, so "this record
+ * cannot be edited or removed" describes the code (D66).
+ *
+ * NO shopId, deliberately, and it is the only table here without one. The
+ * invariant at the top of this file — every table carries shopId — describes
+ * SELLER data, scoped by shopContext(). A platform role belongs to no shop:
+ * writing one is an act of EtsyPilot's operators upon EtsyPilot, and giving it
+ * a shop column would invite someone to scope it to a shop and conclude that
+ * seller isolation covers it. It does not, and this table is not seller data.
+ *
+ * The emails are SNAPSHOTS, not joins. A log that resolves its actor through a
+ * foreign key says nothing once the account is renamed or deleted, which is
+ * exactly when a dispute is likeliest to need it.
+ *
+ * The outcome is flattened from a discriminated union (domain/admin/audit.ts)
+ * and rebuilt on read. A row that cannot be rebuilt renders as unreadable
+ * rather than as a plausible guess.
+ */
+export const adminAuditEvents = pgTable(
+  'admin_audit_events',
+  {
+    id: text('id').primaryKey(),
+    at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
+
+    /** Who acted. Not a foreign key: see the snapshot note above. */
+    actorId: text('actor_id').notNull(),
+    actorEmail: text('actor_email').notNull(),
+    /** Their role AT THE TIME. A later demotion must not rewrite history. */
+    actorRole: text('actor_role').notNull(),
+
+    /** Whose role was to change. Null only when it could not be resolved. */
+    targetId: text('target_id'),
+    targetEmail: text('target_email').notNull(),
+
+    /** 'APPLIED' | 'REFUSED'. The union's discriminant. */
+    outcomeKind: text('outcome_kind').notNull(),
+    /** Set on APPLIED only. */
+    fromRole: text('from_role'),
+    /** The new role on APPLIED, the attempted one on REFUSED. */
+    toRole: text('to_role'),
+    /** Set on REFUSED only. A closed list, never free text. */
+    refusalReason: text('refusal_reason'),
+  },
+  (table) => [
+    // The log is read newest-first and filtered by actor when investigating.
+    index('admin_audit_at_idx').on(table.at),
+    index('admin_audit_target_idx').on(table.targetId),
+  ],
+)
+
 export const bulkOperationsRelations = relations(bulkOperations, ({ many }) => ({
   items: many(bulkOperationItems),
 }))

@@ -41,9 +41,16 @@ export interface SupabaseCredentials {
  * env var. Callers that genuinely cannot proceed raise their own error with
  * their own wording.
  *
- * SUPABASE_SERVICE_ROLE_KEY is not read here and is not read anywhere. It
- * bypasses row-level security, so the only place it could belong is a
- * deliberate admin path, and this product has no admin surface at all.
+ * SUPABASE_SERVICE_ROLE_KEY is not read here and is not read anywhere.
+ *
+ * THAT STAYS TRUE NOW THAT THERE IS AN ADMIN SURFACE, which is the version of
+ * this note worth keeping. The old wording said the key could only belong on a
+ * "deliberate admin path" and that no such path existed — and then one was
+ * built, including a write. The operator panel reads across every shop and
+ * changes users.platform_role, and it does all of it through the ordinary
+ * pooled Postgres connection as the signed-in operator. It has never needed a
+ * credential that bypasses row-level security, and the step-up password check
+ * uses the ANON key like every other auth call.
  */
 export function supabaseCredentials(): SupabaseCredentials | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL

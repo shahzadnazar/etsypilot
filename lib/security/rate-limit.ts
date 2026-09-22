@@ -57,10 +57,50 @@ export const LIMITS = {
   export: { limit: 10, windowMs: 60_000 },
   /** Everything else under /api. Well above any human rate. */
   api: { limit: 60, windowMs: 60_000 },
+  /**
+   * Password re-confirmation before a platform role change.
+   *
+   * THE ONE BUDGET THAT IS NOT ABOUT LOAD. Every other limit here sheds work;
+   * this one exists because someone sitting at an operator's unlocked laptop
+   * has an open session and unlimited time, and could otherwise guess that
+   * operator's password at leisure through the confirmation box. Ten attempts
+   * per quarter hour is 40 an hour, which is useless for guessing a password
+   * and far beyond what changing roles actually takes.
+   *
+   * IT COUNTS SUCCESSES TOO, which is a real cost and is chosen rather than
+   * overlooked: an operator promoting a dozen people in one sitting will be
+   * asked to wait. The alternative — counting only failures — needs a read
+   * that does not increment, and two operations where there is now one, for a
+   * scenario (bulk promotion) that this panel does not offer and that the
+   * confirmation prompt is meant to slow down anyway.
+   */
+  stepUp: { limit: 10, windowMs: 15 * 60_000 },
 } as const
 
+/**
+ * The pseudo-path for step-up, so this extends the existing mechanism rather
+ * than growing a second one beside it.
+ *
+ * It is not a URL anyone requests: the role change is a server action, not a
+ * route. What it names is the BUDGET, and limitFor() is already the function
+ * that maps a name to a budget.
+ *
+ * The caller pairs it with a key of `step-up:<userId>`, which matters because
+ * the window is stored per KEY — the path only chooses the limit. A step-up
+ * attempt must not consume an IP's API budget, or drain one.
+ */
+export const STEP_UP_PATH = '/admin/step-up'
+
 export function limitFor(path: string): { limit: number; windowMs: number } {
+  if (path === STEP_UP_PATH) return LIMITS.stepUp
   return path.startsWith('/api/export/') ? LIMITS.export : LIMITS.api
+}
+
+/** The key a step-up attempt is counted against. Per operator, not per IP:
+ *  the attacker here is already at the operator's desk, so their IP is the
+ *  operator's own and throttling it would throttle the wrong thing. */
+export function stepUpKey(userId: string): string {
+  return `step-up:${userId}`
 }
 
 export function rateLimit(key: string, path: string, now: number): RateLimitResult {

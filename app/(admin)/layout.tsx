@@ -91,13 +91,36 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
       <header className="flex h-topbar shrink-0 items-center gap-3.5 border-b border-line bg-surface px-4 md:px-[26px]">
         <span className="text-[15px] font-bold tracking-[-0.01em] text-ink-1">Operations</span>
+        {/*
+          * Each item is gated on the capability its page requires, so the nav
+          * cannot offer a link to a 404. Audit is gated on canSuperAdminOnly —
+          * a DIFFERENT function taking a DIFFERENT type — which is what stops
+          * it being lumped in with the delegatable permissions the day someone
+          * builds a checkbox editor for them.
+          */}
         <nav aria-label="Operator" className="flex items-center gap-1">
           {access.can('users.view') ? (
+            <>
+              <Link
+                href="/admin/users"
+                className="rounded-control px-2.5 py-1.5 text-[12.5px] font-medium text-ink-2 hover:bg-canvas-soft"
+              >
+                Accounts
+              </Link>
+              <Link
+                href="/admin/managers"
+                className="rounded-control px-2.5 py-1.5 text-[12.5px] font-medium text-ink-2 hover:bg-canvas-soft"
+              >
+                Managers
+              </Link>
+            </>
+          ) : null}
+          {access.canSuperAdminOnly('audit.view') ? (
             <Link
-              href="/admin/users"
+              href="/admin/audit"
               className="rounded-control px-2.5 py-1.5 text-[12.5px] font-medium text-ink-2 hover:bg-canvas-soft"
             >
-              Accounts
+              Audit log
             </Link>
           ) : null}
         </nav>
