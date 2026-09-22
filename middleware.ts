@@ -37,9 +37,30 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { AUTH_COOKIE_OPTIONS, isLiveAuth, supabaseCredentials } from '@/lib/auth/supabase-config'
+import { checkAdminRoute } from '@/lib/security/admin-route'
 import { cspFor } from '@/lib/security/csp'
 import { checkCsrf } from '@/lib/security/csrf'
 import { rateLimit } from '@/lib/security/rate-limit'
+
+/**
+ * A path no route will ever match, used to make /admin genuinely disappear.
+ *
+ * MEASURED, not assumed. The first version of this returned
+ * `new NextResponse(null, { status: 404 })`, and the comment above it claimed
+ * to be "indistinguishable from a route that was never written". Probing the
+ * running server said otherwise:
+ *
+ *     /admin            404, 0 bytes, no content-type
+ *     /administrators   404, 9501 bytes, text/html
+ *
+ * Same status, obviously different responses. The empty body WAS the tell:
+ * anyone could separate "refused" from "never existed" with one curl, which is
+ * precisely the reconnaissance a 404-instead-of-403 exists to deny.
+ *
+ * Rewriting to a path with no route makes Next render its ordinary not-found
+ * page, so the two answers become the same answer.
+ */
+const NOWHERE = '/_etsypilot_no_such_route'
 
 /**
  * The caller, for rate limiting.
@@ -82,6 +103,29 @@ export async function middleware(request: NextRequest) {
     // it — telling an attacker which check refused them is free reconnaissance.
     return new NextResponse(null, { status: 403 })
   }
+
+  /*
+   * THEN the admin gate — after CSRF, which is untouched above.
+   *
+   * This is the FIRST of two checks and deliberately the weaker one. Middleware
+   * runs on the Edge runtime, which cannot reach Postgres (postgres-js is a TCP
+   * driver), so it cannot resolve MANAGER — that role lives in a column. What
+   * it CAN do without a database is tell a signed-out visitor from a signed-in
+   * one, and that covers every anonymous probe and the whole of demo mode.
+   *
+   * The authoritative check is requireAdmin() in each operator page,
+   * server-side, with the database available. Two independent checks is the
+   * point: middleware is not the only way a route can be reached, so the pages
+   * would need their own check even if this one could see everything.
+   *
+   * 404 and never 403. A 403 confirms /admin exists.
+   */
+  const adminRoute = checkAdminRoute({
+    pathname: url.pathname,
+    liveAuth: isLiveAuth(),
+    cookieNames: request.cookies.getAll().map((c) => c.name),
+  })
+  const hideAdminRoute = adminRoute.matched && !adminRoute.reachable
 
   /*
    * Then rate limiting, and only for /api. Pages are cheap and a seller
@@ -145,7 +189,15 @@ export async function middleware(request: NextRequest) {
   headers.set('x-nonce', nonce)
   headers.set('Content-Security-Policy', csp)
 
-  const response = NextResponse.next({ request: { headers } })
+  /*
+   * The refused /admin request is rewritten here rather than returned early, so
+   * the 404 page still carries the nonce and the CSP. A response that skipped
+   * this block would be the only page in the product served without a policy —
+   * and a differently-shaped response is the leak this is trying to close.
+   */
+  const response = hideAdminRoute
+    ? NextResponse.rewrite(new URL(NOWHERE, request.url), { request: { headers } })
+    : NextResponse.next({ request: { headers } })
   response.headers.set('Content-Security-Policy', csp)
 
   /*

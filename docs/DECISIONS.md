@@ -4106,3 +4106,133 @@ back `Anne-Marie O'Brien` / `Annie`, greeting "Anne-Marie", initials "AO".
 **The shell needed no change to prefer a stored name** — `getSession()` already
 reads `users.name` first — which was confirmed rather than assumed. What did need
 changing was the two rendering expressions above.
+
+---
+
+### D91 — The operator panel, read-only, and hidden rather than refused
+
+`/admin` exists. It lists every account on the platform and nothing else, and it
+cannot change anything: no button, no form, no disabled control hinting at one.
+D70 — a control that appears to work and does not is worse than no control — is
+stronger on an operator screen than anywhere else.
+
+#### Two axes, never one
+
+`memberships.role` is a SHOP role: who may touch one seller's listings. Every
+seller is `OWNER` of their own shop, because that is what provisioning creates.
+`users.platform_role` is a PLATFORM role: who may operate EtsyPilot. If those
+were one column, every seller would be an administrator of the platform.
+
+The separation is structural, not documentary. `resolvePlatformRole()` takes an
+email and a stored value and has no parameter a membership could be passed
+through; a test asserts the word `membership` appears nowhere in the role model;
+and the seeded database used for verification gives all five sellers a real
+`OWNER` row — they all render as `user`.
+
+**SUPER_ADMIN and ADMIN are never read from the database.** They come from
+`SUPER_ADMIN_EMAILS` / `ADMIN_EMAILS` only. Writing a row is a far lower bar than
+editing a deployment's environment, and it is also the break-glass route: if the
+promotion UI is broken, an env var and a restart still gets someone in. A row
+reading `SUPER_ADMIN` resolves to `USER`. `MANAGER` is the only elevated role a
+column may assert.
+
+`audit.view` and `roles.write` are NOT permissions. They are a separate type that
+`can()` cannot accept, so `can(role, 'roles.write')` does not compile and a future
+checkbox editor iterating `PERMISSIONS` cannot render them. Both are how someone
+covers their tracks: whoever can change roles can promote themselves, and whoever
+can read the audit log can see who noticed.
+
+Ambiguities in the env lists were decided rather than inherited. Whitespace is
+TRIMMED, because failing closed there means an invisible character silently
+locking out the only administrator. Case is lowered on BOTH sides, so it never
+decides either way. Empty entries are DROPPED — keeping one would let an account
+with no email match it, and absence must never grant.
+
+#### Hidden, not refused — and the difference was measured
+
+404, never 403: a 403 confirms the panel exists. That was the intent from the
+start, and the first implementation did not achieve it. Middleware returned
+`new NextResponse(null, { status: 404 })` under a comment claiming to be
+"indistinguishable from a route that was never written". The running server:
+
+    /admin            404, 0 bytes, no content-type
+    /administrators   404, 9501 bytes, text/html
+
+Same status, obviously different responses. One curl separated "refused" from
+"never written". The status code was never the thing worth asserting.
+
+Two more leaks surfaced the same way, both only visible against a real server:
+
+  - **`export const metadata` survives `notFound()`.** Next resolves a route's
+    static metadata whether or not the component renders, so a refused seller's
+    404 carried `"Accounts · Operations · EtsyPilot"` — the panel's existence and
+    the screen's name. A `<title>` inside the gated component cannot leak.
+  - **`notFound()` thrown from a LAYOUT has no boundary above it**, so Next fell
+    back to a bare error document with no 404 copy at all. The layout now passes
+    `children` through when access is refused and the PAGE refuses instead.
+
+Middleware now rewrites a refused `/admin` to a path with no route, so what comes
+back IS the ordinary 404 — byte-identical once the per-request nonce and the
+echoed path are normalised away. `tests/browser/admin-hidden.py` asserts that and
+fails if it regresses; reintroducing the bare 404 turns it red while the status
+assertion stays green, which is the whole point.
+
+**What is NOT closed, stated rather than glossed.** A signed-in seller who is not
+an operator gets the same 404 status, the same rendered page and no operator
+content whatsoever — no banner, no email, no role, no column name, nothing from
+the account list — but Next wraps a request-time `notFound()` in its
+`__next_error__` shell, so the response is 8,602 bytes where a missing URL is
+9,507. They can tell `/admin` is a URL this application treats specially. Closing
+it means refusing in middleware, the only place that can rewrite; middleware runs
+on the Edge and cannot read `platform_role`, so the choice was to drop MANAGER or
+to add an authenticated internal endpoint the Edge could call. New attack surface
+to hide a fact from people already signed in is a bad trade. Written down so it
+stays a decision.
+
+#### Two checks, deliberately unequal
+
+Middleware is Edge, so it is DB-free: it 404s demo mode outright and every
+request with no Supabase cookie. It cannot resolve MANAGER, which lives in a
+column, and it is not meant to. `domain/admin/access.ts` is authoritative and
+runs regardless — middleware is not the only way a route is reached.
+
+The demo refusal is keyed on the AUTH MODE, and the first version got this wrong
+in both directions at once: `session.isDemo && !isDatabaseConfigured()` let the
+fixed shared demo session through as soon as `DATABASE_URL` was set, and locked
+out a genuine operator whose shop row is flagged `isDemo` — which is the state
+`.env.example` describes the product as actually being in. `session.isDemo`
+describes the SHOP; what matters is whether `getSession()` returned the fixed
+session, and it returns that exactly when `AUTH_MODE` is not live.
+
+#### Guards that hold rather than guards that are written down
+
+`lib/repositories/admin-reads-every-shop.ts` deliberately crosses the shop
+isolation boundary — you cannot list every account by asking one account about
+itself. `lib/permissions/index.ts` is untouched; `shopContext()` is still the
+boundary for everything else. The filename is the first guard, and sweeps are the
+one that holds: only `app/(admin)` and `domain/admin` may import it, it contains
+no write, it selects no token and no order or listing data, and every page under
+`app/(admin)` calls `requireAdmin()` before anything that answers the request.
+
+Nineteen deliberate breaks were applied one at a time and each was caught by the
+test that names that property. Two of those breaks exposed bad tests rather than
+bad code: the cross-shop "no secrets" sweep matched `SERVICE_ROLE` inside the
+banner comment FORBIDDING it, and the page-gating sweep passed with the gate
+deleted because the page's own comment contains `requireAdmin()`. Both now strip
+comments first. A check satisfied by prose about the guard is not a check.
+
+#### Verified against a real database
+
+Postgres 16 in the dev image, all four migrations applied to a scratch database,
+six accounts seeded — one with no shop, one with no name, one apostrophe name,
+all five sellers holding real `OWNER` rows. Rendered as three different people:
+SUPER_ADMIN and MANAGER both get the list; a plain signed-in seller gets 404 on
+`/admin` and `/admin/users`. The list showed `boss@etsypilot.app` as **super
+admin** although its column says `USER` — the role that is in force, not the row
+— and `manager@etsypilot.app` as **manager**, from the column. The account with
+no shop rendered "No shop — setup unfinished", which is the LEFT JOIN doing the
+job an INNER JOIN would have hidden.
+
+680 tests, 46 files (up from 633/44). 217 rendered-output, 29 empty-state, 12
+popup and 15 admin-hidden browser checks pass. Demo mode is unchanged: with
+`AUTH_MODE` unset every screen works as before and `/admin` does not exist.

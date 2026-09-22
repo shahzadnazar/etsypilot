@@ -46,6 +46,20 @@ export const users = pgTable('users', {
    * Nullable, because every row that exists predates it.
    */
   displayName: text('display_name'),
+  /**
+   * PLATFORM role — who may operate EtsyPilot itself. NOT a shop role.
+   *
+   * `memberships.role` is the other axis entirely: who may touch one seller's
+   * listings. D20 parked that matrix deliberately, and the two must never be
+   * conflated — a seller who is OWNER of their own shop gains nothing here, and
+   * a MANAGER of the platform is not thereby a member of anyone's shop.
+   *
+   * ONLY 'MANAGER' and 'USER' are meaningful in this column. SUPER_ADMIN and
+   * ADMIN come from environment variables and are never read from the database,
+   * so a database compromise cannot mint one — see domain/admin/roles.ts. A row
+   * that somehow contains 'SUPER_ADMIN' is treated as USER.
+   */
+  platformRole: text('platform_role').notNull().default('USER'),
   /** Role selected during onboarding: handmade / pod / digital / consultant. */
   sellerType: text('seller_type'),
   primaryGoal: text('primary_goal'),
