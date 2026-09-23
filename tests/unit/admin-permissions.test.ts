@@ -16,6 +16,7 @@ import {
   PLATFORM_ROLES,
   SUPER_ADMIN_ONLY,
 } from '@/domain/admin/roles'
+import { visibleOperatorNav } from '@/domain/admin/navigation'
 import {
   describePermissionOutcome,
   flattenPermissionOutcome,
@@ -921,9 +922,28 @@ describe('both permission screens are SUPER_ADMIN only', () => {
     expect(guard).toBeLessThan(source.indexOf('readPermissionMatrix('))
   })
 
-  it('does not link the matrix from the nav without the capability', () => {
-    const source = code(join('app', '(admin)', 'layout.tsx'))
-    expect(source).toContain("canSuperAdminOnly('roles.write')")
+  it('OFFERS NO NAV ENTRY for the matrix without the capability', () => {
+    /*
+     * Asked of the function rather than of the layout's source, which is what
+     * this used to grep. The gate moved into domain/admin/navigation.ts when
+     * the shell was built, and a substring check would have followed it and
+     * kept testing a string; this tests the answer. A viewer who is refused
+     * the page is offered no route to it, and one who holds it is — the
+     * second half matters, because a nav that offers nothing to anybody would
+     * satisfy the first.
+     */
+    const refused = visibleOperatorNav({ can: () => true, canSuperAdminOnly: () => false })
+    expect(refused.flatMap((group) => group.items.map((item) => item.href))).not.toContain(
+      '/admin/permissions',
+    )
+
+    const allowed = visibleOperatorNav({
+      can: () => true,
+      canSuperAdminOnly: (capability) => capability === 'roles.write',
+    })
+    expect(allowed.flatMap((group) => group.items.map((item) => item.href))).toContain(
+      '/admin/permissions',
+    )
   })
 
   it('leaves every decision to the domain, not the action', () => {

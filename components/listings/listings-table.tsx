@@ -79,7 +79,29 @@ export function ListingsTable({ view }: { view: ListingsView }) {
         tabIndex={0}
         role="region"
         aria-label="Listings, scrolls horizontally"
-        className="overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+        /*
+       * `relative` on a horizontal scroll container, and it is load-bearing.
+       *
+       * MEASURED at 390: six routes scrolled SIDEWAYS as a whole — /listings
+       * was 914px of document in a 390px viewport — while every table inside
+       * its own scroll container behaved perfectly. The cause is the sr-only
+       * spans in the cells ("No confirmed cost for this listing…"). Tailwind's
+       * sr-only is position:absolute, and an absolutely positioned element is
+       * only clipped by an overflow ancestor that is ALSO its containing block.
+       * With no positioned ancestor between them and the root, those 1px spans
+       * sat at x=914 in the document and dragged the page's scroll width with
+       * them.
+       *
+       * So every overflow-x-auto container in the codebase is positioned.
+       * Nothing about the announcements changes: the spans are still in the
+       * accessibility tree, still read, still invisible.
+       *
+       * Found by the operator panel's 390/768 sweep and then measured across
+       * the seller app, which had the same defect on six routes the existing
+       * sweep did not cover. D56's lesson, a second time: a geometric defect is
+       * invisible at 1440, and a sweep only ever sees the routes it visits.
+       */
+      className="relative overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
       >
         <table className="w-full min-w-[1000px] border-collapse text-body">
           <caption className="sr-only">

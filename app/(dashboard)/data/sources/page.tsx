@@ -56,7 +56,7 @@ export default function DataSourcesPage() {
         tabIndex={0}
         role="region"
         aria-label="Data sources, scrolls horizontally"
-        className="overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+        className="relative overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
       >
         <table className="w-full min-w-[880px] border-collapse text-small">
           <thead>

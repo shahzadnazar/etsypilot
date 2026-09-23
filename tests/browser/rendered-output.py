@@ -932,8 +932,16 @@ with sync_playwright() as p:
     # No page scrolls sideways at 390px. Found the hard way: a seven-column
     # research table inside a card still put a scrollbar on the whole document,
     # and the fix was the designed one — cards below md, table above.
+    #
+    # The list was seven routes and NONE of them hosted a horizontally
+    # scrolling table, which is why six routes that did were sideways-scrolling
+    # the whole time this check was green. A sweep only ever sees the routes it
+    # visits, so every route with a scrolling table is now on it.
     for route in ["/research/keywords", "/listings/audit", "/listings/ai-copilot",
-                  "/billing", "/settings/shops", "/tools", "/profit"]:
+                  "/billing", "/settings/shops", "/tools", "/profit",
+                  "/research/opportunities", "/research/niche", "/analytics",
+                  "/analytics/sales-map", "/listings", "/listings/change-history",
+                  "/settings/costs", "/settings/audit-log", "/data/sources"]:
         pg.goto(f"{BASE}{route}", wait_until="domcontentloaded")
         pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(400)
         wide = pg.evaluate("() => document.documentElement.scrollWidth > window.innerWidth + 1")

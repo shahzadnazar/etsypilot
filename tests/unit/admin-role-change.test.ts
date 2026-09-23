@@ -17,6 +17,7 @@ import {
   type AdminAuditEvent,
 } from '@/domain/admin/audit'
 import { LIMITS, limitFor, resetRateLimits, stepUpKey, STEP_UP_PATH } from '@/lib/security/rate-limit'
+import { visibleOperatorNav } from '@/domain/admin/navigation'
 
 /*
  * THE FIRST WRITE PATH IN THE OPERATOR AREA.
@@ -836,9 +837,25 @@ describe('the audit log is readable by SUPER_ADMIN only', () => {
     expect(source).toContain('notFound()')
   })
 
-  it('links to neither page from the operator nav without the capability', () => {
-    const source = code(join('app', '(admin)', 'layout.tsx'))
-    expect(source).toContain("canSuperAdminOnly('audit.view')")
+  it('OFFERS NO NAV ENTRY for either page without the capability', () => {
+    /*
+     * Behavioural, not a grep of the layout — the gate lives in the nav model
+     * now, and the question worth asking was always "what is this viewer
+     * offered", not "does that file contain this string".
+     *
+     * An ADMIN is the case that matters: they hold every delegatable
+     * permission, so `can` returning true for everything is exactly their
+     * shape, and neither of these two may appear for them.
+     */
+    const admin = visibleOperatorNav({ can: () => true, canSuperAdminOnly: () => false })
+    const hrefs = admin.flatMap((group) => group.items.map((item) => item.href))
+    expect(hrefs).not.toContain('/admin/audit')
+    expect(hrefs).not.toContain('/admin/permissions')
+
+    const superAdmin = visibleOperatorNav({ can: () => true, canSuperAdminOnly: () => true })
+    const all = superAdmin.flatMap((group) => group.items.map((item) => item.href))
+    expect(all).toContain('/admin/audit')
+    expect(all).toContain('/admin/permissions')
   })
 
   it('keeps both capabilities out of the delegatable permission list', () => {

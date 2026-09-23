@@ -57,7 +57,7 @@ export default async function AdminManagersPage() {
           tabIndex={0}
           role="region"
           aria-label="Managers, scrolls horizontally"
-          className="w-full max-w-full overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          className="relative w-full max-w-full overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
           <table className="w-full min-w-[720px] border-collapse text-body">
             <caption className="sr-only">

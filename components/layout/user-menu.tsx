@@ -28,12 +28,24 @@ export function UserMenu({
   userInitials,
   userName,
   userEmail,
+  prefetch,
 }: {
   userInitials: string
   /** A display label. May be derived from the email when no name is set. */
   userName: string
   /** Always shown in full, so the label above it is never the only identifier. */
   userEmail: string
+  /**
+   * Passed through to the Profile link. Defaults to Next's behaviour, which is
+   * what the seller app wants.
+   *
+   * The OPERATOR shell passes false, and the reason is D94 rather than
+   * performance: a prefetched link to a SELLER route renders that route, and
+   * /settings/profile resolves a session the same way /dashboard does — which
+   * was measured in A4 to re-create the operator's own shop and membership
+   * rows. Opening an operator screen must not execute a seller route.
+   */
+  prefetch?: false
 }) {
   return (
     <details className="relative shrink-0 [&_summary::-webkit-details-marker]:hidden">
@@ -62,6 +74,7 @@ export function UserMenu({
 
         <Link
           href="/settings/profile"
+          prefetch={prefetch}
           className="flex items-center gap-2 px-3.5 py-2.5 text-small text-ink-2 hover:bg-canvas-soft"
         >
           <User size={14} aria-hidden />

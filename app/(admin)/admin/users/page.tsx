@@ -102,10 +102,30 @@ export default async function AdminUsersPage({
         </Card>
       ) : (
         <Card
+          /*
+            * `relative`, and it is load-bearing rather than cosmetic.
+            *
+            * MEASURED at 390 and 768: this page scrolled SIDEWAYS as a whole,
+            * 778px of document in a 390px viewport, while the table inside its
+            * own scroll container behaved perfectly. The cause is the sr-only
+            * spans in the rows — "open account detail", "for <email>". Tailwind's
+            * sr-only is position:absolute, and an absolutely positioned element
+            * is only clipped by an overflow ancestor that is also its CONTAINING
+            * BLOCK. With no positioned ancestor between them and the root, those
+            * 1px spans sat at x=777 in the document and dragged the page's
+            * scroll width out with them.
+            *
+            * Making the scroll container positioned gives them a containing
+            * block that clips. Nothing about the announcement changes: they are
+            * still in the accessibility tree, still read, still not visible.
+            *
+            * Found by the operator shell's own 390/768 sweep, which is the
+            * point of D56 — a geometric defect is invisible at 1440.
+            */
           tabIndex={0}
           role="region"
           aria-label="Accounts, scrolls horizontally"
-          className="w-full max-w-full overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          className="relative w-full max-w-full overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
           <table className="w-full min-w-[820px] border-collapse text-body">
             <caption className="sr-only">

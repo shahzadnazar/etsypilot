@@ -29,7 +29,7 @@ export function BillingHistory({ invoices }: { invoices: Invoice[] }) {
       tabIndex={0}
       role="region"
       aria-label="Billing history, scrolls horizontally"
-      className="w-full max-w-full overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+      className="relative w-full max-w-full overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
     >
       <table className="w-full min-w-[600px] border-collapse text-body">
         <caption className="sr-only">

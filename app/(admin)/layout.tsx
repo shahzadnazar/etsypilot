@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
-import Link from 'next/link'
+import { OperatorShell } from '@/components/admin/operator-shell'
 import { getAdminAccess } from '@/domain/admin/access'
+import { visibleOperatorNav } from '@/domain/admin/navigation'
+import { initialsFor } from '@/lib/utils/name'
 
 /*
  * The operator shell.
@@ -15,12 +17,19 @@ import { getAdminAccess } from '@/domain/admin/access'
  * one that still holds when a route is reached some way middleware does not
  * cover. notFound(), never a 403: a 403 confirms /admin exists.
  *
- * VISUALLY DISTINCT ON PURPOSE. A dark chrome and an explicit banner, so it is
+ * VISUALLY DISTINCT ON PURPOSE. An explicit banner above everything, so it is
  * never ambiguous which application you are looking at — an operator who thinks
  * they are in their own account is an operator about to be surprised by what
  * they are seeing. Every colour is a D1 token or the same literal dark pair the
  * demo banner uses (D1/D10: a token background with a literal foreground breaks
  * on theme flip).
+ *
+ * THE CHROME LIVES IN components/admin, not here. This file's job is the gate
+ * and nothing else; when the navigation and the shell were inline it was four
+ * hundred lines in which the one security-relevant branch was easy to lose.
+ * OperatorShell takes navigation that is ALREADY FILTERED — computed here,
+ * server-side, from the same `can` the pages gate on — so the browser bundle
+ * never learns which items this viewer was refused.
  */
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const access = await getAdminAccess()
@@ -56,104 +65,23 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   if (!access) return <>{children}</>
 
   return (
-    <div className="flex min-h-screen flex-col bg-canvas">
-      <div
-        role="status"
-        aria-label="Operator console"
-        className="flex flex-wrap items-center gap-2.5 px-4 py-2.5 md:px-[18px]"
-        style={{ background: '#241B12' }}
-      >
-        <span
-          className="rounded-[5px] px-2 py-[3px] text-[9.5px] font-semibold uppercase tracking-[0.07em] text-white"
-          style={{ background: 'rgba(255,255,255,.14)' }}
-        >
-          Operator
-        </span>
-        <span className="flex-1 text-[12px] leading-snug" style={{ color: '#F7F3ED' }}>
-          EtsyPilot operations — not a seller account. You are looking at every shop on the
-          platform, read-only.
-        </span>
-        <span className="tnum text-[11px]" style={{ color: '#C9BCA9' }}>
-          {access.email} · {access.role.replace('_', ' ').toLowerCase()}
-        </span>
-        {/*
-          * The way back to the seller app. An operator console with no exit is
-          * a console people leave by editing the URL.
-          */}
-        {/*
-          * prefetch={false}, and it is a D94 line rather than a performance one.
-          *
-          * MEASURED: with the default prefetch, loading /admin/users in a
-          * browser re-created the operator's own shop and membership rows. The
-          * operator page had written nothing — Next had speculatively rendered
-          * /dashboard, and the SELLER route repairs a missing shop by
-          * provisioning it. Correct behaviour in the wrong place: opening an
-          * operator screen should not execute a seller route, and "the
-          * operator area wrote no seller data" is a much harder claim to make
-          * when merely looking at the panel can trigger one.
-          *
-          * Single-request probes with curl showed zero rows written across all
-          * four operator pages, which is how the prefetch was identified as
-          * the cause rather than the gate.
-          */}
-        <Link
-          href="/dashboard"
-          prefetch={false}
-          className="shrink-0 rounded-[7px] bg-white px-2.5 py-1.5 text-[11px] font-semibold"
-          style={{ color: '#241B12' }}
-        >
-          My shop
-        </Link>
-      </div>
-
-      <header className="flex h-topbar shrink-0 items-center gap-3.5 border-b border-line bg-surface px-4 md:px-[26px]">
-        <span className="text-[15px] font-bold tracking-[-0.01em] text-ink-1">Operations</span>
-        {/*
-          * Each item is gated on the capability its page requires, so the nav
-          * cannot offer a link to a 404. Audit is gated on canSuperAdminOnly —
-          * a DIFFERENT function taking a DIFFERENT type — which is what stops
-          * it being lumped in with the delegatable permissions the day someone
-          * builds a checkbox editor for them.
-          */}
-        <nav aria-label="Operator" className="flex items-center gap-1">
-          {access.can('users.view') ? (
-            <>
-              <Link
-                href="/admin/users"
-                className="rounded-control px-2.5 py-1.5 text-[12.5px] font-medium text-ink-2 hover:bg-canvas-soft"
-              >
-                Accounts
-              </Link>
-              <Link
-                href="/admin/managers"
-                className="rounded-control px-2.5 py-1.5 text-[12.5px] font-medium text-ink-2 hover:bg-canvas-soft"
-              >
-                Managers
-              </Link>
-            </>
-          ) : null}
-          {access.canSuperAdminOnly('roles.write') ? (
-            <Link
-              href="/admin/permissions"
-              className="rounded-control px-2.5 py-1.5 text-[12.5px] font-medium text-ink-2 hover:bg-canvas-soft"
-            >
-              Permissions
-            </Link>
-          ) : null}
-          {access.canSuperAdminOnly('audit.view') ? (
-            <Link
-              href="/admin/audit"
-              className="rounded-control px-2.5 py-1.5 text-[12.5px] font-medium text-ink-2 hover:bg-canvas-soft"
-            >
-              Audit log
-            </Link>
-          ) : null}
-        </nav>
-      </header>
-
-      <main id="main" className="flex-1 overflow-y-auto px-4 py-5 md:px-6">
-        <div className="mx-auto w-full max-w-content">{children}</div>
-      </main>
-    </div>
+    <OperatorShell
+      groups={visibleOperatorNav(access)}
+      email={access.email}
+      role={access.role}
+      /*
+       * Initials from the EMAIL, with no name to derive them from, and that is
+       * a fact about the operator identity rather than an omission here.
+       * getOperatorIdentity() returns a user id and an address and nothing
+       * else — it deliberately reads no `users` row, because resolving one is
+       * what dragged provisioning into the operator closure and made D94 false
+       * by import. The address is also the honest label: it is the thing that
+       * distinguishes two operator logins on one machine.
+       */
+      userInitials={initialsFor('', access.email)}
+      userName={access.email}
+    >
+      {children}
+    </OperatorShell>
   )
 }

@@ -119,7 +119,7 @@ export function FeeCalculator() {
             tabIndex={0}
             role="region"
             aria-label="Fee breakdown, scrolls horizontally"
-            className="mt-3 overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            className="relative mt-3 overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
           >
             <table className="w-full border-collapse text-small">
               <thead>

@@ -74,7 +74,7 @@ export function BaselineChart({
         tabIndex={0}
         role="region"
         aria-label="Baseline chart, scrolls horizontally"
-        className="overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+        className="relative overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
       >
         <svg
           viewBox={`0 0 ${W} ${H}`}

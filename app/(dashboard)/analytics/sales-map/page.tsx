@@ -114,7 +114,7 @@ export default async function SalesMapPage() {
             tabIndex={0}
             role="region"
             aria-label="Sales by country, scrolls horizontally"
-            className="overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            className="relative overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
           >
             <table className="w-full min-w-[420px] border-collapse text-body">
               <caption className="sr-only">
