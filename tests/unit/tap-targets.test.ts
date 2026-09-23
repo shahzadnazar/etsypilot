@@ -12,12 +12,13 @@
  */
 
 import { readFileSync, readdirSync, statSync } from 'node:fs'
-import { join } from 'node:path'
+
 import { describe, expect, it } from 'vitest'
+import { posixJoin } from '../support/paths'
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
-    const path = join(dir, name)
+    const path = posixJoin(dir, name)
     if (statSync(path).isDirectory()) walk(path, out)
     else if (path.endsWith('.tsx')) out.push(path)
   }

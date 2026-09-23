@@ -1,6 +1,6 @@
 import fs from 'node:fs'
-import path from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { posixJoin } from '../support/paths'
 import {
   CALCULATIONS,
   SPECS,
@@ -142,7 +142,7 @@ describe('a result is never dressed as something it is not', () => {
  */
 describe('it stays separate from Profit Reality', () => {
   it('has no import edge into the profit domain, or anywhere stateful', () => {
-    const source = fs.readFileSync(path.join(process.cwd(), 'domain/calculator/engine.ts'), 'utf8')
+    const source = fs.readFileSync(posixJoin(process.cwd(), 'domain/calculator/engine.ts'), 'utf8')
     const imports = [...source.matchAll(/from '([^']+)'/g)].map((m) => m[1]!)
 
     // Exactly one import, and it is a type.
@@ -161,7 +161,7 @@ describe('it stays separate from Profit Reality', () => {
 
   it('reads no clock and no randomness, so the same input is the same answer', () => {
     const source = fs
-      .readFileSync(path.join(process.cwd(), 'domain/calculator/engine.ts'), 'utf8')
+      .readFileSync(posixJoin(process.cwd(), 'domain/calculator/engine.ts'), 'utf8')
       // Strip comments: the prose is allowed to mention what the code avoids.
       .replace(/\/\*[\s\S]*?\*\//g, '')
       .replace(/\/\/.*$/gm, '')

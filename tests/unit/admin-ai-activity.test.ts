@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+
 import {
   COST_STATEMENT,
   GENERATION_KINDS,
@@ -30,9 +30,9 @@ import { OPERATOR_NAV } from '@/domain/admin/navigation'
  * Comments are stripped, and the sweeps match a shape rather than a word.
  */
 
-const PAGE = join('app', '(admin)', 'admin', 'ai', 'page.tsx')
-const MODEL = join('domain', 'admin', 'ai-activity.ts')
-const READS = join('lib', 'repositories', 'admin-reads-every-shop.ts')
+const PAGE = 'app/(admin)/admin/ai/page.tsx'
+const MODEL = 'domain/admin/ai-activity.ts'
+const READS = 'lib/repositories/admin-reads-every-shop.ts'
 
 function code(file: string): string {
   return readFileSync(file, 'utf8')
@@ -56,7 +56,7 @@ const tally = (
 
 describe('the kinds and statuses are the schema’s own', () => {
   it('MATCHES the column comments, which are read as text', () => {
-    const schema = readFileSync(join('db', 'schema', 'index.ts'), 'utf8')
+    const schema = readFileSync('db/schema/index.ts', 'utf8')
     const table = schema.slice(
       schema.indexOf('export const aiGenerations'),
       schema.indexOf('export const aiGenerations') + 900,
@@ -136,7 +136,7 @@ describe('the generated text never reaches the screen', () => {
   it('FINDS THOSE COLUMNS WHERE THEY REALLY ARE', () => {
     // The positive control. A sweep for absent columns passes perfectly when
     // the names are wrong, so it is first pointed at the schema.
-    const schema = readFileSync(join('db', 'schema', 'index.ts'), 'utf8')
+    const schema = readFileSync('db/schema/index.ts', 'utf8')
     expect(schema).toContain("input: jsonb('input')")
     expect(schema).toContain("output: text('output')")
   })
@@ -326,7 +326,7 @@ describe('there is no cost figure, and the page says why', () => {
   })
 
   it('CONFIRMS THE SCHEMA HAS NO COST COLUMN, so the claim is checked', () => {
-    const schema = readFileSync(join('db', 'schema', 'index.ts'), 'utf8')
+    const schema = readFileSync('db/schema/index.ts', 'utf8')
     const table = schema.slice(
       schema.indexOf('export const aiGenerations'),
       schema.indexOf('export const aiGenerations') + 900,

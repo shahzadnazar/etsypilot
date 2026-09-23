@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
-import { join } from 'node:path'
+
+import { posixJoin } from '../support/paths'
 import {
   BAND_COPY,
   BAND_ORDER,
@@ -34,9 +35,9 @@ import { OPERATOR_NAV } from '@/domain/admin/navigation'
  * Comments are stripped, and the sweeps match a shape rather than a word.
  */
 
-const PAGE = join('app', '(admin)', 'admin', 'usage', 'page.tsx')
-const MODEL = join('domain', 'admin', 'usage.ts')
-const READS = join('lib', 'repositories', 'admin-reads-every-shop.ts')
+const PAGE = 'app/(admin)/admin/usage/page.tsx'
+const MODEL = 'domain/admin/usage.ts'
+const READS = 'lib/repositories/admin-reads-every-shop.ts'
 
 function code(file: string): string {
   return readFileSync(file, 'utf8')
@@ -99,7 +100,7 @@ describe('the figures are counts, not a stored counter', () => {
     const walk = (dir: string) => {
       for (const entry of readdirSync(dir)) {
         if (entry === 'node_modules' || entry === '.next') continue
-        const path = join(dir, entry)
+        const path = posixJoin(dir, entry)
         if (statSync(path).isDirectory()) walk(path)
         else if (/\.tsx?$/.test(path)) files.push(path)
       }
@@ -196,7 +197,7 @@ describe('a quota reads as a boundary, not a fine (D37)', () => {
      * failed leaves no row to count. Asserted against the schema, so this goes
      * red if a FAILED status is ever added without the screen being revisited.
      */
-    const schema = readFileSync(join('db', 'schema', 'index.ts'), 'utf8')
+    const schema = readFileSync('db/schema/index.ts', 'utf8')
     const table = schema.slice(
       schema.indexOf('export const aiGenerations'),
       schema.indexOf('export const aiGenerations') + 900,

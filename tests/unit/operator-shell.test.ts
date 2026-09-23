@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
-import { join } from 'node:path'
+
+import { posixJoin } from '../support/paths'
 import {
   OPERATOR_NAV,
   allOperatorHrefs,
@@ -32,7 +33,7 @@ import { PERMISSIONS, SUPER_ADMIN_ONLY, can, type Permission } from '@/domain/ad
  * checks match a CALL SHAPE rather than a word.
  */
 
-const ADMIN_ROOT = join('app', '(admin)')
+const ADMIN_ROOT = 'app/(admin)'
 
 /** Source with comments removed. See the note above. */
 function code(file: string): string {
@@ -43,7 +44,7 @@ function code(file: string): string {
 
 function pagesUnder(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
-    const path = join(dir, entry)
+    const path = posixJoin(dir, entry)
     if (statSync(path).isDirectory()) pagesUnder(path, out)
     else if (entry === 'page.tsx') out.push(path)
   }
@@ -52,7 +53,7 @@ function pagesUnder(dir: string, out: string[] = []): string[] {
 
 /** The file Next would render for an operator href. */
 function pageFor(href: string): string {
-  return join(ADMIN_ROOT, href.replace(/^\//, ''), 'page.tsx')
+  return posixJoin(ADMIN_ROOT, href.replace(/^\//, ''), 'page.tsx')
 }
 
 /** A viewer holding exactly these permissions and no capabilities. */
@@ -97,7 +98,7 @@ describe('every navigation entry goes somewhere real', () => {
     const offered = new Set(allOperatorHrefs().map(pageFor))
     const unlisted = pagesUnder(ADMIN_ROOT)
       .filter((page) => !page.includes('[') )
-      .filter((page) => page !== join(ADMIN_ROOT, 'admin', 'page.tsx'))
+      .filter((page) => page !== posixJoin(ADMIN_ROOT, 'admin', 'page.tsx'))
       .filter((page) => !offered.has(page))
     expect(unlisted).toEqual([])
   })
@@ -120,7 +121,7 @@ describe('every navigation entry goes somewhere real', () => {
      * the roadmap honest. Here it would advertise a capability over other
      * people's data that does not exist, which is a different and worse claim.
      */
-    const source = code(join('domain', 'admin', 'navigation.ts'))
+    const source = code('domain/admin/navigation.ts')
     expect(source).not.toContain('unbuilt')
     expect(source).not.toContain('Soon')
   })
@@ -248,11 +249,11 @@ describe('the nav is composed from the viewer, not filtered on screen', () => {
 
 /* ───────────────────────── the chrome itself ─────────────────────────────── */
 
-const SHELL = join('components', 'admin', 'operator-shell.tsx')
-const SIDEBAR = join('components', 'admin', 'operator-sidebar.tsx')
-const DRAWER = join('components', 'admin', 'operator-mobile-bar.tsx')
-const BANNER = join('components', 'admin', 'operator-banner.tsx')
-const LAYOUT = join(ADMIN_ROOT, 'layout.tsx')
+const SHELL = 'components/admin/operator-shell.tsx'
+const SIDEBAR = 'components/admin/operator-sidebar.tsx'
+const DRAWER = 'components/admin/operator-mobile-bar.tsx'
+const BANNER = 'components/admin/operator-banner.tsx'
+const LAYOUT = posixJoin(ADMIN_ROOT, 'layout.tsx')
 
 describe('the shell renders no padlock, because it cannot know of one', () => {
   it('passes the client components ALREADY-FILTERED groups, never an access object', () => {
@@ -344,7 +345,7 @@ describe('the operator marker cannot be switched off', () => {
      * found on. Every href in the operator chrome is either an /admin route or
      * carries prefetch={false}.
      */
-    for (const file of [SHELL, SIDEBAR, DRAWER, BANNER, join('components', 'admin', 'operator-top-bar.tsx')]) {
+    for (const file of [SHELL, SIDEBAR, DRAWER, BANNER, 'components/admin/operator-top-bar.tsx']) {
       const source = code(file)
       for (const match of source.matchAll(/href="(\/[^"]*)"/g)) {
         const href = match[1]!
@@ -372,15 +373,15 @@ describe('the operator shell is its own, and does not bend the seller one', () =
   it('SHARES the sign-out rather than copying it', () => {
     // A second sign-out is a second thing to keep correct, and sign-out is the
     // control that must work with no JavaScript at all.
-    expect(code(join('components', 'admin', 'operator-top-bar.tsx'))).toContain(
+    expect(code('components/admin/operator-top-bar.tsx')).toContain(
       "from '@/components/layout/user-menu'",
     )
-    expect(existsSync(join('components', 'admin', 'user-menu.tsx'))).toBe(false)
+    expect(existsSync('components/admin/user-menu.tsx')).toBe(false)
   })
 
   it('leaves the seller shell untouched by the addition', () => {
     // AppShell must not have grown an operator branch.
-    const source = code(join('components', 'layout', 'app-shell.tsx'))
+    const source = code('components/layout/app-shell.tsx')
     expect(source).not.toContain('operator')
     expect(source).not.toContain('Operator')
   })
@@ -409,7 +410,7 @@ describe('the chrome meets the responsive standard the seller app is held to', (
      * both themes fixes both halves.
      */
     const allowed = new Set(['#241B12', '#F7F3ED', '#C9BCA9'])
-    for (const file of [SHELL, SIDEBAR, DRAWER, BANNER, join('components', 'admin', 'operator-top-bar.tsx')]) {
+    for (const file of [SHELL, SIDEBAR, DRAWER, BANNER, 'components/admin/operator-top-bar.tsx']) {
       for (const match of code(file).matchAll(/#[0-9A-Fa-f]{3,8}\b/g)) {
         expect(allowed, `${file} :: ${match[0]}`).toContain(match[0])
       }

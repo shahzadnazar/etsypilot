@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { posixJoin } from '../support/paths'
 import { createHmac } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+
 import * as lifecycle from '@/domain/billing/lifecycle'
 import {
   CANCEL_FLOW,
@@ -184,7 +185,7 @@ describe('a downgrade pauses, it never deletes', () => {
  * is the dark pattern the removal was supposed to avoid, wearing a new hat.
  */
 describe('subscription charges are not refunded, and nothing pretends otherwise', () => {
-  const root = join(__dirname, '..', '..')
+  const root = posixJoin(__dirname, '..', '..')
 
   it('exports no refund eligibility or assertion from the lifecycle domain', () => {
     expect(Object.keys(lifecycle)).not.toContain('refundEligibility')
@@ -198,11 +199,11 @@ describe('subscription charges are not refunded, and nothing pretends otherwise'
   })
 
   it('serves no refund route', () => {
-    expect(existsSync(join(root, 'app/api/billing/refund'))).toBe(false)
+    expect(existsSync(posixJoin(root, 'app/api/billing/refund'))).toBe(false)
   })
 
   it('renders no refund control on the billing page', () => {
-    const page = readFileSync(join(root, 'app/(dashboard)/billing/page.tsx'), 'utf8')
+    const page = readFileSync(posixJoin(root, 'app/(dashboard)/billing/page.tsx'), 'utf8')
     expect(page).not.toContain('Request refund')
     expect(page).not.toContain('/api/billing/refund')
   })

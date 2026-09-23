@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
-import { join } from 'node:path'
+
+import { posixJoin } from '../support/paths'
 import {
   ASSIGNABLE_ROLES,
   PLATFORM_ROLES,
@@ -825,14 +826,14 @@ describe('the audit log is readable by SUPER_ADMIN only', () => {
      * separate type can() does not accept — so this cannot be relaxed into a
      * permission without the call site going red.
      */
-    const source = code(join('app', '(admin)', 'admin', 'audit', 'page.tsx'))
+    const source = code('app/(admin)/admin/audit/page.tsx')
     expect(source).toContain("canSuperAdminOnly('audit.view')")
     expect(source).toContain('notFound()')
     expect(source).not.toContain("can('audit.view')")
   })
 
   it('gates the role editor the same way', () => {
-    const source = code(join('app', '(admin)', 'admin', 'users', '[userId]', 'role', 'page.tsx'))
+    const source = code('app/(admin)/admin/users/[userId]/role/page.tsx')
     expect(source).toContain("canSuperAdminOnly('roles.write')")
     expect(source).toContain('notFound()')
   })
@@ -877,7 +878,7 @@ describe('the audit log is readable by SUPER_ADMIN only', () => {
 describe('the new pages are covered by the existing guards', () => {
   function pages(dir: string, out: string[] = []): string[] {
     for (const entry of readdirSync(dir)) {
-      const path = join(dir, entry)
+      const path = posixJoin(dir, entry)
       if (statSync(path).isDirectory()) pages(path, out)
       else if (entry === 'page.tsx') out.push(path)
     }
@@ -887,7 +888,7 @@ describe('the new pages are covered by the existing guards', () => {
   it('added pages, so the sweep has more to check than before', () => {
     // If this ever drops back to 2, the pages were removed or moved out of the
     // tree the guard walks — and the guard would go on passing.
-    expect(pages(join('app', '(admin)')).length).toBeGreaterThanOrEqual(5)
+    expect(pages('app/(admin)').length).toBeGreaterThanOrEqual(5)
   })
 
   it('gates the server action through the domain, not in the action', () => {
@@ -896,7 +897,7 @@ describe('the new pages are covered by the existing guards', () => {
      * changePlatformRole(), because a gate split between the action and the
      * domain is a gate with two places to forget.
      */
-    const source = code(join('app', '(admin)', 'admin', 'users', 'actions.ts'))
+    const source = code('app/(admin)/admin/users/actions.ts')
     expect(source).toContain('changePlatformRole(')
     expect(source).not.toContain('canSuperAdminOnly')
     expect(source).not.toContain('verifyPassword')

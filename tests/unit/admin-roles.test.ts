@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
-import { join } from 'node:path'
+
+import { posixJoin } from '../support/paths'
 import {
   can,
   canSuperAdminOnly,
@@ -241,7 +242,7 @@ describe('only admin code may read across shops', () => {
   function walk(dir: string, out: string[] = []): string[] {
     for (const entry of readdirSync(dir)) {
       if (entry === 'node_modules' || entry === '.next') continue
-      const path = join(dir, entry)
+      const path = posixJoin(dir, entry)
       if (statSync(path).isDirectory()) walk(path, out)
       else if (/\.tsx?$/.test(path)) out.push(path)
     }
@@ -274,7 +275,7 @@ describe('only admin code may read across shops', () => {
 
   it('is imported only from app/(admin) and domain/admin', () => {
     const stray = importers.filter(
-      (file) => !file.startsWith('app/(admin)') && !file.startsWith(join('domain', 'admin')),
+      (file) => !file.startsWith('app/(admin)') && !file.startsWith('domain/admin'),
     )
     expect(stray).toEqual([])
   })
@@ -508,7 +509,7 @@ describe('only admin code may read across shops', () => {
 describe('every operator page gates itself', () => {
   function pages(dir: string, out: string[] = []): string[] {
     for (const entry of readdirSync(dir)) {
-      const path = join(dir, entry)
+      const path = posixJoin(dir, entry)
       if (statSync(path).isDirectory()) pages(path, out)
       else if (entry === 'page.tsx') out.push(path)
     }
@@ -571,7 +572,7 @@ describe('every operator page gates itself', () => {
      * "Accounts · Operations · EtsyPilot". A <title> inside the component
      * cannot leak, because a refused request never reaches it.
      */
-    for (const file of [...found, join('app', '(admin)', 'layout.tsx')]) {
+    for (const file of [...found, 'app/(admin)/layout.tsx']) {
       const source = code(file)
       expect(source, file).not.toContain('export const metadata')
       expect(source, file).not.toContain('generateMetadata')

@@ -122,4 +122,3 @@ describe('email is transactional only', () => {
   })
 })
 
-

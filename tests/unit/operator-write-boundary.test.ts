@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
-import { dirname, join, normalize } from 'node:path'
+import { dirname, normalize } from 'node:path'
+import { posix, posixJoin } from '../support/paths'
 import { AppError } from '@/lib/errors/types'
 import { shopContext } from '@/lib/permissions'
 import {
@@ -82,7 +83,14 @@ function code(file: string): string {
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     if (entry === 'node_modules' || entry === '.next') continue
-    const path = join(dir, entry)
+    /*
+     * posixJoin, not join: on Windows this is where `app\(admin)\layout.tsx`
+     * would be born, and every rule below is expressed in forward slashes —
+     * OPERATOR_ROOTS, OPERATOR_FILE, the allowlists in operator-writes.ts.
+     * Normalised here, at birth, because a path that reaches a Set under two
+     * spellings has already given the wrong answer.
+     */
+    const path = posixJoin(dir, entry)
     if (statSync(path).isDirectory()) walk(path, out)
     else if (/\.tsx?$/.test(path)) out.push(path)
   }
@@ -93,13 +101,13 @@ function walk(dir: string, out: string[] = []): string[] {
 function resolveImport(specifier: string, from: string): string | null {
   let base: string
   if (specifier.startsWith('@/')) base = specifier.slice(2)
-  else if (specifier.startsWith('.')) base = normalize(join(dirname(from), specifier))
+  else if (specifier.startsWith('.')) base = posix(normalize(posixJoin(dirname(from), specifier)))
   else return null // a package; it has no getDb of ours to reach
   for (const candidate of [
     `${base}.ts`,
     `${base}.tsx`,
-    join(base, 'index.ts'),
-    join(base, 'index.tsx'),
+    posixJoin(base, 'index.ts'),
+    posixJoin(base, 'index.tsx'),
   ]) {
     if (existsSync(candidate) && statSync(candidate).isFile()) return candidate
   }
@@ -149,7 +157,7 @@ function operatorClosure(): string[] {
 const CLOSURE = operatorClosure()
 const SEEDS = operatorSeeds()
 
-const DB_MODULE = join('lib', 'db', 'index.ts')
+const DB_MODULE = 'lib/db/index.ts'
 
 /**
  * Does this module obtain a database handle?
@@ -196,7 +204,7 @@ describe('the guard has a subject', () => {
   it('finds the operator files it is meant to be checking', () => {
     // A closure of nothing passes every assertion below perfectly.
     expect(SEEDS.length).toBeGreaterThan(10)
-    expect(SEEDS).toContain(join('domain', 'admin', 'access.ts'))
+    expect(SEEDS).toContain('domain/admin/access.ts')
     expect(SEEDS).toContain('lib/repositories/admin-writes-platform-role.ts')
   })
 
@@ -242,14 +250,14 @@ describe('only the named repositories can reach the database', () => {
      * The gate now calls getOperatorIdentity(), which reads the Supabase
      * identity and nothing else. No screen under /admin needed the shop.
      */
-    expect(CLOSURE).not.toContain(join('lib', 'repositories', 'accounts.ts'))
-    expect(CLOSURE).not.toContain(join('domain', 'auth', 'provision.ts'))
+    expect(CLOSURE).not.toContain('lib/repositories/accounts.ts')
+    expect(CLOSURE).not.toContain('domain/auth/provision.ts')
   })
 
   it('does not reach getSession, which can provision', () => {
     // Named separately from accounts.ts so a failure says WHICH edge came
     // back, rather than just "something reaches a write".
-    expect(CLOSURE).not.toContain(join('lib', 'auth', 'index.ts'))
+    expect(CLOSURE).not.toContain('lib/auth/index.ts')
   })
 
   it('keeps accounts.ts reachable from the AUTH path, which needs it', () => {
@@ -269,8 +277,8 @@ describe('only the named repositories can reach the database', () => {
         }
       }
     }
-    expect([...seen]).toContain(join('lib', 'repositories', 'accounts.ts'))
-    expect([...seen]).toContain(join('domain', 'auth', 'provision.ts'))
+    expect([...seen]).toContain('lib/repositories/accounts.ts')
+    expect([...seen]).toContain('domain/auth/provision.ts')
   })
 
   it('still lets the operator area READ across every shop', () => {
@@ -418,7 +426,7 @@ describe('the allowlist is complete and honest', () => {
 
 /* ═══════════════════ the second half: the seller's Etsy shop ═════════════ */
 
-const ETSY_FACTORY_MODULE = join('lib', 'etsy', 'index.ts')
+const ETSY_FACTORY_MODULE = 'lib/etsy/index.ts'
 
 /**
  * The file that DECLARES the rule, and the one module allowed to name what
@@ -436,7 +444,7 @@ const ETSY_FACTORY_MODULE = join('lib', 'etsy', 'index.ts')
  * imports at all. A policy file has to be able to name what it forbids; it
  * must not be able to do it.
  */
-const POLICY_MODULE = join('domain', 'admin', 'operator-writes.ts')
+const POLICY_MODULE = 'domain/admin/operator-writes.ts'
 
 /** Every closure module except the one that declares the rule. */
 const SUBJECTS = CLOSURE.filter((file) => file !== POLICY_MODULE)
@@ -535,12 +543,12 @@ describe('the operator area cannot write to the seller’s Etsy shop', () => {
   it('reaches no Etsy adapter module at all', () => {
     // The third overlapping barrier: there is nowhere in the closure for a
     // service to come from, injected or otherwise.
-    const etsy = CLOSURE.filter((file) => file.startsWith(join('lib', 'etsy'))).sort()
+    const etsy = CLOSURE.filter((file) => file.startsWith('lib/etsy')).sort()
     expect(etsy).toEqual([])
   })
 
   it('reaches no part of the bulk editor, which is what owns the write', () => {
-    const bulk = CLOSURE.filter((file) => file.startsWith(join('domain', 'bulk-editor'))).sort()
+    const bulk = CLOSURE.filter((file) => file.startsWith('domain/bulk-editor')).sort()
     expect(bulk).toEqual([])
   })
 
@@ -623,7 +631,7 @@ describe('an operator cannot obtain a writable shop context', () => {
       new RegExp(`\\b${SHOP_CONTEXT_FACTORY}\\b`).test(code(file)),
     ).sort()
     expect(users).toEqual([...OPERATOR_SHOP_CONTEXT_MODULES].sort())
-    expect(CLOSURE).not.toContain(join('lib', 'permissions', 'index.ts'))
+    expect(CLOSURE).not.toContain('lib/permissions/index.ts')
   })
 
   it('could not build a session to pass, because the identity has no shop', () => {
@@ -634,7 +642,7 @@ describe('an operator cannot obtain a writable shop context', () => {
      * — a future screen that wanted a context would have to go and find a
      * shop id from somewhere, which is a visible act rather than a slip.
      */
-    const identity = code(join('lib', 'auth', 'operator-identity.ts'))
+    const identity = code('lib/auth/operator-identity.ts')
     const shape = identity.slice(
       identity.indexOf('export interface OperatorIdentity'),
       identity.indexOf('}', identity.indexOf('export interface OperatorIdentity')),
@@ -644,7 +652,7 @@ describe('an operator cannot obtain a writable shop context', () => {
     expect(shape).not.toContain('shopId')
     expect(shape).not.toContain('isDemo')
     // And shopContext really does require one, so the type refuses.
-    expect(code(join('lib', 'permissions', 'index.ts'))).toContain('session: Session')
+    expect(code('lib/permissions/index.ts')).toContain('session: Session')
   })
 })
 

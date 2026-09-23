@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+
 import {
   CONNECTION_STATUSES,
   EXPIRING_SOON_DAYS,
@@ -32,8 +32,8 @@ import { OPERATOR_NAV } from '@/domain/admin/navigation'
  * a call shape rather than a word.
  */
 
-const PAGE = join('app', '(admin)', 'admin', 'etsy', 'page.tsx')
-const READS = join('lib', 'repositories', 'admin-reads-every-shop.ts')
+const PAGE = 'app/(admin)/admin/etsy/page.tsx'
+const READS = 'lib/repositories/admin-reads-every-shop.ts'
 
 function code(file: string): string {
   return readFileSync(file, 'utf8')
@@ -76,7 +76,7 @@ describe('the status vocabulary is the product’s own', () => {
      * manoeuvre the guard itself uses — and the duplication becomes a checked
      * claim rather than an unowned copy.
      */
-    const source = readFileSync(join('lib', 'etsy', 'interface.ts'), 'utf8')
+    const source = readFileSync('lib/etsy/interface.ts', 'utf8')
     const declared = source
       .slice(source.indexOf('export type ConnectionStatus'))
       .split('\n')[0]!
@@ -88,7 +88,7 @@ describe('the status vocabulary is the product’s own', () => {
   })
 
   it('does not IMPORT that module, which would breach the Etsy boundary', () => {
-    const source = code(join('domain', 'admin', 'etsy-health.ts'))
+    const source = code('domain/admin/etsy-health.ts')
     expect(source).not.toContain('lib/etsy')
     expect(source).not.toContain('applyListingChanges')
     expect(source).not.toContain('getEtsyService')
@@ -395,7 +395,7 @@ describe('the screen is gated, read-only, and offers no Etsy control', () => {
   it('NEVER NAMES THE TOKEN REFERENCE, on the one screen about tokens', () => {
     // The whole subject of this page is the authorisation, which makes it the
     // screen where selecting the credential would have been most tempting.
-    for (const file of [PAGE, join('domain', 'admin', 'etsy-health.ts')]) {
+    for (const file of [PAGE, 'domain/admin/etsy-health.ts']) {
       expect(code(file), file).not.toContain('tokenRef')
       expect(code(file), file).not.toContain('token_ref')
     }

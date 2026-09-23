@@ -37,6 +37,7 @@
     "@types/node": "22.10.7",
     "@types/react": "19.0.7",
     "@types/react-dom": "19.0.3",
+    "@types/yauzl": "^3.4.0",
     "autoprefixer": "10.4.20",
     "axe-core": "^4.13.0",
     "drizzle-kit": "^0.31.10",
@@ -45,7 +46,8 @@
     "postcss": "^8.5.26",
     "tailwindcss": "3.4.17",
     "typescript": "5.7.3",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.11",
+    "yauzl": "^3.4.0"
   },
   "overrides": {
     "@esbuild-kit/core-utils": "npm:tsx@^4.20.6",

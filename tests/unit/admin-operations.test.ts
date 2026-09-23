@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+
 import {
   ATTENTION_STATES,
   ITEM_STATUSES,
@@ -33,9 +33,9 @@ import { OPERATOR_NAV } from '@/domain/admin/navigation'
  * Comments are stripped, and the sweeps match a shape rather than a word.
  */
 
-const PAGE = join('app', '(admin)', 'admin', 'operations', 'page.tsx')
-const MODEL = join('domain', 'admin', 'operations.ts')
-const READS = join('lib', 'repositories', 'admin-reads-every-shop.ts')
+const PAGE = 'app/(admin)/admin/operations/page.tsx'
+const MODEL = 'domain/admin/operations.ts'
+const READS = 'lib/repositories/admin-reads-every-shop.ts'
 
 function code(file: string): string {
   return readFileSync(file, 'utf8')
@@ -83,7 +83,7 @@ describe('the state vocabulary matches the two places that define it', () => {
      * the write method. Reading the file keeps the two in step without putting
      * either in the closure.
      */
-    const source = readFileSync(join('domain', 'bulk-editor', 'types.ts'), 'utf8')
+    const source = readFileSync('domain/bulk-editor/types.ts', 'utf8')
     const declared = source
       .slice(
         source.indexOf('export const OPERATION_STATES'),
@@ -101,7 +101,7 @@ describe('the state vocabulary matches the two places that define it', () => {
      * Two sources, both checked, because they have drifted from each other
      * before in this codebase and the screen is built from neither directly.
      */
-    const schema = readFileSync(join('db', 'schema', 'index.ts'), 'utf8')
+    const schema = readFileSync('db/schema/index.ts', 'utf8')
     const table = schema.slice(
       schema.indexOf('export const bulkOperations'),
       schema.indexOf('export const bulkOperationItems'),
@@ -122,7 +122,7 @@ describe('the state vocabulary matches the two places that define it', () => {
      * Pinned to the SOURCE rather than to the number nine, so this stays true
      * if a tenth is ever genuinely added.
      */
-    const source = readFileSync(join('domain', 'bulk-editor', 'types.ts'), 'utf8')
+    const source = readFileSync('domain/bulk-editor/types.ts', 'utf8')
     const declared = source
       .slice(
         source.indexOf('export const OPERATION_STATES'),
@@ -133,7 +133,7 @@ describe('the state vocabulary matches the two places that define it', () => {
   })
 
   it('matches the item statuses in the schema', () => {
-    const schema = readFileSync(join('db', 'schema', 'index.ts'), 'utf8')
+    const schema = readFileSync('db/schema/index.ts', 'utf8')
     const table = schema.slice(schema.indexOf('export const bulkOperationItems'))
     for (const status of ITEM_STATUSES) {
       expect(table.slice(0, 900), status).toContain(status)
@@ -378,7 +378,7 @@ describe('the per-item read is a read of reasons', () => {
 
   it('FINDS THOSE COLUMNS WHERE THEY REALLY ARE', () => {
     // The positive control for the two sweeps above.
-    const schema = readFileSync(join('db', 'schema', 'index.ts'), 'utf8')
+    const schema = readFileSync('db/schema/index.ts', 'utf8')
     expect(schema).toContain("beforeValue: jsonb('before_value')")
     expect(schema).toContain("afterValue: jsonb('after_value')")
   })

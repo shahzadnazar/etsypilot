@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+
 import {
   NEEDS_ATTENTION_STATUSES,
   STATUS_COPY,
@@ -35,9 +35,9 @@ import { OPERATOR_NAV } from '@/domain/admin/navigation'
  * own documentation.
  */
 
-const PAGE = join('app', '(admin)', 'admin', 'subscriptions', 'page.tsx')
-const MODEL = join('domain', 'admin', 'subscriptions.ts')
-const READS = join('lib', 'repositories', 'admin-reads-every-shop.ts')
+const PAGE = 'app/(admin)/admin/subscriptions/page.tsx'
+const MODEL = 'domain/admin/subscriptions.ts'
+const READS = 'lib/repositories/admin-reads-every-shop.ts'
 
 function code(file: string): string {
   return readFileSync(file, 'utf8')
@@ -76,7 +76,7 @@ describe('the status list is the billing model’s own', () => {
      * asserts the same thing at runtime, because a cast would silence the type
      * and leave the summary silently one bucket short.
      */
-    const source = readFileSync(join('lib', 'billing', 'interface.ts'), 'utf8')
+    const source = readFileSync('lib/billing/interface.ts', 'utf8')
     const declared = source
       .slice(
         source.indexOf('export type SubscriptionStatus'),
@@ -144,7 +144,7 @@ describe('plan limits are read from PLANS, never written here (D46)', () => {
      * states every limit, legitimately, because that is the page whose job is
      * to state them.
      */
-    const pricing = readFileSync(join('domain', 'billing', 'plans.ts'), 'utf8')
+    const pricing = readFileSync('domain/billing/plans.ts', 'utf8')
     const growth = PLANS.find((plan) => plan.key === 'GROWTH')!
     expect(pricing).toMatch(
       new RegExp(`(${growth.limits.listings.toLocaleString('en-US')})\\s*listings`, 'i'),
@@ -248,7 +248,7 @@ describe('nothing here implies a subscription refund exists (D83)', () => {
      * the ORDER refund — `orders.refunds`, money a seller returned to a buyer,
      * which D83 deliberately kept.
      */
-    const schema = readFileSync(join('db', 'schema', 'index.ts'), 'utf8')
+    const schema = readFileSync('db/schema/index.ts', 'utf8')
     const memberAccess = REFUND_AFFORDANCES.find(([name]) => name === 'a member access')![1]
     expect(schema).toContain('refunds')
     expect(`orders.refunds`).toMatch(memberAccess)

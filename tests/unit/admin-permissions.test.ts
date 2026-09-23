@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
-import { join } from 'node:path'
+
+import { posixJoin } from '../support/paths'
 import {
   EDITABLE_ROLES,
   NON_DELEGATABLE,
@@ -84,7 +85,7 @@ describe('the seeded matrix grants exactly what the code knows about', () => {
     .sort()
 
   const touching = files
-    .map((name) => ({ name, sql: readFileSync(join('db/migrations', name), 'utf8') }))
+    .map((name) => ({ name, sql: readFileSync(posixJoin('db/migrations', name), 'utf8') }))
     .filter((file) => file.sql.includes('admin_role_permissions'))
 
   /** The union across every migration, which is what a fresh database ends at. */
@@ -254,8 +255,8 @@ describe('audit.view and roles.write cannot be granted here', () => {
      * <input value="roles.write"> would bypass the iteration entirely.
      */
     const files = [
-      join('app', '(admin)', 'admin', 'permissions', 'page.tsx'),
-      join('app', '(admin)', 'admin', 'permissions', '[role]', 'page.tsx'),
+      'app/(admin)/admin/permissions/page.tsx',
+      'app/(admin)/admin/permissions/[role]/page.tsx',
     ]
     for (const file of files) {
       /*
@@ -775,7 +776,7 @@ describe('nothing enforces from DEFAULT_ROLE_PERMISSIONS', () => {
     const walk = (dir: string) => {
       for (const entry of readdirSync(dir)) {
         if (entry === 'node_modules' || entry === '.next') continue
-        const path = join(dir, entry)
+        const path = posixJoin(dir, entry)
         if (statSync(path).isDirectory()) walk(path)
         else if (/\.tsx?$/.test(path)) files.push(path)
       }
@@ -783,7 +784,7 @@ describe('nothing enforces from DEFAULT_ROLE_PERMISSIONS', () => {
     roots.forEach(walk)
     const builders = files.filter(
       (file) =>
-        file !== join('domain', 'admin', 'access.ts') &&
+        file !== 'domain/admin/access.ts' &&
         code(file).includes('canSuperAdminOnly: ('),
     )
     expect(builders).toEqual([])
@@ -800,7 +801,7 @@ describe('nothing enforces from DEFAULT_ROLE_PERMISSIONS', () => {
     const walk = (dir: string) => {
       for (const entry of readdirSync(dir)) {
         if (entry === 'node_modules' || entry === '.next') continue
-        const path = join(dir, entry)
+        const path = posixJoin(dir, entry)
         if (statSync(path).isDirectory()) walk(path)
         else if (/\.tsx?$/.test(path)) files.push(path)
       }
@@ -808,10 +809,10 @@ describe('nothing enforces from DEFAULT_ROLE_PERMISSIONS', () => {
     roots.forEach(walk)
     const readers = files.filter(
       (file) =>
-        !file.endsWith(join('domain', 'admin', 'roles.ts')) &&
+        !file.endsWith('domain/admin/roles.ts') &&
         code(file).includes('DEFAULT_ROLE_PERMISSIONS'),
     )
-    expect(readers).toEqual([join('domain', 'admin', 'permissions.ts')])
+    expect(readers).toEqual(['domain/admin/permissions.ts'])
   })
 })
 
@@ -882,8 +883,8 @@ describe('the permission store', () => {
 /* ──────────────────────── the new pages gate themselves ──────────────────── */
 
 describe('both permission screens are SUPER_ADMIN only', () => {
-  const matrix = join('app', '(admin)', 'admin', 'permissions', 'page.tsx')
-  const editor = join('app', '(admin)', 'admin', 'permissions', '[role]', 'page.tsx')
+  const matrix = 'app/(admin)/admin/permissions/page.tsx'
+  const editor = 'app/(admin)/admin/permissions/[role]/page.tsx'
 
   it('404s an ADMIN rather than showing a read-only view', () => {
     for (const file of [matrix, editor]) {
@@ -914,7 +915,7 @@ describe('both permission screens are SUPER_ADMIN only', () => {
      * That is D70's control that appears to work and does not, on the one
      * screen where the reader is deciding who may do what.
      */
-    const source = code(join('app', '(admin)', 'admin', 'permissions', '[role]', 'page.tsx'))
+    const source = code('app/(admin)/admin/permissions/[role]/page.tsx')
     expect(source).toContain('isEditableRole(role)')
     const guard = source.indexOf('if (!isEditableRole(role)) notFound()')
     expect(guard).toBeGreaterThan(-1)
@@ -947,7 +948,7 @@ describe('both permission screens are SUPER_ADMIN only', () => {
   })
 
   it('leaves every decision to the domain, not the action', () => {
-    const source = code(join('app', '(admin)', 'admin', 'permissions', 'actions.ts'))
+    const source = code('app/(admin)/admin/permissions/actions.ts')
     expect(source).toContain('changeRolePermissions(')
     expect(source).not.toContain('canSuperAdminOnly')
     expect(source).not.toContain('verifyPassword')

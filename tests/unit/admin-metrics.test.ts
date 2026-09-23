@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
-import { join } from 'node:path'
+
+import { posixJoin } from '../support/paths'
 import {
   ONBOARDING_CAVEAT,
   ONBOARDING_STATES,
@@ -31,9 +32,9 @@ import { OPERATOR_NAV } from '@/domain/admin/navigation'
  * Comments are stripped, and the sweeps match a shape rather than a word.
  */
 
-const PAGE = join('app', '(admin)', 'admin', 'metrics', 'page.tsx')
-const MODEL = join('domain', 'admin', 'metrics.ts')
-const READS = join('lib', 'repositories', 'admin-reads-every-shop.ts')
+const PAGE = 'app/(admin)/admin/metrics/page.tsx'
+const MODEL = 'domain/admin/metrics.ts'
+const READS = 'lib/repositories/admin-reads-every-shop.ts'
 
 function code(file: string): string {
   return readFileSync(file, 'utf8')
@@ -94,7 +95,7 @@ describe('metrics.view is an ordinary grantable permission', () => {
 
   it('DOES NOT TOUCH THE TWO NON-DELEGATABLE CAPABILITIES', () => {
     // Those are about covering your tracks (D91); this is not one of them.
-    const source = code(join('domain', 'admin', 'roles.ts'))
+    const source = code('domain/admin/roles.ts')
     expect(source).toContain("export const SUPER_ADMIN_ONLY = ['audit.view', 'roles.write']")
     const permissions = source.slice(
       source.indexOf('export const PERMISSIONS'),
@@ -106,7 +107,7 @@ describe('metrics.view is an ordinary grantable permission', () => {
 
   it('is granted by a migration, to ADMIN only', () => {
     const migration = readFileSync(
-      join('db', 'migrations', '0007_grant_metrics_view.sql'),
+      'db/migrations/0007_grant_metrics_view.sql',
       'utf8',
     ).replace(/--.*$/gm, '')
     expect(migration).toContain("'metrics.view'")
@@ -195,7 +196,7 @@ describe('the onboarding funnel is honest about its source', () => {
     const walk = (dir: string) => {
       for (const entry of readdirSync(dir)) {
         if (entry === 'node_modules' || entry === '.next') continue
-        const path = join(dir, entry)
+        const path = posixJoin(dir, entry)
         if (statSync(path).isDirectory()) walk(path)
         else if (/\.tsx?$/.test(path)) files.push(path)
       }
@@ -403,7 +404,7 @@ describe('the chart is the seller app’s, and its claim is not', () => {
      * demand and false of a count. A shared component carrying that copy would
      * have put "modelled" on a figure somebody counted.
      */
-    const shared = code(join('components', 'charts', 'monthly-series.tsx'))
+    const shared = code('components/charts/monthly-series.tsx')
     for (const claim of ['modelled', 'Indexed', 'demand']) {
       expect(shared, claim).not.toContain(claim)
     }
@@ -412,7 +413,7 @@ describe('the chart is the seller app’s, and its claim is not', () => {
   })
 
   it('leaves the demand chart saying exactly what it said before', () => {
-    const demand = readFileSync(join('components', 'research', 'demand-chart.tsx'), 'utf8')
+    const demand = readFileSync('components/research/demand-chart.tsx', 'utf8')
     expect(demand).toContain('Indexed, modelled monthly.')
     expect(demand).toMatch(/months of modelled demand for/)
   })

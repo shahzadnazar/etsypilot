@@ -24,13 +24,21 @@
  */
 
 import { readFileSync, readdirSync, statSync } from 'node:fs'
-import { join } from 'node:path'
+
 import { describe, expect, it } from 'vitest'
+import { posixJoin } from '../support/paths'
 import { MOBILE_TABS, NAV_FOOTER, NAV_GROUPS, SETTINGS_NAV } from '@/components/layout/navigation'
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
-    const path = join(dir, name)
+    /*
+     * posixJoin, not join. Every route below is derived by SLICING this path —
+     * `pagePath.slice('app'.length)` and `/\/page\.tsx$/` — so on Windows the
+     * walker produced `app\(dashboard)\profit\page.tsx`, the regex never
+     * matched, ROUTES came back empty, and every href on every page read as
+     * broken. Normalised at birth, before anything is sliced or keyed on.
+     */
+    const path = posixJoin(dir, name)
     if (statSync(path).isDirectory()) walk(path, out)
     else if (path.endsWith('.tsx') || path.endsWith('.ts')) out.push(path)
   }

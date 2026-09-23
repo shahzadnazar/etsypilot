@@ -10,7 +10,7 @@
 
 import { createHash } from 'node:crypto'
 import fs from 'node:fs'
-import path from 'node:path'
+import { posixJoin, posixRelative } from '../support/paths'
 import { describe, expect, it } from 'vitest'
 import {
   authorizeUrl,
@@ -573,7 +573,7 @@ describe('the OAuth flow cookie', () => {
 
 describe('every outcome the routes can emit has copy a seller reads', () => {
   const routes = ['app/api/etsy/callback/route.ts', 'app/api/etsy/connect/route.ts']
-    .map((p) => fs.readFileSync(path.join(ROOT, p), 'utf8'))
+    .map((p) => fs.readFileSync(posixJoin(ROOT, p), 'utf8'))
     .join('\n')
 
   it('emits nothing CONNECT_OUTCOMES does not describe', () => {
@@ -609,20 +609,20 @@ describe('swapping the adapter is a one-file change', () => {
         /from\s+['"](@\/lib\/etsy\/live|\.\/live)['"]/.test(fs.readFileSync(f, 'utf8')) ||
         /require\(['"]\.\/live['"]\)/.test(fs.readFileSync(f, 'utf8')),
     )
-    expect(importers.map((f) => path.relative(ROOT, f))).toEqual(['lib/etsy/index.ts'])
+    expect(importers.map((f) => posixRelative(ROOT, f))).toEqual(['lib/etsy/index.ts'])
   })
 
   it('keeps the mock the same one-file change in the other direction', () => {
     const importers = sources.filter(
       (f) =>
-        f !== path.join(ROOT, 'lib/etsy/index.ts') &&
+        f !== posixJoin(ROOT, 'lib/etsy/index.ts') &&
         // Each adapter family has its own ./mock; only the Etsy one is in
         // question, so a relative import counts only from inside lib/etsy.
         (/from\s+['"]@\/lib\/etsy\/mock['"]/.test(fs.readFileSync(f, 'utf8')) ||
-          (f.startsWith(path.join(ROOT, 'lib/etsy')) &&
+          (f.startsWith(posixJoin(ROOT, 'lib/etsy')) &&
             /from\s+['"]\.\/mock['"]/.test(fs.readFileSync(f, 'utf8')))),
     )
-    expect(importers.map((f) => path.relative(ROOT, f))).toEqual([])
+    expect(importers.map((f) => posixRelative(ROOT, f))).toEqual([])
   })
 
   it('never exposes an Etsy credential to the browser', () => {
@@ -630,11 +630,11 @@ describe('swapping the adapter is a one-file change', () => {
     // may ever carry it, in source or in the template.
     const offenders = sources.filter((f) => /NEXT_PUBLIC_[A-Z_]*(ETSY|TOKEN)/.test(fs.readFileSync(f, 'utf8')))
     expect(offenders).toEqual([])
-    expect(fs.readFileSync(path.join(ROOT, '.env.example'), 'utf8')).not.toMatch(/NEXT_PUBLIC_[A-Z_]*ETSY/)
+    expect(fs.readFileSync(posixJoin(ROOT, '.env.example'), 'utf8')).not.toMatch(/NEXT_PUBLIC_[A-Z_]*ETSY/)
   })
 
   it('ships an env template with placeholders and no values', () => {
-    const template = fs.readFileSync(path.join(ROOT, '.env.example'), 'utf8')
+    const template = fs.readFileSync(posixJoin(ROOT, '.env.example'), 'utf8')
     for (const key of ['ETSY_API_KEY', 'ETSY_API_SECRET', 'ETSY_REDIRECT_URI', 'TOKEN_ENCRYPTION_KEY']) {
       expect(template).toMatch(new RegExp(`^${key}=\\s*$`, 'm'))
     }
@@ -645,12 +645,18 @@ function listSources(roots: string[]): string[] {
   const out: string[] = []
   const walk = (dir: string): void => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      const full = path.join(dir, entry.name)
+      /*
+       * Normalised at birth. These absolute paths are compared against EACH
+       * OTHER below (`f !== …`, `f.startsWith(…)`) and turned into
+       * repo-relative names for the assertions, and a mix of separators makes
+       * both of those quietly wrong.
+       */
+      const full = posixJoin(dir, entry.name)
       if (entry.isDirectory()) walk(full)
       else if (/\.tsx?$/.test(entry.name)) out.push(full)
     }
   }
-  for (const root of roots) walk(path.join(ROOT, root))
+  for (const root of roots) walk(posixJoin(ROOT, root))
   return out
 }
 
@@ -670,7 +676,7 @@ describe('the server-only marker is still on every module that holds a secret', 
     // bundle. The list is the rule, so a new module joins it or is not covered.
     'lib/auth/supabase.ts',
   ])('%s', (file) => {
-    expect(fs.readFileSync(path.join(ROOT, file), 'utf8')).toMatch(/^import 'server-only'$/m)
+    expect(fs.readFileSync(posixJoin(ROOT, file), 'utf8')).toMatch(/^import 'server-only'$/m)
   })
 })
 
@@ -699,6 +705,6 @@ describe('no client component can reach an Etsy credential', () => {
     const offenders = clientFiles.filter((f) =>
       new RegExp(`from\\s+['"]${module.replace(/[/\-]/g, '\\$&')}['"]`).test(fs.readFileSync(f, 'utf8')),
     )
-    expect(offenders.map((f) => path.relative(ROOT, f))).toEqual([])
+    expect(offenders.map((f) => posixRelative(ROOT, f))).toEqual([])
   })
 })

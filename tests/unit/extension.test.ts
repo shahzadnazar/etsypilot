@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
-import path from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
+import { posixJoin } from '../support/paths'
 import { listingIdFromUrl } from '@/lib/extension/contract'
 import { ALLOWED_HOSTS, ALLOWED_PERMISSIONS, FORBIDDEN_APIS } from '@/lib/extension/policy'
 import { getListingIntelligence } from '@/domain/extension/service'
@@ -102,10 +102,10 @@ describe('the popup shows the same figures as the app, with the same badges', ()
  * what a seller installs, and Phase 9 passes or fails on the second one.
  */
 describe('the packaged extension holds no credentials', () => {
-  const built = path.join(ROOT, 'extension', 'build')
+  const built = posixJoin(ROOT, 'extension', 'build')
 
   function ensureBuilt(): void {
-    if (fs.existsSync(path.join(built, 'chrome', 'manifest.json'))) return
+    if (fs.existsSync(posixJoin(built, 'chrome', 'manifest.json'))) return
     execFileSync('node', ['extension/build.mjs'], { cwd: ROOT, stdio: 'pipe' })
   }
 
@@ -113,13 +113,13 @@ describe('the packaged extension holds no credentials', () => {
     return fs
       .readdirSync(dir, { withFileTypes: true, recursive: true })
       .filter((e) => e.isFile())
-      .map((e) => path.join(e.parentPath ?? dir, e.name))
+      .map((e) => posixJoin(e.parentPath ?? dir, e.name))
   }
 
   for (const browser of ['chrome', 'firefox']) {
     it(`${browser}: requests only activeTab and etsy.com`, () => {
       ensureBuilt()
-      const manifest = JSON.parse(fs.readFileSync(path.join(built, browser, 'manifest.json'), 'utf8'))
+      const manifest = JSON.parse(fs.readFileSync(posixJoin(built, browser, 'manifest.json'), 'utf8'))
 
       expect(manifest.permissions ?? []).toEqual([...ALLOWED_PERMISSIONS])
       expect(manifest.host_permissions ?? []).toEqual([...ALLOWED_HOSTS])
@@ -132,7 +132,7 @@ describe('the packaged extension holds no credentials', () => {
 
     it(`${browser}: ships no forbidden browser API`, () => {
       ensureBuilt()
-      const bundle = filesIn(path.join(built, browser))
+      const bundle = filesIn(posixJoin(built, browser))
         .map((f) => fs.readFileSync(f, 'utf8'))
         .join('\n')
 
@@ -143,7 +143,7 @@ describe('the packaged extension holds no credentials', () => {
 
     it(`${browser}: ships nothing shaped like a credential`, () => {
       ensureBuilt()
-      const bundle = filesIn(path.join(built, browser))
+      const bundle = filesIn(posixJoin(built, browser))
         .map((f) => fs.readFileSync(f, 'utf8'))
         .join('\n')
 
@@ -165,7 +165,7 @@ describe('the packaged extension holds no credentials', () => {
 
     it(`${browser}: talks to the app and to nowhere else`, () => {
       ensureBuilt()
-      const bundle = filesIn(path.join(built, browser))
+      const bundle = filesIn(posixJoin(built, browser))
         .map((f) => fs.readFileSync(f, 'utf8'))
         .join('\n')
 
@@ -177,7 +177,7 @@ describe('the packaged extension holds no credentials', () => {
        * assertion rather than to check the artefact.
        */
       const configured = fs
-        .readFileSync(path.join(built, browser, 'dist/extension/src/client.js'), 'utf8')
+        .readFileSync(posixJoin(built, browser, 'dist/extension/src/client.js'), 'utf8')
         .match(/APP_ORIGIN = '([^']+)'/)?.[1]
       expect(configured, 'the build did not substitute an app origin').toBeTruthy()
 
@@ -204,6 +204,40 @@ describe('the packaged extension holds no credentials', () => {
  * being READ. So the header logic is tested by origin, not assumed.
  */
 describe('the endpoint answers only the extension', () => {
+  /*
+   * PAY THE COMPILE COST HERE, NOT IN THE FIRST TEST.
+   *
+   * "grants CORS to an allow-listed extension id" took 7,820ms on a Windows
+   * machine against a 5,000ms limit while its sibling took 2,801ms, so it was
+   * slowness rather than a hang — and the first test was being charged for
+   * something the second got free.
+   *
+   * MEASURED rather than guessed. On this Linux machine:
+   *
+   *   first  await import('…/listing/route')   1012ms
+   *   second await import(same)                   0ms   (module cache)
+   *   the GET call itself                         4ms
+   *
+   * All of it is Vite transforming the route and the graph behind it —
+   * shopContext, the Etsy adapter, the domain — on first use. Whichever test
+   * imports first pays for every test in the file.
+   *
+   * So it is paid in a beforeAll, which is where a one-off setup cost belongs,
+   * and the generous timeout is on the WARM-UP rather than on a test. Raising
+   * the test's own limit would have worked and would have bought a blind spot:
+   * every later assertion in this describe keeps the strict default, so a
+   * genuine hang in the route still fails in five seconds. Raising the GLOBAL
+   * testTimeout would hide the next real hang anywhere in the suite.
+   *
+   * Importing early is safe because the route reads EXTENSION_IDS inside
+   * allowedOrigins(), per request — checked, not assumed. Freezing an env var
+   * at import time is exactly what the comment below is guarding against, and
+   * this would break it if it did.
+   */
+  beforeAll(async () => {
+    await import('@/app/api/extension/listing/route')
+  }, 60_000)
+
   async function headersFor(origin: string | null, ids: string): Promise<Headers> {
     const previous = process.env.EXTENSION_IDS
     process.env.EXTENSION_IDS = ids
