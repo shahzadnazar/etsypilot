@@ -49,6 +49,7 @@ MODULES = [
     ("/admin/etsy", "etsy.view", "Etsy connections", "What the seller sees when a reconnection ends"),
     ("/admin/subscriptions", "subscriptions.view", "Subscriptions", "Trials ending within"),
     ("/admin/usage", "usage.view", "Usage & quota", "These figures are counts"),
+    ("/admin/ai", "ai.view", "AI activity", "generated text is deliberately not shown"),
 ]
 
 fails, notes = [], []
@@ -194,7 +195,30 @@ def usage_specifics(page, body, text):
     check(page.locator("main form").count() == 0, "and no form")
 
 
+def ai_specifics(page, body, text):
+    """/admin/ai, for a viewer who can see it."""
+    check("Titles" in text and "Explanations" in text,
+          "every generation kind is counted, including the empty ones")
+    check("Drafted, not yet decided" in text,
+          "a draft is labelled undecided, not 'not accepted'")
+    check("Acceptance rate" in text, "the acceptance rate is shown")
+    check("Calculated" in text, "and carries a provenance badge")
+    # THE SELLER'S OWN WORDS. The fixtures deliberately seed generations whose
+    # output contains this phrase; a sweep for a string the database does not
+    # hold proves nothing.
+    check(
+        "nobody but the seller" not in body.lower(),
+        "NO GENERATED TEXT REACHES THE PAYLOAD",
+    )
+    check("beeswax" not in body.lower(), "and no listing copy either")
+    check("Volume, not money" in text, "the page says there is no cost figure")
+    buttons = page.locator("main button").count()
+    check(buttons == 0, f"there is no button in the page content ({buttons})")
+    check(page.locator("main form").count() == 0, "and no form")
+
+
 SPECIFICS = {
+    "/admin/ai": ai_specifics,
     "/admin/etsy": etsy_specifics,
     "/admin/subscriptions": subscriptions_specifics,
     "/admin/usage": usage_specifics,

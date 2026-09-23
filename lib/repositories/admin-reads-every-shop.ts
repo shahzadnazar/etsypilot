@@ -725,6 +725,77 @@ export async function adminListUsage(monthStart: Date): Promise<AdminUsageRow[]>
     }))
 }
 
+/* ------------------------------------------------- AI activity, every shop */
+
+/**
+ * Generation counts grouped by shop, kind and status.
+ *
+ * ── THE TEXT IS NOT SELECTED, AND CANNOT BE ───────────────────────────────
+ *
+ * `ai_generations.input` and `.output` hold a seller's own listing copy. The
+ * SELECT names neither, the returned type has no field either could arrive
+ * in, and the guard in tests/unit/admin-roles.test.ts reads the SELECT and
+ * fails on a bare column. Three layers for one rule, because this is the rule
+ * most likely to be relaxed by somebody adding "just the first line" to a
+ * support screen.
+ *
+ * `listing_id` and `actor_id` are not read either. A count per listing is a
+ * list of listings wearing a count's clothes, and a count per actor is a
+ * record of which teammate used the feature — neither is what "what is the AI
+ * costing" asks.
+ *
+ * ── GROUPED IN SQL ────────────────────────────────────────────────────────
+ *
+ * One row per (shop, kind, status), so no generation row enters the process at
+ * all. The folding into per-shop totals happens in the pure domain module over
+ * numbers.
+ */
+export interface AdminGenerationTally {
+  shopId: string
+  kind: string
+  status: string
+  count: number
+}
+
+/** Just enough about a shop to label a tally. No plan, no counts, no content. */
+export interface AdminShopLabel {
+  shopId: string
+  shopName: string
+  isDemo: boolean
+  ownerEmail: string | null
+}
+
+export async function adminCountGenerations(
+  since: Date,
+): Promise<{ tallies: AdminGenerationTally[]; shops: AdminShopLabel[] }> {
+  const db = getDb()
+
+  const tallies = await db
+    .select({
+      shopId: schema.aiGenerations.shopId,
+      kind: schema.aiGenerations.kind,
+      status: schema.aiGenerations.status,
+      count: count(),
+    })
+    .from(schema.aiGenerations)
+    .where(gte(schema.aiGenerations.createdAt, since))
+    .groupBy(schema.aiGenerations.shopId, schema.aiGenerations.kind, schema.aiGenerations.status)
+
+  const shops = await db
+    .select({
+      shopId: schema.shops.id,
+      shopName: schema.shops.name,
+      isDemo: schema.shops.isDemo,
+      ownerEmail: schema.users.email,
+    })
+    .from(schema.shops)
+    .leftJoin(schema.users, eq(schema.users.id, schema.shops.ownerId))
+    .orderBy(asc(schema.shops.name))
+    .limit(500)
+
+  return { tallies, shops }
+}
+
 /**
  * Every account, newest first.
  *

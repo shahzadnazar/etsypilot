@@ -347,15 +347,34 @@ describe('only admin code may read across shops', () => {
    * purchases never enter the process; the totals do.
    */
   const AGGREGATE_ONLY = [
-    { table: 'schema.orders', groupKey: 'schema.orders.shopId' },
-    { table: 'schema.listings', groupKey: 'schema.listings.shopId' },
-    { table: 'schema.aiGenerations', groupKey: 'schema.aiGenerations.shopId' },
+    { table: 'schema.orders', groupKeys: ['schema.orders.shopId'] },
+    { table: 'schema.listings', groupKeys: ['schema.listings.shopId'] },
+    {
+      table: 'schema.aiGenerations',
+      /*
+       * `kind` and `status` are grouping keys, not content: they are the two
+       * enumerations the AI screen counts BY, and neither carries a word the
+       * seller wrote. An ALLOWLIST rather than "any column that is not
+       * content", because the failure mode of getting this wrong should be a
+       * red test naming the column, not a quiet permission.
+       *
+       * Deliberately absent: `listingId`, which would make a count per
+       * listing — a list of listings wearing a count's clothes — and
+       * `actorId`, which would make a record of which teammate used the
+       * feature. Neither is what "what is the AI costing" asks.
+       */
+      groupKeys: [
+        'schema.aiGenerations.shopId',
+        'schema.aiGenerations.kind',
+        'schema.aiGenerations.status',
+      ],
+    },
   ]
 
   it('READS ORDERS, LISTINGS AND AI GENERATIONS ONLY AS AGGREGATES', () => {
     const source = code(`lib/repositories/${MODULE}.ts`)
 
-    for (const { table, groupKey } of AGGREGATE_ONLY) {
+    for (const { table, groupKeys } of AGGREGATE_ONLY) {
       const queries = source.split(`.from(${table})`).slice(0, -1)
 
       // A sweep that matches nothing passes perfectly. Each table must
@@ -369,22 +388,34 @@ describe('only admin code may read across shops', () => {
         for (const field of fields) {
           const trimmed = field.trim()
           const aggregate = /^\w+:\s*(count\(\)|sql<[^>]*>`[^`]*\b(sum|count)\()/.test(trimmed)
-          const grouping = trimmed.endsWith(`${groupKey},`) || trimmed.endsWith(groupKey)
+          const grouping = groupKeys.some(
+            (key) => trimmed.endsWith(`${key},`) || trimmed.endsWith(key),
+          )
           expect(aggregate || grouping, `${table} :: ${trimmed}`).toBe(true)
         }
       }
     }
   })
 
-  it('GROUPS BY SHOP where it groups at all, so a count is per shop', () => {
+  it('GROUPS ONLY BY AN ALLOWLISTED KEY, and always by shop', () => {
     /*
-     * The grouping key is the one bare column the rule above allows, so it is
-     * worth pinning what it may be. A count grouped by listing id would be a
-     * list of listings wearing a count's clothes.
+     * Grouping keys are the only bare columns the rule above allows, so it is
+     * worth pinning exactly which. Every group must include the shop — a count
+     * that is not per shop is not answering an operator's question — and every
+     * other key must be on the allowlist for its table.
      */
     const source = code(`lib/repositories/${MODULE}.ts`)
-    for (const match of source.matchAll(/\.groupBy\(([^)]*)\)/g)) {
-      expect(match[1]!.trim(), match[0]).toMatch(/schema\.\w+\.shopId/)
+    const allowed = new Set(AGGREGATE_ONLY.flatMap((entry) => entry.groupKeys))
+
+    const groups = [...source.matchAll(/\.groupBy\(([^)]*)\)/g)]
+    expect(groups.length, 'no groupBy found to check').toBeGreaterThan(0)
+
+    for (const match of groups) {
+      const keys = match[1]!.split(',').map((key) => key.trim()).filter(Boolean)
+      expect(keys.some((key) => key.endsWith('.shopId')), match[0]).toBe(true)
+      for (const key of keys) {
+        expect(allowed.has(key), `${match[0]} :: ${key}`).toBe(true)
+      }
     }
   })
 })

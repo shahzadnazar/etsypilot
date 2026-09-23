@@ -108,6 +108,12 @@ export const OPERATOR_NAV: readonly OperatorNavGroup[] = [
         gate: permission('usage.view'),
         blurb: 'Listings and AI generations against each plan’s limits. Who is near a cap.',
       },
+      {
+        label: 'AI activity',
+        href: '/admin/ai',
+        gate: permission('ai.view'),
+        blurb: 'How much the AI is used, and how often its drafts are accepted.',
+      },
     ],
   },
   {

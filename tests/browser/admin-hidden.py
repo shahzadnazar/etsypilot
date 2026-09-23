@@ -66,6 +66,7 @@ GATED = [
     "/admin/etsy",
     "/admin/subscriptions",
     "/admin/usage",
+    "/admin/ai",
 ]
 CONTROLS = ["/administrators", "/admin-nonexistent/x"]
 

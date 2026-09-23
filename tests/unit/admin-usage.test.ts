@@ -210,7 +210,20 @@ describe('a quota reads as a boundary, not a fine (D37)', () => {
     // The seller declined something that was produced. Excluding it would
     // understate what they used and overstate what is left.
     expect(readFileSync(PAGE, 'utf8')).toMatch(/rejected draft does count/i)
-    expect(code(READS)).not.toContain("aiGenerations.status")
+
+    /*
+     * Scoped to the USAGE query, not to the whole repository file. Written
+     * first as a file-wide sweep, and the AI-activity screen made it red by
+     * legitimately GROUPING by status — which is a different question in a
+     * different query. A guard about one query has to be asked of that query.
+     */
+    const source = code(READS)
+    const usageQuery = source.slice(
+      source.indexOf('export async function adminListUsage'),
+      source.indexOf('export async function adminListUsage') + 2200,
+    )
+    expect(usageQuery.length).toBeGreaterThan(100) // positive control
+    expect(usageQuery).not.toContain('aiGenerations.status')
   })
 })
 
