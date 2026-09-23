@@ -146,6 +146,11 @@ export const PERMISSION_LABELS: Record<Permission, { title: string; detail: stri
     title: 'Operations',
     detail: 'See queues, jobs and the platform’s own health.',
   },
+  'metrics.view': {
+    title: 'Growth metrics',
+    detail:
+      'See platform-wide totals — signups, onboarding, plan mix, trial conversion. Aggregate only: no account is named on that screen.',
+  },
   'financials.view': {
     title: 'Financials',
     detail:

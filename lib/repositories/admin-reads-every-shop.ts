@@ -899,6 +899,120 @@ export async function adminListOperations(options: { limit?: number } = {}): Pro
   return { operations, failedItems }
 }
 
+/* ------------------------------------------------- platform growth metrics */
+
+/**
+ * Aggregate platform figures. COUNTS ONLY — no row of any kind is returned.
+ *
+ * Every query here is a count or a grouped count, so the result has no name,
+ * no address and no id in it anywhere. The metrics screen cannot name an
+ * account because nothing reaches it that could: the guarantee is the shape of
+ * this function's return type rather than a rule the page follows.
+ *
+ * Grouped by month, by onboarding state and by plan — three enumerations, none
+ * of which identifies anybody. `date_trunc` in SQL rather than bucketing in
+ * memory, for the same reason as everywhere else in this file: a query that
+ * pulled every user row to count them by month would be a query that had every
+ * user row.
+ */
+export interface AdminMetrics {
+  totalAccounts: number
+  signupsByMonth: { month: string; count: number }[]
+  onboardingCounts: { state: string; count: number }[]
+  connectedShops: number
+  demoShops: number
+  shopsWithNoConnection: number
+  totalShops: number
+  planCounts: { plan: string | null; count: number }[]
+  everTrialed: number
+  trialedAndPaying: number
+  paying: number
+}
+
+export async function adminReadMetrics(since: Date): Promise<AdminMetrics> {
+  const db = getDb()
+
+  const [accounts] = await db.select({ total: count() }).from(schema.users)
+
+  const signups = await db
+    .select({
+      month: sql<string>`to_char(date_trunc('month', ${schema.users.createdAt}), 'YYYY-MM')`,
+      count: count(),
+    })
+    .from(schema.users)
+    .where(gte(schema.users.createdAt, since))
+    .groupBy(sql`date_trunc('month', ${schema.users.createdAt})`)
+    .orderBy(sql`date_trunc('month', ${schema.users.createdAt})`)
+
+  const onboarding = await db
+    .select({ state: schema.users.onboardingState, count: count() })
+    .from(schema.users)
+    .groupBy(schema.users.onboardingState)
+
+  const [shopTotals] = await db
+    .select({
+      total: count(),
+      demo: sql<number>`count(*) filter (where ${schema.shops.isDemo})::int`,
+      /*
+       * A REAL connection: an etsy_connections row that has not been revoked,
+       * on a shop that is not the demo dataset. A demo shop is not a connected
+       * shop and is not an unconnected one either — it is a shop with no Etsy
+       * behind it by design, and folding it into either would misstate the one
+       * number this screen exists to report.
+       */
+      connected: sql<number>`count(*) filter (
+        where not ${schema.shops.isDemo}
+          and ${schema.etsyConnections.shopId} is not null
+          and ${schema.etsyConnections.revokedAt} is null
+      )::int`,
+      unconnected: sql<number>`count(*) filter (
+        where not ${schema.shops.isDemo}
+          and (${schema.etsyConnections.shopId} is null or ${schema.etsyConnections.revokedAt} is not null)
+      )::int`,
+    })
+    .from(schema.shops)
+    .leftJoin(schema.etsyConnections, eq(schema.etsyConnections.shopId, schema.shops.id))
+
+  const plans = await db
+    .select({ plan: schema.subscriptions.plan, count: count() })
+    .from(schema.users)
+    .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.users.id))
+    .groupBy(schema.subscriptions.plan)
+
+  const [trials] = await db
+    .select({
+      /*
+       * Evidence of a trial that is STILL VISIBLE. A subscription row carries
+       * its current status, not its history, so `trial_ends_at` surviving on
+       * the row is the only trace an ended trial leaves. The domain module
+       * reports what this can and cannot support.
+       */
+      everTrialed: sql<number>`count(*) filter (where ${schema.subscriptions.trialEndsAt} is not null)::int`,
+      trialedAndPaying: sql<number>`count(*) filter (
+        where ${schema.subscriptions.trialEndsAt} is not null
+          and ${schema.subscriptions.status} in ('ACTIVE', 'PAST_DUE', 'CANCELLING')
+      )::int`,
+      paying: sql<number>`count(*) filter (
+        where ${schema.subscriptions.status} in ('ACTIVE', 'PAST_DUE', 'CANCELLING')
+      )::int`,
+    })
+    .from(schema.subscriptions)
+
+  return {
+    totalAccounts: accounts?.total ?? 0,
+    signupsByMonth: signups,
+    onboardingCounts: onboarding,
+    connectedShops: shopTotals?.connected ?? 0,
+    demoShops: shopTotals?.demo ?? 0,
+    shopsWithNoConnection: shopTotals?.unconnected ?? 0,
+    totalShops: shopTotals?.total ?? 0,
+    planCounts: plans,
+    everTrialed: trials?.everTrialed ?? 0,
+    trialedAndPaying: trials?.trialedAndPaying ?? 0,
+    paying: trials?.paying ?? 0,
+  }
+}
+
 /**
  * Every account, newest first.
  *

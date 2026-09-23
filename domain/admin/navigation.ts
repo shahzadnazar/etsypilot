@@ -131,6 +131,17 @@ export const OPERATOR_NAV: readonly OperatorNavGroup[] = [
     ],
   },
   {
+    label: 'Insight',
+    items: [
+      {
+        label: 'Growth metrics',
+        href: '/admin/metrics',
+        gate: permission('metrics.view'),
+        blurb: 'Signups, onboarding, plan mix and trial conversion. Totals only.',
+      },
+    ],
+  },
+  {
     label: 'Administration',
     items: [
       {

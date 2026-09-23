@@ -50,6 +50,14 @@ SUPER = ("boss@etsypilot.app", "correct-horse-battery")
 ADMIN = ("ops@etsypilot.app", "admin-password-here")
 SUBJECT = ("promoted@example.com", "manager-password-y")
 
+# SCOPED TO <main>, not the document.
+#
+# The operator shell's account menu contains a sign-out FORM, whose button is a
+# `button[type="submit"]` sitting inside a closed <details>. So on every
+# operator page the bare selector now matches that button first, it is never
+# actionable, and the click waits thirty seconds and fails. The submit this
+# harness means is the one in the page content.
+
 fails, notes = [], []
 
 
@@ -100,7 +108,7 @@ def save_permissions(page, role, ticked, password):
     # the pre-submit body. The database assertions passed throughout, which is
     # what made it obvious the fault was in the harness and not the app.
     with page.expect_navigation(wait_until="load", timeout=15000):
-        page.click('button[type="submit"]')
+        page.click('main button[type="submit"]')
     guard_budget(page, f"saving {role} permissions")
 
 
@@ -341,7 +349,7 @@ def main():
             boss_page.check('input[name="role"][value="USER"]')
             boss_page.fill('input[name="password"]', SUPER[1])
             with boss_page.expect_navigation(wait_until="load", timeout=15000):
-                boss_page.click('button[type="submit"]')
+                boss_page.click('main button[type="submit"]')
 
             body = boss_page.inner_text("body")
             check("Not changed" in body, "a role change whose record fails is reported as failed")
@@ -371,7 +379,7 @@ def main():
         boss_page.check('input[name="role"][value="USER"]')
         boss_page.fill('input[name="password"]', SUPER[1])
         with boss_page.expect_navigation(wait_until="load", timeout=15000):
-            boss_page.click('button[type="submit"]')
+            boss_page.click('main button[type="submit"]')
         check(
             sql(f"select platform_role from users where email='{SUBJECT[0]}'") == "USER",
             "with the audit table working again, the same change applies",

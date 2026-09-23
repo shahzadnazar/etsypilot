@@ -35,6 +35,14 @@ ADMIN = ("ops@etsypilot.app", "admin-password-here")
 SELLER = ("seller@example.com", "seller-password-x")
 SUBJECT = ("promoted@example.com", "manager-password-y")
 
+# SCOPED TO <main>, not the document.
+#
+# The operator shell's account menu contains a sign-out FORM, whose button is a
+# `button[type="submit"]` sitting inside a closed <details>. So on every
+# operator page the bare selector now matches that button first, it is never
+# actionable, and the click waits thirty seconds and fails. The submit this
+# harness means is the one in the page content.
+
 fails, notes = [], []
 
 
@@ -122,7 +130,7 @@ def main():
 
         page.check('input[name="role"][value="MANAGER"]')
         page.fill('input[name="password"]', "definitely-not-the-password")
-        page.click('button[type="submit"]')
+        page.click('main button[type="submit"]')
         page.wait_for_url("**/role?outcome=*", timeout=15000)
 
         refused_body = page.inner_text("body")
@@ -137,7 +145,7 @@ def main():
         page.goto(f"{BASE}{href}", wait_until="load")
         page.check('input[name="role"][value="MANAGER"]')
         page.fill('input[name="password"]', SUPER[1])
-        page.click('button[type="submit"]')
+        page.click('main button[type="submit"]')
         page.wait_for_url("**/admin/users?changed=*", timeout=15000)
 
         check("/admin/users" in page.url, "a correct password applies the change and returns to the list")
@@ -247,7 +255,7 @@ def main():
         page.goto(f"{BASE}/admin/users/{subject_id}/role", wait_until="load")
         page.check('input[name="role"][value="USER"]')
         page.fill('input[name="password"]', SUPER[1])
-        page.click('button[type="submit"]')
+        page.click('main button[type="submit"]')
         page.wait_for_url("**/admin/users?changed=*", timeout=15000)
 
         page.goto(f"{BASE}/admin/managers", wait_until="load")

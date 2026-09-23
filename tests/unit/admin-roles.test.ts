@@ -162,17 +162,19 @@ describe('a SHOP role grants no PLATFORM access', () => {
 })
 
 describe('permissions', () => {
-  it('COUNTS EIGHT PERMISSIONS, and adding a ninth is a decision', () => {
+  it('COUNTS NINE PERMISSIONS, and adding a tenth is a decision', () => {
     /*
      * The one place the number is written down. Every other test derives from
      * PERMISSIONS.length, so adding a key goes red HERE — in the test whose
      * whole subject is how many there are — rather than in four unrelated
      * tests that happened to mention a literal. A6 added the eighth,
      * `financials.view`, and the four it went red in are the reason this
-     * test exists.
+     * test exists. Part 6 added the ninth, `metrics.view`, and this was the
+     * only place that needed touching — which is the test doing its job.
      */
-    expect(PERMISSIONS).toHaveLength(8)
+    expect(PERMISSIONS).toHaveLength(9)
     expect(PERMISSIONS).toContain('financials.view')
+    expect(PERMISSIONS).toContain('metrics.view')
   })
 
   it('gives SUPER_ADMIN and ADMIN every permission there is', () => {
@@ -397,24 +399,97 @@ describe('only admin code may read across shops', () => {
     }
   })
 
-  it('GROUPS ONLY BY AN ALLOWLISTED KEY, and always by shop', () => {
-    /*
-     * Grouping keys are the only bare columns the rule above allows, so it is
-     * worth pinning exactly which. Every group must include the shop — a count
-     * that is not per shop is not answering an operator's question — and every
-     * other key must be on the allowlist for its table.
-     */
-    const source = code(`lib/repositories/${MODULE}.ts`)
-    const allowed = new Set(AGGREGATE_ONLY.flatMap((entry) => entry.groupKeys))
+  /*
+   * Grouping keys that do not identify anybody.
+   *
+   * The three content tables above must ALSO group by shop — a count of a
+   * seller's listings that is not per shop is not answering an operator's
+   * question. These do not: they are platform aggregates over `users` and
+   * `subscriptions`, and grouping them by shop would be meaningless. What they
+   * share with the others is that every key is an ENUMERATION or a date
+   * bucket, never something that names a person.
+   *
+   * An allowlist rather than "anything that is not an email", so the failure
+   * mode of adding a key is a red test naming it. `users.email` and
+   * `users.name` are deliberately absent: a metrics screen that grouped by
+   * either would have a name in its result set, and the guarantee that it
+   * cannot name an account is that nothing reaches it that could.
+   */
+  const AGGREGATE_GROUP_KEYS = [
+    'schema.users.onboardingState',
+    'schema.subscriptions.plan',
+  ]
 
-    const groups = [...source.matchAll(/\.groupBy\(([^)]*)\)/g)]
+  /**
+   * The argument list of every `.groupBy(...)`, with parentheses balanced.
+   *
+   * A plain `/\.groupBy\(([^)]*)\)/` stops at the FIRST closing paren, which
+   * is inside `date_trunc(...)` — so the shape check never saw the whole
+   * expression and reported a date bucket as an unknown key. Balanced from the
+   * opening paren instead.
+   */
+  function groupByArguments(source: string): string[] {
+    const found: string[] = []
+    for (const match of source.matchAll(/\.groupBy\(/g)) {
+      let depth = 1
+      let index = match.index! + match[0].length
+      const start = index
+      while (index < source.length && depth > 0) {
+        if (source[index] === '(') depth += 1
+        else if (source[index] === ')') depth -= 1
+        index += 1
+      }
+      found.push(source.slice(start, index - 1))
+    }
+    return found
+  }
+
+  it('GROUPS ONLY BY AN ALLOWLISTED KEY, and by shop on the content tables', () => {
+    const source = code(`lib/repositories/${MODULE}.ts`)
+    const perShop = new Set(AGGREGATE_ONLY.flatMap((entry) => entry.groupKeys))
+    const allowed = new Set([...perShop, ...AGGREGATE_GROUP_KEYS])
+
+    const groups = groupByArguments(source)
     expect(groups.length, 'no groupBy found to check').toBeGreaterThan(0)
 
-    for (const match of groups) {
-      const keys = match[1]!.split(',').map((key) => key.trim()).filter(Boolean)
-      expect(keys.some((key) => key.endsWith('.shopId')), match[0]).toBe(true)
+    let sawPerShop = false
+    for (const group of groups) {
+      const raw = group.trim()
+
+      /*
+       * A date bucket, which is an expression rather than a column. Allowed by
+       * SHAPE — date_trunc over a timestamp cannot carry an identity — and
+       * pinned to that shape so a `sql` template cannot become a way to group
+       * by anything at all.
+       */
+      if (/^sql`date_trunc\('\w+', \$\{schema\.\w+\.\w+\}\)`$/.test(raw)) continue
+
+      const keys = raw.split(',').map((key) => key.trim()).filter(Boolean)
       for (const key of keys) {
-        expect(allowed.has(key), `${match[0]} :: ${key}`).toBe(true)
+        expect(allowed.has(key), `groupBy(${raw}) :: ${key}`).toBe(true)
+      }
+
+      // A group that touches a content table must be per shop.
+      if (keys.some((key) => perShop.has(key))) {
+        expect(keys.some((key) => key.endsWith('.shopId')), raw).toBe(true)
+        sawPerShop = true
+      }
+    }
+
+    // Positive control: at least one per-shop grouping must exist, or the
+    // clause above is asserting about nothing.
+    expect(sawPerShop, 'no per-shop grouping found').toBe(true)
+  })
+
+  it('GROUPS BY NO COLUMN THAT NAMES A PERSON', () => {
+    /*
+     * The converse, stated separately because the allowlist above could be
+     * widened without anybody noticing what it had been widened to.
+     */
+    const source = code(`lib/repositories/${MODULE}.ts`)
+    for (const group of groupByArguments(source)) {
+      for (const naming of ['.email', '.name', '.displayName', '.ownerId', '.actorId']) {
+        expect(group, `groupBy(${group}) :: ${naming}`).not.toContain(naming)
       }
     }
   })

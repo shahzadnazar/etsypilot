@@ -50,6 +50,13 @@
       "when": 1790110520154,
       "tag": "0006_grant_financials_view",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790110521154,
+      "tag": "0007_grant_metrics_view",
+      "breakpoints": true
     }
   ]
 }

@@ -158,6 +158,26 @@ export const PERMISSIONS = [
    * two are about covering your tracks (D91); this is about doing the job.
    */
   'financials.view',
+  /*
+   * Aggregate platform metrics: signups, the onboarding funnel, plan mix,
+   * trial conversion.
+   *
+   * The LEAST sensitive permission in the list about the MOST sensitive
+   * subject, which is only a contradiction until you look at what it can
+   * reach: nothing here names an account. A metrics screen that named people
+   * would be read as a leaderboard of sellers, and the accounts list already
+   * exists for the question "who is this".
+   *
+   * Ticked by default for SUPER_ADMIN and ADMIN, UNTICKED for MANAGER, the
+   * same shape as financials.view. Not because the figures are dangerous —
+   * they are not — but because a manager is a promoted seller and how the
+   * business is doing is not part of the job they were promoted into. A super
+   * admin can tick it, which is the point of the matrix.
+   *
+   * An ORDINARY grantable permission. The two non-delegatable capabilities
+   * are about covering your tracks (D91); this is not one of them.
+   */
+  'metrics.view',
 ] as const
 export type Permission = (typeof PERMISSIONS)[number]
 

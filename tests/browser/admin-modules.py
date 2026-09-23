@@ -57,6 +57,7 @@ MODULES = [
     ("/admin/usage", "usage.view", "Usage & quota", "These figures are counts"),
     ("/admin/ai", "ai.view", "AI activity", "generated text is deliberately not shown"),
     ("/admin/operations", "operations.view", "Bulk operations", "Why items failed"),
+    ("/admin/metrics", "metrics.view", "Growth metrics", "Trial conversion"),
 ]
 
 fails, notes = [], []
@@ -249,7 +250,45 @@ def operations_specifics(page, body, text):
     check(links == 0, f"and no link out of the page content ({links})")
 
 
+def metrics_specifics(page, body, text):
+    """/admin/metrics, for a viewer who can see it."""
+    check("Signups" in text, "the signup series is rendered")
+    check("Counted, not modelled" in text,
+          "and says its figures are counted — the shared chart carries no claim")
+    check("modelled monthly" not in text,
+          "the demand chart's own caption did NOT come across with the drawing")
+    check("Not started" in text, "the onboarding funnel is rendered")
+    check(
+        "the column is not maintained" in text,
+        "and says the column behind it is not maintained",
+    )
+    check("Not a true conversion rate" in text,
+          "the trial conversion states what it cannot know")
+    check("No billing record" in text, "the plan mix keeps no-record separate from free")
+    check("Demo shop" in text, "and a demo shop is its own bucket")
+    # NO SELLER IS NAMED. The fixtures seed real addresses, so a sweep for a
+    # string the database does not hold proves nothing.
+    #
+    # Scoped to <main>, because the SHELL names the signed-in operator on
+    # purpose — the banner exists so two operator logins on one machine are
+    # distinguishable, and asking the whole document fired on that. The viewer
+    # knowing who they are is not the same as the screen naming a seller.
+    content = page.eval_on_selector("main", "el => el.outerHTML")
+    for address in ("seller@example.com", "growth@example.com", "boss@etsypilot.app"):
+        check(address not in content, f"NO ACCOUNT IS NAMED ON THE SCREEN ({address})")
+    check(
+        "Willow" not in content and "Healthy Haberdashery" not in content,
+        "and no shop is named either",
+    )
+    # The converse: the banner still names the viewer, which is the point of it.
+    check("boss@etsypilot.app" in body, "while the operator banner still names the viewer")
+    check("Nothing here is a forecast" in text, "the page says it forecasts nothing")
+    buttons = page.locator("main button").count()
+    check(buttons == 0, f"there is no button in the page content ({buttons})")
+
+
 SPECIFICS = {
+    "/admin/metrics": metrics_specifics,
     "/admin/operations": operations_specifics,
     "/admin/ai": ai_specifics,
     "/admin/etsy": etsy_specifics,
