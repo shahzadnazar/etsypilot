@@ -8,6 +8,7 @@ import {
   NON_DELEGATABLE_LABELS,
   PERMISSION_LABELS,
 } from '@/domain/admin/permissions'
+import { FORECLOSED_BY_DESIGN, OPERATOR_WRITABLE } from '@/domain/admin/operator-writes'
 import { PERMISSIONS } from '@/domain/admin/roles'
 import { readPermissionMatrix } from '@/lib/repositories/admin-permissions'
 
@@ -176,6 +177,47 @@ export default async function AdminPermissionsPage({
           screen. Both are how someone covers their tracks: whoever can change these permissions
           can grant themselves the rest, and whoever can read the audit log can see who noticed.
           They are named here so their absence reads as a decision rather than a gap.
+        </p>
+      </Card>
+
+      {/*
+        * WHAT THE WHOLE PANEL CAN CHANGE, rendered from the same constant the
+        * import-graph guard enforces (D94). Two reasons it is on a screen
+        * rather than only in a comment:
+        *
+        * Every permission above is a READ. An operator reading this page could
+        * reasonably assume that ticking enough boxes eventually reaches a
+        * write, and it never does — so the panel says where the ceiling is.
+        *
+        * And a constant used only by its own test drifts into decoration. This
+        * one is rendered, so a stale entry is visible to whoever is looking at
+        * the screen, not just to whoever runs the suite.
+        */}
+      <Card className="mt-3 max-w-prose p-[18px] text-small leading-relaxed text-ink-2">
+        <p className="font-semibold text-ink-1">
+          Every permission above is a permission to LOOK.
+        </p>
+        <p className="mt-1.5">
+          Whatever is ticked, this panel can change exactly {OPERATOR_WRITABLE.length} things, and
+          none of them is seller data:
+        </p>
+        <ul className="mt-1.5 flex flex-col gap-1">
+          {OPERATOR_WRITABLE.map((entry) => (
+            <li key={entry.table} className="flex gap-2">
+              <span aria-hidden className="text-muted-2">·</span>
+              <span>
+                <span className="font-semibold text-ink-1">{entry.label}</span>
+                <span className="block text-caption leading-relaxed text-muted-1">{entry.why}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-2.5 font-semibold text-ink-1">Which means it cannot do these.</p>
+        <p className="mt-1 text-muted-1">
+          {FORECLOSED_BY_DESIGN.join(' · ')}. Each is a real support request and each is refused
+          by design, not by omission — a seller&rsquo;s data is written by the seller, or not at
+          all. Adding any of them means changing the rule, its guard and its decision record
+          together.
         </p>
       </Card>
 

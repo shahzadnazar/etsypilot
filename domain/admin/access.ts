@@ -57,7 +57,7 @@ import 'server-only'
 
 import { cache } from 'react'
 import { notFound } from 'next/navigation'
-import { getSession } from '@/lib/auth'
+import { getOperatorIdentity } from '@/lib/auth/operator-identity'
 import { isLiveAuth } from '@/lib/auth/supabase-config'
 import { isDatabaseConfigured } from '@/lib/db'
 import { logFailure } from '@/lib/errors/api'
@@ -94,16 +94,34 @@ export interface AdminAccess {
  * between them. One request sees one answer.
  */
 export const getAdminAccess = cache(async function getAdminAccess(): Promise<AdminAccess | null> {
-  const session = await getSession()
+  /*
+   * getOperatorIdentity(), NOT getSession(), and the difference is the whole
+   * of D94 at this one line.
+   *
+   * getSession() resolves the caller's shop and REPAIRS a missing one by
+   * calling provisionAccount(), which writes `users`, `shops` and
+   * `memberships`. Importing it put those three seller tables one import away
+   * from every operator page — so "the operator area cannot write seller data"
+   * was false by import, and the guard that enforces it failed on the code as
+   * it stood rather than on some future mistake.
+   *
+   * This is not an exemption carved for the guard. No screen under /admin
+   * reads the operator's own shop, because an operator is not acting as a
+   * seller here; the gate needs an id and an email, which is exactly what
+   * getOperatorIdentity returns and all it can obtain.
+   */
+  const session = await getOperatorIdentity()
   if (!session) return null
 
   /*
    * Demo mode has no platform administrators, by construction.
    *
-   * With AUTH_MODE unset, getSession() returns a FIXED session shared by
-   * everyone who can reach the deployment. If that session could resolve to an
+   * With AUTH_MODE unset the seller app runs on a FIXED session shared by
+   * everyone who can reach the deployment. If that could resolve to an
    * administrator, the operator panel would be open to anybody who could load
-   * the site. Refused here outright, before any email is compared.
+   * the site. Refused here outright, before any email is compared — and
+   * refused a second time inside getOperatorIdentity(), which produces no
+   * identity at all in demo mode.
    *
    * THE CONDITION IS THE AUTH MODE, and getting that wrong is easy enough that
    * it is worth recording what the first version said:
@@ -120,8 +138,8 @@ export const getAdminAccess = cache(async function getAdminAccess(): Promise<Adm
    * whenever the database went away.
    *
    * `session.isDemo` was never the right question: it describes the SHOP, not
-   * the session's provenance. What matters is whether getSession() returned
-   * the fixed session, and it returns that exactly when AUTH_MODE is not live.
+   * the session's provenance. What matters is whether the fixed demo session
+   * is in play, and it is exactly when AUTH_MODE is not live.
    */
   if (!isLiveAuth()) return null
 

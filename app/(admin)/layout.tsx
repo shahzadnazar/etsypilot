@@ -80,8 +80,25 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           * The way back to the seller app. An operator console with no exit is
           * a console people leave by editing the URL.
           */}
+        {/*
+          * prefetch={false}, and it is a D94 line rather than a performance one.
+          *
+          * MEASURED: with the default prefetch, loading /admin/users in a
+          * browser re-created the operator's own shop and membership rows. The
+          * operator page had written nothing — Next had speculatively rendered
+          * /dashboard, and the SELLER route repairs a missing shop by
+          * provisioning it. Correct behaviour in the wrong place: opening an
+          * operator screen should not execute a seller route, and "the
+          * operator area wrote no seller data" is a much harder claim to make
+          * when merely looking at the panel can trigger one.
+          *
+          * Single-request probes with curl showed zero rows written across all
+          * four operator pages, which is how the prefetch was identified as
+          * the cause rather than the gate.
+          */}
         <Link
           href="/dashboard"
+          prefetch={false}
           className="shrink-0 rounded-[7px] bg-white px-2.5 py-1.5 text-[11px] font-semibold"
           style={{ color: '#241B12' }}
         >

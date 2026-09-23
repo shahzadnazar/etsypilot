@@ -4528,3 +4528,149 @@ negatives if the budget runs out.
 Demo mode is unchanged: all seven `/admin` paths 404 with `AUTH_MODE` unset, and
 217 rendered-output, 29 empty-state, 12 popup, 15 admin-hidden and 43
 role-change checks pass.
+
+---
+
+### D94 — The operator area cannot write seller data
+
+SUPER_ADMIN, ADMIN and MANAGER may **read** every seller's data — that is what
+an operator panel is for — and may write **none** of it. Not "should not":
+cannot, checked by a test that reads the import graph.
+
+The operator area may write exactly four things, and they are named in
+`domain/admin/operator-writes.ts`:
+
+| | |
+| --- | --- |
+| `users.platform_role` | one column of an otherwise seller-owned row |
+| `admin_audit_events` | the role-change log |
+| `admin_role_permissions` | the permission matrix |
+| `admin_permission_audit_events` | the permission-change log |
+
+Everything else in `db/schema` is seller data and is read-only from this side.
+
+#### An allowlist, because a denylist fails the wrong way
+
+"The operator area must not write listings, orders or costs" is correct the day
+it is written and silently wrong the day a table is added: the new table is not
+on the list, the check passes, and nobody learns anything. An allowlist fails
+the other way round — a write to a table nobody named is refused, and the
+refusal names the table.
+
+#### The rule was FALSE when it was written
+
+This is the part worth recording. `getAdminAccess()` called `getSession()`,
+which resolves the caller's shop and **repairs a missing one** by calling
+`provisionAccount()` — which writes `users`, `shops` and `memberships`. So
+every operator page transitively imported a module that writes three seller
+tables. The guard failed on the code as it stood, not on a hypothetical future
+mistake, and `lib/repositories/accounts.ts` sits one folder away from the
+operator repositories.
+
+The fix is not an exemption for accounts.ts. The operator gate never needed a
+shop — no screen under `/admin` reads the operator's own shop, because an
+operator is not acting as a seller there. It needed an id and an email, so it
+now calls `getOperatorIdentity()` (`lib/auth/operator-identity.ts`), which runs
+the same `getUser()` check against the same provider and can obtain nothing
+else. `accounts.ts` stays reachable from the auth path, which needs it, and the
+guard asserts **both** directions: unreachable from the operator area, and
+still reachable from `lib/auth/actions.ts`. Without the second assertion,
+deleting provisioning outright would make the first one pass.
+
+It also fixed a lock-out nobody had hit yet. `getSession()` returns null when
+the shop cannot be resolved, so a SUPER_ADMIN whose own provisioning had failed
+was refused `/admin` — the one screen that could repair anything — by a missing
+row in a table the panel never reads. Break-glass is meant to survive a broken
+database; it did not survive a missing shop.
+
+#### What enforces it
+
+`tests/unit/operator-write-boundary.test.ts` seeds from every file under
+`app/(admin)`, `domain/admin` and `lib/repositories/admin-*`, follows imports
+transitively — **including dynamic `import()`**, since deferring a module does
+not make its writes unreachable — and then asks two questions:
+
+1. **Which modules in that closure import `getDb`?** Exactly the four
+   repositories in `OPERATOR_DB_MODULES`. This is the load-bearing assertion:
+   you cannot write to Postgres without a handle, so a module that has none
+   cannot write whatever methods it calls.
+2. **Inside those four, what does every insert/update/delete target?** A table
+   on the allowlist — and for `users`, the only column set must be
+   `platformRole`.
+
+Working from the chokepoint rather than from `.insert(`/`.update(`/`.delete(`
+is deliberate. Those are Map methods too, and the closure genuinely contains
+both: `lib/security/rate-limit.ts` calls `store.delete(k)` on a Map and is in
+the closure because the step-up limiter is. Flagging it would be noise;
+excusing it by filename would be a denylist wearing an allowlist's clothes.
+
+Three further properties the same test carries: no `delete` anywhere in the
+operator area at all (the audit tables are append-only, and deleting a
+permission row silently restores the DEFAULTS); a write whose table it cannot
+parse **fails** rather than being skipped; and the allowlist must have no entry
+that nothing uses, because a stale allowlist is a permission granted for a
+reason that has gone away.
+
+Comments are stripped before every read. Four guards in this codebase have now
+matched their own documentation instead of the code — the "no secrets" sweep
+matched the banner forbidding secrets, the page-gating sweep matched a comment
+saying `requireAdmin()`, the cross-shop import sweep matched files explaining
+that they cross the same boundary, and the non-delegatable sweep matched the
+gate that enforces it.
+
+#### Verified by taking the shop away
+
+The import graph is an argument; this is the measurement. With a real Postgres,
+the signed-in SUPER_ADMIN's own `shops` and `memberships` rows were deleted —
+the exact state that used to trigger the repair — and then:
+
+| request | status | shops | memberships |
+| --- | --- | --- | --- |
+| `/admin/users` | 200 | 0 | 0 |
+| `/admin/permissions` | 200 | 0 | 0 |
+| `/admin/audit` | 200 | 0 | 0 |
+| `/admin/managers` | 200 | 0 | 0 |
+| `/dashboard` | 200 | **1** | **1** |
+
+Four operator pages wrote nothing. One request to the seller app, same account
+and same cookie, repaired it — which is the other half of the rule, and why
+`accounts.ts` must stay reachable from auth. The 200s also confirm the
+lock-out fix: an operator with no shop row now reaches the panel.
+
+**The first run of this experiment failed, and the cause is worth recording.**
+In a browser, loading `/admin/users` re-created the shop. The operator page had
+written nothing — Next had *prefetched* the "My shop" link in the operator
+banner, and rendering `/dashboard` ran the seller route, which repairs a
+missing shop by provisioning it. Correct behaviour in the wrong place: opening
+an operator screen should not speculatively execute a seller one, and the claim
+"the operator area wrote no seller data" is much harder to make when merely
+looking at the panel can trigger a write. That link is now `prefetch={false}`.
+
+Single-request probes with curl showed zero rows across all four pages, which
+is how the prefetch — rather than the gate — was identified as the cause. The
+import-graph guard could not have caught it: the write was in a different
+route, reached by the framework rather than by an import.
+
+#### What this forecloses
+
+Deliberately, and listed so the trade is visible rather than discovered. None
+of these can be built without amending the allowlist, the guard and this record
+together:
+
+  - resetting a seller's plan quota
+  - cancelling or refunding a subscription
+  - fixing a broken cost rule on a seller's behalf
+  - correcting a listing or an order
+  - clearing a stuck bulk job
+  - revoking or re-linking an Etsy connection
+  - deleting an account on request
+  - **full impersonation — acting as a seller**
+
+Every one is a plausible support request, and support is exactly where "just
+one small write" enters a codebase. The answer is not that they are bad
+features. It is that each needs its own decision, its own audit trail and its
+own consent story, and none of them should arrive as a side effect of an
+operator screen that already had a database handle in scope.
+
+The seller keeps writing their own data through the ordinary app, scoped by
+`shopContext()`. `lib/permissions/index.ts` is untouched.

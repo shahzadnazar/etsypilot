@@ -93,7 +93,7 @@ describe('the Edge check: what middleware can decide without a database', () => 
  * who is not an administrator?" without creating one.
  */
 const session = vi.hoisted(() => ({
-  current: null as null | { userId: string; email: string; isDemo: boolean },
+  current: null as null | { userId: string; email: string },
 }))
 const db = vi.hoisted(() => ({
   configured: false,
@@ -105,7 +105,16 @@ const db = vi.hoisted(() => ({
 const auth = vi.hoisted(() => ({ live: true }))
 const notFoundCalls = vi.hoisted(() => ({ count: 0 }))
 
-vi.mock('@/lib/auth', () => ({ getSession: async () => session.current }))
+/*
+ * getOperatorIdentity, not getSession. The gate stopped calling getSession
+ * under D94: that function resolves the caller's SHOP and repairs a missing
+ * one by provisioning it, which put three seller tables one import away from
+ * every operator page. The identity read can obtain an id and an email and
+ * nothing else.
+ */
+vi.mock('@/lib/auth/operator-identity', () => ({
+  getOperatorIdentity: async () => session.current,
+}))
 vi.mock('@/lib/db', () => ({ isDatabaseConfigured: () => db.configured }))
 vi.mock('@/lib/auth/supabase-config', () => ({ isLiveAuth: () => auth.live }))
 vi.mock('@/lib/repositories/admin-reads-every-shop', () => ({
@@ -156,7 +165,7 @@ describe('the Node check: a non-admin gets 404 from /admin', () => {
   })
 
   it('refuses a signed-in seller who is not on any list', async () => {
-    session.current = { userId: 'u1', email: 'seller@x.com', isDemo: false }
+    session.current = { userId: 'u1', email: 'seller@x.com' }
     process.env.SUPER_ADMIN_EMAILS = 'boss@etsypilot.app'
     expect(await getAdminAccess()).toBeNull()
   })
@@ -179,7 +188,7 @@ describe('the Node check: a non-admin gets 404 from /admin', () => {
     auth.live = false
     db.configured = true
     process.env.SUPER_ADMIN_EMAILS = 'salman@willowandfern.com'
-    session.current = { userId: 'demo', email: 'salman@willowandfern.com', isDemo: true }
+    session.current = { userId: 'demo', email: 'salman@willowandfern.com' }
     expect(await getAdminAccess()).toBeNull()
   })
 
@@ -190,12 +199,34 @@ describe('the Node check: a non-admin gets 404 from /admin', () => {
      * state .env.example describes as the one the product is actually in:
      * real people signing in while shop data is still Willow & Fern. Their
      * SHOP being a demo shop says nothing about their PLATFORM role.
+     *
+     * THIS IS NOW STRUCTURAL RATHER THAN CHECKED. Under D94 the gate reads an
+     * identity with no shop in it at all, so there is no isDemo for a future
+     * edit to reach for. The test is kept because the property is what
+     * matters, not the mechanism that currently guarantees it — and because a
+     * later change that reintroduced a shop lookup would have to make this
+     * pass again.
      */
     auth.live = true
     db.configured = true
     process.env.SUPER_ADMIN_EMAILS = 'boss@etsypilot.app'
-    session.current = { userId: 'u9', email: 'boss@etsypilot.app', isDemo: true }
+    session.current = { userId: 'u9', email: 'boss@etsypilot.app' }
     expect((await getAdminAccess())?.role).toBe('SUPER_ADMIN')
+  })
+
+  it('cannot see a shop at all, so it cannot provision one', async () => {
+    /*
+     * The D94 property at this level: the object the gate reads has exactly
+     * two fields. A shop cannot be resolved from it, so the repair path that
+     * writes users, shops and memberships is not merely unused here — it is
+     * unreachable, which the import-graph guard checks separately.
+     */
+    auth.live = true
+    process.env.SUPER_ADMIN_EMAILS = 'boss@etsypilot.app'
+    session.current = { userId: 'u9', email: 'boss@etsypilot.app' }
+    const access = await getAdminAccess()
+    expect(access).not.toBeNull()
+    expect(Object.keys(session.current)).toEqual(['userId', 'email'])
   })
 
   it('refuses the DEMO session outright, whatever the email says', async () => {
@@ -207,12 +238,12 @@ describe('the Node check: a non-admin gets 404 from /admin', () => {
      * administrator.
      */
     process.env.SUPER_ADMIN_EMAILS = 'salman@willowandfern.com'
-    session.current = { userId: 'demo', email: 'salman@willowandfern.com', isDemo: true }
+    session.current = { userId: 'demo', email: 'salman@willowandfern.com' }
     expect(await getAdminAccess()).toBeNull()
   })
 
   it('throws notFound() rather than returning, so a caller cannot ignore it', async () => {
-    session.current = { userId: 'u1', email: 'seller@x.com', isDemo: false }
+    session.current = { userId: 'u1', email: 'seller@x.com' }
     await expect(requireAdmin('users.view')).rejects.toThrow('NEXT_NOT_FOUND')
     expect(notFoundCalls.count).toBe(1)
   })
@@ -222,7 +253,7 @@ describe('the Node check: a non-admin gets 404 from /admin', () => {
     // same as being allowed on every operator screen.
     db.configured = true
     db.storedRole = 'MANAGER'
-    session.current = { userId: 'u2', email: 'manager@x.com', isDemo: false }
+    session.current = { userId: 'u2', email: 'manager@x.com' }
 
     const access = await getAdminAccess()
     expect(access?.role).toBe('MANAGER')
@@ -232,7 +263,7 @@ describe('the Node check: a non-admin gets 404 from /admin', () => {
 
   it('admits an administrator named in the environment', async () => {
     process.env.ADMIN_EMAILS = 'ops@etsypilot.app'
-    session.current = { userId: 'u3', email: 'ops@etsypilot.app', isDemo: false }
+    session.current = { userId: 'u3', email: 'ops@etsypilot.app' }
 
     const access = await getAdminAccess()
     expect(access?.role).toBe('ADMIN')
@@ -244,7 +275,7 @@ describe('the Node check: a non-admin gets 404 from /admin', () => {
 
   it('gives roles.write and audit.view to SUPER_ADMIN alone', async () => {
     process.env.SUPER_ADMIN_EMAILS = 'boss@etsypilot.app'
-    session.current = { userId: 'u4', email: 'boss@etsypilot.app', isDemo: false }
+    session.current = { userId: 'u4', email: 'boss@etsypilot.app' }
     const access = await getAdminAccess()
     expect(access?.canSuperAdminOnly('roles.write')).toBe(true)
     expect(access?.canSuperAdminOnly('audit.view')).toBe(true)
@@ -259,10 +290,10 @@ describe('the Node check: a non-admin gets 404 from /admin', () => {
     db.storedRole = 'MANAGER' // would grant, if it were read
     process.env.SUPER_ADMIN_EMAILS = 'boss@etsypilot.app'
 
-    session.current = { userId: 'u5', email: 'manager@x.com', isDemo: false }
+    session.current = { userId: 'u5', email: 'manager@x.com' }
     expect(await getAdminAccess()).toBeNull() // the column was never read
 
-    session.current = { userId: 'u6', email: 'boss@etsypilot.app', isDemo: false }
+    session.current = { userId: 'u6', email: 'boss@etsypilot.app' }
     expect((await getAdminAccess())?.role).toBe('SUPER_ADMIN')
   })
 })
@@ -292,7 +323,7 @@ describe('the stored set decides, not DEFAULT_ROLE_PERMISSIONS', () => {
      */
     db.storedRole = 'MANAGER'
     db.storedPermissions = []
-    session.current = { userId: 'm1', email: 'manager@x.com', isDemo: false }
+    session.current = { userId: 'm1', email: 'manager@x.com' }
 
     expect(await getAdminAccess()).toBeNull()
     await expect(requireAdmin('users.view')).rejects.toThrow('NEXT_NOT_FOUND')
@@ -301,7 +332,7 @@ describe('the stored set decides, not DEFAULT_ROLE_PERMISSIONS', () => {
   it('gives it back when the box is re-ticked', async () => {
     db.storedRole = 'MANAGER'
     db.storedPermissions = ['users.view']
-    session.current = { userId: 'm1', email: 'manager@x.com', isDemo: false }
+    session.current = { userId: 'm1', email: 'manager@x.com' }
 
     const access = await getAdminAccess()
     expect(access?.role).toBe('MANAGER')
@@ -315,7 +346,7 @@ describe('the stored set decides, not DEFAULT_ROLE_PERMISSIONS', () => {
      * defaults. ADMIN's default is all seven; the stored set says one.
      */
     db.storedPermissions = ['users.view']
-    session.current = { userId: 'a1', email: 'ops@etsypilot.app', isDemo: false }
+    session.current = { userId: 'a1', email: 'ops@etsypilot.app' }
 
     const access = await getAdminAccess()
     expect(access?.role).toBe('ADMIN')
@@ -329,7 +360,7 @@ describe('the stored set decides, not DEFAULT_ROLE_PERMISSIONS', () => {
   it('GRANTS a MANAGER something the defaults never gave them', async () => {
     db.storedRole = 'MANAGER'
     db.storedPermissions = ['users.view', 'subscriptions.view']
-    session.current = { userId: 'm1', email: 'manager@x.com', isDemo: false }
+    session.current = { userId: 'm1', email: 'manager@x.com' }
 
     const access = await getAdminAccess()
     expect(access?.can('subscriptions.view')).toBe(true)
@@ -342,10 +373,10 @@ describe('the stored set decides, not DEFAULT_ROLE_PERMISSIONS', () => {
      */
     db.storedRole = 'MANAGER'
     db.storedPermissions = null
-    session.current = { userId: 'm1', email: 'manager@x.com', isDemo: false }
+    session.current = { userId: 'm1', email: 'manager@x.com' }
     expect((await getAdminAccess())?.permissions).toEqual(['users.view'])
 
-    session.current = { userId: 'a1', email: 'ops@etsypilot.app', isDemo: false }
+    session.current = { userId: 'a1', email: 'ops@etsypilot.app' }
     expect((await getAdminAccess())?.permissions).toHaveLength(7)
   })
 
@@ -357,7 +388,7 @@ describe('the stored set decides, not DEFAULT_ROLE_PERMISSIONS', () => {
      */
     process.env.SUPER_ADMIN_EMAILS = 'boss@etsypilot.app'
     db.storedPermissions = []
-    session.current = { userId: 's1', email: 'boss@etsypilot.app', isDemo: false }
+    session.current = { userId: 's1', email: 'boss@etsypilot.app' }
 
     const access = await getAdminAccess()
     expect(access?.role).toBe('SUPER_ADMIN')
@@ -374,7 +405,7 @@ describe('the stored set decides, not DEFAULT_ROLE_PERMISSIONS', () => {
      */
     db.storedRole = 'MANAGER'
     db.storedPermissions = ['users.view', 'roles.write', 'audit.view']
-    session.current = { userId: 'm1', email: 'manager@x.com', isDemo: false }
+    session.current = { userId: 'm1', email: 'manager@x.com' }
 
     const access = await getAdminAccess()
     expect(access?.permissions).toEqual(['users.view'])
@@ -386,7 +417,7 @@ describe('the stored set decides, not DEFAULT_ROLE_PERMISSIONS', () => {
     // Falling back to the defaults would silently re-grant something an
     // operator had deliberately revoked.
     db.permissionsThrow = true
-    session.current = { userId: 'a1', email: 'ops@etsypilot.app', isDemo: false }
+    session.current = { userId: 'a1', email: 'ops@etsypilot.app' }
     expect(await getAdminAccess()).toBeNull()
   })
 
@@ -395,7 +426,7 @@ describe('the stored set decides, not DEFAULT_ROLE_PERMISSIONS', () => {
     // promotion UI.
     process.env.SUPER_ADMIN_EMAILS = 'boss@etsypilot.app'
     db.permissionsThrow = true
-    session.current = { userId: 's1', email: 'boss@etsypilot.app', isDemo: false }
+    session.current = { userId: 's1', email: 'boss@etsypilot.app' }
     expect((await getAdminAccess())?.permissions).toHaveLength(7)
   })
 })
