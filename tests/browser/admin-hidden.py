@@ -64,6 +64,7 @@ GATED = [
     # The read-only modules. Each is gated on its own permission key, and every
     # one of them must be as invisible in demo mode as /admin itself.
     "/admin/etsy",
+    "/admin/subscriptions",
 ]
 CONTROLS = ["/administrators", "/admin-nonexistent/x"]
 

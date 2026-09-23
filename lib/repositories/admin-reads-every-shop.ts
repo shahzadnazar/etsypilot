@@ -561,6 +561,83 @@ export async function adminListEtsyConnections(): Promise<AdminConnectionRow[]> 
   }))
 }
 
+/* --------------------------------------------- every account's subscription */
+
+/**
+ * Every account's billing state, for the subscriptions screen.
+ *
+ * ── LEFT JOIN, AND THAT IS THE WHOLE POINT ────────────────────────────────
+ *
+ * An account with NO subscription row is the state worth seeing: it has never
+ * been through billing at all, which is different from choosing the free tier
+ * and different again from cancelling. An inner join would hide exactly those
+ * accounts, and they are the ones an operator is looking for. The nulls reach
+ * the domain as nulls and are bucketed there.
+ *
+ * ── NOTHING ABOUT A CARD ──────────────────────────────────────────────────
+ *
+ * No `stripe_customer_id`, no `stripe_subscription_id`. Neither is a secret
+ * exactly, and both are a handle into the billing provider — an identifier
+ * that lets somebody look up a payment method is an identifier a support
+ * screen has no use for. The seller's own billing page shows them a brand and
+ * a last four; this shows nobody anything.
+ *
+ * And no refund of any kind, because D83 removed them: nothing in this
+ * product can produce a credit for a plan charge, so nothing here may select a
+ * column implying one.
+ */
+export interface AdminSubscriptionRow {
+  userId: string
+  email: string | null
+  shopName: string | null
+  plan: string | null
+  status: string | null
+  renewsAt: Date | null
+  trialEndsAt: Date | null
+  cancelledAt: Date | null
+}
+
+export async function adminListSubscriptions(): Promise<AdminSubscriptionRow[]> {
+  const rows = await getDb()
+    .select({
+      userId: schema.users.id,
+      email: schema.users.email,
+      shopName: schema.shops.name,
+      plan: schema.subscriptions.plan,
+      status: schema.subscriptions.status,
+      renewsAt: schema.subscriptions.renewsAt,
+      trialEndsAt: schema.subscriptions.trialEndsAt,
+      cancelledAt: schema.subscriptions.cancelledAt,
+    })
+    .from(schema.users)
+    .leftJoin(schema.shops, eq(schema.shops.ownerId, schema.users.id))
+    /*
+     * A live subscription beats a cancelled one, as on the detail screen.
+     * `subscriptions` has no createdAt, so an arbitrary row would make the
+     * list report "cancelled" for an account that has since resubscribed —
+     * wrong in the direction that alarms.
+     */
+    .leftJoin(
+      schema.subscriptions,
+      eq(schema.subscriptions.userId, schema.users.id),
+    )
+    .orderBy(asc(schema.users.email), sql`${schema.subscriptions.cancelledAt} nulls first`)
+    .limit(1000)
+
+  /*
+   * One row per ACCOUNT, keeping the first — which the ordering above has
+   * already made the live one. An account with two subscription rows is a data
+   * problem, and showing it twice in a count by plan would make the totals
+   * disagree with the account list for a reason nobody could see.
+   */
+  const seen = new Set<string>()
+  return rows.filter((row) => {
+    if (seen.has(row.userId)) return false
+    seen.add(row.userId)
+    return true
+  })
+}
+
 /**
  * Every account, newest first.
  *

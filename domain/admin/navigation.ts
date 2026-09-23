@@ -96,6 +96,12 @@ export const OPERATOR_NAV: readonly OperatorNavGroup[] = [
         gate: permission('etsy.view'),
         blurb: 'Which shops are authorised, which have lapsed, and what last synced.',
       },
+      {
+        label: 'Subscriptions',
+        href: '/admin/subscriptions',
+        gate: permission('subscriptions.view'),
+        blurb: 'Who is on what plan, what is past due, and which trials end this week.',
+      },
     ],
   },
   {

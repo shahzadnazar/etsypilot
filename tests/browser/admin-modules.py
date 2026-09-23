@@ -47,6 +47,7 @@ MANAGER = ("promoted@example.com", "manager-password-y")
 # path, permission key, nav label, a string only this screen renders.
 MODULES = [
     ("/admin/etsy", "etsy.view", "Etsy connections", "What the seller sees when a reconnection ends"),
+    ("/admin/subscriptions", "subscriptions.view", "Subscriptions", "Trials ending within"),
 ]
 
 fails, notes = [], []
@@ -135,7 +136,39 @@ def etsy_specifics(page, body, text):
     check(page.locator("main form").count() == 0, "and no form")
 
 
-SPECIFICS = {"/admin/etsy": etsy_specifics}
+def subscriptions_specifics(page, body, text):
+    """/admin/subscriptions, for a viewer who can see it."""
+    check("No billing record" in text,
+          "an account with no subscription row is its own bucket, not the free tier")
+    check("Past due" in text, "every status is counted, including the empty ones (D34)")
+    check("Trialing" in text, "including trialing")
+    # THE AFFORDANCE, NOT THE WORD. Asked first as a substring and it fired on
+    # the page's own sentence — "There is no refund either" — which is the
+    # eleventh time in this build that a guard has matched the documentation it
+    # was written to protect. The page must be able to say refunds do not
+    # exist; what it must not have is a column, a control or a state.
+    headers = [h.lower() for h in page.eval_on_selector_all("main th", "els => els.map(e => e.innerText)")]
+    check(
+        not any("refund" in h for h in headers),
+        f"NO REFUND COLUMN ANYWHERE ON THE SCREEN (D83) — headers {headers}",
+    )
+    check(
+        "REFUNDED" not in body,
+        "and the removed REFUNDED status appears nowhere in the payload",
+    )
+    check("does not refund" in text, "and the page still SAYS there is none")
+    check(
+        "stripe" not in body.lower(),
+        "no billing-provider handle reaches the browser",
+    )
+    check("No upgrade, no downgrade, no cancel" in text,
+          "the page names what it cannot do")
+    buttons = page.locator("main button").count()
+    check(buttons == 0, f"there is no button in the page content ({buttons})")
+    check(page.locator("main form").count() == 0, "and no form")
+
+
+SPECIFICS = {"/admin/etsy": etsy_specifics, "/admin/subscriptions": subscriptions_specifics}
 
 
 def main():
