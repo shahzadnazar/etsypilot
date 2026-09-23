@@ -4531,14 +4531,27 @@ role-change checks pass.
 
 ---
 
-### D94 — The operator area cannot write seller data
+### D94 — The operator area cannot write seller data, ours or Etsy's
 
 SUPER_ADMIN, ADMIN and MANAGER may **read** every seller's data — that is what
 an operator panel is for — and may write **none** of it. Not "should not":
 cannot, checked by a test that reads the import graph.
 
-The operator area may write exactly four things, and they are named in
-`domain/admin/operator-writes.ts`:
+**Two halves of one rule**, enforced by one guard:
+
+| | |
+| --- | --- |
+| our database | exactly four things, listed below |
+| the seller's Etsy shop | **nothing at all** |
+
+The second half is the sharper risk, and the reason it is not a footnote. A bad
+database write corrupts our records and the audit trail can repair them. A bad
+Etsy write changes a real seller's live listings on etsy.com, under their name,
+in front of their buyers — no transaction to roll back, no version to restore,
+and nothing useful to say to a buyer who already saw it.
+
+The operator area may write exactly four things in our schema, and they are
+named in `domain/admin/operator-writes.ts`:
 
 | | |
 | --- | --- |
@@ -4618,6 +4631,74 @@ saying `requireAdmin()`, the cross-shop import sweep matched files explaining
 that they cross the same boundary, and the non-delegatable sweep matched the
 gate that enforces it.
 
+#### The Etsy half
+
+`applyListingChanges()` is the only write method on `EtsyService`. D50 already
+records that nothing is auto-published and that it is reachable only through
+the bulk editor's ConfirmedOperation gate — SELECT → CONFIGURE → VALIDATE →
+DIFF → CONFIRM → APPLY → AUDIT → ROLLBACK. What this adds is the other side of
+that sentence: **the operator area sits outside the gate by construction**, so
+no /admin path can reach the gate's far end.
+
+The allowlist for this half is `OPERATOR_ETSY_MODULES`, and it is **empty**. An
+empty allowlist is still an allowlist, and writing it down is the point —
+"nothing" is a decision here, not an oversight. Reads are excluded along with
+writes because the handle is the same object: a screen that could fetch a
+listing could also push one. The `etsy.view` permission is served from our own
+`etsy_connections` table, not from the Etsy API.
+
+Three overlapping barriers, because one would be a convention:
+
+1. **No EtsyService anywhere in the closure.** Same chokepoint shape as
+   `getDb`, resolved through the same import walk so a dynamic
+   `await import('@/lib/etsy')` counts — that exact evasion already slipped
+   past the database half once.
+2. **No module names `applyListingChanges` at all.** The chokepoint alone is
+   not sufficient here and that is the difference from the database half: a
+   module can call the method on a service passed in as a parameter, which is
+   exactly how `domain/bulk-editor/service.ts` does it, without ever importing
+   the factory.
+3. **No `lib/etsy` or `domain/bulk-editor` module in the closure**, so there is
+   nowhere for a service to come from, injected or otherwise.
+
+Every one of those is an "is it absent?" assertion, and a broken detector
+satisfies all three perfectly. So the guard runs a **positive control first**:
+the detectors are pointed at the interface, both adapters and the bulk editor,
+and have to find the write there — including that there are exactly **two** call
+sites, the apply path and the rollback path, which is D50's claim pinned to a
+number and checked against the whole repository rather than only against
+`/admin`. The converse is asserted too: deleting the bulk editor outright would
+otherwise satisfy every absence check.
+
+#### No writable context for another seller's shop
+
+`shopContext(session, shopId)` throws when the session does not own the shop, so
+an operator inspecting someone else's shop cannot obtain a writable context for
+it. `lib/permissions/index.ts` is untouched. The cross-shop throw was already
+asserted for a seller in `provisioning.test.ts`; what is added is the
+operator-shaped case and the structural half:
+
+  - `shopContext` is named nowhere in the operator closure, and
+    `lib/permissions/index.ts` is not in it, so a future operator read path
+    cannot acquire a context on the way to a number;
+  - `getOperatorIdentity()` returns `userId` and `email` and **no shopId**, so
+    an operator page cannot even construct the argument. A screen that wanted a
+    context would have to go and find a shop id from somewhere, which is a
+    visible act rather than a slip.
+
+#### One exemption, and what it costs
+
+`domain/admin/operator-writes.ts` is itself in the operator closure, and it
+holds `'applyListingChanges'` and `'shopContext'` as string constants. The name
+sweeps flagged the allowlist for containing the allowlist — the fifth time a
+guard here has matched its own documentation, and the first time one has matched
+its own **data**.
+
+It is exempted from the name sweeps, and the exemption is paid for: the same
+test asserts that file contains no CALL to any of the four dangerous things and
+imports nothing at all. A policy file has to be able to name what it forbids; it
+must not be able to do it.
+
 #### Verified by taking the shop away
 
 The import graph is an argument; this is the measurement. With a real Postgres,
@@ -4664,6 +4745,9 @@ together:
   - clearing a stuck bulk job
   - revoking or re-linking an Etsy connection
   - deleting an account on request
+  - re-running a failed sync
+  - repairing a listing on a seller's behalf
+  - any operator-triggered publish to Etsy
   - **full impersonation — acting as a seller**
 
 Every one is a plausible support request, and support is exactly where "just
@@ -4672,5 +4756,13 @@ features. It is that each needs its own decision, its own audit trail and its
 own consent story, and none of them should arrive as a side effect of an
 operator screen that already had a database handle in scope.
 
+The last three are the Etsy half's share, and they are the ones support will
+ask for first — a seller whose sync failed wants it re-run, and the operator
+looking at the failure is the obvious person to do it. The answer is that the
+re-run belongs to the seller, in their own app, behind the confirmation gate
+D50 describes. An operator who could publish on their behalf could publish
+without it.
+
 The seller keeps writing their own data through the ordinary app, scoped by
-`shopContext()`. `lib/permissions/index.ts` is untouched.
+`shopContext()`, and their own Etsy shop through the bulk editor's confirmation
+gate. `lib/permissions/index.ts` and `lib/etsy/interface.ts` are untouched.

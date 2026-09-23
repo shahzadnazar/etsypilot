@@ -1,21 +1,42 @@
 import { describe, expect, it } from 'vitest'
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { dirname, join, normalize } from 'node:path'
+import { AppError } from '@/lib/errors/types'
+import { shopContext } from '@/lib/permissions'
 import {
+  ETSY_SERVICE_FACTORY,
+  ETSY_WRITE_CALLERS,
+  ETSY_WRITE_CALL_SITES,
+  ETSY_WRITE_IMPLEMENTATIONS,
+  ETSY_WRITE_METHOD,
   FORECLOSED_BY_DESIGN,
   OPERATOR_DB_MODULES,
+  OPERATOR_ETSY_MODULES,
   OPERATOR_READ_ONLY_MODULES,
+  OPERATOR_SHOP_CONTEXT_MODULES,
   OPERATOR_WRITABLE,
+  SHOP_CONTEXT_FACTORY,
 } from '@/domain/admin/operator-writes'
 
 /*
  * ██████████████████████████████████████████████████████████████████████████
  *
- *   THE OPERATOR AREA CANNOT WRITE SELLER DATA.
+ *   THE OPERATOR AREA CANNOT WRITE SELLER DATA — OURS OR ETSY'S.
  *
  *   Not "does not today". This walks the import graph from every operator
  *   file and fails if a write outside the allowlist is reachable — directly,
  *   or through any module imported at any depth.
+ *
+ *   ONE GUARD, TWO HALVES, deliberately not two files. A second sweep would
+ *   duplicate the closure walk, and the day someone widened one they would
+ *   have no reason to look at the other. The database half and the Etsy half
+ *   share a closure, a comment-stripper and an import resolver, so a change
+ *   to how reachability is decided applies to both at once.
+ *
+ *   The Etsy half is the sharper of the two. A bad database write corrupts
+ *   our records and the audit trail can repair them. A bad Etsy write changes
+ *   a real seller's live listings on etsy.com, under their name, in front of
+ *   their buyers: no transaction to roll back, no version to restore.
  *
  * ██████████████████████████████████████████████████████████████████████████
  *
@@ -392,5 +413,256 @@ describe('the allowlist is complete and honest', () => {
     const decisions = readFileSync('docs/DECISIONS.md', 'utf8')
     expect(decisions).toContain('### D94')
     expect(decisions).toContain('operator-write-boundary')
+  })
+})
+
+/* ═══════════════════ the second half: the seller's Etsy shop ═════════════ */
+
+const ETSY_FACTORY_MODULE = join('lib', 'etsy', 'index.ts')
+
+/**
+ * The file that DECLARES the rule, and the one module allowed to name what
+ * the rule forbids.
+ *
+ * FOUND BY RUNNING IT: domain/admin/operator-writes.ts is itself in the
+ * operator closure, and it holds `ETSY_WRITE_METHOD = 'applyListingChanges'`
+ * and `SHOP_CONTEXT_FACTORY = 'shopContext'` as string constants. So the name
+ * sweeps flagged the allowlist for containing the allowlist — the fifth time
+ * a guard in this codebase has matched its own documentation, and the first
+ * time one has matched its own DATA.
+ *
+ * Exempting it is not a hole, because the exemption is paired with a check
+ * that it contains no CALL to any of the four dangerous things, and no
+ * imports at all. A policy file has to be able to name what it forbids; it
+ * must not be able to do it.
+ */
+const POLICY_MODULE = join('domain', 'admin', 'operator-writes.ts')
+
+/** Every closure module except the one that declares the rule. */
+const SUBJECTS = CLOSURE.filter((file) => file !== POLICY_MODULE)
+
+/**
+ * Does this module obtain an EtsyService?
+ *
+ * The same chokepoint question as touchesDb(), and resolved the same way —
+ * through importsOf(), so a dynamic `await import('@/lib/etsy')` counts. That
+ * exact evasion already slipped past the database half once.
+ */
+function holdsEtsyService(file: string): boolean {
+  return (
+    importsOf(file).includes(ETSY_FACTORY_MODULE) &&
+    new RegExp(`\\b${ETSY_SERVICE_FACTORY}\\b`).test(code(file))
+  )
+}
+
+/** Does this module so much as NAME the one write method? */
+function namesEtsyWrite(file: string): boolean {
+  return new RegExp(`\\b${ETSY_WRITE_METHOD}\\b`).test(code(file))
+}
+
+function callSitesIn(file: string): number {
+  return (code(file).match(new RegExp(`\\.${ETSY_WRITE_METHOD}\\(`, 'g')) ?? []).length
+}
+
+describe('the detectors find the Etsy write where it really is', () => {
+  /*
+   * THE POSITIVE CONTROL, and the reason it comes first.
+   *
+   * Every assertion in the next block is of the form "the operator area
+   * contains none of this". A broken detector satisfies all of them
+   * perfectly — it finds nothing everywhere. So the detector is pointed at
+   * the places the write genuinely lives, and has to find it there before its
+   * silence about /admin means anything.
+   */
+  it('finds the method on the interface and both adapters', () => {
+    for (const file of ETSY_WRITE_IMPLEMENTATIONS) {
+      expect(namesEtsyWrite(file), file).toBe(true)
+    }
+  })
+
+  it('finds the caller, and it is the bulk editor', () => {
+    for (const file of ETSY_WRITE_CALLERS) {
+      expect(namesEtsyWrite(file), file).toBe(true)
+      expect(callSitesIn(file), file).toBe(ETSY_WRITE_CALL_SITES)
+    }
+  })
+
+  it('finds an EtsyService holder outside the operator area', () => {
+    // Otherwise holdsEtsyService() could be returning false for everything.
+    const holders = [...walk('app'), ...walk('domain'), ...walk('lib')].filter(holdsEtsyService)
+    expect(holders.length).toBeGreaterThan(3)
+  })
+
+  it('confirms D50: the apply and rollback paths are the ONLY callers', () => {
+    /*
+     * D50 says nothing is auto-published and that applyListingChanges is
+     * reachable only through the bulk editor's ConfirmedOperation gate. That
+     * is a claim about the whole repository, so it is checked against the
+     * whole repository rather than only against /admin.
+     */
+    const callers = [...walk('app'), ...walk('domain'), ...walk('lib')]
+      .filter((file) => callSitesIn(file) > 0)
+      .sort()
+    expect(callers).toEqual([...ETSY_WRITE_CALLERS].sort())
+  })
+})
+
+describe('the operator area cannot write to the seller’s Etsy shop', () => {
+  it('holds no EtsyService anywhere in the closure', () => {
+    /*
+     * The chokepoint, and the allowlist it is checked against is EMPTY. Reads
+     * are excluded as well as writes because the handle is the same object: a
+     * screen that could fetch a listing could also push one, and the
+     * `etsy.view` permission is served from our own etsy_connections table.
+     */
+    const holders = CLOSURE.filter(holdsEtsyService).sort()
+    expect(holders).toEqual([...OPERATOR_ETSY_MODULES].sort())
+    expect(OPERATOR_ETSY_MODULES).toEqual([])
+  })
+
+  it('never NAMES the write method, even on a service it was handed', () => {
+    /*
+     * The chokepoint alone is not enough here, and that is the difference
+     * from the database half. A module can call a method on a service passed
+     * in as a parameter — which is exactly how domain/bulk-editor/service.ts
+     * does it — without ever importing the factory. So the method name is
+     * swept for as well.
+     */
+    const namers = SUBJECTS.filter(namesEtsyWrite).sort()
+    expect(namers).toEqual([])
+  })
+
+  it('reaches no Etsy adapter module at all', () => {
+    // The third overlapping barrier: there is nowhere in the closure for a
+    // service to come from, injected or otherwise.
+    const etsy = CLOSURE.filter((file) => file.startsWith(join('lib', 'etsy'))).sort()
+    expect(etsy).toEqual([])
+  })
+
+  it('reaches no part of the bulk editor, which is what owns the write', () => {
+    const bulk = CLOSURE.filter((file) => file.startsWith(join('domain', 'bulk-editor'))).sort()
+    expect(bulk).toEqual([])
+  })
+
+  it('lets the policy file NAME what it forbids, but not DO it', () => {
+    /*
+     * The price of the one exemption above. operator-writes.ts may hold the
+     * strings, because a rule that cannot name what it forbids is unwritable.
+     * It may not call any of them, and a call is what the syntax below looks
+     * like. Without this, the exemption would be a hole exactly the shape of
+     * the file that defines the boundary.
+     */
+    const policy = code(POLICY_MODULE)
+    for (const call of [
+      `.${ETSY_WRITE_METHOD}(`,
+      `${ETSY_SERVICE_FACTORY}(`,
+      `${SHOP_CONTEXT_FACTORY}(`,
+      'getDb(',
+    ]) {
+      expect(policy, call).not.toContain(call)
+    }
+    // And it imports nothing at all, so it cannot acquire a handle either.
+    expect(importsOf(POLICY_MODULE)).toEqual([])
+  })
+
+  it('leaves the bulk editor’s own path working', () => {
+    /*
+     * The converse, for the same reason accounts.ts has one: deleting the
+     * bulk editor outright would satisfy every assertion above. The rule is
+     * "unreachable from the operator area", not "unreachable".
+     */
+    for (const file of ETSY_WRITE_CALLERS) {
+      expect(namesEtsyWrite(file), file).toBe(true)
+      expect(existsSync(file), file).toBe(true)
+    }
+  })
+})
+
+/* ════════════════ no writable context for another seller's shop ═════════ */
+
+describe('an operator cannot obtain a writable shop context', () => {
+  /*
+   * shopContext() is the seller isolation boundary and lib/permissions is not
+   * touched by this rule. These assert the property the rule LEANS on, rather
+   * than assuming it, and add the operator-shaped case that was not covered:
+   * the cross-shop throw itself is already asserted in provisioning.test.ts,
+   * for a seller.
+   */
+  const operator = {
+    userId: 'u-operator',
+    email: 'boss@etsypilot.app',
+    name: 'Boss',
+    shopId: 'shop_operator_own',
+    isDemo: false,
+  }
+
+  it('throws when an operator asks for a shop they do not own', () => {
+    expect(() => shopContext(operator, 'shop_some_seller')).toThrow(AppError)
+    try {
+      shopContext(operator, 'shop_some_seller')
+    } catch (error) {
+      expect((error as AppError).kind).toBe('AUTHORIZATION')
+    }
+  })
+
+  it('throws for every seller shop an operator might be inspecting', () => {
+    // The account list shows every shop on the platform. None of them is a
+    // context this session can obtain.
+    for (const shop of ['demo-willow-fern', 'shop_a', 'shop_b', '']) {
+      expect(() => shopContext(operator, shop), shop).toThrow(AppError)
+    }
+  })
+
+  it('is not reachable from the operator area in the first place', () => {
+    /*
+     * The structural half. The read paths a future operator screen will need
+     * must not acquire a context on the way to a number — so lib/permissions
+     * is absent from the closure, and no operator module names shopContext.
+     */
+    const users = SUBJECTS.filter((file) =>
+      new RegExp(`\\b${SHOP_CONTEXT_FACTORY}\\b`).test(code(file)),
+    ).sort()
+    expect(users).toEqual([...OPERATOR_SHOP_CONTEXT_MODULES].sort())
+    expect(CLOSURE).not.toContain(join('lib', 'permissions', 'index.ts'))
+  })
+
+  it('could not build a session to pass, because the identity has no shop', () => {
+    /*
+     * Why the absence above is stable rather than a coincidence. shopContext
+     * takes a Session, which carries shopId and isDemo. getOperatorIdentity()
+     * returns neither, so an operator page cannot even construct the argument
+     * — a future screen that wanted a context would have to go and find a
+     * shop id from somewhere, which is a visible act rather than a slip.
+     */
+    const identity = code(join('lib', 'auth', 'operator-identity.ts'))
+    const shape = identity.slice(
+      identity.indexOf('export interface OperatorIdentity'),
+      identity.indexOf('}', identity.indexOf('export interface OperatorIdentity')),
+    )
+    expect(shape).toContain('userId')
+    expect(shape).toContain('email')
+    expect(shape).not.toContain('shopId')
+    expect(shape).not.toContain('isDemo')
+    // And shopContext really does require one, so the type refuses.
+    expect(code(join('lib', 'permissions', 'index.ts'))).toContain('session: Session')
+  })
+})
+
+describe('the combined rule forecloses both kinds of write', () => {
+  it('names the Etsy-side features it rules out', () => {
+    const listed = FORECLOSED_BY_DESIGN.join(' ').toLowerCase()
+    for (const foreclosed of ['sync', 'listing', 'publish', 'impersonation']) {
+      expect(listed, foreclosed).toContain(foreclosed)
+    }
+  })
+
+  it('is recorded in the same decision, not a second one', () => {
+    // Same rule, two halves. A separate record would let one be amended
+    // without the other being read.
+    const decisions = readFileSync('docs/DECISIONS.md', 'utf8')
+    const d94 = decisions.slice(decisions.indexOf('### D94'))
+    expect(d94).toContain(ETSY_WRITE_METHOD)
+    expect(d94).toContain('D50')
+    expect(decisions).not.toContain('### D95')
   })
 })
