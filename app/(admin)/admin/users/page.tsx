@@ -12,9 +12,10 @@ import { formatCalendarDate } from '@/lib/utils/format'
  * does not is worse than no control — "Sign out everywhere else" that signs
  * nothing out is worse than no button, because whoever clicks it stops looking
  * for the real answer. On an operator screen that argument is stronger again,
- * so this page contains no button, no form, no link that implies an action, and
- * no disabled control hinting at one. Promotion is the next step; when it
- * exists it will arrive as a real control, not as a greyed-out promise.
+ * so this page contains no button, no form, and no disabled control hinting at
+ * one. The two links it does carry are NAVIGATION — an account's detail screen
+ * and the role editor — and each is absent, not greyed out, for a viewer who
+ * may not follow it.
  *
  * requireAdmin() rather than a boolean from the layout: a page that trusts its
  * parent to have checked is a page whose security depends on the parent still
@@ -53,6 +54,13 @@ export default async function AdminUsersPage({
    */
   const mayChangeRoles = access.canSuperAdminOnly('roles.write')
 
+  /*
+   * Same rule for the detail link. A viewer without users.detail gets no link
+   * — not a disabled one — and the detail page 404s them if they type the URL,
+   * which is the half that holds when the markup is not the only way in.
+   */
+  const mayViewDetail = access.can('users.detail')
+
   return (
     <>
       <title>Accounts · Operations · EtsyPilot</title>
@@ -63,7 +71,8 @@ export default async function AdminUsersPage({
         <p className="max-w-prose text-small leading-relaxed text-muted-1">
           {users.length === 1 ? '1 account' : `${users.length} accounts`} · newest first ·
           read-only. Nothing on this page changes anything, and no seller data — listings, orders
-          or revenue — is read to build it.
+          or revenue — is read to build it.{' '}
+          {mayViewDetail ? 'Open an account to see one in depth.' : null}
         </p>
       </div>
 
@@ -119,7 +128,19 @@ export default async function AdminUsersPage({
             <tbody>
               {users.map((user) => (
                 <tr key={user.id} className="border-t border-line align-top">
-                  <td className="px-4 py-3 text-small text-ink-1">{user.email}</td>
+                  <td className="px-4 py-3 text-small text-ink-1">
+                    {mayViewDetail ? (
+                      <Link
+                        href={`/admin/users/${encodeURIComponent(user.id)}`}
+                        className="font-medium text-brand underline underline-offset-2"
+                      >
+                        {user.email}
+                        <span className="sr-only"> — open account detail</span>
+                      </Link>
+                    ) : (
+                      user.email
+                    )}
+                  </td>
                   <td className="px-3 py-3 text-small text-ink-2">
                     {user.name ?? (
                       <>

@@ -115,7 +115,7 @@ export default async function AdminPermissionsPage({
                   {role.replace('_', ' ').toLowerCase()}
                   {!editable ? (
                     <span className="block text-caption font-normal text-muted-1">
-                      Always all seven
+                      Always all {PERMISSIONS.length}
                     </span>
                   ) : null}
                 </th>

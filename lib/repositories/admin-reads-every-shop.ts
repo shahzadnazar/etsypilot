@@ -34,16 +34,26 @@ import 'server-only'
  *        password, never anything from SUPABASE_SERVICE_ROLE_KEY. The column
  *        lists below are explicit for that reason — `select *` would quietly
  *        start returning whatever a future migration adds.
- *     4. NO ORDER DATA, NO LISTING DATA. An operator listing accounts has no
- *        business reading a seller's revenue. Those get their own reviewed
- *        additions with their own justification, or they do not exist.
+ *     4. NO ORDER ROWS, NO LISTING DATA. Orders may be SUMMED and COUNTED;
+ *        not one order row may be selected, and no buyer-identifying column
+ *        may be named at all. A1 forbade the orders table outright, on the
+ *        grounds that an operator LISTING accounts has no business reading a
+ *        seller's revenue — and said such a read would need its own reviewed
+ *        addition with its own justification. This is that addition. The
+ *        justification is `financials.view`: "my profit looks wrong" is the
+ *        support case this product most has to be able to answer, and it
+ *        cannot be answered by someone who cannot see the figures. What the
+ *        rule keeps is the part that was actually protecting anyone — the
+ *        aggregate crosses the boundary, the purchases do not. The test in
+ *        tests/unit/admin-roles.test.ts enforces it by reading the SELECT.
  *
  * ██████████████████████████████████████████████████████████████████████████
  */
 
-import { desc, eq } from 'drizzle-orm'
+import { and, asc, count, desc, eq, gte, lte, sql } from 'drizzle-orm'
 import { getDb, schema } from '@/lib/db'
 import { resolvePlatformRole, type PlatformRole } from '@/domain/admin/roles'
+import type { AccountDetailReads, Read } from '@/domain/admin/account-detail'
 
 /** One row of the operator's account list. Nothing here is money or content. */
 export interface AdminUserRow {
@@ -140,6 +150,314 @@ export async function adminListManagers(): Promise<AdminUserRow[]> {
     shopIsDemo: row.shopIsDemo,
     signedUpAt: row.signedUpAt,
   }))
+}
+
+/* ------------------------------------------------ one account, in depth */
+
+const NOT_READ = { read: false } as const
+
+/**
+ * Everything the account detail screen can show, in one read.
+ *
+ * ── WHAT IS DELIBERATELY NOT SELECTED ─────────────────────────────────────
+ *
+ * `etsy_connections.token_ref` — rule 3 of this file. A support screen has no
+ * use for a credential, and selecting it would put one in a React payload.
+ *
+ * `orders.country_code` — and this is the one worth spelling out. It is the
+ * closest thing to buyer-identifying data in the schema, and D77 exists
+ * because a country with one order in it is a person. The seller's own
+ * analytics folds countries under five orders together BEFORE the data leaves
+ * the domain; rather than reimplement that folding for an operator screen,
+ * this reads no country at all. An operator answering "my profit looks wrong"
+ * does not need to know where the buyers were.
+ *
+ * Nothing here selects from `order_items` either: a line item is what somebody
+ * bought. The financial figures are aggregates over `orders`, which is the
+ * level the question is asked at.
+ *
+ * ── AGGREGATED IN SQL, NOT IN MEMORY ──────────────────────────────────────
+ *
+ * The order figures come back as sums and a count. That is not only faster —
+ * it means no individual order row is ever loaded into the process, so there
+ * is no array of purchases for a later change to start rendering.
+ */
+export interface AdminAccountDetail {
+  id: string
+  email: string
+  name: string | null
+  displayName: string | null
+  storedRole: string
+  resolvedRole: PlatformRole
+  onboardingState: string
+  signedUpAt: Date
+
+  shop: {
+    id: string
+    name: string
+    isDemo: boolean
+    connectionStatus: string
+    lastSyncedAt: Date | null
+    createdAt: Date
+    membershipRole: string | null
+    membershipSince: Date | null
+  } | null
+
+  /** Null when the shop has never been connected to Etsy. */
+  connection: Read<{
+    scopes: string[]
+    expiresAt: Date | null
+    revokedAt: Date | null
+  } | null>
+
+  /** Null when no subscription row exists — different from a free plan. */
+  subscription: Read<{
+    plan: string
+    status: string
+    renewsAt: Date | null
+    trialEndsAt: Date | null
+    cancelledAt: Date | null
+  } | null>
+
+  /** Empty when no usage record exists for the current period. */
+  usage: Read<{ metric: string; used: number; limit: number; periodStart: Date; periodEnd: Date }[]>
+
+  /**
+   * The most recent computed profit record, or null when none has been
+   * computed. Carries its own coverage percentage, which is what stops the
+   * screen from rendering a profit that silently excludes unconfirmed costs.
+   */
+  profit: Read<{
+    periodStart: Date
+    periodEnd: Date
+    grossRevenue: string
+    etsyFees: string
+    paymentProcessing: string
+    offsiteAds: string
+    shipping: string
+    cogs: string
+    labour: string
+    otherCosts: string
+    netProfit: string
+    coveragePercent: number
+    computedAt: Date
+  } | null>
+
+  /**
+   * Order aggregates over the profit record's period, or null when there is no
+   * period to aggregate over. Never individual orders.
+   */
+  orders: Read<{
+    count: number
+    gross: string
+    refunds: string
+    etsyFees: string
+    paymentProcessing: string
+    offsiteAds: string
+  } | null>
+}
+
+export async function adminReadAccountDetail(
+  userId: string,
+  reads: AccountDetailReads,
+): Promise<AdminAccountDetail | null> {
+  const db = getDb()
+
+  const [account] = await db
+    .select({
+      id: schema.users.id,
+      email: schema.users.email,
+      name: schema.users.name,
+      displayName: schema.users.displayName,
+      storedRole: schema.users.platformRole,
+      onboardingState: schema.users.onboardingState,
+      signedUpAt: schema.users.createdAt,
+    })
+    .from(schema.users)
+    .where(eq(schema.users.id, userId))
+    .limit(1)
+  if (!account) return null
+
+  const [shopRow] = await db
+    .select({
+      id: schema.shops.id,
+      name: schema.shops.name,
+      isDemo: schema.shops.isDemo,
+      connectionStatus: schema.shops.connectionStatus,
+      lastSyncedAt: schema.shops.lastSyncedAt,
+      createdAt: schema.shops.createdAt,
+    })
+    .from(schema.shops)
+    .where(eq(schema.shops.ownerId, userId))
+    .limit(1)
+
+  const base = {
+    id: account.id,
+    email: account.email,
+    name: account.name,
+    displayName: account.displayName,
+    storedRole: account.storedRole,
+    resolvedRole: resolvePlatformRole({ email: account.email, storedRole: account.storedRole }),
+    onboardingState: account.onboardingState,
+    signedUpAt: account.signedUpAt,
+  }
+
+  /*
+   * An account with no shop stops here. What the caller asked to read still
+   * decides the shape of the answer: a section that was not requested reports
+   * `read: false` rather than an empty one, whether or not there was anything
+   * to find.
+   */
+  const notFoundFor = <T>(want: boolean, value: T): Read<T> =>
+    want ? { read: true, value } : NOT_READ
+
+  if (!shopRow) {
+    return {
+      ...base,
+      shop: null,
+      connection: notFoundFor(reads.connection, null),
+      subscription: notFoundFor(reads.plan, null),
+      usage: notFoundFor(reads.usage, []),
+      profit: notFoundFor(reads.financials, null),
+      orders: notFoundFor(reads.financials, null),
+    }
+  }
+
+  const [membership] = await db
+    .select({ role: schema.memberships.role, createdAt: schema.memberships.createdAt })
+    .from(schema.memberships)
+    .where(and(eq(schema.memberships.userId, userId), eq(schema.memberships.shopId, shopRow.id)))
+    .limit(1)
+
+  // scopes, expiry and revocation. NEVER token_ref.
+  const [connection] = reads.connection
+    ? await db
+        .select({
+          scopes: schema.etsyConnections.scopes,
+          expiresAt: schema.etsyConnections.expiresAt,
+          revokedAt: schema.etsyConnections.revokedAt,
+        })
+        .from(schema.etsyConnections)
+        .where(eq(schema.etsyConnections.shopId, shopRow.id))
+        .limit(1)
+    : [null]
+
+  /*
+   * Read when EITHER the plan or the usage section is visible, because usage
+   * records hang off the subscription id. Only exposed when the plan section
+   * is, so a viewer holding usage.view alone still learns nothing about what
+   * the seller pays.
+   */
+  const [subscription] = reads.plan || reads.usage
+    ? await db
+        .select({
+          id: schema.subscriptions.id,
+          plan: schema.subscriptions.plan,
+          status: schema.subscriptions.status,
+          renewsAt: schema.subscriptions.renewsAt,
+          trialEndsAt: schema.subscriptions.trialEndsAt,
+          cancelledAt: schema.subscriptions.cancelledAt,
+        })
+        .from(schema.subscriptions)
+        .where(eq(schema.subscriptions.userId, userId))
+        /*
+         * A live subscription beats a cancelled one. `subscriptions` has no
+         * createdAt, and picking an arbitrary row would make the Plan section
+         * report "cancelled" for an account that has since resubscribed —
+         * a figure that is wrong in the direction that alarms.
+         */
+        .orderBy(sql`${schema.subscriptions.cancelledAt} nulls first`)
+        .limit(1)
+    : [null]
+
+  const usage =
+    reads.usage && subscription
+      ? await db
+          .select({
+            metric: schema.usageRecords.metric,
+            used: schema.usageRecords.used,
+            limit: schema.usageRecords.limit,
+            periodStart: schema.usageRecords.periodStart,
+            periodEnd: schema.usageRecords.periodEnd,
+          })
+          .from(schema.usageRecords)
+          .where(eq(schema.usageRecords.subscriptionId, subscription.id))
+          .orderBy(desc(schema.usageRecords.periodEnd), asc(schema.usageRecords.metric))
+          .limit(10)
+      : []
+
+  const [profit] = reads.financials
+    ? await db
+        .select({
+          periodStart: schema.profitRecords.periodStart,
+          periodEnd: schema.profitRecords.periodEnd,
+          grossRevenue: schema.profitRecords.grossRevenue,
+          etsyFees: schema.profitRecords.etsyFees,
+          paymentProcessing: schema.profitRecords.paymentProcessing,
+          offsiteAds: schema.profitRecords.offsiteAds,
+          shipping: schema.profitRecords.shipping,
+          cogs: schema.profitRecords.cogs,
+          labour: schema.profitRecords.labour,
+          otherCosts: schema.profitRecords.otherCosts,
+          netProfit: schema.profitRecords.netProfit,
+          coveragePercent: schema.profitRecords.coveragePercent,
+          computedAt: schema.profitRecords.computedAt,
+        })
+        .from(schema.profitRecords)
+        .where(eq(schema.profitRecords.shopId, shopRow.id))
+        .orderBy(desc(schema.profitRecords.periodEnd))
+        .limit(1)
+    : [null]
+
+  /*
+   * Aggregates only. No order row reaches this process, so there is no list of
+   * purchases for a later change to start rendering, and no country code to
+   * re-identify a buyer from.
+   */
+  const [orderTotals] = profit
+    ? await db
+        .select({
+          count: count(),
+          gross: sql<string>`coalesce(sum(${schema.orders.gross}), 0)::text`,
+          refunds: sql<string>`coalesce(sum(${schema.orders.refunds}), 0)::text`,
+          etsyFees: sql<string>`coalesce(sum(${schema.orders.etsyFees}), 0)::text`,
+          paymentProcessing: sql<string>`coalesce(sum(${schema.orders.paymentProcessing}), 0)::text`,
+          offsiteAds: sql<string>`coalesce(sum(${schema.orders.offsiteAds}), 0)::text`,
+        })
+        .from(schema.orders)
+        .where(
+          and(
+            eq(schema.orders.shopId, shopRow.id),
+            gte(schema.orders.placedAt, profit.periodStart),
+            lte(schema.orders.placedAt, profit.periodEnd),
+          ),
+        )
+    : [null]
+
+  return {
+    ...base,
+    shop: {
+      ...shopRow,
+      membershipRole: membership?.role ?? null,
+      membershipSince: membership?.createdAt ?? null,
+    },
+    connection: notFoundFor(reads.connection, connection ?? null),
+    subscription: notFoundFor(
+      reads.plan,
+      subscription
+        ? {
+            plan: subscription.plan,
+            status: subscription.status,
+            renewsAt: subscription.renewsAt,
+            trialEndsAt: subscription.trialEndsAt,
+            cancelledAt: subscription.cancelledAt,
+          }
+        : null,
+    ),
+    usage: notFoundFor(reads.usage, usage),
+    profit: notFoundFor(reads.financials, profit ?? null),
+    orders: notFoundFor(reads.financials, orderTotals ?? null),
+  }
 }
 
 /**

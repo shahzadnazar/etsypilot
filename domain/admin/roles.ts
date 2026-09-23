@@ -139,6 +139,25 @@ export const PERMISSIONS = [
   'ai.view',
   'etsy.view',
   'operations.view',
+  /*
+   * A seller's own money: revenue, profit, orders, fees.
+   *
+   * THE MOST SENSITIVE THING IN THE PRODUCT, and it is here anyway. EtsyPilot's
+   * core promise is that its numbers are trustworthy, so "my profit looks
+   * wrong" is the support case the product most has to be able to answer — and
+   * it cannot be answered by someone who cannot see the figures. A support
+   * process that resolves it by asking the seller to read numbers down the
+   * phone is worse for them, not better.
+   *
+   * Ticked by default for SUPER_ADMIN and ADMIN, UNTICKED for MANAGER. A
+   * manager is a promoted seller; seeing who exists is a different thing from
+   * seeing what everyone earns. The matrix can change that, which is the point
+   * of the matrix — this is a default, not a ceiling.
+   *
+   * An ORDINARY grantable permission, not a non-delegatable capability. Those
+   * two are about covering your tracks (D91); this is about doing the job.
+   */
+  'financials.view',
 ] as const
 export type Permission = (typeof PERMISSIONS)[number]
 

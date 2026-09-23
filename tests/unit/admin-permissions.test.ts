@@ -43,49 +43,154 @@ function code(file: string): string {
 
 /* ─────────────────── the seeded defaults match A1 exactly ────────────────── */
 
-describe('the seeded defaults are A1 unchanged', () => {
-  const migration = readFileSync('db/migrations/0005_low_captain_universe.sql', 'utf8')
+/**
+ * Every permission key each migration grants to each role.
+ *
+ * A6 turned this from "read 0005" into "read them all", because a permission
+ * added later is granted by a LATER migration and a guard pinned to the first
+ * one would report the new key as ungranted. Reading every migration is also
+ * the stricter question: it catches a later file quietly granting MANAGER
+ * something, which pinning to 0005 never could.
+ *
+ * SPLIT BY STATEMENT, THEN BY ROLE, because 0005 grants ADMIN and MANAGER in
+ * ONE insert — a statement-level split alone would credit ADMIN with MANAGER's
+ * row and the MANAGER guard would stop meaning anything. Within a statement,
+ * each role literal owns the text up to the next one; a statement naming a
+ * single role owns all of it, which is how 0006's UPDATE is read.
+ */
+function grantsByRole(sql: string): Map<string, Set<string>> {
+  const grants = new Map<string, Set<string>>()
+  const statements = sql.replace(/--.*$/gm, '').split(';')
 
-  it('seeds ADMIN with all seven, in the order PERMISSIONS declares', () => {
+  for (const statement of statements) {
+    const marks = [...statement.matchAll(/'(SUPER_ADMIN|ADMIN|MANAGER|USER)'/g)]
+    marks.forEach((mark, index) => {
+      const from = index === 0 ? 0 : (mark.index ?? 0)
+      const to = marks[index + 1]?.index ?? statement.length
+      const role = mark[1] as string
+      const keys = statement.slice(from, to).match(/'[a-z]+(?:\.[a-z]+)+'/g) ?? []
+      const set = grants.get(role) ?? new Set<string>()
+      for (const key of keys) set.add(key.replaceAll("'", ''))
+      grants.set(role, set)
+    })
+  }
+  return grants
+}
+
+describe('the seeded matrix grants exactly what the code knows about', () => {
+  const files = readdirSync('db/migrations')
+    .filter((name) => name.endsWith('.sql'))
+    .sort()
+
+  const touching = files
+    .map((name) => ({ name, sql: readFileSync(join('db/migrations', name), 'utf8') }))
+    .filter((file) => file.sql.includes('admin_role_permissions'))
+
+  /** The union across every migration, which is what a fresh database ends at. */
+  const granted = new Map<string, Set<string>>()
+  for (const file of touching) {
+    for (const [role, keys] of grantsByRole(file.sql)) {
+      const set = granted.get(role) ?? new Set<string>()
+      for (const key of keys) set.add(key)
+      granted.set(role, set)
+    }
+  }
+
+  it('finds the migrations it is meant to be reading', () => {
+    // A sweep over an empty file list passes perfectly.
+    expect(touching.map((file) => file.name).length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('GRANTS ADMIN EVERY KEY THE CODE KNOWS ABOUT', () => {
+    /*
+     * The check that catches a permission added to PERMISSIONS later with no
+     * matching migration. Without it the new key would silently be absent from
+     * ADMIN's row — a permission that exists in the type system and is granted
+     * to nobody, which looks exactly like a deliberate revocation.
+     *
+     * Equality, not containment, so it also catches the other direction: a
+     * migration granting a key the code has since removed leaves a row the
+     * parser will reject in full (resolvePermissions filters through
+     * PERMISSIONS), and the operator would see permissions vanish with nothing
+     * to read that explained it.
+     */
+    expect(granted.get('ADMIN')).toEqual(new Set(PERMISSIONS))
     expect(DEFAULT_ROLE_PERMISSIONS.ADMIN).toEqual([...PERMISSIONS])
-    for (const permission of PERMISSIONS) {
-      expect(migration, permission).toContain(`'${permission}'`)
+  })
+
+  it('GRANTS MANAGER users.view and nothing else, in any migration', () => {
+    /*
+     * Across every file, not just 0005. financials.view is the reason this is
+     * worth its own assertion: a manager is a promoted seller, and the
+     * migration that granted the key to ADMIN is exactly where it would have
+     * been easiest to add MANAGER too.
+     */
+    expect(granted.get('MANAGER')).toEqual(new Set(['users.view']))
+    expect(DEFAULT_ROLE_PERMISSIONS.MANAGER).toEqual(['users.view'])
+  })
+
+  it('seeds NO row for SUPER_ADMIN, in any migration', () => {
+    // Its set is never read from the store. A row would invite editing one.
+    expect(granted.has('SUPER_ADMIN')).toBe(false)
+    for (const file of touching) {
+      expect(file.sql, file.name).not.toContain("('SUPER_ADMIN'")
     }
   })
 
-  it('seeds MANAGER with users.view and nothing else', () => {
-    expect(DEFAULT_ROLE_PERMISSIONS.MANAGER).toEqual(['users.view'])
-    expect(migration).toContain("('MANAGER', ARRAY['users.view'])")
-  })
-
-  it('SEEDS EVERY KEY THE CODE KNOWS ABOUT', () => {
+  it('0005 still seeds the seven it shipped with, in declaration order', () => {
     /*
-     * The check that catches a permission added to PERMISSIONS later with no
-     * matching seed. Without it, the new key would silently be absent from
-     * ADMIN's row — a permission that exists in the type system and is granted
-     * to nobody, which looks exactly like a deliberate revocation.
+     * Pinned to the literal rather than to PERMISSIONS, which is the point: a
+     * migration is a record of what a deployed database was told, and it does
+     * not change when the code does. If this ever goes red, an existing
+     * migration has been edited — which is the thing "additive only" forbids.
      */
-    const seeded = migration
-      .slice(migration.indexOf("('ADMIN'"), migration.indexOf("('MANAGER'"))
-      .match(/'[a-z.]+\.[a-z]+'/g)
-    expect(seeded).not.toBeNull()
-    expect(new Set(seeded?.map((entry) => entry.replaceAll("'", '')))).toEqual(new Set(PERMISSIONS))
-  })
-
-  it('seeds NO row for SUPER_ADMIN', () => {
-    // Its set is never read from the store. A row would invite editing one.
-    expect(migration).not.toContain("('SUPER_ADMIN'")
+    const a1 = [
+      'users.view',
+      'users.detail',
+      'subscriptions.view',
+      'usage.view',
+      'ai.view',
+      'etsy.view',
+      'operations.view',
+    ]
+    const sql = readFileSync('db/migrations/0005_low_captain_universe.sql', 'utf8')
+    expect(sql).toContain(`('ADMIN', ARRAY[${a1.map((key) => `'${key}'`).join(',')}])`)
+    expect(sql).toContain("('MANAGER', ARRAY['users.view'])")
+    // And they are still the first seven of PERMISSIONS, in the same order.
+    expect([...PERMISSIONS].slice(0, a1.length)).toEqual(a1)
   })
 
   it('cannot overwrite a matrix an operator has since edited', () => {
-    // A migration that reset permissions on every deploy would be a permission
-    // screen that changes nothing, slowly.
-    expect(migration).toContain('ON CONFLICT ("role") DO NOTHING')
+    /*
+     * A migration that reset permissions on every deploy would be a permission
+     * screen that changes nothing, slowly. Every file that touches the table
+     * has to say how it avoids that: the seed by ON CONFLICT DO NOTHING, a
+     * later grant by refusing to append a key the row already holds.
+     */
+    for (const file of touching) {
+      const guarded =
+        file.sql.includes('ON CONFLICT ("role") DO NOTHING') ||
+        /NOT \('[a-z.]+' = ANY\("permissions"\)\)/.test(file.sql)
+      expect(guarded, file.name).toBe(true)
+    }
   })
 
   it('adds only new tables, changing no existing column', () => {
-    expect(migration).not.toContain('ALTER TABLE')
-    expect(migration).not.toContain('DROP')
+    for (const file of touching) {
+      expect(file.sql, file.name).not.toContain('ALTER TABLE')
+      expect(file.sql, file.name).not.toContain('DROP')
+    }
+  })
+
+  it('is listed in the drizzle journal, so it actually runs', () => {
+    /*
+     * A migration file that no journal entry names is a file that never
+     * executes — a permission granted in a diff and in nobody's database.
+     */
+    const journal = readFileSync('db/migrations/meta/_journal.json', 'utf8')
+    for (const file of touching) {
+      expect(journal, file.name).toContain(`"${file.name.replace(/\.sql$/, '')}"`)
+    }
   })
 })
 
@@ -192,7 +297,7 @@ describe('SUPER_ADMIN cannot be edited, and cannot lock itself out', () => {
     expect(isEditableRole('MANAGER')).toBe(true)
   })
 
-  it('gives SUPER_ADMIN all seven whatever the store says', () => {
+  it('gives SUPER_ADMIN every permission whatever the store says', () => {
     /*
      * The lock-out guard. If a stored empty set could apply to SUPER_ADMIN,
      * one save would remove the only account able to undo it — and the way
@@ -254,7 +359,7 @@ describe('no row and an empty set are different answers', () => {
 /* ────────────────────────────── parsing the form ─────────────────────────── */
 
 describe('the single door from a form to a permission set', () => {
-  it('accepts the seven, in canonical order whatever order they arrive in', () => {
+  it('accepts every known key, in canonical order whatever order they arrive in', () => {
     const scrambled = ['operations.view', 'users.view', 'ai.view']
     expect(parsePermissionKeys(scrambled)).toEqual(['users.view', 'ai.view', 'operations.view'])
   })

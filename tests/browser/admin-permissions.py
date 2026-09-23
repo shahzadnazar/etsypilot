@@ -140,9 +140,19 @@ def main():
         # ---- the seed is what A1 had ----------------------------------------
         seeded_admin = sql("select permissions from admin_role_permissions where role='ADMIN'")
         seeded_manager = sql("select permissions from admin_role_permissions where role='MANAGER'")
+        # Derived from the code, not a literal. A6 added an eighth permission
+        # and this assertion — which counted commas — went red on the migration
+        # that granted it, reporting a correct seed as a failure. The unit
+        # suite pins the number in one place; this one asks whether Postgres
+        # ended up with what domain/admin/roles.ts declares.
+        declared = [
+            line.split("'")[1]
+            for line in open("domain/admin/roles.ts").read().splitlines()
+            if line.strip().startswith("'") and ".view" in line
+        ]
         check(
-            seeded_admin.count(",") == 6 and "users.view" in seeded_admin,
-            f"ADMIN is seeded with all seven ({seeded_admin})",
+            all(f"{key}" in seeded_admin for key in declared) and len(declared) >= 7,
+            f"ADMIN is seeded with every declared permission, {len(declared)} of them ({seeded_admin})",
         )
         check(seeded_manager == "{users.view}", f"MANAGER is seeded with users.view only ({seeded_manager})")
 

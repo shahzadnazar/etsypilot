@@ -162,9 +162,22 @@ describe('a SHOP role grants no PLATFORM access', () => {
 })
 
 describe('permissions', () => {
-  it('gives SUPER_ADMIN and ADMIN all seven', () => {
-    expect(DEFAULT_ROLE_PERMISSIONS.SUPER_ADMIN).toHaveLength(7)
-    expect(DEFAULT_ROLE_PERMISSIONS.ADMIN).toHaveLength(7)
+  it('COUNTS EIGHT PERMISSIONS, and adding a ninth is a decision', () => {
+    /*
+     * The one place the number is written down. Every other test derives from
+     * PERMISSIONS.length, so adding a key goes red HERE — in the test whose
+     * whole subject is how many there are — rather than in four unrelated
+     * tests that happened to mention a literal. A6 added the eighth,
+     * `financials.view`, and the four it went red in are the reason this
+     * test exists.
+     */
+    expect(PERMISSIONS).toHaveLength(8)
+    expect(PERMISSIONS).toContain('financials.view')
+  })
+
+  it('gives SUPER_ADMIN and ADMIN every permission there is', () => {
+    expect(DEFAULT_ROLE_PERMISSIONS.SUPER_ADMIN).toHaveLength(PERMISSIONS.length)
+    expect(DEFAULT_ROLE_PERMISSIONS.ADMIN).toHaveLength(PERMISSIONS.length)
     for (const permission of PERMISSIONS) {
       expect(can('SUPER_ADMIN', permission), permission).toBe(true)
       expect(can('ADMIN', permission), permission).toBe(true)
@@ -176,6 +189,13 @@ describe('permissions', () => {
     expect(can('MANAGER', 'users.view')).toBe(true)
     expect(can('MANAGER', 'subscriptions.view')).toBe(false)
     expect(can('MANAGER', 'users.detail')).toBe(false)
+    /*
+     * A manager is a promoted seller. Seeing WHO exists is a different thing
+     * from seeing what everyone earns, so the most sensitive permission in the
+     * product is not one they get by being promoted. A super admin can tick it
+     * from the matrix — that is the matrix's purpose — but it takes a person.
+     */
+    expect(can('MANAGER', 'financials.view')).toBe(false)
   })
 
   it('gives USER none, and no admin access at all', () => {
@@ -266,17 +286,65 @@ describe('only admin code may read across shops', () => {
     }
   })
 
-  it('selects no secret and no seller money', () => {
+  it('selects no secret, no listing and no buyer', () => {
     /*
      * Comments stripped, and the reason is not cosmetic: the banner at the top
      * of that file NAMES these things in order to forbid them. Matching the
      * prose would mean the rule could only be obeyed by deleting the rule.
+     *
+     * `schema.orders` LEFT THIS LIST IN A6 and the replacement is the test
+     * below, which is stricter about the thing that was actually at stake.
+     * A1 banned the table outright because the account LIST had no business
+     * reading revenue; the detail screen's financials.view section does, and
+     * banning the table would have been protecting the wrong noun. What stays
+     * banned is every way an individual purchase or buyer could arrive:
+     * `order_items` is what somebody bought, `country_code` is where they
+     * were, and D77 exists because a country with one order in it is a person.
      */
-    const source = readFileSync(`lib/repositories/${MODULE}.ts`, 'utf8')
-      .replace(/\/\*[\s\S]*?\*\//g, '')
-      .replace(/^\s*\/\/.*$/gm, '')
-    for (const forbidden of ['tokenRef', 'SERVICE_ROLE', 'schema.orders', 'schema.listings']) {
-      expect(source, forbidden).not.toContain(forbidden)
+    const source = code(`lib/repositories/${MODULE}.ts`)
+    const forbidden = [
+      'tokenRef',
+      'SERVICE_ROLE',
+      'schema.listings',
+      'schema.listingVariations',
+      'schema.orderItems',
+      'countryCode',
+      'etsyReceiptId',
+    ]
+    for (const name of forbidden) {
+      expect(source, name).not.toContain(name)
+    }
+  })
+
+  it('READS ORDERS ONLY AS AGGREGATES, never as rows', () => {
+    /*
+     * What replaced the blanket ban, and the reason it is stronger: deleting
+     * `schema.orders` from a forbidden-strings list would have left NOTHING
+     * checking how the table is read. This reads the SELECT itself.
+     *
+     * Every query that reaches the orders table must name its columns only
+     * inside count() or sum(). A single bare column — `gross:
+     * schema.orders.gross` — turns the query from a total into a list of
+     * purchases, and this goes red on it. The aggregate crosses the shop
+     * isolation boundary; the individual orders never enter the process, so
+     * there is no array of somebody's shopping for a later change to render.
+     */
+    const source = code(`lib/repositories/${MODULE}.ts`)
+    const queries = source.split('.from(schema.orders)').slice(0, -1)
+
+    // A sweep that matches nothing passes perfectly. This one must find the
+    // financials query, or it is asserting about an empty set.
+    expect(queries.length).toBeGreaterThan(0)
+
+    for (const before of queries) {
+      const select = before.slice(before.lastIndexOf('.select({'))
+      const fields = select.match(/^\s*\w+:\s*.*$/gm) ?? []
+      expect(fields.length, select).toBeGreaterThan(0)
+      for (const field of fields) {
+        expect(field.trim(), field.trim()).toMatch(
+          /^\w+:\s*(count\(\)|sql<[^>]*>`[^`]*\bsum\()/,
+        )
+      }
     }
   })
 })

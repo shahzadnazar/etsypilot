@@ -3,6 +3,9 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
+import { PERMISSION_LABELS } from '@/domain/admin/permissions'
+import { PERMISSIONS } from '@/domain/admin/roles'
+import { FORECLOSED_BY_DESIGN, OPERATOR_WRITABLE } from '@/domain/admin/operator-writes'
 import { getConnectionState } from '@/domain/connect/service'
 import { ETSY_SCOPES } from '@/domain/connect/types'
 import { getSession } from '@/lib/auth'
@@ -22,6 +25,25 @@ export const metadata: Metadata = { title: 'Data permissions' }
  * Whether a scope is granted is read from the SHOP, not written down here. The
  * connect screen, this page and the OAuth request all read ETSY_SCOPES, so
  * three surfaces cannot describe different permissions.
+ *
+ * ── AND WHAT OUR OWN STAFF CAN SEE ────────────────────────────────────────
+ *
+ * A6 added the second half, on the same principle as the first. A page that
+ * tells a seller what Etsy granted us, and says nothing about who at EtsyPilot
+ * can look at the result, is answering the easier question.
+ *
+ * D59a: the privacy page READS the adapters, it does not describe them. Every
+ * line of the staff card below is computed from the same constants the
+ * operator panel is built out of — PERMISSIONS and PERMISSION_LABELS for what
+ * staff can see, OPERATOR_WRITABLE for the complete list of what they can
+ * change, FORECLOSED_BY_DESIGN for what is refused by construction. So this
+ * page cannot promise a limit the code has since dropped: adding an operator
+ * permission adds a line here, and adding a writable table adds a line here
+ * too, in the same commit, whether or not anyone remembered this file.
+ *
+ * An authored paragraph would be the same defect as a coverage figure that is
+ * stated rather than computed (D34) — true on the day it was written, and
+ * unowned afterwards.
  */
 export default async function DataPermissionsPage() {
   const session = await getSession()
@@ -106,6 +128,83 @@ export default async function DataPermissionsPage() {
           )
         })}
       </div>
+
+      <Card className="mt-4 flex flex-col gap-3 p-[18px]">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-section text-ink-1">What EtsyPilot staff can see</h2>
+          <p className="max-w-prose text-small leading-relaxed text-ink-2">
+            Support and operations staff can read your account to answer questions about it. This
+            list is generated from the permissions that actually exist in the product, so it
+            cannot fall out of date with them.
+          </p>
+        </div>
+
+        <ul className="flex flex-col gap-1.5">
+          {/*
+            * Keyed by the LABEL, not the permission key, and that is not a
+            * style preference. React serialises a `key` into the RSC flight
+            * payload — measured against a real server, `key={permission}` put
+            * `["$","li","financials.view",…]` in the seller's browser. The
+            * internal identifiers are not secrets, but a page that exists to
+            * tell a seller plainly what staff can see should not also ship
+            * them the permission table's field names.
+            */}
+          {PERMISSIONS.map((permission) => (
+            <li
+              key={PERMISSION_LABELS[permission].title}
+              className="max-w-prose text-small leading-relaxed text-ink-2"
+            >
+              <strong className="font-semibold text-ink-1">
+                {PERMISSION_LABELS[permission].title}
+              </strong>{' '}
+              — {PERMISSION_LABELS[permission].detail}
+            </li>
+          ))}
+        </ul>
+
+        <p className="max-w-prose text-caption leading-relaxed text-muted-1">
+          Not every member of staff holds all of these. They are granted individually, a change to
+          anyone&rsquo;s permissions is recorded, and nobody can grant themselves more.
+        </p>
+
+        <div className="flex flex-col gap-1 border-t border-line pt-3">
+          <h3 className="text-label text-muted-1">And what they can change</h3>
+          <p className="max-w-prose text-small leading-relaxed text-ink-2">
+            {OPERATOR_WRITABLE.length === 1
+              ? 'One thing'
+              : `${OPERATOR_WRITABLE.length} things`}
+            , none of them yours:
+          </p>
+          <ul className="mt-1 flex flex-col gap-1">
+            {OPERATOR_WRITABLE.map((writable) => (
+              <li key={writable.table} className="max-w-prose text-caption leading-relaxed text-muted-1">
+                <strong className="font-semibold text-ink-2">{writable.label}</strong> —{' '}
+                {writable.why}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-1 max-w-prose text-caption leading-relaxed text-muted-1">
+            Everything else is read-only from the staff side, and that is enforced by a test that
+            reads the code rather than by a rule anyone has to remember. These are refused by
+            construction, for every member of staff including the most senior:
+          </p>
+          <ul className="mt-1.5 flex flex-wrap gap-1.5">
+            {FORECLOSED_BY_DESIGN.map((item) => (
+              <li
+                key={item}
+                className="rounded-[6px] border border-line bg-canvas-soft px-2 py-0.5 text-caption text-muted-1"
+              >
+                {item}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 max-w-prose text-caption leading-relaxed text-muted-1">
+            Nobody at EtsyPilot can sign in as you, publish to your Etsy shop, or edit your
+            listings, orders or costs. If you ask us to fix something in your shop, we will tell
+            you how to do it — we cannot do it for you, and that is deliberate.
+          </p>
+        </div>
+      </Card>
 
       <Card className="mt-4 flex flex-col gap-2 p-[18px]">
         <h2 className="text-label text-muted-1">How access works</h2>

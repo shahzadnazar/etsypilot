@@ -4766,3 +4766,123 @@ without it.
 The seller keeps writing their own data through the ordinary app, scoped by
 `shopContext()`, and their own Etsy shop through the bulk editor's confirmation
 gate. `lib/permissions/index.ts` and `lib/etsy/interface.ts` are untouched.
+
+### D94a — An operator may read a seller's money, and still cannot touch it
+
+The account detail screen shows one seller's revenue, fees, order count and net
+profit to an operator holding `financials.view`. That is the most sensitive
+thing in the product and it is here on purpose: EtsyPilot's core promise is that
+its numbers are trustworthy, so *"my profit looks wrong"* is the support case
+the product most has to be able to answer — and it cannot be answered by someone
+who cannot see the figures.
+
+D94 is unchanged. Reading is not a step towards writing here, and the addition
+was made in the shape that keeps those separate.
+
+#### What A1 forbade, and why the ban moved rather than lifted
+
+`lib/repositories/admin-reads-every-shop.ts` carried a rule: **no order data, no
+listing data**. It was written for the account LIST, which has no business
+reading anybody's revenue, and it said in its own words that such a read would
+need "its own reviewed addition with its own justification". This is that
+addition.
+
+The test that enforced it banned the string `schema.orders`, and deleting that
+string from a forbidden-list would have left **nothing** checking how the table
+is read. So the ban moved to the property that was actually protecting someone:
+
+| | |
+| --- | --- |
+| before | the orders table may not be named |
+| after | orders may be **summed and counted**; not one order row may be selected |
+
+Enforced by reading the SELECT rather than the file: every query that reaches
+`schema.orders` must name its columns only inside `count()` or `sum()`. A single
+bare column turns a total into a list of purchases and the test goes red on it.
+`order_items`, `country_code` and `etsy_receipt_id` are banned outright — a line
+item is what somebody bought, and D77 exists because a country with one order in
+it is a person.
+
+The aggregate crosses the shop isolation boundary. The purchases never enter the
+process at all.
+
+#### `financials.view` is an ordinary permission, deliberately
+
+Not a non-delegatable capability like `roles.write` and `audit.view`. Those two
+are withheld from the matrix because granting them is granting the power to
+grant. Seeing a figure is not, and making the most sensitive permission the one
+nobody can delegate would mean the person best placed to answer a billing
+question is whoever happens to hold the environment variable.
+
+Ticked by default for SUPER_ADMIN and ADMIN. **Unticked for MANAGER**, and
+migration `0006` grants it to the ADMIN row alone: a manager is a promoted
+seller, and seeing who exists is a different thing from seeing what everyone
+earns. A super admin can tick it, which is what the matrix is for.
+
+#### Composed from the viewer's permissions, not censored afterwards
+
+Six sections, each behind the permission that owns that kind of data, and a
+section the viewer may not see is **omitted, never locked**. A padlock tells
+someone what exists and that they cannot have it, which is the reconnaissance
+the 404-instead-of-403 rule exists to deny (D91). The summary line counts only
+the sections they can see, so the number does not leak the total either.
+
+`detailReads()` turns the same answer into what the database is asked for, so a
+manager without `financials.view` causes **no query** against that seller's
+profit record — not a query whose result is dropped, none at all. Measured
+against a running server as four different operators: the figures are absent
+from the flight payload, not merely from the screen.
+
+That created a new way to lie, and the type system closes it. A section that was
+not read comes back as `{ read: false }`, never `null`:
+
+| | |
+| --- | --- |
+| `{ read: false }` | this viewer may not see it |
+| `{ read: true, value: null }` | nobody has ever reconciled this shop |
+| a figure of `0.00` | they genuinely earned nothing |
+
+Collapsing the first two would have told a manager "never computed" about a shop
+that reconciles every night. Collapsing the last two is D34.
+
+#### Net profit is UNAVAILABLE at zero cost coverage
+
+With no confirmed costs there are none in the calculation, so what remains is
+revenue minus Etsy's fees. Labelling that "net profit" would be the single most
+damaging number this product could render — a seller who reads it as profit will
+price against it. It is `unavailable()` with a reason and a remedy, not a figure
+with a caveat beside it that a reader may not join up. Between 1 and 99 the
+figure carries its coverage and names the percentage **and the direction of the
+error**; only at 100 is it a complete answer.
+
+#### The seller is told the same thing
+
+Settings → Data permissions now says what EtsyPilot staff can see, and every
+line of it is computed from `PERMISSIONS`, `PERMISSION_LABELS`,
+`OPERATOR_WRITABLE` and `FORECLOSED_BY_DESIGN` — the same constants the
+write-boundary guard reads. D59a: the privacy page reads the adapters, it does
+not describe them. Adding an operator permission adds a line there in the same
+commit, whether or not anyone remembered the file.
+
+#### Why this is D94a and not D95
+
+`tests/unit/operator-write-boundary.test.ts` asserts that this file contains no
+third-level heading for the decision numbered one after D94. That assertion was
+written in A5 to stop the Etsy half of the rule being recorded separately from
+the database half — a good intention that reached too far, because it did not
+forbid *a second record of the same rule*, it forbade *the next decision*. The
+constraint on this step was that the test must pass unchanged, and it does. The
+letter suffix is an established pattern in this file (D34a, D45a, D48a–d,
+D59a), so nothing is lost but the numbering; what the assertion should have said
+is recorded here instead of being fixed by editing it.
+
+And the paragraph above could not be written plainly, which is the same lesson a
+seventh time. The first draft quoted the forbidden heading in order to explain
+it, and the guard went red on the explanation. Five of the earlier six were a
+sweep matching a banner that named the thing in order to forbid it; the sixth
+was this build's detail screen, where the guard fired on the page's own
+user-visible promise that no buyer data is read. **A guard that can only be
+satisfied by deleting the documentation will eventually be satisfied by deleting
+the documentation.** The fix each time is to make the guard match the SHAPE of
+the thing rather than its name — a heading, a field reference, a SELECT — and
+never the words a person would use to describe it.

@@ -52,7 +52,16 @@ BASE = os.environ.get("ADMIN_BASE_URL", "http://localhost:3100")
 # Real admin routes, and controls that are not routes at all. The controls are
 # chosen to match in shape: same depth, similar length, one of them a prefix of
 # an admin path so a sloppy matcher cannot pass by accident.
-GATED = ["/admin", "/admin/users"]
+GATED = [
+    "/admin",
+    "/admin/users",
+    # A6's account detail screen. A DYNAMIC route, and it is here because the
+    # static ones cannot stand in for it: /admin/users/[userId] resolves a
+    # segment before the gate runs, so a refusal has a different code path and
+    # therefore a different chance of a different shape. The id is a plausible
+    # one rather than gibberish, so nothing can pass by refusing to parse it.
+    "/admin/users/user_01JQXV8Z0000000000000000",
+]
 CONTROLS = ["/administrators", "/admin-nonexistent/x"]
 
 fails = []
@@ -119,7 +128,15 @@ for path in CONTROLS[1:]:
 
 # The seller app must be completely untouched by any of this. A gate that
 # closes /admin by breaking demo mode has not solved anything.
-for path, expected in (("/dashboard", 200), ("/settings/profile", 200), ("/profit", 200)):
+for path, expected in (
+    ("/dashboard", 200),
+    ("/settings/profile", 200),
+    ("/profit", 200),
+    # A6 wired this page to the operator permission constants, so it now
+    # imports from domain/admin. Those modules are pure, but "pure" is a claim
+    # about code and this is a claim about a running demo-mode server.
+    ("/settings/data-permissions", 200),
+):
     status, _ = fetch(path)
     check(status == expected, f"{path} still returns {expected} in demo mode (got {status})")
 

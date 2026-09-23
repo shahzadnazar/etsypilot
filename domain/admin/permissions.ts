@@ -6,7 +6,7 @@
  *
  * ── WHAT IS EDITABLE, AND WHAT IS NOT ─────────────────────────────────────
  *
- *   SUPER_ADMIN   never. Always all seven, never read from the store.
+ *   SUPER_ADMIN   never. Always every permission, never read from the store.
  *   ADMIN         editable.
  *   MANAGER       editable.
  *   USER          not in the matrix at all; it is the absence of a role.
@@ -145,6 +145,11 @@ export const PERMISSION_LABELS: Record<Permission, { title: string; detail: stri
   'operations.view': {
     title: 'Operations',
     detail: 'See queues, jobs and the platform’s own health.',
+  },
+  'financials.view': {
+    title: 'Financials',
+    detail:
+      'See a seller’s revenue, profit, order count and fees. The most sensitive figures in the product — and read-only, like everything else here.',
   },
 }
 

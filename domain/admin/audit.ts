@@ -68,7 +68,7 @@ export const REFUSAL_REASONS = [
   'NOT_RECORDED',
   /** The submitted role is not one whose permissions may be edited. */
   'ROLE_NOT_EDITABLE',
-  /** A submitted permission key was not one of the seven. */
+  /** A submitted permission key was not one the code knows about. */
   'INVALID_PERMISSION',
 ] as const
 export type RefusalReason = (typeof REFUSAL_REASONS)[number]

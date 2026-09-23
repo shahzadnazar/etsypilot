@@ -182,7 +182,7 @@ export const getAdminAccess = cache(async function getAdminAccess(): Promise<Adm
    * and there is no second path to keep in step.
    *
    * SUPER_ADMIN never reaches the store: resolvePermissions() returns all
-   * seven for it without a query. That is what makes the matrix safe to edit —
+   * every permission for it without a query. That is what makes the matrix safe to edit —
    * whatever an operator does to the ADMIN and MANAGER rows, the person who
    * can fix it still has the screen that fixes it.
    */

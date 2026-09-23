@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { checkAdminRoute } from '@/lib/security/admin-route'
+import { PERMISSIONS } from '@/domain/admin/roles'
 
 /*
  * THE GATE, as opposed to the role model.
@@ -343,7 +344,7 @@ describe('the stored set decides, not DEFAULT_ROLE_PERMISSIONS', () => {
   it('REVOKES from an ADMIN who holds it by default', async () => {
     /*
      * The direction that proves the store is read rather than merged with the
-     * defaults. ADMIN's default is all seven; the stored set says one.
+     * defaults. ADMIN's default is every permission; the stored set says one.
      */
     db.storedPermissions = ['users.view']
     session.current = { userId: 'a1', email: 'ops@etsypilot.app' }
@@ -351,7 +352,7 @@ describe('the stored set decides, not DEFAULT_ROLE_PERMISSIONS', () => {
     const access = await getAdminAccess()
     expect(access?.role).toBe('ADMIN')
     expect(access?.can('users.view')).toBe(true)
-    for (const permission of ['users.detail', 'subscriptions.view', 'usage.view', 'ai.view', 'etsy.view', 'operations.view'] as const) {
+    for (const permission of PERMISSIONS.filter((key) => key !== 'users.view')) {
       expect(access?.can(permission), permission).toBe(false)
     }
     expect(access?.permissions).toEqual(['users.view'])
@@ -377,7 +378,7 @@ describe('the stored set decides, not DEFAULT_ROLE_PERMISSIONS', () => {
     expect((await getAdminAccess())?.permissions).toEqual(['users.view'])
 
     session.current = { userId: 'a1', email: 'ops@etsypilot.app' }
-    expect((await getAdminAccess())?.permissions).toHaveLength(7)
+    expect((await getAdminAccess())?.permissions).toHaveLength(PERMISSIONS.length)
   })
 
   it('never lets the store touch SUPER_ADMIN', async () => {
@@ -392,7 +393,7 @@ describe('the stored set decides, not DEFAULT_ROLE_PERMISSIONS', () => {
 
     const access = await getAdminAccess()
     expect(access?.role).toBe('SUPER_ADMIN')
-    expect(access?.permissions).toHaveLength(7)
+    expect(access?.permissions).toHaveLength(PERMISSIONS.length)
     expect(access?.can('users.view')).toBe(true)
     expect(access?.canSuperAdminOnly('roles.write')).toBe(true)
   })
@@ -427,6 +428,6 @@ describe('the stored set decides, not DEFAULT_ROLE_PERMISSIONS', () => {
     process.env.SUPER_ADMIN_EMAILS = 'boss@etsypilot.app'
     db.permissionsThrow = true
     session.current = { userId: 's1', email: 'boss@etsypilot.app' }
-    expect((await getAdminAccess())?.permissions).toHaveLength(7)
+    expect((await getAdminAccess())?.permissions).toHaveLength(PERMISSIONS.length)
   })
 })
