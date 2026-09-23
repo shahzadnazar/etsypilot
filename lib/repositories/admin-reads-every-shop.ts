@@ -796,6 +796,109 @@ export async function adminCountGenerations(
   return { tallies, shops }
 }
 
+/* ------------------------------------------------- bulk operations, all shops */
+
+/**
+ * Bulk operations and the items that failed under them.
+ *
+ * ── THE ONE SCREEN THAT READS ROWS, AND STILL READS NO CONTENT ────────────
+ *
+ * Per-item rows are what make partial success expressible, so this is the one
+ * operator read that is deliberately not an aggregate: "which forty listings
+ * failed, and why" is the question a support conversation actually asks.
+ *
+ * `before_value` and `after_value` are still never selected. They hold the
+ * listing content the job was changing — the old title and the new one — and
+ * an operator diagnosing a failure needs the REASON, not the copy. The error
+ * string, the status and the attempt count are the whole of what is read.
+ *
+ * The items query is narrowed to FAILED items only, on operations that are
+ * themselves in a failure state. An unfiltered read of this table would be a
+ * change history of every bulk edit ever made.
+ *
+ * `bulk_operations.config` is not selected either: it holds the find-and-
+ * replace strings and the price rules a seller typed, which is their content
+ * by another route. `fields` IS selected — it is the list of field NAMES the
+ * job touches, price or tags, never their values.
+ */
+export interface AdminOperationRow {
+  id: string
+  shopId: string
+  /* Null when the operation outlives its shop row. Rendered as such, never
+     as a blank — an orphaned job is a finding, not an empty cell. */
+  shopName: string | null
+  ownerEmail: string | null
+  state: string
+  fields: string[]
+  listingCount: number
+  createdAt: Date
+  completedAt: Date | null
+}
+
+export interface AdminOperationItemRow {
+  operationId: string
+  listingId: string
+  status: string
+  error: string | null
+  attempts: number
+}
+
+export async function adminListOperations(options: { limit?: number } = {}): Promise<{
+  operations: AdminOperationRow[]
+  failedItems: AdminOperationItemRow[]
+}> {
+  const db = getDb()
+  const limit = Math.min(Math.max(options.limit ?? 200, 1), 500)
+
+  const operations = await db
+    .select({
+      id: schema.bulkOperations.id,
+      shopId: schema.bulkOperations.shopId,
+      shopName: schema.shops.name,
+      ownerEmail: schema.users.email,
+      state: schema.bulkOperations.state,
+      fields: schema.bulkOperations.fields,
+      listingCount: schema.bulkOperations.listingCount,
+      createdAt: schema.bulkOperations.createdAt,
+      completedAt: schema.bulkOperations.completedAt,
+    })
+    .from(schema.bulkOperations)
+    .leftJoin(schema.shops, eq(schema.shops.id, schema.bulkOperations.shopId))
+    .leftJoin(schema.users, eq(schema.users.id, schema.shops.ownerId))
+    .orderBy(desc(schema.bulkOperations.createdAt))
+    .limit(limit)
+
+  const failing = operations
+    .filter((operation) => ['FAILED', 'PARTIAL_SUCCESS'].includes(operation.state))
+    .map((operation) => operation.id)
+
+  /*
+   * No failing operations means no items query at all, rather than a query
+   * with an empty IN list — which some drivers turn into `in ()` and others
+   * into a full scan of the largest child table in the schema.
+   */
+  const failedItems = failing.length
+    ? await db
+        .select({
+          operationId: schema.bulkOperationItems.operationId,
+          listingId: schema.bulkOperationItems.listingId,
+          status: schema.bulkOperationItems.status,
+          error: schema.bulkOperationItems.error,
+          attempts: schema.bulkOperationItems.attempts,
+        })
+        .from(schema.bulkOperationItems)
+        .where(
+          and(
+            inArray(schema.bulkOperationItems.operationId, failing),
+            eq(schema.bulkOperationItems.status, 'FAILED'),
+          ),
+        )
+        .limit(1000)
+    : []
+
+  return { operations, failedItems }
+}
+
 /**
  * Every account, newest first.
  *

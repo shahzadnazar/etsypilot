@@ -45,11 +45,18 @@ ADMIN = ("ops@etsypilot.app", "admin-password-here")
 MANAGER = ("promoted@example.com", "manager-password-y")
 
 # path, permission key, nav label, a string only this screen renders.
+#
+# THE LABEL MUST BE DISTINCTIVE. The absence check below asserts it appears
+# nowhere for a viewer without the permission, so a label that is also a word
+# the SHELL uses makes the check fire on the chrome. "Operations" did exactly
+# that — the rail is headed Operations — and the item is now "Bulk
+# operations", which is both unambiguous for a reader and checkable.
 MODULES = [
     ("/admin/etsy", "etsy.view", "Etsy connections", "What the seller sees when a reconnection ends"),
     ("/admin/subscriptions", "subscriptions.view", "Subscriptions", "Trials ending within"),
     ("/admin/usage", "usage.view", "Usage & quota", "These figures are counts"),
     ("/admin/ai", "ai.view", "AI activity", "generated text is deliberately not shown"),
+    ("/admin/operations", "operations.view", "Bulk operations", "Why items failed"),
 ]
 
 fails, notes = [], []
@@ -217,7 +224,33 @@ def ai_specifics(page, body, text):
     check(page.locator("main form").count() == 0, "and no form")
 
 
+def operations_specifics(page, body, text):
+    """/admin/operations, for a viewer who can see it."""
+    check("Partial success" in text and "Rollback available" in text,
+          "every operation state is counted, including the empty ones (D34)")
+    check("Stuck in applying" in text, "the stuck section exists")
+    check(
+        "Price must be greater than zero" in text,
+        "the per-item failure REASONS are shown — that is what support needs",
+    )
+    # The seeded items carry before/after values with a distinctive phrase.
+    check(
+        "seller wrote this title" not in body.lower(),
+        "NO LISTING CONTENT REACHES THE PAYLOAD, only the reason",
+    )
+    check(
+        "no retry, no clear, no cancel and no rollback" in text.lower(),
+        "the page names all four missing controls",
+    )
+    buttons = page.locator("main button").count()
+    check(buttons == 0, f"there is no button in the page content ({buttons})")
+    check(page.locator("main form").count() == 0, "and no form")
+    links = page.locator("main a").count()
+    check(links == 0, f"and no link out of the page content ({links})")
+
+
 SPECIFICS = {
+    "/admin/operations": operations_specifics,
     "/admin/ai": ai_specifics,
     "/admin/etsy": etsy_specifics,
     "/admin/subscriptions": subscriptions_specifics,

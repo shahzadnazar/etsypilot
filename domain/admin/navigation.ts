@@ -114,6 +114,20 @@ export const OPERATOR_NAV: readonly OperatorNavGroup[] = [
         gate: permission('ai.view'),
         blurb: 'How much the AI is used, and how often its drafts are accepted.',
       },
+      {
+        /*
+         * "Bulk operations", not "Operations". The console itself is called
+         * Operations — the rail says so and the top bar says "Platform
+         * operations" — so a nav item with the same word is ambiguous for a
+         * reader and, as it turned out, for a test: the browser check asserting
+         * the label appears NOWHERE for a viewer without the permission fired
+         * on the shell's own heading. The label is what the screen is about.
+         */
+        label: 'Bulk operations',
+        href: '/admin/operations',
+        gate: permission('operations.view'),
+        blurb: 'Bulk jobs by state, what is stuck, and why individual items failed.',
+      },
     ],
   },
   {
