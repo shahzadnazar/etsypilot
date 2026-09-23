@@ -88,6 +88,17 @@ export const OPERATOR_NAV: readonly OperatorNavGroup[] = [
     ],
   },
   {
+    label: 'Platform',
+    items: [
+      {
+        label: 'Etsy connections',
+        href: '/admin/etsy',
+        gate: permission('etsy.view'),
+        blurb: 'Which shops are authorised, which have lapsed, and what last synced.',
+      },
+    ],
+  },
+  {
     label: 'Administration',
     items: [
       {

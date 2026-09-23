@@ -61,6 +61,9 @@ GATED = [
     # therefore a different chance of a different shape. The id is a plausible
     # one rather than gibberish, so nothing can pass by refusing to parse it.
     "/admin/users/user_01JQXV8Z0000000000000000",
+    # The read-only modules. Each is gated on its own permission key, and every
+    # one of them must be as invisible in demo mode as /admin itself.
+    "/admin/etsy",
 ]
 CONTROLS = ["/administrators", "/admin-nonexistent/x"]
 

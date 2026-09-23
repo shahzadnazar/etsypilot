@@ -197,7 +197,7 @@ def main():
             check(seller not in text, f"no seller navigation on an operator screen ({seller})")
 
         # ---- the banner is on EVERY operator screen -------------------------
-        for path in ("/admin/users", "/admin/managers", "/admin/permissions", "/admin/audit"):
+        for path in sorted(set(nav_hrefs(boss_page))):
             status, body = body_of(boss_page, path)
             check(status == 200, f"{path} renders for a super admin ({status})")
             check(
@@ -255,8 +255,16 @@ def main():
         # ================= geometry and accessibility ========================
         # Run against the super admin, who sees the most: the widest rail, the
         # longest nav, and every group heading.
+        boss_page.set_viewport_size({"width": 1440, "height": 1000})
+        boss_page.goto(f"{BASE}/admin/users", wait_until="load")
+        # Every screen this operator is offered, read from the rail rather than
+        # written here — so a module added in a later part is swept without
+        # anybody remembering to add it to a list.
+        SCREENS = sorted(set(nav_hrefs(boss_page)))
+        check(len(SCREENS) >= 4, f"the sweep has screens to visit ({len(SCREENS)})")
+
         for label, width, height in VIEWPORTS:
-            for path in ("/admin/users", "/admin/managers", "/admin/permissions", "/admin/audit"):
+            for path in SCREENS:
                 boss_page.set_viewport_size({"width": width, "height": height})
                 boss_page.goto(f"{BASE}{path}", wait_until="load")
                 boss_page.wait_for_timeout(200)
@@ -298,15 +306,17 @@ def main():
             '#operator-nav a[href^="/admin"]',
             "els => els.map(e => ({href: e.getAttribute('href'), h: e.getBoundingClientRect().height}))",
         )
-        check(len(drawer_links) == 4, f"the drawer carries all four items ({len(drawer_links)})")
+        # DERIVED, not a literal. This read `== 4` and went red the moment a
+        # fifth operator screen was built — a test that has to be edited every
+        # time the product grows is a test people edit without reading. The
+        # real property is the comparison against the rail, below.
+        check(
+            len(drawer_links) >= 2,
+            f"the drawer carries the operator's screens ({len(drawer_links)})",
+        )
         check(
             all(link["h"] >= 44 for link in drawer_links),
             "and every row is at least 44px tall",
-        )
-        check(
-            set(link["href"] for link in drawer_links) == set(nav_hrefs(boss_page)) - {"/admin/users"}
-            or True,
-            "the drawer offers the same set the rail does",
         )
 
         # The drawer must carry the same SET as the desktop rail — asserted

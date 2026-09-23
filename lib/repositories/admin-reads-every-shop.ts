@@ -50,7 +50,7 @@ import 'server-only'
  * ██████████████████████████████████████████████████████████████████████████
  */
 
-import { and, asc, count, desc, eq, gte, lte, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, gte, inArray, lte, sql } from 'drizzle-orm'
 import { getDb, schema } from '@/lib/db'
 import { resolvePlatformRole, type PlatformRole } from '@/domain/admin/roles'
 import type { AccountDetailReads, Read } from '@/domain/admin/account-detail'
@@ -458,6 +458,107 @@ export async function adminReadAccountDetail(
     profit: notFoundFor(reads.financials, profit ?? null),
     orders: notFoundFor(reads.financials, orderTotals ?? null),
   }
+}
+
+/* ------------------------------------------------ every shop's connection */
+
+/**
+ * Every shop's Etsy connection, for the connection-health screen.
+ *
+ * ── WHAT IS DELIBERATELY NOT SELECTED ─────────────────────────────────────
+ *
+ * `etsy_connections.token_ref` — rule 3. A support screen has no use for a
+ * credential, and selecting it would put one in a React payload. This is the
+ * screen where it would have been most tempting: the whole subject is the
+ * token, and the one column that must never leave the server is the token's.
+ *
+ * From `events`, only the TYPE, the TIME and the REASON. Never `listing_id`,
+ * never `before_value`, never `after_value` — those three are listing content,
+ * which is a seller's own product copy and has nothing to do with whether
+ * their sync ran. The row filter is narrowed to the two sync event types for
+ * the same reason: a query that read every event of every kind would be one
+ * `select` away from a change history nobody asked for.
+ *
+ * ── AGGREGATED IN SQL ─────────────────────────────────────────────────────
+ *
+ * The two sync facts come back as one row per shop via DISTINCT ON, so no
+ * event history is loaded into the process — there is no array of a seller's
+ * changes for a later edit to start rendering.
+ */
+export interface AdminConnectionRow {
+  shopId: string
+  shopName: string
+  isDemo: boolean
+  ownerEmail: string | null
+  connectionStatus: string
+  lastSyncedAt: Date | null
+  scopes: string[] | null
+  expiresAt: Date | null
+  revokedAt: Date | null
+  lastSyncFailure: { at: Date; reason: string | null } | null
+  lastSyncSuccess: Date | null
+}
+
+export async function adminListEtsyConnections(): Promise<AdminConnectionRow[]> {
+  const db = getDb()
+
+  const shops = await db
+    .select({
+      shopId: schema.shops.id,
+      shopName: schema.shops.name,
+      isDemo: schema.shops.isDemo,
+      connectionStatus: schema.shops.connectionStatus,
+      lastSyncedAt: schema.shops.lastSyncedAt,
+      ownerEmail: schema.users.email,
+      scopes: schema.etsyConnections.scopes,
+      expiresAt: schema.etsyConnections.expiresAt,
+      revokedAt: schema.etsyConnections.revokedAt,
+    })
+    .from(schema.shops)
+    .leftJoin(schema.users, eq(schema.users.id, schema.shops.ownerId))
+    .leftJoin(schema.etsyConnections, eq(schema.etsyConnections.shopId, schema.shops.id))
+    .orderBy(asc(schema.shops.name))
+    .limit(500)
+
+  /*
+   * The latest sync event of each kind, per shop, in one query.
+   *
+   * DISTINCT ON rather than a fetch-and-reduce: the events table is the
+   * largest in the schema and holds every listing change ever made, so a read
+   * that pulled rows into the process to pick two would be pulling a seller's
+   * whole change history to answer "did the last sync work".
+   */
+  const syncEvents = await db
+    .selectDistinctOn([schema.events.shopId, schema.events.type], {
+      shopId: schema.events.shopId,
+      type: schema.events.type,
+      at: schema.events.timestamp,
+      reason: schema.events.reason,
+    })
+    .from(schema.events)
+    .where(inArray(schema.events.type, ['SYNC_FAILED', 'SYNC_COMPLETED']))
+    .orderBy(asc(schema.events.shopId), asc(schema.events.type), desc(schema.events.timestamp))
+
+  const failures = new Map<string, { at: Date; reason: string | null }>()
+  const successes = new Map<string, Date>()
+  for (const event of syncEvents) {
+    if (event.type === 'SYNC_FAILED') failures.set(event.shopId, { at: event.at, reason: event.reason })
+    else successes.set(event.shopId, event.at)
+  }
+
+  return shops.map((shop) => ({
+    shopId: shop.shopId,
+    shopName: shop.shopName,
+    isDemo: shop.isDemo,
+    ownerEmail: shop.ownerEmail,
+    connectionStatus: shop.connectionStatus,
+    lastSyncedAt: shop.lastSyncedAt,
+    scopes: shop.scopes,
+    expiresAt: shop.expiresAt,
+    revokedAt: shop.revokedAt,
+    lastSyncFailure: failures.get(shop.shopId) ?? null,
+    lastSyncSuccess: successes.get(shop.shopId) ?? null,
+  }))
 }
 
 /**
