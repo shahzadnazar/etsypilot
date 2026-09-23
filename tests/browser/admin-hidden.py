@@ -65,6 +65,7 @@ GATED = [
     # one of them must be as invisible in demo mode as /admin itself.
     "/admin/etsy",
     "/admin/subscriptions",
+    "/admin/usage",
 ]
 CONTROLS = ["/administrators", "/admin-nonexistent/x"]
 

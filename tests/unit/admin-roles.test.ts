@@ -305,46 +305,86 @@ describe('only admin code may read across shops', () => {
     const forbidden = [
       'tokenRef',
       'SERVICE_ROLE',
-      'schema.listings',
       'schema.listingVariations',
       'schema.orderItems',
       'countryCode',
       'etsyReceiptId',
+      /*
+       * `schema.listings` LEFT THIS LIST in the usage step, and the
+       * replacement is the aggregate guard below — the same move the orders
+       * ban made in A6, for the same reason. A plan's listing meter is a
+       * COUNT of listings, and banning the table would have been protecting
+       * the wrong noun.
+       *
+       * What is banned instead is every column that carries a seller's own
+       * WORDS. A count of listings tells an operator whether a shop is over
+       * its plan; a title tells them what somebody sells, which is none of
+       * their business and not what the meter is for.
+       */
+      'listings.title',
+      'listings.description',
+      'listings.tags',
+      'aiGenerations.input',
+      'aiGenerations.output',
     ]
     for (const name of forbidden) {
       expect(source, name).not.toContain(name)
     }
   })
 
-  it('READS ORDERS ONLY AS AGGREGATES, never as rows', () => {
+  /*
+   * The three tables that hold a seller's own content or purchases, and may
+   * be COUNTED but never listed.
+   *
+   * `orders` joined this list in A6 and `listings`/`ai_generations` in the
+   * usage step, each time replacing a blanket ban on the table name. The
+   * blanket ban was the weaker rule: deleting a string from a forbidden list
+   * leaves NOTHING checking how the table is read, whereas this reads the
+   * SELECT and fails on a single bare column.
+   *
+   * A grouping key is allowed — you cannot group a count per shop without
+   * naming the shop id — and nothing else is. A seller's words and a buyer's
+   * purchases never enter the process; the totals do.
+   */
+  const AGGREGATE_ONLY = [
+    { table: 'schema.orders', groupKey: 'schema.orders.shopId' },
+    { table: 'schema.listings', groupKey: 'schema.listings.shopId' },
+    { table: 'schema.aiGenerations', groupKey: 'schema.aiGenerations.shopId' },
+  ]
+
+  it('READS ORDERS, LISTINGS AND AI GENERATIONS ONLY AS AGGREGATES', () => {
+    const source = code(`lib/repositories/${MODULE}.ts`)
+
+    for (const { table, groupKey } of AGGREGATE_ONLY) {
+      const queries = source.split(`.from(${table})`).slice(0, -1)
+
+      // A sweep that matches nothing passes perfectly. Each table must
+      // actually be read somewhere, or this is asserting about an empty set.
+      expect(queries.length, table).toBeGreaterThan(0)
+
+      for (const before of queries) {
+        const select = before.slice(before.lastIndexOf('.select({'))
+        const fields = select.match(/^\s*\w+:\s*.*$/gm) ?? []
+        expect(fields.length, `${table} :: ${select}`).toBeGreaterThan(0)
+        for (const field of fields) {
+          const trimmed = field.trim()
+          const aggregate = /^\w+:\s*(count\(\)|sql<[^>]*>`[^`]*\b(sum|count)\()/.test(trimmed)
+          const grouping = trimmed.endsWith(`${groupKey},`) || trimmed.endsWith(groupKey)
+          expect(aggregate || grouping, `${table} :: ${trimmed}`).toBe(true)
+        }
+      }
+    }
+  })
+
+  it('GROUPS BY SHOP where it groups at all, so a count is per shop', () => {
     /*
-     * What replaced the blanket ban, and the reason it is stronger: deleting
-     * `schema.orders` from a forbidden-strings list would have left NOTHING
-     * checking how the table is read. This reads the SELECT itself.
-     *
-     * Every query that reaches the orders table must name its columns only
-     * inside count() or sum(). A single bare column — `gross:
-     * schema.orders.gross` — turns the query from a total into a list of
-     * purchases, and this goes red on it. The aggregate crosses the shop
-     * isolation boundary; the individual orders never enter the process, so
-     * there is no array of somebody's shopping for a later change to render.
+     * The grouping key is the one bare column the rule above allows, so it is
+     * worth pinning what it may be. A count grouped by listing id would be a
+     * list of listings wearing a count's clothes.
      */
     const source = code(`lib/repositories/${MODULE}.ts`)
-    const queries = source.split('.from(schema.orders)').slice(0, -1)
-
-    // A sweep that matches nothing passes perfectly. This one must find the
-    // financials query, or it is asserting about an empty set.
-    expect(queries.length).toBeGreaterThan(0)
-
-    for (const before of queries) {
-      const select = before.slice(before.lastIndexOf('.select({'))
-      const fields = select.match(/^\s*\w+:\s*.*$/gm) ?? []
-      expect(fields.length, select).toBeGreaterThan(0)
-      for (const field of fields) {
-        expect(field.trim(), field.trim()).toMatch(
-          /^\w+:\s*(count\(\)|sql<[^>]*>`[^`]*\bsum\()/,
-        )
-      }
+    for (const match of source.matchAll(/\.groupBy\(([^)]*)\)/g)) {
+      expect(match[1]!.trim(), match[0]).toMatch(/schema\.\w+\.shopId/)
     }
   })
 })

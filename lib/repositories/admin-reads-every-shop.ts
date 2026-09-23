@@ -638,6 +638,93 @@ export async function adminListSubscriptions(): Promise<AdminSubscriptionRow[]> 
   })
 }
 
+/* ------------------------------------------------- every shop's plan usage */
+
+/**
+ * Plan usage per shop, COUNTED rather than read from a stored counter.
+ *
+ * `usage_records` has a `used` column and nothing in the product writes it —
+ * grepped, not assumed — so reading it would report figures that are not
+ * usage. Both meters are counts over the rows that ARE the usage.
+ *
+ * ── AGGREGATES ONLY, ON BOTH TABLES ───────────────────────────────────────
+ *
+ * `listings` and `ai_generations` are the two most content-heavy tables in the
+ * schema: one holds a seller's titles, tags and descriptions, the other holds
+ * the AI's input and output, which is the same copy again. Neither is read as
+ * rows. Every column named below is inside count(), so no listing and no
+ * generated text enters the process at all — the guard in
+ * tests/unit/admin-roles.test.ts reads the SELECT and fails on a bare column.
+ */
+export interface AdminUsageRow {
+  shopId: string
+  shopName: string
+  ownerEmail: string | null
+  isDemo: boolean
+  plan: string | null
+  activeListings: number
+  aiGenerationsThisMonth: number
+}
+
+export async function adminListUsage(monthStart: Date): Promise<AdminUsageRow[]> {
+  const db = getDb()
+
+  const shops = await db
+    .select({
+      shopId: schema.shops.id,
+      shopName: schema.shops.name,
+      isDemo: schema.shops.isDemo,
+      ownerEmail: schema.users.email,
+      plan: schema.subscriptions.plan,
+    })
+    .from(schema.shops)
+    .leftJoin(schema.users, eq(schema.users.id, schema.shops.ownerId))
+    .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.shops.ownerId))
+    .orderBy(asc(schema.shops.name), sql`${schema.subscriptions.cancelledAt} nulls first`)
+    .limit(500)
+
+  /* Active listings per shop. A count, grouped in SQL — never a list. */
+  const listingCounts = await db
+    .select({
+      shopId: schema.listings.shopId,
+      active: count(),
+    })
+    .from(schema.listings)
+    .where(eq(schema.listings.state, 'ACTIVE'))
+    .groupBy(schema.listings.shopId)
+
+  /* Generations this month per shop. Also a count, for the same reason twice
+     over: ai_generations.output is the seller's own listing copy. */
+  const generationCounts = await db
+    .select({
+      shopId: schema.aiGenerations.shopId,
+      used: count(),
+    })
+    .from(schema.aiGenerations)
+    .where(gte(schema.aiGenerations.createdAt, monthStart))
+    .groupBy(schema.aiGenerations.shopId)
+
+  const listings = new Map(listingCounts.map((entry) => [entry.shopId, entry.active]))
+  const generations = new Map(generationCounts.map((entry) => [entry.shopId, entry.used]))
+
+  const seen = new Set<string>()
+  return shops
+    .filter((shop) => {
+      if (seen.has(shop.shopId)) return false
+      seen.add(shop.shopId)
+      return true
+    })
+    .map((shop) => ({
+      shopId: shop.shopId,
+      shopName: shop.shopName,
+      ownerEmail: shop.ownerEmail,
+      isDemo: shop.isDemo,
+      plan: shop.plan,
+      activeListings: listings.get(shop.shopId) ?? 0,
+      aiGenerationsThisMonth: generations.get(shop.shopId) ?? 0,
+    }))
+}
+
 /**
  * Every account, newest first.
  *

@@ -102,6 +102,12 @@ export const OPERATOR_NAV: readonly OperatorNavGroup[] = [
         gate: permission('subscriptions.view'),
         blurb: 'Who is on what plan, what is past due, and which trials end this week.',
       },
+      {
+        label: 'Usage & quota',
+        href: '/admin/usage',
+        gate: permission('usage.view'),
+        blurb: 'Listings and AI generations against each plan’s limits. Who is near a cap.',
+      },
     ],
   },
   {

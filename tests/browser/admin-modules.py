@@ -48,6 +48,7 @@ MANAGER = ("promoted@example.com", "manager-password-y")
 MODULES = [
     ("/admin/etsy", "etsy.view", "Etsy connections", "What the seller sees when a reconnection ends"),
     ("/admin/subscriptions", "subscriptions.view", "Subscriptions", "Trials ending within"),
+    ("/admin/usage", "usage.view", "Usage & quota", "These figures are counts"),
 ]
 
 fails, notes = [], []
@@ -168,7 +169,36 @@ def subscriptions_specifics(page, body, text):
     check(page.locator("main form").count() == 0, "and no form")
 
 
-SPECIFICS = {"/admin/etsy": etsy_specifics, "/admin/subscriptions": subscriptions_specifics}
+def usage_specifics(page, body, text):
+    """/admin/usage, for a viewer who can see it."""
+    check("Over" in text and "Not on this plan" in text,
+          "every band is counted, including the empty ones (D34)")
+    check(
+        "usage_records" in text and "nothing in the product writes it" in text,
+        "the page says the figures are counted, not read from the stored counter",
+    )
+    check("No quota reset, no top-up" in text, "and names what it cannot do")
+    check(
+        "failed AI generation is never counted" in text,
+        "and states D37's rule about failed generations",
+    )
+    # NO SELLER CONTENT, measured against text the fixtures deliberately put
+    # in the database. A sweep for a string the database does not hold proves
+    # nothing, so the seeded listings are titled "Handmade beeswax lavender
+    # candle N" and the seeded generations output "A generated title nobody but
+    # the seller should read N".
+    for content in ("beeswax", "lavender", "nobody but the seller"):
+        check(content not in body.lower(), f"no seller content in the payload ({content})")
+    buttons = page.locator("main button").count()
+    check(buttons == 0, f"there is no button in the page content ({buttons})")
+    check(page.locator("main form").count() == 0, "and no form")
+
+
+SPECIFICS = {
+    "/admin/etsy": etsy_specifics,
+    "/admin/subscriptions": subscriptions_specifics,
+    "/admin/usage": usage_specifics,
+}
 
 
 def main():

@@ -472,11 +472,25 @@ describe('the cross-shop read takes only what the screen needs', () => {
     }
   })
 
-  it('still selects no secret, no listing and no buyer', () => {
-    // Re-asserted here beside the new query, because this is the step where
-    // adding one would have been easiest.
+  it('still selects no secret, no listing content and no buyer', () => {
+    /*
+     * Re-asserted here beside the new query, because this is the step where
+     * adding one would have been easiest.
+     *
+     * `schema.listings` is NOT on this list any more: the usage screen counts
+     * listings, and the rule that replaced the table ban is the aggregate
+     * guard in admin-roles.test.ts, which reads the SELECT rather than the
+     * file. What stays banned everywhere is a seller's own WORDS.
+     */
     const source = code(READS)
-    for (const name of ['tokenRef', 'SERVICE_ROLE', 'schema.listings', 'schema.orderItems']) {
+    for (const name of [
+      'tokenRef',
+      'SERVICE_ROLE',
+      'schema.orderItems',
+      'listings.title',
+      'listings.description',
+      'aiGenerations.output',
+    ]) {
       expect(source, name).not.toContain(name)
     }
   })
