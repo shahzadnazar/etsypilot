@@ -23,6 +23,47 @@ const SCRIPT = `
 `
 
 /*
+ * ── THE "SCRIPT TAG WHILE RENDERING" WARNING: MEASURED, NOT REPRODUCED ────
+ *
+ * This component was reported as logging, on every page load in dev:
+ *
+ *   Encountered a script tag while rendering React component. Scripts inside
+ *   React components are never executed when rendering on the client.
+ *
+ * It was not reproduced. Every route this app serves was loaded under
+ * `next dev` and `next start`, in both themes, hard-reloaded, client-navigated
+ * between route groups, run through a Fast Refresh cycle, run with the theme
+ * toggled, run with head mutated before hydration the way an extension would,
+ * and loaded on a 404. The console stayed clean on all of them.
+ *
+ * THE DETECTOR WAS PROVED LIVE FIRST, because "I looked and saw nothing" is
+ * worth nothing otherwise. React's warning fires from createInstance — the
+ * path for a node React builds ON THE CLIENT — so a throwaway client component
+ * that mounted a <script> after hydration was added to a route, and the
+ * warning appeared immediately. The mechanism is present in this exact bundle;
+ * this script does not reach it, because it arrives in the server's HTML and
+ * is hydrated rather than created.
+ *
+ * So nothing here changed. Two reasons to write that down rather than change
+ * something anyway:
+ *
+ *   The obvious silencer is a `type` React treats as a data block, and every
+ *   one of those is a type the browser WILL NOT EXECUTE. That trades a console
+ *   line for the flash this component exists to prevent — and the flash is
+ *   silent, so the trade also destroys the evidence.
+ *
+ *   Moving to <script src> would leave createInstance behind, at the cost of a
+ *   render-blocking request before first paint and a second thing the CSP has
+ *   to nonce under 'strict-dynamic'.
+ *
+ * If it does appear, it is a real difference between environments and worth
+ * knowing about rather than papering over: tests/browser/dev-server.py now
+ * fails on any console error or warning during a dev page load, and asserts
+ * this script's two load-bearing properties — that it carries its nonce, and
+ * that data-theme is already correct at first paint in both themes.
+ */
+
+/*
  * The nonce is required, not optional.
  *
  * Typing it as a required prop is the point: under the CSP in middleware.ts an
