@@ -1,3 +1,4 @@
+import { EmptyState } from '@/components/ui/states'
 import { Card } from '@/components/ui/card'
 import { PageHeader } from '@/components/layout/page-header'
 import { requireAdmin } from '@/domain/admin/access'
@@ -69,10 +70,10 @@ export default async function OperationsPage() {
       />
 
       {operations.length === 0 ? (
-        <Card className="p-[18px] text-small leading-relaxed text-ink-2">
-          No bulk operations yet. Rows appear here as sellers use the bulk editor — this screen is
-          not seeded and shows nothing that is not really in the database.
-        </Card>
+        <EmptyState
+          title="No bulk operations yet"
+          description="Rows appear here as sellers use the bulk editor. This screen is not seeded and shows nothing that is not really in the database."
+        />
       ) : (
         <>
           <section aria-labelledby="states-heading" className="mb-4">
@@ -109,11 +110,11 @@ export default async function OperationsPage() {
             blurb="An apply is rate-limited against Etsy, so a large job legitimately takes a while. Past this window it is not running, it is stuck."
           >
             {stalled.length === 0 ? (
-              <Nothing>
-                Nothing has been applying for more than {STUCK_AFTER_MINUTES} minutes. A job
-                currently running and inside the window is not listed here — it is in the state
-                counts above.
-              </Nothing>
+              <EmptyState
+                quiet
+                title={`Nothing has been applying for more than ${STUCK_AFTER_MINUTES} minutes`}
+                description="A job appears here once it has been in the applying state past that threshold. One currently running and inside the window is not listed — it is in the state counts above."
+              />
             ) : (
               <ul className="flex flex-col gap-2">
                 {stalled.map((entry) => (
@@ -142,10 +143,11 @@ export default async function OperationsPage() {
             blurb="Grouped by reason. Forty listings failing for one reason is one finding; reading it forty times buries the second reason underneath."
           >
             {reasons.length === 0 ? (
-              <Nothing>
-                No failed items on any failed or partially-successful operation. That is a
-                measured state, not a section that did not load.
-              </Nothing>
+              <EmptyState
+                quiet
+                title="No failed items"
+                description="An item appears here when an operation fails or partially succeeds and records a reason against a listing. That is a measured state, not a section that did not load."
+              />
             ) : (
               <ul className="flex flex-col gap-2">
                 {reasons.map(({ reason, count }) => (
@@ -170,10 +172,16 @@ export default async function OperationsPage() {
             blurb="Partially succeeded, failed, or still applying. Partial success first: a wholly failed job is obvious and the seller knows, while a partial one leaves a shop in a state nobody chose."
           >
             {attention.length === 0 ? (
-              <Nothing>
-                Nothing is failed, partially succeeded, or applying. Measured across{' '}
-                {formatNumber(operations.length)} operations.
-              </Nothing>
+              <EmptyState
+                quiet
+                title="Nothing is failed, partially succeeded, or applying"
+                description={
+                  <>
+                    An operation appears here when it enters one of those states. Measured across{' '}
+                    {formatNumber(operations.length)} operations.
+                  </>
+                }
+              />
             ) : (
               <ul className="flex flex-col gap-3">
                 {attention.map((entry) => (
@@ -240,9 +248,6 @@ function Section({
   )
 }
 
-function Nothing({ children }: { children: React.ReactNode }) {
-  return <p className="max-w-prose text-small leading-relaxed text-ink-2">{children}</p>
-}
 
 /**
  * An operation whose shop row is gone.

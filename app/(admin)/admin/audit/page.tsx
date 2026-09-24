@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import { EmptyState } from '@/components/ui/states'
 import { OperatorTable } from '@/components/admin/operator-table'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
@@ -94,10 +95,15 @@ export default async function AdminAuditPage() {
       ) : null}
 
       {entries.length === 0 ? (
-        <Card className="p-[18px] text-small leading-relaxed text-ink-2">
-          Nothing has been attempted yet. Rows appear here when a platform role or a role&rsquo;s
-          permissions are changed — or when a change is refused, which is recorded just the same.
-        </Card>
+        <EmptyState
+          title="Nothing has been attempted yet"
+          description={
+            <>
+              Rows appear here when a platform role or a role&rsquo;s permissions are changed — or
+              when a change is refused, which is recorded just the same.
+            </>
+          }
+        />
       ) : (
         <OperatorTable
           label="Audit log"

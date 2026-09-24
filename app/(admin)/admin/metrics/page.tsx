@@ -1,7 +1,8 @@
+import { EmptyState } from '@/components/ui/states'
 import { Card } from '@/components/ui/card'
 import { PageHeader } from '@/components/layout/page-header'
 import { MonthlySeriesChart } from '@/components/charts/monthly-series'
-import { ProvenanceBadge } from '@/components/provenance/provenance-badge'
+import { OperatorFigure } from '@/components/admin/operator-figure'
 import { requireAdmin } from '@/domain/admin/access'
 import {
   ONBOARDING_CAVEAT,
@@ -73,10 +74,10 @@ export default async function MetricsPage() {
       />
 
       {metrics.totalAccounts === 0 ? (
-        <Card className="p-[18px] text-small leading-relaxed text-ink-2">
-          No accounts yet. Every figure here is counted from real rows — this screen is not
-          seeded and shows nothing that is not in the database.
-        </Card>
+        <EmptyState
+          title="No accounts yet"
+          description="Every figure here is counted from real rows. This screen is not seeded and shows nothing that is not in the database."
+        />
       ) : (
         <>
           <Card className="mb-3 p-[18px]">
@@ -149,40 +150,17 @@ export default async function MetricsPage() {
               title="Trial conversion"
               blurb="Of the accounts with a trial still visible on their subscription, the share now paying."
             >
-              <div className="flex flex-col gap-1 rounded-card border border-line bg-canvas-soft p-3">
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-label text-muted-1">Converted</span>
-                  <ProvenanceBadge
-                    type={conversion.provenance.type}
-                    srDetail={`Trial conversion: ${conversion.provenance.methodology}`}
-                  />
-                </div>
-                {conversion.value === null ? (
+              <OperatorFigure
+                label="Converted"
+                figure={conversion}
+                suffix="%"
+                footnote={
                   <>
-                    <span aria-hidden className="tnum text-[18px] font-semibold text-muted-2">
-                      —
-                    </span>
-                    <p className="text-caption leading-relaxed text-ink-2">
-                      {conversion.provenance.methodology}
-                    </p>
+                    {formatNumber(metrics.trialedAndPaying)} of{' '}
+                    {formatNumber(metrics.everTrialed)} visible trials
                   </>
-                ) : (
-                  <>
-                    <span className="tnum text-[18px] font-semibold text-ink-1">
-                      {conversion.value}%
-                    </span>
-                    <p className="tnum text-caption text-muted-1">
-                      {formatNumber(metrics.trialedAndPaying)} of{' '}
-                      {formatNumber(metrics.everTrialed)} visible trials
-                    </p>
-                  </>
-                )}
-                {conversion.provenance.limitations?.map((limitation) => (
-                  <p key={limitation} className="text-caption leading-relaxed text-muted-1">
-                    {limitation}
-                  </p>
-                ))}
-              </div>
+                }
+              />
             </Section>
           </div>
         </>

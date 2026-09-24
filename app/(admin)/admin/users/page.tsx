@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { EmptyState } from '@/components/ui/states'
 import { OperatorTable } from '@/components/admin/operator-table'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
@@ -98,10 +99,10 @@ export default async function AdminUsersPage({
       ) : null}
 
       {users.length === 0 ? (
-        <Card className="p-[18px] text-small leading-relaxed text-ink-2">
-          No accounts yet. Rows appear here as people sign up — this list is not seeded and shows
-          nothing that is not really in the database.
-        </Card>
+        <EmptyState
+          title="No accounts yet"
+          description="Rows appear here as people sign up. This list is not seeded and shows nothing that is not really in the database."
+        />
       ) : (
         <OperatorTable
           label="Accounts"

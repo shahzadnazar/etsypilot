@@ -712,3 +712,163 @@ describe('every operator table goes through one wrapper', () => {
     expect(widths.sort((a, b) => a - b)).toEqual([720, 760, 820, 860, 860, 900])
   })
 })
+
+/* ─────────────────── the shared state surfaces, in the console ───────────── */
+
+describe('the operator console uses the shared state surfaces', () => {
+  /*
+   * components/ui/states.tsx was used by 23 seller files and ZERO operator
+   * files. Every operator empty was
+   *
+   *     <Card className="p-[18px] text-small text-ink-2">No accounts yet…</Card>
+   *
+   * — no heading, no next step — and six pages carried an identical local
+   * `Nothing()` helper with no title at all. There was no error.tsx anywhere
+   * under app/(admin), so a throw lost the console chrome along with the page,
+   * and no loading.tsx, so every screen showed a blank frame and then snapped.
+   */
+
+  const QUERY_SCREENS = [
+    'ai',
+    'audit',
+    'etsy',
+    'managers',
+    'metrics',
+    'operations',
+    'subscriptions',
+    'usage',
+    'users',
+  ]
+
+  it('has an error boundary INSIDE the group, so a throw keeps the chrome', () => {
+    const boundary = posixJoin(ADMIN_ROOT, 'error.tsx')
+    expect(existsSync(boundary)).toBe(true)
+    const source = code(boundary)
+    expect(source).toContain('ErrorState')
+    expect(source).toContain('error.digest')
+    expect(source).toContain('reset')
+  })
+
+  it('LEAKS NO STACK TRACE OR DATABASE MESSAGE, and invents no reference', () => {
+    /*
+     * `error.message` is never rendered. And the reference is Next's digest or
+     * NOTHING: app/error.tsx used to invent one with a random generator, which
+     * is worse than none — it sends someone into a support conversation
+     * holding evidence that appears in no log.
+     */
+    const source = code(posixJoin(ADMIN_ROOT, 'error.tsx'))
+    expect(source).not.toContain('error.message')
+    expect(source).not.toContain('error.stack')
+    expect(source).not.toMatch(/makeReference|randomUUID|Math\.random/)
+  })
+
+  it('gives every screen that runs a query a skeleton', () => {
+    for (const screen of QUERY_SCREENS) {
+      const loading = posixJoin(ADMIN_ROOT, `admin/${screen}/loading.tsx`)
+      expect(existsSync(loading), loading).toBe(true)
+      const source = code(loading)
+      expect(source, loading).toContain('Skeleton')
+      // Announced as waiting. Every Skeleton is aria-hidden, so without this
+      // the whole route announces as an empty region.
+      expect(source, loading).toContain('aria-busy')
+      expect(source, loading).toContain('aria-label')
+    }
+  })
+
+  it('shapes each skeleton like its own page, not like a generic bar', () => {
+    /*
+     * The converse, and the one that has teeth: nine copies of the same
+     * three-bar placeholder would satisfy every assertion above. Counting the
+     * distinct skeleton bodies is what says they were shaped rather than
+     * pasted.
+     */
+    const bodies = new Set(
+      QUERY_SCREENS.map((screen) =>
+        code(posixJoin(ADMIN_ROOT, `admin/${screen}/loading.tsx`))
+          .split('return (')[1]!
+          .replace(/\s+/g, ' '),
+      ),
+    )
+    expect(bodies.size).toBeGreaterThanOrEqual(6)
+  })
+
+  /**
+   * A Card of bare text rendered because something is EMPTY.
+   *
+   * Matched as the branch rather than as the class, deliberately. The same
+   * `p-[18px] text-small …` Card is also how the permissions screen renders
+   * two explanatory notes, and those are not empty states — they have a
+   * heading, a list, and they render whatever the data says. A rule that fired
+   * on them would be true about the class and wrong about the page. What was
+   * actually the defect is a length-zero branch whose whole content is a
+   * paragraph in a box.
+   */
+  const BARE_EMPTY = /(?:length|size)\s*===\s*0\s*\?\s*\(\s*<Card[^>]*text-small/
+
+  it('RENDERS NO BARE-TEXT EMPTY STATE on any operator page', () => {
+    for (const page of pagesUnder(ADMIN_ROOT)) {
+      const source = code(page)
+      expect(source, page).not.toMatch(BARE_EMPTY)
+      // And the six identical local helpers that did the same inside sections.
+      expect(source, page).not.toContain('function Nothing')
+      expect(source, page).not.toContain('<Nothing>')
+    }
+  })
+
+  it('catches the shape it is looking for when it is really there', () => {
+    // The positive control. Without it the rule above passes on a repository
+    // where the spelling moved rather than the pattern.
+    expect(
+      BARE_EMPTY.test(
+        'users.length === 0 ? (\n <Card className="p-[18px] text-small text-ink-2">No accounts yet.',
+      ),
+    ).toBe(true)
+    expect(BARE_EMPTY.test('<Card className="p-[18px] text-small text-ink-2">A note.')).toBe(false)
+  })
+
+  it('still has an empty state on every screen that can be empty', () => {
+    // The converse. "No bare text" is satisfied by deleting the empty states.
+    for (const screen of QUERY_SCREENS) {
+      const page = posixJoin(ADMIN_ROOT, `admin/${screen}/page.tsx`)
+      expect(code(page), page).toContain('<EmptyState')
+    }
+  })
+
+  it('gives every empty state a title AND a description', () => {
+    /*
+     * The complaint was not that the empties were missing — it was that they
+     * were a sentence with no heading and no next step. A title prop that is
+     * present but blank would pass a looser check than this one.
+     */
+    let counted = 0
+    for (const page of pagesUnder(ADMIN_ROOT)) {
+      const source = code(page)
+      for (const match of source.matchAll(/<EmptyState\b([\s\S]*?)\/>/g)) {
+        const props = match[1]!
+        expect(props, page).toMatch(/title=\{?[`'"]?.{8,}/)
+        expect(props, page).toMatch(/description=/)
+        counted += 1
+      }
+    }
+    // Anti-vacuity: a regex that matched nothing would pass the loop above.
+    expect(counted).toBeGreaterThanOrEqual(17)
+  })
+
+  it('renders an unavailable figure through UnavailableCard, never an em dash', () => {
+    /*
+     * admin/ai, admin/users/[userId] and admin/metrics each re-implemented an
+     * unavailable figure locally as `—` plus a paragraph. One component draws
+     * it now, and the branch is what makes "a null value cannot render as a
+     * number" true by construction rather than by care.
+     */
+    const figure = code('components/admin/operator-figure.tsx')
+    expect(figure).toContain('UnavailableCard')
+    expect(figure).toContain('figure.value === null')
+    // Both branches carry a badge: unavailable IS a provenance class.
+    expect(figure.match(/badge/g)?.length ?? 0).toBeGreaterThanOrEqual(3)
+
+    for (const page of pagesUnder(ADMIN_ROOT)) {
+      expect(code(page), page).not.toContain('function Figure(')
+    }
+  })
+})

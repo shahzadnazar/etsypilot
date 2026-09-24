@@ -1,3 +1,4 @@
+import { EmptyState } from '@/components/ui/states'
 import { OperatorTable } from '@/components/admin/operator-table'
 import { Card } from '@/components/ui/card'
 import { PageHeader } from '@/components/layout/page-header'
@@ -67,10 +68,10 @@ export default async function SubscriptionsPage() {
       />
 
       {rows.length === 0 ? (
-        <Card className="p-[18px] text-small leading-relaxed text-ink-2">
-          No accounts yet. Rows appear here as people sign up — this screen is not seeded and
-          shows nothing that is not really in the database.
-        </Card>
+        <EmptyState
+          title="No accounts yet"
+          description="Rows appear here as people sign up. This screen is not seeded and shows nothing that is not really in the database."
+        />
       ) : (
         <>
           <Section
@@ -133,11 +134,18 @@ export default async function SubscriptionsPage() {
             blurb="Past due and cancelling, worst first. Both are worth knowing before the seller writes in — and neither is fixable from here."
           >
             {attention.length === 0 ? (
-              <Nothing>
-                Nothing is past due or cancelling. That is a measured state over{' '}
-                {rows.length === 1 ? 'the one account' : `all ${rows.length} accounts`}, not a
-                section that failed to load.
-              </Nothing>
+              <EmptyState
+                quiet
+                title="Nothing is past due or cancelling"
+                description={
+                  <>
+                    An account appears here when its billing status turns past due, or when it is
+                    set to cancel at period end. Measured over{' '}
+                    {rows.length === 1 ? 'the one account' : `all ${rows.length} accounts`}, not a
+                    section that failed to load.
+                  </>
+                }
+              />
             ) : (
               <ul className="flex flex-col gap-2.5">
                 {attention.map((row) => {
@@ -174,11 +182,11 @@ export default async function SubscriptionsPage() {
             blurb="Only accounts whose status is actually trialing. A trial date left behind on an account that has since converted is a stale column, not a trial."
           >
             {endingTrials.length === 0 ? (
-              <Nothing>
-                No trial ends in the next {TRIAL_ENDING_SOON_DAYS} days. Trials that have already
-                ended are not listed here — this section is for the ones that can still be reached
-                in time.
-              </Nothing>
+              <EmptyState
+                quiet
+                title={`No trial ends in the next ${TRIAL_ENDING_SOON_DAYS} days`}
+                description="An account appears here as its trial approaches that window. Trials that have already ended are not listed — this section is for the ones that can still be reached in time."
+              />
             ) : (
               <ul className="flex flex-col gap-2">
                 {endingTrials.map((entry) => (
@@ -246,9 +254,6 @@ function Section({
   )
 }
 
-function Nothing({ children }: { children: React.ReactNode }) {
-  return <p className="max-w-prose text-small leading-relaxed text-ink-2">{children}</p>
-}
 
 function toneInk(tone: 'ok' | 'info' | 'warn' | 'danger'): string {
   switch (tone) {

@@ -1,6 +1,7 @@
+import { EmptyState } from '@/components/ui/states'
 import { Card } from '@/components/ui/card'
 import { PageHeader } from '@/components/layout/page-header'
-import { ProvenanceBadge } from '@/components/provenance/provenance-badge'
+import { OperatorFigure } from '@/components/admin/operator-figure'
 import { requireAdmin } from '@/domain/admin/access'
 import {
   COST_STATEMENT,
@@ -14,7 +15,6 @@ import {
 } from '@/domain/admin/ai-activity'
 import { adminCountGenerations } from '@/lib/repositories/admin-reads-every-shop'
 import { formatNumber } from '@/lib/utils/format'
-import type { Provenanced } from '@/lib/provenance/types'
 
 /*
  * AI activity across every shop. READ-ONLY.
@@ -79,10 +79,10 @@ export default async function AiActivityPage() {
       </Card>
 
       {totals.total === 0 ? (
-        <Card className="p-[18px] text-small leading-relaxed text-ink-2">
-          No generations in the last {WINDOW_DAYS} days. That is a measured zero over a known
-          window — not an empty screen, and not a claim about any longer period.
-        </Card>
+        <EmptyState
+          title={`No generations in the last ${WINDOW_DAYS} days`}
+          description="That is a measured zero over a known window — not an empty screen, and not a claim about any longer period."
+        />
       ) : (
         <>
           <div className="mb-3 grid gap-3 lg:grid-cols-2">
@@ -120,7 +120,7 @@ export default async function AiActivityPage() {
             title="Acceptance"
             blurb="Accepted as a share of the generations a seller has actually decided on."
           >
-            <Figure label="Acceptance rate" figure={totals.acceptance} suffix="%" />
+            <OperatorFigure label="Acceptance rate" figure={totals.acceptance} suffix="%" />
           </Section>
 
           {totals.unrecognised > 0 ? (
@@ -147,9 +147,11 @@ export default async function AiActivityPage() {
             blurb="Busiest first. Only shops that generated something in the window appear."
           >
             {used.length === 0 ? (
-              <Nothing>
-                No shop generated anything in the last {WINDOW_DAYS} days.
-              </Nothing>
+              <EmptyState
+                quiet
+                title={`No shop generated anything in the last ${WINDOW_DAYS} days`}
+                description="A row appears here for each shop that runs a generation inside the window. This is a measured zero over that window, not a claim about any longer period."
+              />
             ) : (
               <ul className="flex flex-col gap-3">
                 {used.map((shop) => (
@@ -199,9 +201,6 @@ function Section({
   )
 }
 
-function Nothing({ children }: { children: React.ReactNode }) {
-  return <p className="max-w-prose text-small leading-relaxed text-ink-2">{children}</p>
-}
 
 /**
  * A count with a proportion bar.
@@ -236,60 +235,6 @@ function Bar({ label, value, total }: { label: string; value: number; total: num
   )
 }
 
-/**
- * One figure with the provenance that produced it.
- *
- * An UNAVAILABLE figure renders its reason and its remedy instead of a
- * numeral, so there is no way to show a blank where a number is expected and
- * let the reader fill it in. A shop with only drafts has no acceptance rate,
- * and 0% would be the most misleading number this screen could carry.
- */
-function Figure({
-  label,
-  figure,
-  suffix,
-}: {
-  label: string
-  figure: Provenanced<number>
-  suffix?: string
-}) {
-  return (
-    <div className="flex flex-col gap-1 rounded-card border border-line bg-canvas-soft p-3">
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="text-label text-muted-1">{label}</span>
-        <ProvenanceBadge
-          type={figure.provenance.type}
-          srDetail={`${label}: ${figure.provenance.methodology}`}
-        />
-      </div>
-      {figure.value === null ? (
-        <>
-          <span aria-hidden className="tnum text-[18px] font-semibold text-muted-2">
-            —
-          </span>
-          <p className="text-caption leading-relaxed text-ink-2">{figure.provenance.methodology}</p>
-        </>
-      ) : (
-        <>
-          <span className="tnum text-[18px] font-semibold text-ink-1">
-            {figure.value}
-            {suffix}
-          </span>
-          {figure.provenance.coverage !== undefined && figure.provenance.coverage < 100 ? (
-            <p className="text-caption leading-relaxed text-muted-1">
-              Decided on {figure.provenance.coverage}% of generations.
-            </p>
-          ) : null}
-        </>
-      )}
-      {figure.provenance.limitations?.map((limitation) => (
-        <p key={limitation} className="text-caption leading-relaxed text-muted-1">
-          {limitation}
-        </p>
-      ))}
-    </div>
-  )
-}
 
 function ShopRow({ shop, mayNameOwners }: { shop: ShopActivity; mayNameOwners: boolean }) {
   return (

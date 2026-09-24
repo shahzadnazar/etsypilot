@@ -1,3 +1,4 @@
+import { EmptyState } from '@/components/ui/states'
 import { OperatorTable } from '@/components/admin/operator-table'
 import { Card } from '@/components/ui/card'
 import { PageHeader } from '@/components/layout/page-header'
@@ -79,10 +80,10 @@ export default async function EtsyConnectionsPage() {
       />
 
       {rows.length === 0 ? (
-        <Card className="p-[18px] text-small leading-relaxed text-ink-2">
-          No shops yet. Rows appear here as accounts are provisioned — this screen is not seeded
-          and shows nothing that is not really in the database.
-        </Card>
+        <EmptyState
+          title="No shops yet"
+          description="Rows appear here as accounts are provisioned. This screen is not seeded and shows nothing that is not really in the database."
+        />
       ) : (
         <>
           {/*
@@ -135,11 +136,11 @@ export default async function EtsyConnectionsPage() {
             blurb="Everything that is not healthy, most urgent first. Every one of these is resolved by the seller."
           >
             {attention.length === 0 ? (
-              <Nothing>
-                Nothing needs attention. Every connected shop is authorised, not expiring this
-                week, and synced within the last week — this is a measured state, not a screen
-                that has not loaded.
-              </Nothing>
+              <EmptyState
+                quiet
+                title="Nothing needs attention"
+                description="Every connected shop is authorised, not expiring this week, and synced within the last week. A shop appears here when one of those stops being true — this is a measured state, not a screen that has not loaded."
+              />
             ) : (
               <ConnectionTable rows={attention} mayNameOwners={mayNameOwners} />
             )}
@@ -150,10 +151,11 @@ export default async function EtsyConnectionsPage() {
             blurb="Authorisations that lapse soon and can still be saved by the seller opening the app. Already-expired shops are in the table above, not here."
           >
             {expiring.length === 0 ? (
-              <Nothing>
-                No authorisation lapses in the next {EXPIRING_SOON_DAYS} days. Shops with no
-                expiry on record are not counted here — an absent expiry is not a distant one.
-              </Nothing>
+              <EmptyState
+                quiet
+                title={`No authorisation lapses in the next ${EXPIRING_SOON_DAYS} days`}
+                description="A shop appears here as its grant approaches expiry. Shops with no expiry on record are not counted — an absent expiry is not a distant one."
+              />
             ) : (
               <ul className="flex flex-col gap-2">
                 {expiring.map((entry) => (
@@ -252,9 +254,6 @@ function Section({
   )
 }
 
-function Nothing({ children }: { children: React.ReactNode }) {
-  return <p className="max-w-prose text-small leading-relaxed text-ink-2">{children}</p>
-}
 
 /** Tone to a token pair (D1). Never a literal, and never colour alone. */
 function toneInk(tone: HealthCopy['tone']): string {

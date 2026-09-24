@@ -1,7 +1,7 @@
 import Link from 'next/link'
+import { EmptyState } from '@/components/ui/states'
 import { OperatorTable } from '@/components/admin/operator-table'
 import { PageHeader } from '@/components/layout/page-header'
-import { Card } from '@/components/ui/card'
 import { requireAdmin } from '@/domain/admin/access'
 import { adminListManagers } from '@/lib/repositories/admin-reads-every-shop'
 import { adminReadPromotions } from '@/lib/repositories/admin-audit-log'
@@ -47,13 +47,18 @@ export default async function AdminManagersPage() {
       />
 
       {managers.length === 0 ? (
-        <Card className="p-[18px] text-small leading-relaxed text-ink-2">
-          Nobody has been promoted to manager. Promote someone from{' '}
-          <Link href="/admin/users" className="font-semibold text-brand underline underline-offset-2">
-            Accounts
-          </Link>
-          .
-        </Card>
+        <EmptyState
+          title="Nobody has been promoted to manager"
+          description="A manager is an ordinary account given the operator role. Promote one from the accounts list and they appear here, with who promoted them and when."
+          action={
+            <Link
+              href="/admin/users"
+              className="font-semibold text-brand underline underline-offset-2"
+            >
+              Go to Accounts
+            </Link>
+          }
+        />
       ) : (
         <OperatorTable
           label="Managers"

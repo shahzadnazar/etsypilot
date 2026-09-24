@@ -1,3 +1,4 @@
+import { EmptyState } from '@/components/ui/states'
 import { Card } from '@/components/ui/card'
 import { PageHeader } from '@/components/layout/page-header'
 import { requireAdmin } from '@/domain/admin/access'
@@ -81,10 +82,10 @@ export default async function UsagePage() {
       </Card>
 
       {rows.length === 0 ? (
-        <Card className="p-[18px] text-small leading-relaxed text-ink-2">
-          No shops yet. Rows appear here as accounts are provisioned — this screen is not seeded
-          and shows nothing that is not really in the database.
-        </Card>
+        <EmptyState
+          title="No shops yet"
+          description="Rows appear here as accounts are provisioned. This screen is not seeded and shows nothing that is not really in the database."
+        />
       ) : (
         <>
           <div className="mb-3 grid gap-3 lg:grid-cols-2">
@@ -97,11 +98,18 @@ export default async function UsagePage() {
             blurb={`Anything past its cap, exactly at it, or within ${Math.round(NEAR_THRESHOLD * 100)}% of it. Worst first.`}
           >
             {pressing.length === 0 ? (
-              <Nothing>
-                No shop is at, over, or near a limit. That is a measured state across{' '}
-                {rows.length === 1 ? 'the one shop' : `all ${rows.length} shops`}, not a section
-                that failed to load.
-              </Nothing>
+              <EmptyState
+                quiet
+                title="No shop is at, over, or near a limit"
+                description={
+                  <>
+                    A shop appears here once a meter reaches its cap, passes it, or comes within
+                    the threshold above. Measured across{' '}
+                    {rows.length === 1 ? 'the one shop' : `all ${rows.length} shops`}, not a
+                    section that failed to load.
+                  </>
+                }
+              />
             ) : (
               <ul className="flex flex-col gap-3">
                 {pressing.map((entry) => (
@@ -186,9 +194,6 @@ function Section({
   )
 }
 
-function Nothing({ children }: { children: React.ReactNode }) {
-  return <p className="max-w-prose text-small leading-relaxed text-ink-2">{children}</p>
-}
 
 function toneInk(tone: 'ok' | 'info' | 'warn' | 'danger'): string {
   switch (tone) {

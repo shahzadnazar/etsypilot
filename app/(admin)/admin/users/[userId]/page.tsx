@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { EmptyState } from '@/components/ui/states'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
-import { ProvenanceBadge } from '@/components/provenance/provenance-badge'
+import { OperatorFigure } from '@/components/admin/operator-figure'
 import { requireAdmin } from '@/domain/admin/access'
 import {
   detailReads,
@@ -17,7 +18,6 @@ import {
   type AdminAccountDetail,
 } from '@/lib/repositories/admin-reads-every-shop'
 import { formatDate, formatDateTime, formatNumber } from '@/lib/utils/format'
-import type { Provenanced } from '@/lib/provenance/types'
 
 /*
  * One seller account, in depth. READ-ONLY.
@@ -198,9 +198,6 @@ function Absent({ reason }: { reason: string }) {
 }
 
 /** A whole section with nothing in it, said in words rather than left blank. */
-function Nothing({ children }: { children: React.ReactNode }) {
-  return <p className="max-w-prose text-small leading-relaxed text-ink-2">{children}</p>
-}
 
 /* ------------------------------------------------------------- the bodies */
 
@@ -307,13 +304,11 @@ function Identity({
 function Shop({ detail }: { detail: AdminAccountDetail }) {
   if (!detail.shop) {
     return (
-      <Nothing>
-        <strong className="font-semibold" style={{ color: 'var(--warning-ink)' }}>
-          No shop — setup unfinished.
-        </strong>{' '}
-        This account signed up but provisioning never completed, so there is nothing for it to
-        look at in the app. That is a real state, not a gap in this page.
-      </Nothing>
+      <EmptyState
+        quiet
+        title="No shop — setup unfinished"
+        description="This account signed up but provisioning never completed, so there is nothing for it to look at in the app. That is a real state, not a gap in this page."
+      />
     )
   }
   return (
@@ -355,11 +350,11 @@ function Connection({ detail }: { detail: AdminAccountDetail }) {
 
   if (!connection) {
     return (
-      <Nothing>
-        Never connected to Etsy. The shop exists in EtsyPilot and has no grant behind it, which is
-        different from a grant that has since been revoked — that would show below with the date it
-        happened.
-      </Nothing>
+      <EmptyState
+        quiet
+        title="Never connected to Etsy"
+        description="The shop exists in EtsyPilot and has no grant behind it, which is different from a grant that has since been revoked — that would show below with the date it happened."
+      />
     )
   }
 
@@ -404,10 +399,11 @@ function Connection({ detail }: { detail: AdminAccountDetail }) {
 
       <p className="mt-3 text-label text-muted-1">Scopes Etsy granted</p>
       {connection.scopes.length === 0 ? (
-        <Nothing>
-          The grant records no scopes. That is a broken connection rather than a restrictive one —
-          worth noticing, because the app will behave as though nothing were connected.
-        </Nothing>
+        <EmptyState
+          quiet
+          title="The grant records no scopes"
+          description="That is a broken connection rather than a restrictive one — worth noticing, because the app will behave as though nothing were connected."
+        />
       ) : (
         <ul className="mt-1 flex flex-wrap gap-1.5">
           {connection.scopes.map((scope) => (
@@ -434,10 +430,11 @@ function Plan({ detail }: { detail: AdminAccountDetail }) {
 
   if (!subscription) {
     return (
-      <Nothing>
-        No subscription record. Not the same as a free plan and not the same as a cancelled one —
-        this account has never had a row, so there is nothing to renew, cancel or refund.
-      </Nothing>
+      <EmptyState
+        quiet
+        title="No subscription record"
+        description="Not the same as a free plan and not the same as a cancelled one — this account has never had a row, so there is nothing to renew, cancel or refund."
+      />
     )
   }
 
@@ -479,10 +476,11 @@ function Usage({ detail }: { detail: AdminAccountDetail }) {
 
   if (usage.length === 0) {
     return (
-      <Nothing>
-        No usage records. That means nothing has been metered for this account — not that every
-        meter reads zero. A quota that has genuinely not been touched still has a row saying so.
-      </Nothing>
+      <EmptyState
+        quiet
+        title="No usage records"
+        description="Nothing has been metered for this account — which is not the same as every meter reading zero. A quota that has genuinely not been touched still has a row saying so."
+      />
     )
   }
 
@@ -527,11 +525,11 @@ function Financials({ detail }: { detail: AdminAccountDetail }) {
 
   if (view.kind === 'NEVER_COMPUTED') {
     return (
-      <Nothing>
-        Profit has never been computed for this shop. That is not a profit of zero and it is not a
-        shop with no sales — it means no reconciliation has run, so there is no figure to show and
-        none should be inferred from the absence of one.
-      </Nothing>
+      <EmptyState
+        quiet
+        title="Profit has never been computed for this shop"
+        description="That is not a profit of zero and it is not a shop with no sales — it means no reconciliation has run, so there is no figure to show and none should be inferred from the absence of one."
+      />
     )
   }
 
@@ -545,10 +543,10 @@ function Financials({ detail }: { detail: AdminAccountDetail }) {
       </p>
 
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
-        <Figure label="Gross revenue" figure={summary.grossRevenue} />
-        <Figure label="Fees" figure={summary.fees} />
-        <Figure label="Orders" figure={summary.orderCount} />
-        <Figure label="Net profit" figure={summary.netProfit} />
+        <OperatorFigure label="Gross revenue" figure={summary.grossRevenue} />
+        <OperatorFigure label="Fees" figure={summary.fees} />
+        <OperatorFigure label="Orders" figure={summary.orderCount} />
+        <OperatorFigure label="Net profit" figure={summary.netProfit} />
       </div>
 
       <p
@@ -572,52 +570,6 @@ function Financials({ detail }: { detail: AdminAccountDetail }) {
   )
 }
 
-/**
- * One money figure with the provenance that produced it.
- *
- * The badge is not decoration: an UNAVAILABLE figure renders its reason and
- * its remedy instead of a numeral, so there is no way to show a blank where a
- * number is expected and let the reader fill it in.
- */
-function Figure({ label, figure }: { label: string; figure: Provenanced<string | number> }) {
-  return (
-    <div className="flex flex-col gap-1 rounded-card border border-line bg-canvas-soft p-3">
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="text-label text-muted-1">{label}</span>
-        <ProvenanceBadge
-          type={figure.provenance.type}
-          srDetail={`${label}: ${figure.provenance.methodology}`}
-        />
-      </div>
-      {figure.value === null ? (
-        <>
-          <span aria-hidden className="tnum text-[18px] font-semibold text-muted-2">
-            —
-          </span>
-          <p className="text-caption leading-relaxed text-ink-2">
-            {figure.provenance.methodology}
-          </p>
-          {figure.provenance.limitations?.map((limitation) => (
-            <p key={limitation} className="text-caption leading-relaxed text-muted-1">
-              {limitation}
-            </p>
-          ))}
-        </>
-      ) : (
-        <>
-          <span className="tnum text-[18px] font-semibold text-ink-1">
-            {typeof figure.value === 'number' ? formatNumber(figure.value) : figure.value}
-          </span>
-          {figure.provenance.limitations?.map((limitation) => (
-            <p key={limitation} className="text-caption leading-relaxed text-muted-1">
-              {limitation}
-            </p>
-          ))}
-        </>
-      )}
-    </div>
-  )
-}
 
 /**
  * The branch that should never render.
@@ -631,9 +583,10 @@ function Figure({ label, figure }: { label: string; figure: Provenanced<string |
  */
 function NotRead() {
   return (
-    <Nothing>
-      Not read for this view. Nothing is being hidden from you here — this section was not fetched,
-      so there is no figure to show and none should be inferred.
-    </Nothing>
+    <EmptyState
+      quiet
+      title="Not read for this view"
+      description="Nothing is being hidden from you here — this section was not fetched, so there is no figure to show and none should be inferred."
+    />
   )
 }
