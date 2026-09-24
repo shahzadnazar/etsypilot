@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
 import { requireAdmin } from '@/domain/admin/access'
 import {
@@ -57,17 +58,17 @@ export default async function AdminAuditPage() {
     <>
       <title>Audit log · Operations · EtsyPilot</title>
 
-      <div className="flex flex-col gap-1 pb-4">
-        <h1 className="text-[22px] font-bold leading-tight tracking-[-0.01em] text-ink-1">
-          Audit log
-        </h1>
-        <p className="max-w-prose text-small leading-relaxed text-muted-1">
-          Every platform role change, every permission change and every refused attempt.{' '}
-          {entries.length} {entries.length === 1 ? 'record' : 'records'}
-          {refusals > 0 ? `, ${refusals} refused` : ''} · newest first. These records cannot be
-          edited or removed — the store has no update and no delete.
-        </p>
-      </div>
+      <PageHeader
+        title="Audit log"
+        subtitle={
+          <>
+            Every platform role change, every permission change and every refused attempt.{' '}
+            {entries.length} {entries.length === 1 ? 'record' : 'records'}
+            {refusals > 0 ? `, ${refusals} refused` : ''} · newest first. These records cannot be
+            edited or removed — the store has no update and no delete.
+          </>
+        }
+      />
 
       {unreadable > 0 ? (
         /*

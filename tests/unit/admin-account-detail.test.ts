@@ -364,10 +364,26 @@ describe('the detail screen changes nothing', () => {
 
   it('links ONLY to the role editor, and only behind roles.write', () => {
     const source = code(PAGE)
-    // Every href on the page, and there are exactly two: back, and the editor.
-    const hrefs = source.match(/href=\{?["`][^"`}]*/g) ?? []
-    expect(hrefs.length).toBe(2)
-    expect(hrefs.join(' ')).toContain('/admin/users')
+    /*
+     * Every destination on the page, and there are exactly two: back, and the
+     * editor.
+     *
+     * Both spellings are matched — `href=` on an element and `href:` in the
+     * object PageHeader's `back` slot takes. Counting one spelling is what
+     * this assertion used to do, and moving the back link onto the shared
+     * header made it silently count one link instead of two: the number
+     * changed, the page did not, and the test would have gone green again the
+     * moment anyone "fixed" the 2 to a 1. Asserting the SET rather than the
+     * COUNT is what makes that impossible — a third link cannot arrive
+     * unnoticed whichever way it is written.
+     */
+    const destinations = [...source.matchAll(/href\s*[=:]\s*\{?[`'"]([^`'"]*)/g)]
+      .map((match) => match[1]!)
+      .sort()
+    expect(destinations).toEqual([
+      '/admin/users',
+      '/admin/users/${encodeURIComponent(detail.id)}/role',
+    ])
     expect(source).toContain("canSuperAdminOnly('roles.write')")
   })
 

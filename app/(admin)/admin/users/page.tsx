@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
 import { requireAdmin } from '@/domain/admin/access'
 import { roleSource } from '@/domain/admin/roles'
@@ -64,17 +65,17 @@ export default async function AdminUsersPage({
   return (
     <>
       <title>Accounts · Operations · EtsyPilot</title>
-      <div className="flex flex-col gap-1 pb-4">
-        <h1 className="text-[22px] font-bold leading-tight tracking-[-0.01em] text-ink-1">
-          Accounts
-        </h1>
-        <p className="max-w-prose text-small leading-relaxed text-muted-1">
-          {users.length === 1 ? '1 account' : `${users.length} accounts`} · newest first ·
-          read-only. Nothing on this page changes anything, and no seller data — listings, orders
-          or revenue — is read to build it.{' '}
-          {mayViewDetail ? 'Open an account to see one in depth.' : null}
-        </p>
-      </div>
+      <PageHeader
+        title="Accounts"
+        subtitle={
+          <>
+            {users.length === 1 ? '1 account' : `${users.length} accounts`} · newest first ·
+            read-only. Nothing on this page changes anything, and no seller data — listings,
+            orders or revenue — is read to build it.{' '}
+            {mayViewDetail ? 'Open an account to see one in depth.' : null}
+          </>
+        }
+      />
 
       {changed ? (
         <Card

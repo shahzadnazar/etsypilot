@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
 import { requireAdmin } from '@/domain/admin/access'
 import { isRefusalReason, REFUSAL_COPY } from '@/domain/admin/audit'
@@ -74,22 +75,18 @@ export default async function ChangeRolePage({
     <div className="mx-auto w-full max-w-[560px]">
       <title>Change role · Operations · EtsyPilot</title>
 
-      <Link
-        href="/admin/users"
-        className="text-small text-muted-1 underline underline-offset-2 hover:text-ink-2"
-      >
-        ← Accounts
-      </Link>
-
-      <h1 className="mt-3 text-[22px] font-bold leading-tight tracking-[-0.01em] text-ink-1">
-        Change platform role
-      </h1>
-      <p className="mt-1 text-small leading-relaxed text-muted-1">
-        {target.email} · currently{' '}
-        <span className="font-semibold text-ink-2">
-          {target.resolvedRole.replace('_', ' ').toLowerCase()}
-        </span>
-      </p>
+      <PageHeader
+        back={{ href: '/admin/users', label: 'Accounts' }}
+        title="Change platform role"
+        subtitle={
+          <>
+            {target.email} · currently{' '}
+            <span className="font-semibold text-ink-2">
+              {currentRole.replace('_', ' ').toLowerCase()}
+            </span>
+          </>
+        }
+      />
 
       {refusal ? (
         <Card

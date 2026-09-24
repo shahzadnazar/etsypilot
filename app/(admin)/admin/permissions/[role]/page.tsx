@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { requireAdmin } from '@/domain/admin/access'
@@ -58,20 +59,11 @@ export default async function EditRolePermissionsPage({
     <div className="mx-auto w-full max-w-[620px]">
       <title>Edit permissions · Operations · EtsyPilot</title>
 
-      <Link
-        href="/admin/permissions"
-        className="text-small text-muted-1 underline underline-offset-2 hover:text-ink-2"
-      >
-        ← Permissions
-      </Link>
-
-      <h1 className="mt-3 text-[22px] font-bold leading-tight tracking-[-0.01em] text-ink-1">
-        {role.replace('_', ' ').toLowerCase()} permissions
-      </h1>
-      <p className="mt-1 max-w-prose text-small leading-relaxed text-muted-1">
-        Applies to every account holding this role, not to one person. Unticking everything is
-        allowed and means exactly that: the role keeps its name and loses the panel.
-      </p>
+      <PageHeader
+        back={{ href: '/admin/permissions', label: 'Permissions' }}
+        title={`${role.replace('_', ' ').toLowerCase()} permissions`}
+        subtitle="Applies to every account holding this role, not to one person. Unticking everything is allowed and means exactly that: the role keeps its name and loses the panel."
+      />
 
       {refusal ? (
         <Card

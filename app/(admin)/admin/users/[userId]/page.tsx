@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
 import { ProvenanceBadge } from '@/components/provenance/provenance-badge'
 import { requireAdmin } from '@/domain/admin/access'
@@ -83,20 +84,17 @@ export default async function AccountDetailPage({
     <div className="mx-auto w-full max-w-[860px]">
       <title>Account · Operations · EtsyPilot</title>
 
-      <Link
-        href="/admin/users"
-        className="text-small text-muted-1 underline underline-offset-2 hover:text-ink-2"
-      >
-        ← Accounts
-      </Link>
-
-      <h1 className="mt-3 break-words text-[22px] font-bold leading-tight tracking-[-0.01em] text-ink-1">
-        {detail.email}
-      </h1>
-      <p className="mt-1 text-small leading-relaxed text-muted-1">
-        {sections.length === 1 ? '1 section' : `${sections.length} sections`} · read-only. Nothing
-        on this page changes anything, and no buyer of this shop appears anywhere on it.
-      </p>
+      <PageHeader
+        back={{ href: '/admin/users', label: 'Accounts' }}
+        title={detail.email}
+        subtitle={
+          <>
+            {sections.length === 1 ? '1 section' : `${sections.length} sections`} · read-only.
+            Nothing on this page changes anything, and no buyer of this shop appears anywhere
+            on it.
+          </>
+        }
+      />
 
       <div className="mt-4 flex flex-col gap-3">
         {sections.map((section) => (

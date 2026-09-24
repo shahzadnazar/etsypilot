@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
 import { requireAdmin } from '@/domain/admin/access'
 import { adminListManagers } from '@/lib/repositories/admin-reads-every-shop'
@@ -32,17 +33,17 @@ export default async function AdminManagersPage() {
     <>
       <title>Managers · Operations · EtsyPilot</title>
 
-      <div className="flex flex-col gap-1 pb-4">
-        <h1 className="text-[22px] font-bold leading-tight tracking-[-0.01em] text-ink-1">
-          Managers
-        </h1>
-        <p className="max-w-prose text-small leading-relaxed text-muted-1">
-          {managers.length === 1 ? '1 account' : `${managers.length} accounts`} promoted to manager.
-          A manager sees the account list and nothing else — no money, no seller data, no audit
-          log. Super admins and admins are not listed here: their role comes from an environment
-          variable, not from this column.
-        </p>
-      </div>
+      <PageHeader
+        title="Managers"
+        subtitle={
+          <>
+            {managers.length === 1 ? '1 account' : `${managers.length} accounts`} promoted to
+            manager. A manager sees the account list and nothing else — no money, no seller data,
+            no audit log. Super admins and admins are not listed here: their role comes from an
+            environment variable, not from this column.
+          </>
+        }
+      />
 
       {managers.length === 0 ? (
         <Card className="p-[18px] text-small leading-relaxed text-ink-2">

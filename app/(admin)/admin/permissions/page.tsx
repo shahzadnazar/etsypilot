@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
 import { requireAdmin } from '@/domain/admin/access'
 import {
@@ -56,15 +57,10 @@ export default async function AdminPermissionsPage({
     <>
       <title>Permissions · Operations · EtsyPilot</title>
 
-      <div className="flex flex-col gap-1 pb-4">
-        <h1 className="text-[22px] font-bold leading-tight tracking-[-0.01em] text-ink-1">
-          Permissions
-        </h1>
-        <p className="max-w-prose text-small leading-relaxed text-muted-1">
-          What each platform role may do. Set per role, not per person — one set for all admins,
-          one for all managers. Changes take effect on their next request and need your password.
-        </p>
-      </div>
+      <PageHeader
+        title="Permissions"
+        subtitle="What each platform role may do. Set per role, not per person — one set for all admins, one for all managers. Changes take effect on their next request and need your password."
+      />
 
       {changed ? (
         <Card

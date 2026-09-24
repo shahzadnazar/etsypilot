@@ -534,3 +534,96 @@ describe('a 404 in the operator console says something true there', () => {
     expect(code(FRAME)).toContain('links.length > 0')
   })
 })
+
+/* ───────────────────── one header, across both applications ──────────────── */
+
+describe('the operator console writes no heading of its own', () => {
+  /*
+   * Seven operator pages hand-rolled
+   *
+   *     <h1 className="text-[22px] font-bold leading-tight tracking-[-0.01em] …">
+   *
+   * a literal that had ALREADY DRIFTED from PageHeader's `text-page` token —
+   * which is the whole argument. Two spellings of one heading do not stay two
+   * spellings of one heading; they become two headings.
+   */
+
+  it('finds the operator pages it is meant to be checking', () => {
+    // Anti-vacuity, and it has teeth here: a broken pagesUnder() would report
+    // no pages and every assertion below would pass on nothing at all.
+    expect(pagesUnder(ADMIN_ROOT).length).toBeGreaterThan(10)
+  })
+
+  it('CONTAINS NO LITERAL <h1 ANYWHERE UNDER app/(admin)', () => {
+    for (const page of pagesUnder(ADMIN_ROOT)) {
+      expect(code(page), page).not.toContain('<h1')
+    }
+  })
+
+  /**
+   * /admin renders nothing: it gates, then redirects to the one surface that
+   * exists. A header rule cannot apply to a page with no markup, and the
+   * exemption is PAID FOR below rather than asserted.
+   */
+  const RENDERS_NOTHING = posixJoin(ADMIN_ROOT, 'admin/page.tsx')
+
+  it('exempts only the page that renders nothing, and proves it renders nothing', () => {
+    const source = code(RENDERS_NOTHING)
+    expect(source).toContain('redirect(')
+    expect(source).not.toContain('return (')
+    expect(source).not.toContain('className')
+  })
+
+  it('renders every one of them through PageHeader', () => {
+    /*
+     * The converse of the rule above, and not the same claim. "No <h1" is
+     * satisfied by a page with no heading at all — a page that lost its title
+     * in the move would pass it. This is what says the heading is still there.
+     */
+    for (const page of pagesUnder(ADMIN_ROOT)) {
+      if (page === RENDERS_NOTHING) continue
+      expect(code(page), page).toContain('<PageHeader')
+    }
+  })
+
+  it('keeps the ONE <h1 in PageHeader, where the token is', () => {
+    const header = code('components/layout/page-header.tsx')
+    expect(header).toContain('<h1')
+    expect(header).toContain('text-page')
+    /*
+     * And the drifted heading literal is gone from the operator pages. Matched
+     * in full — `text-[22px] font-bold leading-tight` — rather than on the
+     * size alone, because the size alone is also how admin/etsy renders a
+     * metric, and a rule that fired on that would be telling a true thing
+     * about the wrong element.
+     */
+    for (const page of pagesUnder(ADMIN_ROOT)) {
+      expect(code(page), page).not.toContain('text-[22px] font-bold leading-tight')
+    }
+  })
+
+  it('gives the three detail screens a back link and the list screens none', () => {
+    /*
+     * The `back` slot exists because three pages invented their own markup for
+     * it, each slightly different. Asserting WHICH pages carry one is what
+     * stops the slot being sprayed across the list screens, where one level up
+     * is the console's own rail.
+     */
+    const withBack = pagesUnder(ADMIN_ROOT)
+      .filter((page) => code(page).includes('back={'))
+      .sort()
+    expect(withBack).toEqual([
+      posixJoin(ADMIN_ROOT, 'admin/permissions/[role]/page.tsx'),
+      posixJoin(ADMIN_ROOT, 'admin/users/[userId]/page.tsx'),
+      posixJoin(ADMIN_ROOT, 'admin/users/[userId]/role/page.tsx'),
+    ])
+  })
+
+  it('draws no breadcrumb trail', () => {
+    // Two levels. A trail over two levels is a line of vertical space on a
+    // phone spent saying what the single back link already says.
+    for (const page of pagesUnder(ADMIN_ROOT)) {
+      expect(code(page).toLowerCase(), page).not.toContain('breadcrumb')
+    }
+  })
+})
