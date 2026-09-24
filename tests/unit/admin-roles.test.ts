@@ -599,3 +599,246 @@ describe('the seller app never links to /admin', () => {
     }
   })
 })
+
+/* ─────────── the gate that decides before the response streams ───────────── */
+
+describe('every operator route is gated ABOVE its Suspense boundary', () => {
+  /*
+   * ══════════════════════════════════════════════════════════════════════
+   *   A PAGE'S notFound() CANNOT SET A STATUS THAT HAS ALREADY BEEN SENT,
+   *   AND A loading.tsx IS WHAT SENDS IT.
+   * ══════════════════════════════════════════════════════════════════════
+   *
+   * `loading.tsx` wraps a segment's page in Suspense. Next flushes everything
+   * ABOVE that boundary as soon as it resolves — 200, with the fallback — so
+   * the page body runs into a response whose status line is already on the
+   * wire.
+   *
+   * MEASURED against `next start` as a real MANAGER holding only users.view:
+   * eight of nine gated routes answered 200 carrying the operator 404 page,
+   * and /admin/permissions — the one segment with no loading.tsx — answered
+   * 404. The BODY was right on all of them, which is exactly why it survived
+   * a round of verification: only the status line was wrong, and nothing that
+   * reads a page notices. Everything that reads a status does.
+   *
+   * So each route carries a layout.tsx, which is part of the shell and decides
+   * before the flush. This asserts the structure rather than the behaviour —
+   * the behaviour is measured against a running server in
+   * tests/browser/admin-refusal-status.py, because a status line is not a
+   * thing a unit test can see, and believing otherwise is what produced the
+   * defect.
+   */
+
+  function under(dir: string, name: string, out: string[] = []): string[] {
+    for (const entry of readdirSync(dir)) {
+      const path = posixJoin(dir, entry)
+      if (statSync(path).isDirectory()) under(path, name, out)
+      else if (entry === name) out.push(path)
+    }
+    return out
+  }
+
+  const strip = (file: string) =>
+    readFileSync(file, 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '')
+
+  const PAGES = under('app/(admin)', 'page.tsx')
+  const LAYOUTS = under('app/(admin)', 'layout.tsx')
+  const LOADINGS = under('app/(admin)', 'loading.tsx')
+
+  /**
+   * The keys a file REFUSES on — not the keys it merely consults.
+   *
+   * The distinction is load-bearing and the first version of this test did not
+   * make it. The accounts list calls
+   *
+   *     const mayChangeRoles = access.canSuperAdminOnly('roles.write')
+   *
+   * to decide whether to render a column. That is a question, not a gate: a
+   * viewer without roles.write still sees the list, minus one column. Counting
+   * it as a requirement made this test demand that /admin/users refuse anyone
+   * without roles.write — which would have locked every manager out of the one
+   * screen they are meant to have.
+   *
+   * A refusal is `requireAdmin(...)`, which throws by itself, or a
+   * canSuperAdminOnly() whose negation is followed by notFound().
+   */
+  function keysIn(file: string): string[] {
+    const source = strip(file)
+    return [
+      ...[...source.matchAll(/requireAdmin\('([\w.]+)'\)/g)].map((m) => m[1]!),
+      ...[...source.matchAll(/permission: '([\w.]+)'/g)].map((m) => m[1]!),
+      ...[...source.matchAll(/superAdminOnly: '([\w.]+)'/g)].map((m) => m[1]!),
+      ...[...source.matchAll(/!\s*access\.canSuperAdminOnly\('([\w.]+)'\)\)\s*notFound\(\)/g)].map(
+        (m) => m[1]!,
+      ),
+    ].sort()
+  }
+
+  it('tells a REFUSAL apart from a question, which is where this test started wrong', () => {
+    // The positive control for keysIn. Without it the rule below passes on an
+    // extractor that treats every mention of a capability as a requirement.
+    const list = posixJoin('app/(admin)', 'admin/users/(list)/page.tsx')
+    expect(strip(list)).toContain("canSuperAdminOnly('roles.write')")
+    expect(keysIn(list)).toEqual(['users.view'])
+
+    const editor = posixJoin('app/(admin)', 'admin/permissions/page.tsx')
+    expect(keysIn(editor)).toEqual(['roles.write', 'users.view'])
+  })
+
+  /** Every layout from the (admin) root down to this file's own segment. */
+  function chainFor(file: string): string[] {
+    const parts = file.split('/')
+    const chain: string[] = []
+    for (let depth = parts.length - 1; depth > 0; depth -= 1) {
+      const candidate = `${parts.slice(0, depth).join('/')}/layout.tsx`
+      if (LAYOUTS.includes(candidate)) chain.push(candidate)
+    }
+    return chain
+  }
+
+  it('finds the pages, the layouts and the skeletons it is checking', () => {
+    expect(PAGES.length).toBeGreaterThanOrEqual(13)
+    expect(LAYOUTS.length).toBeGreaterThanOrEqual(12)
+    expect(LOADINGS.length).toBeGreaterThanOrEqual(8)
+  })
+
+  it('COVERS BOTH GROUPS: routes with a skeleton and routes without', () => {
+    /*
+     * The difference between those two groups WAS the original clue, and a
+     * check that happened to cover only one of them would have missed this the
+     * first time too. This asserts the sample is mixed, so the rules below
+     * cannot quietly become a statement about one group.
+     */
+    const segments = PAGES.map((page) => page.slice(0, page.lastIndexOf('/')))
+    const withSkeleton = segments.filter((segment) =>
+      LOADINGS.some((loading) => loading.startsWith(`${segment}/`)),
+    )
+    expect(withSkeleton.length).toBeGreaterThan(0)
+    expect(segments.length - withSkeleton.length).toBeGreaterThan(0)
+  })
+
+  it('GIVES EVERY PAGE A LAYOUT GATE ABOVE IT', () => {
+    for (const page of PAGES) {
+      const gated = chainFor(page).filter((layout) =>
+        strip(layout).includes('requireOperatorRoute('),
+      )
+      // /admin is the redirect stub: it has no Suspense above it and the group
+      // layout already refuses a non-operator before it runs.
+      if (page === posixJoin('app/(admin)', 'admin/page.tsx')) continue
+      expect(gated, page).not.toEqual([])
+    }
+  })
+
+  it('DECLARES THE SAME KEYS IN THE LAYOUT AS IN THE PAGE', () => {
+    /*
+     * Two places enforce each route now, so they can disagree — and a layout
+     * that gated on a WEAKER permission than its page would restore exactly
+     * the bug this describe block exists for, with the page's stricter check
+     * refusing at 200 all over again.
+     */
+    for (const page of PAGES) {
+      if (page === posixJoin('app/(admin)', 'admin/page.tsx')) continue
+      const fromLayouts = [...new Set(chainFor(page).flatMap(keysIn))].sort()
+      const fromPage = [...new Set(keysIn(page))].sort()
+      expect(fromLayouts, page).toEqual(fromPage)
+    }
+  })
+
+  it('keeps the page gating itself as well, so a deleted layout is not an opening', () => {
+    for (const page of PAGES) {
+      expect(strip(page), page).toContain('requireAdmin(')
+    }
+  })
+
+  it('puts a gate above every skeleton, so adding one cannot cost a status', () => {
+    /*
+     * Stated from the SKELETON's side rather than the page's. A loading.tsx
+     * added to a segment tomorrow is the exact edit that caused this, and this
+     * is the assertion that would have gone red on it.
+     */
+    for (const loading of LOADINGS) {
+      const gated = chainFor(loading).filter((layout) =>
+        strip(layout).includes('requireOperatorRoute('),
+      )
+      expect(gated, loading).not.toEqual([])
+    }
+  })
+})
+
+/* ──────────── the same shape on the seller side, which is clean ──────────── */
+
+describe('a seller route redirects before it does any work', () => {
+  /*
+   * THE SAME SHAPE, CHECKED BECAUSE THE OPERATOR SIDE HAD THE DEFECT.
+   *
+   * Eleven seller routes have a loading.tsx, and every one of their pages
+   * calls redirect('/login') for a signed-out visitor — a redirect issued
+   * from inside a Suspense boundary, which is exactly the arrangement that
+   * cost the operator routes their 404.
+   *
+   * MEASURED against `next start`, signed out: all eleven answer 307 with
+   * Location: /login. No seller page calls notFound() at all. So the seller
+   * side does not have the defect today, and the reason it does not is
+   * structural rather than lucky: the session check is the FIRST thing every
+   * one of those pages does, so nothing has suspended by the time the redirect
+   * throws. Middleware sends nobody anywhere — it says so — so the 307 is the
+   * page's own.
+   *
+   * That property is what this asserts, because it is the property that keeps
+   * the measurement true. A page that fetched first and redirected second
+   * would return 200 and then bounce the browser with client-side JavaScript,
+   * which is slower, invisible to anything following redirects server-side,
+   * and the same class of bug wearing different clothes.
+   */
+
+  function sellerPages(dir: string, out: string[] = []): string[] {
+    for (const entry of readdirSync(dir)) {
+      const path = posixJoin(dir, entry)
+      if (statSync(path).isDirectory()) sellerPages(path, out)
+      else if (entry === 'page.tsx') out.push(path)
+    }
+    return out
+  }
+
+  const strip = (file: string) =>
+    readFileSync(file, 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '')
+
+  const GUARDED = sellerPages('app/(dashboard)').filter((page) =>
+    strip(page).includes("redirect('/login')"),
+  )
+
+  it('finds the seller pages it is meant to be checking', () => {
+    expect(GUARDED.length).toBeGreaterThanOrEqual(20)
+  })
+
+  it('CHECKS THE SESSION BEFORE IT AWAITS ANYTHING ELSE', () => {
+    for (const page of GUARDED) {
+      const source = strip(page)
+      const guard = source.indexOf("redirect('/login')")
+      const body = source.slice(0, guard)
+      /*
+       * Exactly one await before the guard, and it is the session read itself.
+       * A second one is something that ran for a visitor who is not signed in,
+       * and — the point of this test — something that may have suspended and
+       * committed a 200 before the redirect could set a status.
+       */
+      const awaits = body.match(/\bawait\b/g) ?? []
+      expect(awaits.length, `${page} awaits ${awaits.length} things before its session guard`).toBe(
+        1,
+      )
+      expect(body, page).toMatch(/await (getSession|requireSession)\(\)/)
+    }
+  })
+
+  it('calls notFound() from no seller page at all', () => {
+    // If one ever does, it needs the operator treatment: the status has to be
+    // decided above the boundary, not inside it.
+    for (const page of sellerPages('app/(dashboard)')) {
+      expect(strip(page), page).not.toContain('notFound()')
+    }
+  })
+})

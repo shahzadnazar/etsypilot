@@ -245,3 +245,50 @@ export async function requireAdmin(permission: Permission): Promise<AdminAccess>
   if (!access || !access.can(permission)) notFound()
   return access
 }
+
+/**
+ * The gate a ROUTE SEGMENT applies, from its layout, above every Suspense
+ * boundary below it.
+ *
+ * ══════════════════════════════════════════════════════════════════════════
+ *   A PAGE'S OWN notFound() CANNOT SET THE STATUS ONCE THE RESPONSE HAS
+ *   STARTED STREAMING, AND A loading.tsx MAKES IT START.
+ * ══════════════════════════════════════════════════════════════════════════
+ *
+ * `loading.tsx` wraps a segment's PAGE in a Suspense boundary. Next renders
+ * everything above that boundary — the shell — and flushes it as soon as it
+ * resolves, with the fallback in place. The 200 is on the wire before the page
+ * body ever runs, so the page's requireAdmin() throws into a response whose
+ * status line has already been sent.
+ *
+ * MEASURED, as a real MANAGER holding only users.view, against `next start`:
+ *
+ *   /admin/audit          200   ← has a loading.tsx
+ *   /admin/etsy           200   ← has a loading.tsx
+ *   /admin/permissions    404   ← has none
+ *
+ * Eight of nine gated routes answered 200 carrying the operator 404 page. The
+ * body was right, which is what let it survive: the only wrong thing was the
+ * status line, and nothing that reads a page notices. Everything that reads a
+ * STATUS does — which is every scanner and every script, and is the whole
+ * reason /admin answers 404 rather than 403.
+ *
+ * A LAYOUT is part of the shell, so it decides before the flush. This is what
+ * each route's layout.tsx calls, and the layout chain is why the route groups
+ * exist: `(list)` and `(detail)` are places to hang a gate that wraps ONE page
+ * rather than a whole subtree, because /admin/users and /admin/users/<id> do
+ * not require the same permission.
+ *
+ * THE PAGES STILL GATE THEMSELVES. This is not a replacement for that, and a
+ * sweep asserts every page keeps its own call: a layout can be deleted, and a
+ * page that trusted it would then be open.
+ */
+export async function requireOperatorRoute(gate: {
+  permission: Permission
+  /** For the two capabilities that are not delegatable. */
+  superAdminOnly?: SuperAdminOnlyCapability
+}): Promise<AdminAccess> {
+  const access = await requireAdmin(gate.permission)
+  if (gate.superAdminOnly && !access.canSuperAdminOnly(gate.superAdminOnly)) notFound()
+  return access
+}

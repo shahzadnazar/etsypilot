@@ -71,3 +71,38 @@ export function posixJoin(...parts: string[]): string {
 export function posixRelative(from: string, to: string): string {
   return posix(relative(from, to))
 }
+
+/*
+ * ── A FILE PATH IS NOT A ROUTE ────────────────────────────────────────────
+ *
+ * `app/(admin)/admin/users/(list)/page.tsx` serves `/admin/users`: both
+ * `(admin)` and `(list)` are route GROUPS, which organise files and do not
+ * appear in the URL.
+ *
+ * Several operator tests computed the file path from the href by hand —
+ * `${ADMIN_ROOT}/${href}/page.tsx` — which worked while every route was one
+ * directory per segment, and broke the moment a group was introduced to hang
+ * a gate on. They now ask these, so the next group costs nothing.
+ *
+ * links.test.ts has had its own copy of routeOf since it was written; this is
+ * the same rule, in the one place both can read it.
+ */
+
+/** The URL a page file serves. Route groups are dropped, as Next drops them. */
+export function routeOf(pagePath: string): string {
+  const dir = posix(pagePath)
+    .replace(/^app/, '')
+    .replace(/\/page\.tsx$/, '')
+  return dir.replace(/\/\([^)]*\)/g, '') || '/'
+}
+
+/**
+ * The page file that serves a route, or null.
+ *
+ * Takes the candidate files rather than reading the disk, so a caller that has
+ * already walked the tree does not walk it again — and so this stays a pure
+ * function of a list, which is testable.
+ */
+export function pageForRoute(route: string, pages: readonly string[]): string | null {
+  return pages.find((page) => routeOf(page) === route) ?? null
+}

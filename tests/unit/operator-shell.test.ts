@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 
-import { posixJoin } from '../support/paths'
+import { pageForRoute, posixJoin } from '../support/paths'
 import {
   OPERATOR_NAV,
   allOperatorHrefs,
@@ -51,9 +51,17 @@ function pagesUnder(dir: string, out: string[] = []): string[] {
   return out
 }
 
-/** The file Next would render for an operator href. */
+/**
+ * The file Next would render for an operator href.
+ *
+ * Resolved by MATCHING ROUTES, not by rebuilding the path from the href. The
+ * old version was `${ADMIN_ROOT}/${href}/page.tsx`, which held only while
+ * every route was one directory per URL segment. /admin/users now lives in
+ * app/(admin)/admin/users/(list)/page.tsx — a route group, invisible in the
+ * URL — so the href no longer spells its own file path.
+ */
 function pageFor(href: string): string {
-  return posixJoin(ADMIN_ROOT, href.replace(/^\//, ''), 'page.tsx')
+  return pageForRoute(href, pagesUnder(ADMIN_ROOT)) ?? `${href} (no page)`
 }
 
 /** A viewer holding exactly these permissions and no capabilities. */
@@ -634,7 +642,7 @@ describe('the operator console writes no heading of its own', () => {
       .sort()
     expect(withBack).toEqual([
       posixJoin(ADMIN_ROOT, 'admin/permissions/[role]/page.tsx'),
-      posixJoin(ADMIN_ROOT, 'admin/users/[userId]/page.tsx'),
+      pageFor('/admin/users/[userId]')!,
       posixJoin(ADMIN_ROOT, 'admin/users/[userId]/role/page.tsx'),
     ])
   })
@@ -687,7 +695,7 @@ describe('every operator table goes through one wrapper', () => {
       'admin/managers/page.tsx',
       'admin/permissions/page.tsx',
       'admin/subscriptions/page.tsx',
-      'admin/users/page.tsx',
+      'admin/users/(list)/page.tsx',
     ])
   })
 
@@ -748,6 +756,16 @@ describe('the operator console uses the shared state surfaces', () => {
    * and no loading.tsx, so every screen showed a blank frame and then snapped.
    */
 
+  /**
+   * The skeleton that covers a screen, beside whatever file serves it.
+   *
+   * Derived from the page rather than from the screen name: /admin/users is
+   * served out of a `(list)` route group now, so `admin/users/loading.tsx` is
+   * no longer where its skeleton lives.
+   */
+  const loadingFor = (screen: string) =>
+    posixJoin(pageFor(`/admin/${screen}`).replace(/\/page\.tsx$/, ''), 'loading.tsx')
+
   const QUERY_SCREENS = [
     'ai',
     'audit',
@@ -784,7 +802,7 @@ describe('the operator console uses the shared state surfaces', () => {
 
   it('gives every screen that runs a query a skeleton', () => {
     for (const screen of QUERY_SCREENS) {
-      const loading = posixJoin(ADMIN_ROOT, `admin/${screen}/loading.tsx`)
+      const loading = loadingFor(screen)
       expect(existsSync(loading), loading).toBe(true)
       const source = code(loading)
       expect(source, loading).toContain('Skeleton')
@@ -804,9 +822,7 @@ describe('the operator console uses the shared state surfaces', () => {
      */
     const bodies = new Set(
       QUERY_SCREENS.map((screen) =>
-        code(posixJoin(ADMIN_ROOT, `admin/${screen}/loading.tsx`))
-          .split('return (')[1]!
-          .replace(/\s+/g, ' '),
+        code(loadingFor(screen)).split('return (')[1]!.replace(/\s+/g, ' '),
       ),
     )
     expect(bodies.size).toBeGreaterThanOrEqual(6)
@@ -849,7 +865,7 @@ describe('the operator console uses the shared state surfaces', () => {
   it('still has an empty state on every screen that can be empty', () => {
     // The converse. "No bare text" is satisfied by deleting the empty states.
     for (const screen of QUERY_SCREENS) {
-      const page = posixJoin(ADMIN_ROOT, `admin/${screen}/page.tsx`)
+      const page = pageFor(`/admin/${screen}`)
       expect(code(page), page).toContain('<EmptyState')
     }
   })
@@ -957,7 +973,7 @@ describe('the operator console formats no number of its own', () => {
      * class that does nothing, and a Numeric around one is a lie about what
      * the element holds. They lost the class instead.
      */
-    const detail = code(posixJoin(ADMIN_ROOT, 'admin/users/[userId]/page.tsx'))
+    const detail = code(pageFor('/admin/users/[userId]'))
     expect(detail).toMatch(/<li[\s\S]{0,200}\{scope\}/)
     expect(detail).not.toMatch(/<Numeric[^>]*>\s*\{scope\}/)
     expect(code(posixJoin(ADMIN_ROOT, 'admin/usage/page.tsx'))).toContain('<code>usage_records</code>')

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { pageForRoute, posixJoin } from '../support/paths'
 import {
   ACCOUNT_SECTIONS,
   coverageStatement,
@@ -32,8 +33,24 @@ import { PERMISSION_LABELS } from '@/domain/admin/permissions'
  * in against a real server and reads what actually came back.
  */
 
-const PAGE = 'app/(admin)/admin/users/[userId]/page.tsx'
-const LIST = 'app/(admin)/admin/users/page.tsx'
+
+function adminPages(dir = 'app/(admin)', out: string[] = []): string[] {
+  for (const entry of readdirSync(dir)) {
+    const path = posixJoin(dir, entry)
+    if (statSync(path).isDirectory()) adminPages(path, out)
+    else if (entry === 'page.tsx') out.push(path)
+  }
+  return out
+}
+/*
+ * Resolved by ROUTE, not spelled as a path.
+ *
+ * Both files moved into route groups — `(detail)` and `(list)` — so that each
+ * could carry a layout gating exactly one page. A group is invisible in the
+ * URL, so the route is the stable name and the file path is not.
+ */
+const PAGE = pageForRoute('/admin/users/[userId]', adminPages())!
+const LIST = pageForRoute('/admin/users', adminPages())!
 
 /** Source with comments stripped — a guard must not be satisfied by prose. */
 function code(file: string): string {
