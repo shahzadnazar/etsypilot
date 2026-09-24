@@ -1,12 +1,12 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { requireAdmin } from '@/domain/admin/access'
 import { isRefusalReason, REFUSAL_COPY } from '@/domain/admin/audit'
 import { ASSIGNABLE_ROLES, roleSource } from '@/domain/admin/roles'
 import { adminReadAccount } from '@/lib/repositories/admin-reads-every-shop'
 import { changeRole } from '../../actions'
+import { ChangeRoleSubmit } from './submit'
 
 /*
  * The confirmation screen for a role change.
@@ -56,6 +56,18 @@ export default async function ChangeRolePage({
   if (!target) notFound()
 
   const fromEnvironment = roleSource(target.resolvedRole) === 'ENVIRONMENT'
+  /*
+   * The role this form is starting from, and the one the heading calls
+   * "currently".
+   *
+   * resolvedRole rather than storedRole, so the pre-selected radio cannot
+   * disagree with the sentence above it. Past this line they are the same
+   * value — a DATABASE source means resolvePlatformRole() returned the stored
+   * value — with one exception that matters: a row edited directly to hold
+   * 'ADMIN' is not storable, so it resolves to USER. The heading would say
+   * "currently user" while storedRole pre-selected nothing at all.
+   */
+  const currentRole = target.resolvedRole
   const refusal = isRefusalReason(outcome) ? outcome : null
 
   return (
@@ -145,7 +157,7 @@ export default async function ChangeRolePage({
                     name="role"
                     value={role}
                     required
-                    defaultChecked={target.storedRole === role}
+                    defaultChecked={currentRole === role}
                     className="mt-px h-6 w-6 shrink-0 accent-[var(--brand)]"
                   />
                   <span>
@@ -190,9 +202,7 @@ export default async function ChangeRolePage({
             </div>
 
             <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
-              <Button type="submit" variant="primary">
-                Change role
-              </Button>
+              <ChangeRoleSubmit currentRole={currentRole} />
               <Link
                 href="/admin/users"
                 className="inline-flex h-11 items-center rounded-control px-3.5 text-[12.5px] font-semibold text-ink-2 hover:bg-canvas-soft"

@@ -343,6 +343,24 @@ export function rebuildOutcome(row: {
  */
 export function describeOutcome(outcome: AdminAuditOutcome): string {
   if (outcome.kind === 'REFUSED') return REFUSAL_COPY[outcome.reason]
+  /*
+   * A NO-OP IS NOT A PROMOTION, and this line is here because the log said it
+   * was. A super admin submitted "Manager" for an account already holding
+   * manager and the log read:
+   *
+   *     manager → manager        Promoted to manager
+   *
+   * The change column was honest and the label was not, because the label was
+   * being chosen from the TARGET role rather than from whether anything moved.
+   * Nothing was promoted. Reading it first is what makes the other three
+   * branches true statements rather than statements that happen to be true
+   * when the roles differ.
+   *
+   * describePermissionOutcome() below has said 'No change' for an empty
+   * permission diff since it was written; this is the same rule, arrived at
+   * later, for the log next to it.
+   */
+  if (outcome.from === outcome.to) return 'No change'
   if (outcome.to === 'MANAGER') return 'Promoted to manager'
   if (outcome.from === 'MANAGER') return 'Demoted to user'
   return 'Set to user'

@@ -196,6 +196,39 @@ describe('the audit record carries its own outcome', () => {
     ).toBe(REFUSAL_COPY.WRONG_PASSWORD)
   })
 
+  it('calls a no-op a no-op, in both directions', () => {
+    /*
+     * FOUND ON THE RUNNING PANEL. A super admin submitted "Manager" for an
+     * account already holding manager, and the log read
+     *
+     *     manager → manager        Promoted to manager
+     *
+     * because the sentence was chosen from the target role rather than from
+     * whether anything moved. Both directions are asserted: the manager case
+     * is the one that was observed, and the user case is the one that would
+     * still have read "Set to user" — plausible enough that nobody would look
+     * twice at it.
+     */
+    expect(describeOutcome({ kind: 'APPLIED', from: 'MANAGER', to: 'MANAGER' })).toBe('No change')
+    expect(describeOutcome({ kind: 'APPLIED', from: 'USER', to: 'USER' })).toBe('No change')
+  })
+
+  it('still calls a real change a change', () => {
+    /*
+     * The converse, so the fix above cannot be satisfied by a function that
+     * says 'No change' to everything — which would pass the test before it
+     * just as well.
+     */
+    for (const outcome of [
+      { kind: 'APPLIED', from: 'USER', to: 'MANAGER' },
+      { kind: 'APPLIED', from: 'MANAGER', to: 'USER' },
+      { kind: 'APPLIED', from: 'ADMIN', to: 'USER' },
+      { kind: 'APPLIED', from: 'SUPER_ADMIN', to: 'MANAGER' },
+    ] as const) {
+      expect(describeOutcome(outcome), `${outcome.from} -> ${outcome.to}`).not.toBe('No change')
+    }
+  })
+
   it('answers "was this refused" from one field', () => {
     const base = {
       id: 'e1',
