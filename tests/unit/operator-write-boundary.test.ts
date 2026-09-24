@@ -73,14 +73,69 @@ import {
 const OPERATOR_ROOTS = ['app/(admin)', 'domain/admin']
 const OPERATOR_FILE = /^lib\/repositories\/admin-/
 
+/*
+ * ── EVERY FILESYSTEM ANSWER IS REMEMBERED ─────────────────────────────────
+ *
+ * The four caches below hold the only three questions this file asks the disk:
+ * what is in a directory, what is in a file, and does a path exist. None of
+ * those changes while the suite runs, so asking twice can only cost time.
+ *
+ * It was costing a lot. One test — "finds an EtsyService holder outside the
+ * operator area" — took 4483ms on one Windows run and 5149ms on the next,
+ * against a 5000ms limit, so whether the suite was green depended on the
+ * weather. MEASURED BEFORE TOUCHING ANYTHING, and the timeout turned out to be
+ * the wrong thing to reach for: the walk was only 14ms of it. The cost was the
+ * same files being read, and the same candidate paths being probed, over and
+ * over — 1290 readFileSync and 3241 existsSync calls across this one test
+ * file, for 253 distinct files and 269 distinct paths.
+ *
+ * With the caches, for the whole file:
+ *
+ *   readFileSync  1290 -> 253     readdirSync  580 -> 157
+ *   existsSync    3241 -> 269     statSync    4023 -> 660
+ *   bytes read    10.0MB -> 2.0MB
+ *
+ * 9134 filesystem calls became 1339. On Linux this file's tests went from
+ * 272ms to 45ms, and the flaky one from 66ms to 21ms. Windows pays perhaps
+ * fifty times as much per call as Linux does — Defender inspects each one —
+ * which is why the same test costs microseconds here and seconds there, and
+ * why removing five sixths of the calls is the fix rather than a larger
+ * number in the timeout. No timeout was raised, here or globally: a raised
+ * global testTimeout would hide the next real hang anywhere in the suite.
+ */
+
 /** Source with comments removed. See the note above. */
+const CODE = new Map<string, string>()
 function code(file: string): string {
-  return readFileSync(file, 'utf8')
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/^\s*\/\/.*$/gm, '')
+  let cached = CODE.get(file)
+  if (cached === undefined) {
+    cached = readFileSync(file, 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '')
+    CODE.set(file, cached)
+  }
+  return cached
 }
 
-function walk(dir: string, out: string[] = []): string[] {
+/**
+ * Every .ts/.tsx file under a directory, remembered per root.
+ *
+ * The recursion is a separate function on purpose. Memoising the recursive
+ * form directly would be wrong: the inner calls accumulate into a shared `out`
+ * and ignore the return value, so a cache hit on a subdirectory would return
+ * its files to nobody and silently drop them from the parent's list.
+ */
+const WALKED = new Map<string, string[]>()
+function walk(dir: string): string[] {
+  let cached = WALKED.get(dir)
+  if (!cached) {
+    cached = walkInto(dir, [])
+    WALKED.set(dir, cached)
+  }
+  return cached
+}
+
+function walkInto(dir: string, out: string[]): string[] {
   for (const entry of readdirSync(dir)) {
     if (entry === 'node_modules' || entry === '.next') continue
     /*
@@ -91,7 +146,7 @@ function walk(dir: string, out: string[] = []): string[] {
      * spellings has already given the wrong answer.
      */
     const path = posixJoin(dir, entry)
-    if (statSync(path).isDirectory()) walk(path, out)
+    if (statSync(path).isDirectory()) walkInto(path, out)
     else if (/\.tsx?$/.test(path)) out.push(path)
   }
   return out
@@ -109,9 +164,26 @@ function resolveImport(specifier: string, from: string): string | null {
     posixJoin(base, 'index.ts'),
     posixJoin(base, 'index.tsx'),
   ]) {
-    if (existsSync(candidate) && statSync(candidate).isFile()) return candidate
+    if (isFile(candidate)) return candidate
   }
   return null
+}
+
+/**
+ * Does this path name a file?
+ *
+ * The single biggest saving of the four caches. Forty modules importing
+ * `@/lib/db` probe the same four candidate paths forty times, and every probe
+ * is two syscalls.
+ */
+const IS_FILE = new Map<string, boolean>()
+function isFile(candidate: string): boolean {
+  let cached = IS_FILE.get(candidate)
+  if (cached === undefined) {
+    cached = existsSync(candidate) && statSync(candidate).isFile()
+    IS_FILE.set(candidate, cached)
+  }
+  return cached
 }
 
 /**
@@ -121,13 +193,17 @@ function resolveImport(specifier: string, from: string): string | null {
  * edge — deferring a module to runtime does not make its writes unreachable,
  * and treating it as invisible would be the easiest way around this test.
  */
+const IMPORTS = new Map<string, string[]>()
 function importsOf(file: string): string[] {
+  const cached = IMPORTS.get(file)
+  if (cached) return cached
   const source = code(file)
   const found: string[] = []
   for (const match of source.matchAll(/(?:from|import)\s*\(?\s*['"]([^'"]+)['"]/g)) {
     const resolved = resolveImport(match[1]!, file)
     if (resolved) found.push(resolved)
   }
+  IMPORTS.set(file, found)
   return found
 }
 
