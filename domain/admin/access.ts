@@ -99,13 +99,15 @@ import 'server-only'
  */
 
 import { cache } from 'react'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { getOperatorIdentity } from '@/lib/auth/operator-identity'
+import { getMfaPosture } from '@/lib/auth/mfa'
 import { isLiveAuth } from '@/lib/auth/supabase-config'
 import { isDatabaseConfigured } from '@/lib/db'
 import { logFailure } from '@/lib/errors/api'
 import { adminReadStoredPlatformRole } from '@/lib/repositories/admin-reads-every-shop'
 import { readStoredPermissions } from '@/lib/repositories/admin-permissions'
+import { requiresTwoFactor, twoFactorRemedy } from '@/domain/auth/two-factor'
 import { resolvePermissions } from './permissions'
 import {
   canSuperAdminOnly,
@@ -247,6 +249,74 @@ export const getAdminAccess = cache(async function getAdminAccess(): Promise<Adm
     canSuperAdminOnly: (capability) => canSuperAdminOnly(role, capability),
   }
 })
+
+/**
+ * A SECOND FACTOR, AND A SESSION THAT ACTUALLY USED IT.
+ *
+ * ══════════════════════════════════════════════════════════════════════════
+ *   THE GATE REQUIRES aal2. ENROLLMENT ALONE IS NOT A GATE — IT IS A BADGE.
+ * ══════════════════════════════════════════════════════════════════════════
+ *
+ * lib/auth/mfa.ts explains why those are two questions. This is where the
+ * second one is spent: an operator who enrolled six months ago and signed in
+ * with a password five minutes ago holds an aal1 session, and aal1 does not
+ * open the console. If this required `enrolled` instead of `satisfied`, every
+ * operator would have set up an authenticator they were never asked for again,
+ * and a stolen password would still be enough — which is the whole of what 2FA
+ * is bought to prevent.
+ *
+ * ── IT REDIRECTS, WHERE EVERY OTHER REFUSAL HERE 404s ────────────────────
+ *
+ * Deliberate, and the ORDER is what makes it safe. requireAdmin() has already
+ * established that this caller is an operator before anything below runs. So:
+ *
+ *   not an operator          404, unchanged, from the caller. Learns nothing.
+ *   operator, no factor      redirect to the setup screen
+ *   operator, aal1           redirect to the code screen
+ *
+ * A redirect tells the recipient that /admin exists. That is a disclosure to
+ * an operator about a console they are already inside, which is no disclosure
+ * at all — and the alternative, 404ing someone who is entitled to be here,
+ * would hide the one screen that fixes their problem behind the screen they
+ * cannot reach.
+ *
+ * ── THE ORDERING TRAP, HANDLED HERE RATHER THAN IN A DEPLOY NOTE ─────────
+ *
+ * Turning this on locks out every operator who has not yet enrolled, including
+ * whoever turns it on. If the setup screen lived under /admin, that person
+ * would need aal2 to reach the screen that grants them aal2, and the only way
+ * out would be an intervention in the Supabase dashboard.
+ *
+ * So the setup screen is NOT under /admin. It is app/(account)/two-factor,
+ * outside this gate entirely, reachable by any signed-in account — and a
+ * super admin with no factor can walk to it, enroll, and come back. That is
+ * a property of where the route lives, so it cannot be undone by editing this
+ * function, and tests/browser/two-factor.py walks it as the first thing it
+ * does.
+ */
+export async function requireOperatorTwoFactor(access: AdminAccess): Promise<void> {
+  if (!requiresTwoFactor(access.role)) return
+
+  const posture = await getMfaPosture()
+  /*
+   * UNRESOLVED IS REFUSED HERE. If Supabase could not be asked, this request
+   * cannot show that it used a second factor, and the console is the surface
+   * where that has to mean no. twoFactorRemedy() already returns the setup
+   * path for the closed posture, so this is a statement of intent rather than
+   * a branch — but it is the statement that makes the collapse in
+   * lib/auth/mfa.ts safe to have.
+   */
+  const remedy = twoFactorRemedy(posture)
+  if (!remedy) return
+
+  /*
+   * The destination carries where they were going, so enrolling lands them on
+   * the screen they asked for rather than on the console's front page.
+   * mfa-actions.ts refuses anything that is not a single-slash path, because
+   * this value reaches a redirect.
+   */
+  redirect(remedy)
+}
 
 /**
  * The set in force for a role.

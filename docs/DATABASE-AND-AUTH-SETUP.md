@@ -219,6 +219,104 @@ website they visit. See `docs/SECURITY-REVIEW.md`.
 
 ---
 
+## Step 2b — Two-factor authentication and password reset
+
+Both features use Supabase Auth's own primitives. **Neither adds an environment
+variable**, and that is worth saying plainly rather than leaving you to notice
+it: everything below is a setting in the Supabase dashboard.
+
+### 2b.1 What breaks if you skip this
+
+| Skipped | What happens |
+| --- | --- |
+| MFA not enabled for the project | Enrollment fails at `mfa.enroll`. Operators see "We could not start enrollment" and **cannot open `/admin` at all** — the gate requires a second factor with no grace period. |
+| Recovery codes unavailable | Enrollment still completes and the authenticator works. The screen says so honestly, and a lost phone then needs a manual intervention here rather than a code. |
+| Reset email template left as the default link | The email contains a link and no code. The reset screen asks for six digits that never arrive. |
+
+### 2b.2 Turn on MFA (TOTP)
+
+**Authentication → Sign In / Providers → Multi-Factor Authentication**: enable
+**TOTP (App Authenticator)**. Nothing else is needed — SMS is deliberately not
+used by this product, because it costs money per message and a SIM swap defeats
+it.
+
+**Recovery codes** are a newer GoTrue feature and may appear as a separate
+toggle. Enable it if it is there. The client-side flag that goes with it is
+already set in `lib/auth/supabase.ts` (`auth.experimental.recoveryCodes`), which
+is required: without it the API is present on the client and throws on first
+call, which is a worse failure mode than being absent.
+
+### 2b.3 Make the reset email send a CODE, not a link
+
+**Authentication → Emails → Reset Password**. The default template contains:
+
+```
+<a href="{{ .ConfirmationURL }}">Reset Password</a>
+```
+
+Replace that with the token:
+
+```
+<p>Your EtsyPilot password reset code is:</p>
+<p style="font-size:24px;letter-spacing:4px"><strong>{{ .Token }}</strong></p>
+<p>It expires shortly. If you did not ask for this, ignore this email.</p>
+```
+
+`{{ .Token }}` is the six-digit code. `verifyOtp({ type: 'recovery' })` checks
+it, which is why **this product stores no reset codes of its own** — Supabase
+holds the code with its own expiry, single-use handling and rate limit, and a
+second copy in a table of ours would be a second thing that can leak.
+
+**There is no Site URL to configure for this flow.** The code flow needs no
+`redirectTo`, so nothing here has to change when you get a domain. (If you ever
+switch back to link-based reset, that is when Site URL and Redirect URLs start
+to matter.)
+
+### 2b.4 The ordering trap — read this before you deploy
+
+Turning the requirement on locks out every operator who has not yet enrolled,
+**including you**. The enrollment screen is therefore NOT under `/admin`: it
+lives at `/two-factor`, outside the gate, reachable by any signed-in account.
+
+So the safe order is simply: deploy, sign in, and you will be redirected to
+`/two-factor` automatically. Scan, enter a code, save your recovery codes, and
+`/admin` opens.
+
+**Nobody can reset anyone else's second factor, and no button for it exists.**
+An admin who could clear a manager's factor could enroll their own phone and
+sign in as them. If an operator loses their phone and their recovery codes, the
+only way back is **Authentication → Users → (the account) → remove the factor**
+here in the dashboard.
+
+### 2b.5 Sending email at all
+
+Supabase's built-in sender is capped at a few messages per hour and is not for
+production. It is enough to test the reset flow on two accounts.
+
+Before sellers use it you need an SMTP provider (Resend, Postmark, SES) with a
+**verified sending domain**, configured under **Project Settings → Auth → SMTP
+Settings**. That needs the domain you do not have yet. It is a dashboard
+change, not a code change — nothing in this repository has to be edited when it
+happens.
+
+Two-factor authentication sends no email and is fully usable today.
+
+### 2b.6 Verify
+
+- Signed in as an operator with no factor, `/admin` redirects to `/two-factor`
+- After enrolling, `/admin` opens and recovery codes are shown exactly once
+- Sign out and back in: `/admin` redirects to `/two-factor/verify` until you
+  enter a code
+- `/forgot-password` answers identically for a registered and an unregistered
+  address
+- A reset on an enrolled account asks for the authenticator **before** the new
+  password takes effect
+
+`python3 tests/browser/two-factor.py` asserts all of these against a running
+server.
+
+---
+
 ## Step 3 — Token store
 
 Only now does `DATABASE_URL` + live Etsy work. Implement `DatabaseTokenStore` in

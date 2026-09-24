@@ -41,6 +41,8 @@ import sys
 
 from playwright.sync_api import sync_playwright
 
+from mfa_support import sign_in_with_two_factor
+
 BASE = os.environ.get("ADMIN_BASE_URL", "http://localhost:3100")
 CHROME = os.environ.get("CHROME_PATH", "/opt/pw-browsers/chromium-1194/chrome-linux/chrome")
 PSQL = os.environ.get("PSQL_DSN", "postgres://postgres@127.0.0.1:5999/etsypilot")
@@ -69,11 +71,14 @@ def sql(statement):
 
 
 def sign_in(page, email, password):
-    page.goto(f"{BASE}/login", wait_until="networkidle")
-    page.fill('input[name="email"]', email)
-    page.fill('input[name="password"]', password)
-    page.click('button[type="submit"]')
-    page.wait_for_url(f"{BASE}/dashboard", timeout=15000)
+    """Sign in AND clear the two-factor gate.
+
+    /admin now requires aal2, so a password-only sign-in lands on
+    /two-factor or /two-factor/verify rather than on the console. Every
+    assertion after this point would otherwise be measuring the wrong screen.
+    tests/browser/mfa_support.py does what the person with the phone does.
+    """
+    sign_in_with_two_factor(page, BASE, email, password)
 
 
 def fetch(page, path):
@@ -98,6 +103,22 @@ def fetch(page, path):
     response = page.goto(f"{BASE}{path}", wait_until="load")
     if response is None:
         return 0, "", ""
+    """
+    WAIT FOR THE SKELETON TO GO, because `load` is not the content.
+
+    An operator route with a loading.tsx streams: `load` fires with the
+    PLACEHOLDER on screen and the real rows still arriving. Reading
+    inner_text() there returns skeleton markup, so `marker in text` fails on a
+    page that is perfectly correct.
+
+    This was latent for as long as the page happened to win the race. Adding
+    the two-factor gate put one more round trip in front of every request, the
+    page started losing, and 23 checks went red across four screens at once —
+    all of them reporting "does not render its own content" about content that
+    renders. loading.tsx marks itself aria-busy, so its disappearance is the
+    signal, and a route without one detaches nothing and returns at once.
+    """
+    page.wait_for_selector('[aria-busy="true"]', state="detached", timeout=30000)
     return response.status, response.text(), page.inner_text("body")
 
 

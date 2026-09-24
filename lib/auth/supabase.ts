@@ -93,6 +93,27 @@ export interface CookieAccess {
 export function createSupabaseServerClient(cookies: CookieAccess) {
   const { url, key } = credentials()
   return createServerClient(url, key, {
+    /*
+     * THE RECOVERY-CODES API IS OFF UNTIL ASKED FOR, and finding that out cost
+     * a measurement worth recording. auth-js 2.116 exposes
+     * `mfa.recoveryCodes` on every client, so a `typeof … === 'undefined'`
+     * feature test passes — and then the first call throws:
+     *
+     *   "@supabase/auth-js: the MFA recovery codes API is experimental and
+     *    disabled by default. Enable it by passing
+     *    `auth: { experimental: { recoveryCodes: true } }`"
+     *
+     * A present-but-armed API is worse than an absent one, because the obvious
+     * guard does not catch it. The flag is set here, once, so every caller of
+     * this factory gets the same client rather than each remembering.
+     *
+     * EXPERIMENTAL IS STATED RATHER THAN ASSUMED SAFE: the SDK may change this
+     * shape, and a Supabase project on an older GoTrue answers 404 to the
+     * endpoint. Both cases are handled in lib/auth/mfa-actions.ts, which
+     * returns null rather than an empty list so the screen can say "we could
+     * not ask" instead of "you have none".
+     */
+    auth: { experimental: { recoveryCodes: true } },
     cookies: {
       getAll: () => cookies.getAll(),
       setAll: (list) => cookies.setAll(list),

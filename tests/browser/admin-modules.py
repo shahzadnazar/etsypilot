@@ -36,6 +36,8 @@ import sys
 
 from playwright.sync_api import sync_playwright
 
+from mfa_support import sign_in_with_two_factor
+
 BASE = os.environ.get("ADMIN_BASE_URL", "http://localhost:3100")
 CHROME = os.environ.get("CHROME_PATH", "/opt/pw-browsers/chromium-1194/chrome-linux/chrome")
 PSQL = os.environ.get("PSQL_DSN", "postgres://postgres@127.0.0.1:5999/etsypilot")
@@ -77,11 +79,14 @@ def sql(statement):
 
 
 def sign_in(page, email, password):
-    page.goto(f"{BASE}/login", wait_until="networkidle")
-    page.fill('input[name="email"]', email)
-    page.fill('input[name="password"]', password)
-    page.click('button[type="submit"]')
-    page.wait_for_url(f"{BASE}/dashboard", timeout=15000)
+    """Sign in AND clear the two-factor gate.
+
+    /admin now requires aal2, so a password-only sign-in lands on
+    /two-factor or /two-factor/verify rather than on the console. Every
+    assertion after this point would otherwise be measuring the wrong screen.
+    tests/browser/mfa_support.py does what the person with the phone does.
+    """
+    sign_in_with_two_factor(page, BASE, email, password)
 
 
 def set_manager_permissions(keys):
@@ -104,7 +109,52 @@ def fetch(page, path):
     response = page.goto(f"{BASE}{path}", wait_until="load")
     if response is None:
         return 0, "", ""
+    """
+    WAIT FOR THE SKELETON TO GO, because `load` is not the content.
+
+    An operator route with a loading.tsx streams: `load` fires with the
+    PLACEHOLDER on screen and the real rows still arriving. Reading
+    inner_text() there returns skeleton markup, so `marker in text` fails on a
+    page that is perfectly correct.
+
+    This was latent for as long as the page happened to win the race. Adding
+    the two-factor gate put one more round trip in front of every request, the
+    page started losing, and 23 checks went red across four screens at once —
+    all of them reporting "does not render its own content" about content that
+    renders. loading.tsx marks itself aria-busy, so its disappearance is the
+    signal, and a route without one detaches nothing and returns at once.
+    """
+    page.wait_for_selector('[aria-busy="true"]', state="detached", timeout=30000)
     return response.status, response.text(), page.inner_text("body")
+
+
+def check_read_only(page):
+    """No control on an operator screen DOES anything.
+
+    ── "ZERO BUTTONS" WAS TRUE, THEN STOPPED BEING, AND KEPT PASSING ────────
+
+    This was `main button` count == 0, written out five times. Provenance
+    explainers landed on every operator figure and all five should have gone
+    red that day. None did, because they ran against a loading SKELETON —
+    `wait_until="load"` on a streamed page — and a skeleton has no buttons.
+    They passed for as long as the page lost that race, which was always, until
+    the two-factor gate put one more round trip in front of every request and
+    the race changed sides.
+
+    The claim worth keeping is not "no controls" but "no control that CHANGES
+    anything". An explainer opens a drawer over a figure and writes nothing, so
+    it is identified from the outside and excluded; anything else still fails.
+
+    One function rather than five copies, for the reason the five copies
+    demonstrate: an assertion repeated is an assertion that can rot in one
+    place and be fixed in another.
+    """
+    buttons = page.locator("main button").count()
+    explainers = page.locator("main button[data-provenance-explainer]").count()
+    check(
+        buttons == explainers,
+        f"every control on the screen is a provenance explainer ({explainers} of {buttons})",
+    )
 
 
 def nav_hrefs(page):
@@ -139,10 +189,26 @@ def etsy_specifics(page, body, text):
     )
     # Scoped to <main>, not the document. The SHELL legitimately contains
     # controls — the theme toggle is three radio buttons and the account menu
-    # holds the sign-out form, which must be a form and must be a POST. The
-    # claim is about the screen, so the selector is about the screen.
+    # holds the sign-out form, which must be a form and must be a POST.
+    #
+    # ── "ZERO BUTTONS" WAS TRUE, THEN STOPPED BEING, AND KEPT PASSING ─────
+    #
+    # This asserted `buttons == 0`. Provenance explainers landed on every
+    # operator figure and the assertion should have gone red that day. It did
+    # not, because it ran against a loading SKELETON — `wait_until="load"` on a
+    # streamed page — and a skeleton has no buttons. It passed for as long as
+    # the page lost the race, which was always, until the two-factor gate put
+    # one more round trip in front of every request and the race changed sides.
+    #
+    # The claim worth keeping is not "no controls" but "no control that DOES
+    # anything". An explainer opens a drawer and changes nothing, so it is
+    # identified and excluded, and anything else still fails.
     buttons = page.locator("main button").count()
-    check(buttons == 0, f"there is no button in the page content ({buttons})")
+    explainers = page.locator("main button[data-provenance-explainer]").count()
+    check(
+        buttons == explainers,
+        f"every control on the screen is a provenance explainer ({explainers} of {buttons})",
+    )
     check(page.locator("main form").count() == 0, "and no form")
 
 
@@ -173,8 +239,7 @@ def subscriptions_specifics(page, body, text):
     )
     check("No upgrade, no downgrade, no cancel" in text,
           "the page names what it cannot do")
-    buttons = page.locator("main button").count()
-    check(buttons == 0, f"there is no button in the page content ({buttons})")
+    check_read_only(page)
     check(page.locator("main form").count() == 0, "and no form")
 
 
@@ -198,8 +263,7 @@ def usage_specifics(page, body, text):
     # the seller should read N".
     for content in ("beeswax", "lavender", "nobody but the seller"):
         check(content not in body.lower(), f"no seller content in the payload ({content})")
-    buttons = page.locator("main button").count()
-    check(buttons == 0, f"there is no button in the page content ({buttons})")
+    check_read_only(page)
     check(page.locator("main form").count() == 0, "and no form")
 
 
@@ -220,8 +284,7 @@ def ai_specifics(page, body, text):
     )
     check("beeswax" not in body.lower(), "and no listing copy either")
     check("Volume, not money" in text, "the page says there is no cost figure")
-    buttons = page.locator("main button").count()
-    check(buttons == 0, f"there is no button in the page content ({buttons})")
+    check_read_only(page)
     check(page.locator("main form").count() == 0, "and no form")
 
 
@@ -243,8 +306,7 @@ def operations_specifics(page, body, text):
         "no retry, no clear, no cancel and no rollback" in text.lower(),
         "the page names all four missing controls",
     )
-    buttons = page.locator("main button").count()
-    check(buttons == 0, f"there is no button in the page content ({buttons})")
+    check_read_only(page)
     check(page.locator("main form").count() == 0, "and no form")
     links = page.locator("main a").count()
     check(links == 0, f"and no link out of the page content ({links})")
@@ -283,8 +345,7 @@ def metrics_specifics(page, body, text):
     # The converse: the banner still names the viewer, which is the point of it.
     check("boss@etsypilot.app" in body, "while the operator banner still names the viewer")
     check("Nothing here is a forecast" in text, "the page says it forecasts nothing")
-    buttons = page.locator("main button").count()
-    check(buttons == 0, f"there is no button in the page content ({buttons})")
+    check_read_only(page)
 
 
 SPECIFICS = {

@@ -36,7 +36,7 @@ export const AUTH_OUTCOMES = {
      */
     title: 'That email and password do not match',
     detail:
-      'Check both and try again. If you have forgotten your password, sign up is not the way back in — contact us and we will reset it.',
+      'Check both and try again. If you have forgotten your password, use the reset link below the password field — signing up again is not the way back in.',
   },
   unconfirmed: {
     tone: 'warn',

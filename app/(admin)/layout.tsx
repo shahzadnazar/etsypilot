@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { OperatorShell } from '@/components/admin/operator-shell'
-import { getAdminAccess } from '@/domain/admin/access'
+import { getAdminAccess, requireOperatorTwoFactor } from '@/domain/admin/access'
 import { visibleOperatorNav } from '@/domain/admin/navigation'
 import { initialsFor } from '@/lib/utils/name'
 
@@ -103,6 +103,22 @@ export default async function AdminLayout({ children }: { children: ReactNode })
    *   tell them nothing they do not know and would lose them the way back.
    */
   if (!access) notFound()
+
+  /*
+   * AND A SECOND FACTOR, ON THIS SESSION.
+   *
+   * AFTER the notFound() above and never before it. This one REDIRECTS, and a
+   * redirect to /two-factor would tell a plain seller that /admin is a URL
+   * this application treats specially — the exact disclosure the 404 exists to
+   * deny. Ordering it second means only someone already established as an
+   * operator can observe it.
+   *
+   * Here in the GROUP layout rather than in each route's gate, because it is a
+   * property of the whole console rather than of any one screen, and because
+   * this layout runs above every Suspense boundary — the same reason the
+   * refusal status is decided here (see requireOperatorRoute).
+   */
+  await requireOperatorTwoFactor(access)
 
   return (
     <OperatorShell

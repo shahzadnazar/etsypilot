@@ -6,6 +6,12 @@ import { NotYet } from '@/components/settings/not-yet'
 import { Card } from '@/components/ui/card'
 import { getSecurityView, type SecurityEventOutcome } from '@/domain/security/service'
 import { getSession } from '@/lib/auth'
+import { getMfaPosture } from '@/lib/auth/mfa'
+import { isLiveAuth } from '@/lib/auth/supabase-config'
+import { getAdminAccess } from '@/domain/admin/access'
+import { requiresTwoFactor } from '@/domain/auth/two-factor'
+import { disableTwoFactor } from '@/lib/auth/mfa-actions'
+import { Button } from '@/components/ui/button'
 import { shopContext } from '@/lib/permissions'
 import { formatDate, formatDateTime, formatRelative } from '@/lib/utils/format'
 
@@ -39,7 +45,19 @@ export default async function SecurityPage() {
   if (!session) redirect('/login')
 
   const ctx = shopContext(session, session.shopId)
-  const view = await getSecurityView(ctx)
+  const [view, posture, operator] = await Promise.all([
+    getSecurityView(ctx),
+    /*
+     * The REAL state, read from Supabase, not a field in the view model.
+     * `view.twoStepEnabled` was a placeholder from the era when this page
+     * described an account nothing could change; leaving the badge wired to it
+     * would mean the screen said "On" for a factor that did not exist.
+     */
+    getMfaPosture(),
+    // Operators cannot turn this off, and the button has to know.
+    getAdminAccess(),
+  ])
+  const twoFactorLocked = operator !== null && requiresTwoFactor(operator.role)
 
   return (
     <>
@@ -84,11 +102,11 @@ export default async function SecurityPage() {
         <Card className="flex flex-wrap items-start justify-between gap-3 p-[18px]">
           <div className="flex max-w-prose flex-col gap-1">
             <span className="flex flex-wrap items-center gap-2">
-              <span className="text-section text-ink-1">Two-step verification</span>
+              <span className="text-section text-ink-1">Two-factor authentication</span>
               <span
                 className="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold"
                 style={
-                  view.twoStepEnabled
+                  posture.enrolled
                     ? {
                         background: 'var(--success-surface)',
                         borderColor: 'var(--success-border)',
@@ -101,7 +119,7 @@ export default async function SecurityPage() {
                       }
                 }
               >
-                {view.twoStepEnabled ? 'On' : 'Off'}
+                {posture.enrolled ? 'On' : 'Off'}
               </span>
             </span>
             <span className="text-caption leading-relaxed text-muted-1">
@@ -110,12 +128,48 @@ export default async function SecurityPage() {
                 this account can change live listings.
               </strong>
             </span>
+            {twoFactorLocked ? (
+              <span className="text-caption leading-relaxed text-muted-1">
+                Your account operates EtsyPilot, so this is required and cannot be turned off. A
+                switch that removed your second factor would be a switch anyone who took your
+                session could use.
+              </span>
+            ) : null}
           </div>
-          <NotYet
-            label={view.twoStepEnabled ? 'Turn off' : 'Turn on'}
-            variant={view.twoStepEnabled ? 'secondary' : 'primary'}
-            reason="Arrives with accounts, alongside sign-in."
-          />
+          {!isLiveAuth() ? (
+            /*
+             * Demo mode has one fixed session shared by everyone who can reach
+             * the deployment, so there is no account to enrol a factor
+             * against. The placeholder says so rather than offering a control
+             * that would 404.
+             */
+            <NotYet
+              label="Turn on"
+              variant="primary"
+              reason="Needs a real account. This deployment is running the shared demo session."
+            />
+          ) : posture.enrolled ? (
+            twoFactorLocked ? (
+              <NotYet
+                label="Turn off"
+                variant="secondary"
+                reason="Operator accounts cannot remove their second factor."
+              />
+            ) : (
+              <form action={disableTwoFactor} data-disable-two-factor>
+                <Button type="submit" variant="destructive" loadingLabel="Turning off...">
+                  Turn off
+                </Button>
+              </form>
+            )
+          ) : (
+            <a
+              href="/two-factor"
+              className="inline-flex h-11 items-center justify-center rounded-control bg-brand px-3.5 text-[12.5px] font-semibold text-brand-on"
+            >
+              Turn on
+            </a>
+          )}
         </Card>
 
         {view.googleConnectedAs ? (

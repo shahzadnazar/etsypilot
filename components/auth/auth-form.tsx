@@ -153,7 +153,23 @@ export function AuthForm({
               <span className="text-caption text-muted-1">
                 At least 8 characters. A long ordinary phrase beats a short complicated one.
               </span>
-            ) : null}
+            ) : (
+              /*
+               * The way out, ON the sign-in form rather than in a footer.
+               *
+               * Someone whose password is not working is looking at this field
+               * when they realise it. A reset link anywhere else is a link
+               * they scroll past on the way to trying the same password again.
+               */
+              <span className="text-caption text-muted-1">
+                <Link
+                  href="/forgot-password"
+                  className="font-semibold text-ink-2 underline underline-offset-2"
+                >
+                  Forgot your password?
+                </Link>
+              </span>
+            )}
           </label>
 
           <Button type="submit" variant="primary" className="mt-0.5 w-full">

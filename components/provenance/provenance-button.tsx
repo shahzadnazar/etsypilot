@@ -36,6 +36,22 @@ export function ProvenanceButton({
         aria-haspopup="dialog"
         aria-expanded={open}
         /*
+         * A marker, so a check can tell an EXPLAINER from an ACTION.
+         *
+         * The operator console claims to be read-only, and a browser check
+         * asserted it by counting buttons inside <main> and requiring zero.
+         * That stopped being true the day provenance explainers landed — and
+         * nobody noticed, because the check was reading a loading skeleton
+         * that has no buttons in it. It passed for the wrong reason for as
+         * long as the page lost that race.
+         *
+         * Zero is the wrong number now: this control opens a drawer and
+         * changes nothing. The claim worth keeping is "every control on an
+         * operator screen is an explainer", which needs the two to be
+         * distinguishable from the outside.
+         */
+        data-provenance-explainer
+        /*
          * A ring on hover, not opacity.
          *
          * This used to fade the whole badge on hover, its text with it. The

@@ -22,3 +22,7 @@ extension/build/
 
 #check-db.mjs is a local utility script that connects to the database and checks for connectivity. It should not be committed to version control.
 check-db.mjs
+
+# Python bytecode from the browser checks
+__pycache__/
+*.pyc

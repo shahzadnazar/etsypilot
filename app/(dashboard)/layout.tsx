@@ -7,10 +7,51 @@ import { shopContext } from '@/lib/permissions'
 import { currentPlan } from '@/domain/billing/service'
 import { getActions } from '@/domain/action-center/service'
 import { getAdminAccess } from '@/domain/admin/access'
+import { getMfaPosture } from '@/lib/auth/mfa'
+import { TWO_FACTOR_VERIFY_PATH } from '@/domain/auth/two-factor'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession()
   if (!session) redirect('/login')
+
+  /*
+   * ── A SELLER WHO TURNED 2FA ON IS ASKED FOR IT ──────────────────────────
+   *
+   * Optional means optional to ENROL, not optional to honour. An account with
+   * a verified factor on an aal1 session is asked for a code here, exactly as
+   * an operator is asked at the console's door.
+   *
+   * Without this, a seller could enrol, sign out, sign back in with a password
+   * alone, and land on their dashboard — and the switch in Settings would have
+   * changed nothing except a badge. "Optional second factor" would mean "a
+   * second factor that is never checked", which is a worse lie than not
+   * offering one.
+   *
+   * NOT `requiresTwoFactor(role)` HERE, and the difference matters: this asks
+   * whether the ACCOUNT has a factor, not whether its role must have one.
+   * Operators are covered by both this and the console's own gate, which is
+   * correct — the console's is the one that also refuses an operator who has
+   * not enrolled at all.
+   *
+   * No redirect loop is possible: the code screen lives in app/(account),
+   * under a different layout, and is reachable at aal1 by design.
+   */
+  const posture = await getMfaPosture()
+  /*
+   * `resolved` is required before acting, and the asymmetry with the operator
+   * console is deliberate — lib/auth/mfa.ts sets out why. In short: an
+   * unresolved posture here means Supabase did not answer, and sending every
+   * seller to a code screen during a provider blip costs more than the window
+   * it closes. The console makes the opposite call, because the console is the
+   * privileged surface.
+   */
+  if (posture.resolved && posture.enrolled && !posture.satisfied) {
+    // `next` is explicit because the code screen's default destination is the
+    // operator console — right for the gate that sends most people there,
+    // wrong for a seller, who would land on a 404 having done everything
+    // asked of them.
+    redirect(`${TWO_FACTOR_VERIFY_PATH}?next=/dashboard`)
+  }
 
   const ctx = shopContext(session, session.shopId)
   const [shop, plan, actions, operator] = await Promise.all([

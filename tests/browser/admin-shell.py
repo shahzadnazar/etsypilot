@@ -37,6 +37,8 @@ import sys
 
 from playwright.sync_api import sync_playwright
 
+from mfa_support import sign_in_with_two_factor
+
 BASE = os.environ.get("ADMIN_BASE_URL", "http://localhost:3100")
 CHROME = os.environ.get("CHROME_PATH", "/opt/pw-browsers/chromium-1194/chrome-linux/chrome")
 PSQL = os.environ.get("PSQL_DSN", "postgres://postgres@127.0.0.1:5999/etsypilot")
@@ -67,11 +69,14 @@ def sql(statement):
 
 
 def sign_in(page, email, password):
-    page.goto(f"{BASE}/login", wait_until="networkidle")
-    page.fill('input[name="email"]', email)
-    page.fill('input[name="password"]', password)
-    page.click('button[type="submit"]')
-    page.wait_for_url(f"{BASE}/dashboard", timeout=15000)
+    """Sign in AND clear the two-factor gate.
+
+    /admin now requires aal2, so a password-only sign-in lands on
+    /two-factor or /two-factor/verify rather than on the console. Every
+    assertion after this point would otherwise be measuring the wrong screen.
+    tests/browser/mfa_support.py does what the person with the phone does.
+    """
+    sign_in_with_two_factor(page, BASE, email, password)
 
 
 def set_manager_permissions(keys):
