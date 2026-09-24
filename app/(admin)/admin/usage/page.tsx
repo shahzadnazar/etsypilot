@@ -1,3 +1,4 @@
+import { OperatorTitle } from '@/components/admin/operator-title'
 import { ProvenanceButton } from '@/components/provenance/provenance-button'
 import { OperatorSection } from '@/components/admin/operator-section'
 import { OperatorFigure } from '@/components/admin/operator-figure'
@@ -69,7 +70,7 @@ export default async function UsagePage() {
 
   return (
     <>
-      <title>Usage &amp; quota · Operations · EtsyPilot</title>
+      <OperatorTitle page="Usage & quota" />
       <PageHeader
         title="Usage &amp; quota"
         subtitle={`${rows.length === 1 ? '1 shop' : `${rows.length} shops`} · counted from each shop’s own rows, not from a stored counter · read-only`}

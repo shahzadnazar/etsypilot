@@ -1,3 +1,4 @@
+import { OperatorTitle } from '@/components/admin/operator-title'
 import { ProvenanceButton } from '@/components/provenance/provenance-button'
 import { OperatorSection } from '@/components/admin/operator-section'
 import { OperatorFigure } from '@/components/admin/operator-figure'
@@ -67,7 +68,7 @@ export default async function OperationsPage() {
 
   return (
     <>
-      <title>Operations · Operations · EtsyPilot</title>
+      <OperatorTitle page="Operations" />
       <PageHeader
         title="Bulk operations"
         subtitle={`${operations.length === 1 ? '1 operation' : `${formatNumber(operations.length)} operations`} · newest first · read-only`}

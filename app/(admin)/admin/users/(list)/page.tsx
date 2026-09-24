@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { OperatorTitle } from '@/components/admin/operator-title'
 import { Numeric } from '@/components/ui/numeric'
 import { EmptyState } from '@/components/ui/states'
 import { OperatorTable } from '@/components/admin/operator-table'
@@ -67,7 +68,7 @@ export default async function AdminUsersPage({
 
   return (
     <>
-      <title>Accounts · Operations · EtsyPilot</title>
+      <OperatorTitle page="Accounts" />
       <PageHeader
         title="Accounts"
         subtitle={

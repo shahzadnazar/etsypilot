@@ -518,6 +518,17 @@ describe('every operator page gates itself', () => {
 
   const found = pages('app/(admin)')
 
+  /** The route gates, which must not carry metadata either — measured. */
+  function layoutsUnder(dir: string, out: string[] = []): string[] {
+    for (const entry of readdirSync(dir)) {
+      const path = posixJoin(dir, entry)
+      if (statSync(path).isDirectory()) layoutsUnder(path, out)
+      else if (entry === 'layout.tsx') out.push(path)
+    }
+    return out
+  }
+  const layouts = layoutsUnder('app/(admin)')
+
   /*
    * COMMENTS STRIPPED, and this is not tidiness — it is the fix for a sweep
    * that did not work. The first version tested `source.includes('requireAdmin(')`
@@ -564,39 +575,164 @@ describe('every operator page gates itself', () => {
     }
   })
 
-  it('exposes no static metadata from an operator route', () => {
+  it('exposes no metadata from an operator route, in ANY of its three forms', () => {
     /*
-     * Next resolves a route's static metadata whether or not the component
-     * renders, so `export const metadata` survives notFound() and lands in the
-     * flight payload. Measured: a refused seller's 404 carried
-     * "Accounts · Operations · EtsyPilot". A <title> inside the component
-     * cannot leak, because a refused request never reaches it.
+     * Next resolves a route's metadata whether or not the component renders,
+     * and it resolves it in PARALLEL with the layout — so the gate that now
+     * returns the 404 does not stop it.
+     *
+     * RE-MEASURED after that gate moved, rather than inherited, because
+     * another premise in this file's neighbourhood had already expired. A
+     * probe title was put on /admin/audit in each form and the route requested
+     * by a viewer who is refused it:
+     *
+     *   export const metadata          404, probe string in the response,
+     *                                  refused tab read "PROBE… · EtsyPilot"
+     *   export async function
+     *     generateMetadata()           404, same
+     *   metadata on the gated LAYOUT   404, same
+     *
+     * All three leak. That is why the title is set by a client component
+     * instead — see components/admin/operator-title.tsx, which carries the
+     * measurements for the two smaller defects that choice then had to fix.
      */
-    for (const file of [...found, 'app/(admin)/layout.tsx']) {
+    for (const file of [...found, ...layouts, 'app/(admin)/layout.tsx']) {
       const source = code(file)
       expect(source, file).not.toContain('export const metadata')
       expect(source, file).not.toContain('generateMetadata')
     }
   })
+
+  it('renders no inline <title> either, which was the second thing measured', () => {
+    /*
+     * An inline <title> does not leak — React hoists it only when the
+     * component renders — and it cost two other things, both measured:
+     *
+     *   TWO TITLES IN THE HEAD, because the root layout's metadata emits one
+     *   too, and `document.title` is the FIRST in document order. On
+     *   /admin/users the root's landed first and the tab read "EtsyPilot" on a
+     *   plain server render.
+     *
+     *   A NODE THAT OUTLIVED ITS PAGE. React hoists a COPY and leaves the
+     *   original in the body tree; after /admin/audit -> /dashboard the body
+     *   still held <title>Audit log · Operations · EtsyPilot</title>.
+     */
+    for (const file of found) {
+      expect(code(file), file).not.toContain('<title>')
+      // /admin redirects and renders nothing, so it has no tab of its own.
+      if (file === posixJoin('app/(admin)', 'admin/page.tsx')) continue
+      expect(code(file), file).toContain('<OperatorTitle')
+    }
+  })
+
+  it('sets the title without ever creating a title node', () => {
+    /*
+     * Assigning document.title when the head has none CREATES one. That cost
+     * a stray node on the way out — measured as 2 in the head after
+     * /admin/audit -> /dashboard — because the re-assert fired into the gap
+     * Next leaves while swapping the element.
+     */
+    const component = code('components/admin/operator-title.tsx')
+    expect(component).toContain("document.head.querySelector('title')")
+    expect(component).toContain('observer.disconnect()')
+  })
 })
 
-describe('the seller app never links to /admin', () => {
-  it('has no /admin href in the navigation or the seller shell', () => {
-    const files = ['components/layout/navigation.ts', 'components/layout/top-bar.tsx',
-      'components/layout/sidebar.tsx', 'components/layout/user-menu.tsx']
-    for (const file of files) {
-      /*
-       * The quote is part of the pattern. A bare '/admin' also matches the
-       * path `repositories/admin-reads-every-shop`, which would make this
-       * test fire for a reason it does not describe — and a guard you cannot
-       * read the failure of is a guard you start ignoring. The import is
-       * already covered, by name, one describe block up.
-       */
+describe('no SELLER is offered /admin, and an operator is', () => {
+  /*
+   * This used to assert that no /admin href existed anywhere in the seller
+   * shell, and the reason was sound: no seller should ever see a link to an
+   * operator area. The consequence was that an operator had to type the URL —
+   * the console has had a "My shop" button since it was built and nothing
+   * came back.
+   *
+   * There is one now, in the top bar, rendered only for a viewer
+   * getAdminAccess() already returns an operator for. The property the old
+   * test protected is unchanged in substance; the test is changed to assert
+   * the accurate version of it, which is STRONGER: not "the href is nowhere"
+   * but "the href appears for an operator and not for a seller".
+   *
+   * BOTH HALVES, and the second is the one with teeth. A test that only
+   * checked the operator half would pass with the gate deleted — which is
+   * exactly the failure mode, because deleting the gate shows every seller the
+   * link and nothing else changes.
+   *
+   * The RENDERED halves are measured against a running server in
+   * tests/browser/admin-shell.py, because what a seller's browser receives is
+   * not a thing a file can be read for. This asserts the structure that makes
+   * that measurement hold.
+   */
+
+  const SHELL_FILES = [
+    'components/layout/navigation.ts',
+    'components/layout/sidebar.tsx',
+    'components/layout/user-menu.tsx',
+  ]
+
+  it('writes the href in exactly ONE file, and it is the top bar', () => {
+    /*
+     * The quote is part of the pattern. A bare '/admin' also matches the path
+     * `repositories/admin-reads-every-shop`, which would make this fire for a
+     * reason it does not describe — and a guard you cannot read the failure of
+     * is a guard you start ignoring.
+     */
+    for (const file of SHELL_FILES) {
       const source = readFileSync(file, 'utf8')
       for (const href of ["'/admin", '"/admin', '`/admin']) {
         expect(source, `${file} ${href}`).not.toContain(href)
       }
     }
+    expect(readFileSync('components/layout/top-bar.tsx', 'utf8')).toContain('href="/admin"')
+  })
+
+  it('RENDERS IT ONLY INSIDE THE OPERATOR CONDITION', () => {
+    const source = readFileSync('components/layout/top-bar.tsx', 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+    const gate = source.indexOf('{isOperator ? (')
+    const href = source.indexOf('href="/admin"')
+    expect(gate).toBeGreaterThan(-1)
+    expect(href).toBeGreaterThan(gate)
+    // And it closes before anything else: the href is inside that branch, not
+    // merely after it somewhere.
+    expect(source.indexOf(') : null}', gate)).toBeGreaterThan(href)
+  })
+
+  it('takes a BOOLEAN the server computed, never the means to compute it', () => {
+    /*
+     * A seller's bundle is handed `false`. Handing it an access object, or the
+     * permissions to check, would put the answer in the browser — the same
+     * reason the operator rail is given already-filtered groups.
+     */
+    /*
+     * COMMENTS STRIPPED. The eighteenth time in this repository that a guard
+     * matched its own documentation: the prop's own doc comment explains that
+     * the layout resolves it with getAdminAccess(), and the first version of
+     * this assertion fired on that sentence.
+     */
+    const source = readFileSync('components/layout/top-bar.tsx', 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '')
+    expect(source).toContain('isOperator?: boolean')
+    for (const leak of ['getAdminAccess', 'canSuperAdminOnly', 'platformRole', 'AdminAccess']) {
+      expect(source, leak).not.toContain(leak)
+    }
+  })
+
+  it('decides it with the SAME function the console gates on', () => {
+    // Not a cheaper approximation built from the session the layout already
+    // holds: a second way of deciding who is an operator is a second thing to
+    // keep in step, in the last place that should have its own opinion.
+    const layout = readFileSync('app/(dashboard)/layout.tsx', 'utf8')
+    expect(layout).toContain('getAdminAccess()')
+    expect(layout).toContain('isOperator={operator !== null}')
+  })
+
+  it('prefetches it not at all', () => {
+    // Prefetching a route RENDERS it. The console's "My shop" carries the same
+    // flag in the other direction, for the same reason (D94).
+    const source = readFileSync('components/layout/top-bar.tsx', 'utf8')
+    const href = source.indexOf('href="/admin"')
+    expect(source.slice(href, href + 120)).toContain('prefetch={false}')
   })
 })
 

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { OperatorTitle } from '@/components/admin/operator-title'
 import { OperatorSection } from '@/components/admin/operator-section'
 import { Numeric } from '@/components/ui/numeric'
 import { EmptyState } from '@/components/ui/states'
@@ -84,7 +85,7 @@ export default async function AccountDetailPage({
 
   return (
     <div className="mx-auto w-full max-w-[860px]">
-      <title>Account · Operations · EtsyPilot</title>
+      <OperatorTitle page="Account" />
 
       <PageHeader
         back={{ href: '/admin/users', label: 'Accounts' }}

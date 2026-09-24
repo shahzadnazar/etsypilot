@@ -1,3 +1,4 @@
+import { OperatorTitle } from '@/components/admin/operator-title'
 import { OperatorSection } from '@/components/admin/operator-section'
 import { Numeric } from '@/components/ui/numeric'
 import { EmptyState } from '@/components/ui/states'
@@ -63,7 +64,7 @@ export default async function AiActivityPage() {
 
   return (
     <>
-      <title>AI activity · Operations · EtsyPilot</title>
+      <OperatorTitle page="AI activity" />
       <PageHeader
         title="AI activity"
         subtitle={`Last ${WINDOW_DAYS} days · ${formatNumber(totals.total)} generations across ${formatNumber(totals.activeShops)} ${totals.activeShops === 1 ? 'shop' : 'shops'} · read-only`}

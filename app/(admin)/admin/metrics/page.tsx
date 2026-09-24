@@ -1,3 +1,4 @@
+import { OperatorTitle } from '@/components/admin/operator-title'
 import { OperatorSection } from '@/components/admin/operator-section'
 import { EmptyState } from '@/components/ui/states'
 import { Card, CardBody } from '@/components/ui/card'
@@ -68,7 +69,7 @@ export default async function MetricsPage() {
 
   return (
     <>
-      <title>Growth metrics · Operations · EtsyPilot</title>
+      <OperatorTitle page="Growth metrics" />
       <PageHeader
         title="Growth metrics"
         subtitle={`${formatNumber(metrics.totalAccounts)} accounts · ${formatNumber(metrics.totalShops)} shops · aggregate only, no account is named here · read-only`}

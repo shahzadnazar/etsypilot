@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import { OperatorTitle } from '@/components/admin/operator-title'
 import { Numeric } from '@/components/ui/numeric'
 import { EmptyState } from '@/components/ui/states'
 import { OperatorTable } from '@/components/admin/operator-table'
@@ -59,7 +60,7 @@ export default async function AdminAuditPage() {
 
   return (
     <>
-      <title>Audit log · Operations · EtsyPilot</title>
+      <OperatorTitle page="Audit log" />
 
       <PageHeader
         title="Audit log"

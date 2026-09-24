@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Puzzle, Search } from 'lucide-react'
+import { Puzzle, Search, ShieldCheck } from 'lucide-react'
 import { ShopContext } from './shop-context'
 import { ThemeToggle } from './theme-toggle'
 import { UserMenu } from './user-menu'
@@ -12,6 +12,7 @@ export function TopBar({
   userInitials,
   userName,
   userEmail,
+  isOperator = false,
 }: {
   shopName: string
   lastSyncedAt: string | null
@@ -21,6 +22,16 @@ export function TopBar({
   userName: string | null
   /** Shown in the menu. The one identifier that is never derived. */
   userEmail: string
+  /**
+   * Whether this viewer may open the operator console.
+   *
+   * A BOOLEAN COMPUTED ON THE SERVER, never an access object and never a
+   * check made here. The seller layout resolves it with the same
+   * getAdminAccess() the console itself gates on, so there is no second
+   * opinion about who is an operator — and a seller's bundle is handed
+   * `false`, not the means to work the answer out.
+   */
+  isOperator?: boolean
 }) {
   return (
     <header className="flex h-topbar shrink-0 items-center gap-3.5 border-b border-line bg-surface px-4 md:px-[26px]">
@@ -61,6 +72,33 @@ export function TopBar({
         <Puzzle size={14} aria-hidden />
         Extension
       </Link>
+
+      {/*
+        * The way back to the console, and the only /admin href in the seller
+        * app.
+        *
+        * The console has had a "My shop" button since it was built and nothing
+        * came back, so an operator typed the URL every time.
+        *
+        * IT IS STILL TRUE THAT NO SELLER SEES A LINK TO /admin. This renders
+        * for a viewer getAdminAccess() already returns an operator for; for
+        * everyone else the element is not in the response at all — not hidden,
+        * not disabled, absent. Same rule as the rail: omitted, never locked.
+        *
+        * prefetch={false} for the same reason the console's "My shop" carries
+        * it, in the other direction: prefetching a route RENDERS it, and
+        * hovering a link should not execute an operator screen.
+        */}
+      {isOperator ? (
+        <Link
+          href="/admin"
+          prefetch={false}
+          className="hidden h-9 items-center gap-2 rounded-control border border-line px-3 text-[12px] font-semibold text-ink-2 hover:bg-canvas-soft md:inline-flex"
+        >
+          <ShieldCheck size={14} aria-hidden />
+          Operations
+        </Link>
+      ) : null}
 
       <div className="ml-auto hidden sm:block md:ml-0">
         <ThemeToggle />

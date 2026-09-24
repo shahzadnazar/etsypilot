@@ -6,18 +6,34 @@ import { getEtsyService } from '@/lib/etsy'
 import { shopContext } from '@/lib/permissions'
 import { currentPlan } from '@/domain/billing/service'
 import { getActions } from '@/domain/action-center/service'
+import { getAdminAccess } from '@/domain/admin/access'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession()
   if (!session) redirect('/login')
 
   const ctx = shopContext(session, session.shopId)
-  const [shop, plan, actions] = await Promise.all([
+  const [shop, plan, actions, operator] = await Promise.all([
     getEtsyService().getShop(ctx.shopId),
     // Read, not restated: the chip and the billing page share one source.
     currentPlan(ctx),
     // Same rule for the bell: the dot and the Action Center count one set.
     getActions(ctx),
+    /*
+     * Whether this viewer may open the operator console.
+     *
+     * THE SAME FUNCTION THE CONSOLE GATES ON, not a cheaper approximation
+     * built from the session we already hold. A second way of deciding who is
+     * an operator is a second thing to keep in step, and this one would be
+     * deciding it in the seller app — the last place that should have its own
+     * opinion.
+     *
+     * It returns null immediately in demo mode, so the shared demo session
+     * costs nothing and can never be shown the link. In live mode it is one
+     * more round trip on a layout that already makes several, in parallel
+     * with them rather than after them.
+     */
+    getAdminAccess(),
   ])
 
   /*
@@ -56,6 +72,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
        * activeListingCount was fixed for (D57); this was the other end of it.
        */
       usage={{ used: shop.activeListingCount, limit: plan.limits.listings }}
+      /* A boolean, not the access object: see TopBar. */
+      isOperator={operator !== null}
       openActionCount={actions.counts.OPEN ?? 0}
       /*
        * One source for both. The sidebar chip and the bell used to disagree —

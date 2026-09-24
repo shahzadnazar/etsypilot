@@ -407,11 +407,31 @@ describe('the operator shell is its own, and does not bend the seller one', () =
     expect(existsSync('components/admin/user-menu.tsx')).toBe(false)
   })
 
-  it('leaves the seller shell untouched by the addition', () => {
-    // AppShell must not have grown an operator branch.
+  it('grows no operator BRANCH in the seller shell', () => {
+    /*
+     * This used to ban the substring "operator" from AppShell outright, and
+     * that stopped being the right claim when the seller top bar gained a way
+     * back to the console: AppShell forwards an `isOperator` boolean now.
+     *
+     * Forwarding a boolean is not a branch. What the rule was protecting is
+     * that the seller shell holds no operator CHROME and makes no operator
+     * DECISION — it renders no operator component, imports nothing from the
+     * console, and is never handed the means to work out who an operator is.
+     * That is asserted directly, which is stronger than a word ban that a
+     * rename would have walked straight through.
+     */
     const source = code('components/layout/app-shell.tsx')
-    expect(source).not.toContain('operator')
-    expect(source).not.toContain('Operator')
+    expect(source).toContain('isOperator')
+    for (const forbidden of [
+      'Operator', // no OperatorShell, OperatorSidebar, OperatorBanner…
+      'getAdminAccess',
+      'canSuperAdminOnly',
+      'AdminAccess',
+      'visibleOperatorNav',
+      '/admin',
+    ]) {
+      expect(source.replace(/isOperator/g, ''), forbidden).not.toContain(forbidden)
+    }
   })
 })
 
@@ -1384,5 +1404,30 @@ describe('a skeleton cannot cost the operator gate its status code', () => {
     for (const page of pagesUnder(ADMIN_ROOT)) {
       expect(code(page), page).toContain('requireAdmin(')
     }
+  })
+})
+
+/* ───────────────── the description has a measure, not a viewport ─────────── */
+
+describe('a page description is constrained to a readable width', () => {
+  /*
+   * Moving the operator pages onto PageHeader lost a width the hand-rolled
+   * headings had. MEASURED at 1920: the managers description was ONE line
+   * 1,462px wide — 235 characters — and Accounts 1,126px.
+   */
+  it('constrains the subtitle the way EmptyState constrains its description', () => {
+    expect(code('components/layout/page-header.tsx')).toMatch(
+      /max-w-prose[^"]*text-small text-muted-1/,
+    )
+    // The rule it is borrowed from, so the two cannot drift apart silently.
+    expect(code('components/ui/states.tsx')).toContain('max-w-prose')
+  })
+
+  it('leaves the heading itself unconstrained', () => {
+    // A title is short and centred on nothing; wrapping one at 65ch would
+    // break an account's email address across lines on the detail screen.
+    const header = code('components/layout/page-header.tsx')
+    const h1 = header.indexOf('<h1')
+    expect(header.slice(h1, header.indexOf('>', h1))).not.toContain('max-w-prose')
   })
 })

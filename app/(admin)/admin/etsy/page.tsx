@@ -1,3 +1,4 @@
+import { OperatorTitle } from '@/components/admin/operator-title'
 import { ProvenanceButton } from '@/components/provenance/provenance-button'
 import { OperatorSection } from '@/components/admin/operator-section'
 import { OperatorFigure } from '@/components/admin/operator-figure'
@@ -77,7 +78,7 @@ export default async function EtsyConnectionsPage() {
 
   return (
     <>
-      <title>Etsy connections · Operations · EtsyPilot</title>
+      <OperatorTitle page="Etsy connections" />
       <PageHeader
         title="Etsy connections"
         subtitle={`${rows.length === 1 ? '1 shop' : `${rows.length} shops`} · read from our own records, not from Etsy · read-only`}

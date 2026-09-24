@@ -19,6 +19,7 @@ export function AppShell({
   userInitials,
   userName,
   userEmail,
+  isOperator,
   plan,
   usage,
   openActionCount,
@@ -31,6 +32,8 @@ export function AppShell({
   userInitials: string
   userName: string | null
   userEmail: string
+  /** Server-computed. See TopBar. */
+  isOperator?: boolean
   plan: string
   usage: { used: number; limit: number }
   /** Drives the bell's dot on mobile. */
@@ -83,6 +86,7 @@ export function AppShell({
           />
           <div className="hidden lg:contents">
             <TopBar
+            isOperator={isOperator}
               shopName={shopName}
               lastSyncedAt={lastSyncedAt}
               isDemo={isDemo}

@@ -1,3 +1,4 @@
+import { OperatorTitle } from '@/components/admin/operator-title'
 import { OperatorSection } from '@/components/admin/operator-section'
 import { OperatorFigure } from '@/components/admin/operator-figure'
 import { Money, Numeric } from '@/components/ui/numeric'
@@ -64,7 +65,7 @@ export default async function SubscriptionsPage() {
 
   return (
     <>
-      <title>Subscriptions · Operations · EtsyPilot</title>
+      <OperatorTitle page="Subscriptions" />
       <PageHeader
         title="Subscriptions"
         subtitle={`${rows.length === 1 ? '1 account' : `${rows.length} accounts`} · plan limits read from the pricing definitions, not restated here · read-only`}

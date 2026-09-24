@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { OperatorTitle } from '@/components/admin/operator-title'
 import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { Card, CardBody } from '@/components/ui/card'
@@ -57,7 +58,7 @@ export default async function EditRolePermissionsPage({
 
   return (
     <div className="mx-auto w-full max-w-[620px]">
-      <title>Edit permissions · Operations · EtsyPilot</title>
+      <OperatorTitle page="Edit permissions" />
 
       <PageHeader
         back={{ href: '/admin/permissions', label: 'Permissions' }}

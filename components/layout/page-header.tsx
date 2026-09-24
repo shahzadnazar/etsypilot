@@ -59,7 +59,28 @@ export function PageHeader({
       >
         <div className="flex flex-col gap-1.5">
           <h1 className="text-page tracking-[-0.015em] text-ink-1">{title}</h1>
-          {subtitle ? <div className="text-small text-muted-1">{subtitle}</div> : null}
+          {/*
+            * max-w-prose, which the hand-rolled operator headings had and this
+            * component did not.
+            *
+            * MEASURED at 1920: the managers description rendered as ONE line
+            * 1,462px wide — 235 characters — and Accounts 1,126px. A line that
+            * long is one the eye loses its place returning from.
+            *
+            * IT IS NOT INVISIBLE ON THE SELLER SIDE, which was the expectation
+            * when this was asked for. Measured across all 26 seller pages that
+            * carry a subtitle: 9 stay on one line and 17 now wrap to two (one
+            * to three). Those were 85–190 characters on a single line, so they
+            * were past a comfortable measure too — this makes them consistent
+            * rather than worse — but it is a visible change to 17 pages and
+            * not the no-op it was expected to be.
+            *
+            * 65ch works out at 533px here. The same constraint EmptyState's
+            * description carries, for the same reason.
+            */}
+          {subtitle ? (
+            <div className="max-w-prose text-small text-muted-1">{subtitle}</div>
+          ) : null}
         </div>
         {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
       </div>

@@ -44,6 +44,9 @@ PSQL = os.environ.get("PSQL_DSN", "postgres://postgres@127.0.0.1:5999/etsypilot"
 SUPER = ("boss@etsypilot.app", "correct-horse-battery")
 ADMIN = ("ops@etsypilot.app", "admin-password-here")
 MANAGER = ("promoted@example.com", "manager-password-y")
+# A signed-in account with no operator role at all, for the half of the
+# seller-link check that matters most.
+SELLER = ("seller@example.com", "seller-password-x")
 
 VIEWPORTS = (("mobile", 390, 844), ("tablet", 768, 1024), ("desktop", 1440, 1000))
 
@@ -495,6 +498,37 @@ def main():
             rail == set(link["href"] for link in drawer_links),
             f"THE DRAWER AND THE RAIL OFFER THE SAME SET ({sorted(rail)})",
         )
+
+        # ---- the way back from the seller app ---------------------------------
+        #
+        # BOTH HALVES. The operator half alone would pass with the gate deleted
+        # — which is precisely the failure, because deleting it shows the link
+        # to every seller and changes nothing else that a test would notice.
+        #
+        # The seller half asserts the string is absent from the RESPONSE, not
+        # merely that no anchor is visible. A hidden link is still a link, and
+        # /admin in a seller's HTML is the disclosure this rule exists to stop.
+        boss_page.set_viewport_size({"width": 1440, "height": 1000})
+        for label, page in (("SUPER_ADMIN", boss_page), ("ADMIN", ops_page), ("MANAGER", manager_page)):
+            page.goto(f"{BASE}/dashboard", wait_until="load")
+            links = page.eval_on_selector_all(
+                'a[href="/admin"]', "els => els.map(e => e.textContent.trim())"
+            )
+            check(links == ["Operations"], f"the seller shell offers {label} a way back ({links})")
+
+        seller_context = browser.new_context()
+        seller_page = seller_context.new_page()
+        sign_in(seller_page, *SELLER)
+        seller_page.goto(f"{BASE}/dashboard", wait_until="load")
+        check(
+            seller_page.locator('a[href="/admin"]').count() == 0,
+            "and renders no such link for a plain seller",
+        )
+        check(
+            "/admin" not in seller_page.content(),
+            "with the string nowhere in the response a seller receives",
+        )
+        seller_context.close()
 
         # ---- escape closes it ------------------------------------------------
         boss_page.set_viewport_size({"width": 390, "height": 844})

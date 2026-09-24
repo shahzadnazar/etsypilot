@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { OperatorTitle } from '@/components/admin/operator-title'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card, CardBody } from '@/components/ui/card'
 import { requireAdmin } from '@/domain/admin/access'
@@ -73,7 +74,7 @@ export default async function ChangeRolePage({
 
   return (
     <div className="mx-auto w-full max-w-[560px]">
-      <title>Change role · Operations · EtsyPilot</title>
+      <OperatorTitle page="Change role" />
 
       <PageHeader
         back={{ href: '/admin/users', label: 'Accounts' }}
