@@ -36,23 +36,66 @@ import 'server-only'
  * nonce and the echoed path are normalised. tests/browser/admin-hidden.py
  * asserts exactly that and fails if it stops being true.
  *
- * A SIGNED-IN SELLER WHO IS NOT AN OPERATOR: same 404 status, same rendered
- * page, NO operator content — no banner, no navigation, no email, no role, no
- * column name, nothing from the account list. But the refusal happens during
- * render, and Next wraps a request-time notFound() in its `__next_error__`
- * document shell rather than the root layout, so the response is 8,602 bytes
- * where a missing URL is 9,507. An authenticated seller who compares the two
- * can therefore tell that /admin is a URL this application treats specially.
+ * A SIGNED-IN SELLER WHO IS NOT AN OPERATOR: same 404 status, NO operator
+ * content — no banner, no navigation, no email, no role, no column name,
+ * nothing from the account list. The refusal happens during render, and Next
+ * wraps a request-time notFound() in its `__next_error__` document shell
+ * rather than the root layout. An authenticated seller who compares /admin
+ * with a URL nobody wrote can therefore tell that /admin is treated specially.
  * They learn nothing else.
  *
- * NOT CLOSED, and deliberately so rather than by oversight. Closing it means
- * refusing in middleware, which is the only place that can rewrite — and
- * middleware runs on the Edge runtime, which cannot read platform_role, so it
- * cannot recognise a MANAGER. The options were to drop the MANAGER role or to
- * add an internal role-resolution endpoint that the Edge can call with the
- * session cookie. A new authenticated internal endpoint is real attack surface,
- * and it would be spent hiding a fact from people who are already signed in.
- * Written down here so it stays a decision rather than becoming a discovery.
+ * ── THAT GAP IS WIDER THAN THIS COMMENT USED TO SAY. RE-MEASURED. ────────
+ *
+ * It described the difference as a byte count — 8,602 against 9,507, same
+ * rendered page. "Same rendered page" is no longer true, and the number is not
+ * the tell any more. On Next 16.3.6, `next start`:
+ *
+ *   signed-in seller, /admin        404    8,088 bytes, <body> EMPTY
+ *   any missing URL                 404   10,292 bytes, the 404 page, rendered
+ *
+ * A request-time notFound() now returns a document with NO server-rendered
+ * markup at all. The page travels as an RSC payload in inline scripts and is
+ * drawn by the client after hydration. So the two responses are not "the same
+ * page at a different size"; one is a page and the other is an empty shell,
+ * which anyone can separate with a single curl and no JavaScript.
+ *
+ * It is also what a refused operator pays: blank for 0.3s on this machine,
+ * 7s throttled to slow-3G, 15s on 2G, and blank forever with JavaScript off.
+ *
+ * ── AND THE REASON IT WAS LEFT OPEN HAS EXPIRED ──────────────────────────
+ *
+ * The paragraph here used to conclude: closing it means refusing in
+ * middleware, middleware runs on the Edge runtime, the Edge cannot read
+ * platform_role, therefore a MANAGER cannot be recognised before the response
+ * starts — so the only alternatives were dropping the MANAGER role or adding
+ * an internal role-resolution endpoint for the Edge to call.
+ *
+ * MEASURED, because the premise is a fact about Next and facts about Next in
+ * this file have expired before. `middleware.ts` does still run on Edge:
+ *
+ *   middleware.ts   { runtime: "edge",   dbError: "The edge runtime does not
+ *                     support Node.js 'net' module." }
+ *
+ * But `middleware.ts` is deprecated in Next 16 — the build prints the notice
+ * on every run — and its replacement is not the same runtime. The same file,
+ * renamed `proxy.ts` with its export renamed to `proxy`, and nothing else
+ * changed:
+ *
+ *   proxy.ts        { runtime: "nodejs", node: "22.22.2",
+ *                     dbRead: "MANAGER" }
+ *
+ * Postgres, read from the request path, before a byte of the response. The
+ * third option the paragraph above could not see is therefore available: a
+ * Node-runtime proxy can resolve platform_role and rewrite a refused /admin
+ * request to a path with no route, exactly as it already does for anonymous
+ * visitors — which is the ONE case measured as genuinely indistinguishable
+ * from a missing URL, and the one case that is fully server-rendered.
+ *
+ * THAT IS NOT DONE HERE, and the reason is scope rather than doubt: it moves
+ * a database read into the request path of every matched request in the
+ * seller app, and it needs its own fail-closed argument. Recorded as the open
+ * option it now is, so the next person weighing it starts from the measurement
+ * rather than from the sentence that used to close the question.
  */
 
 import { cache } from 'react'
@@ -278,6 +321,27 @@ export async function requireAdmin(permission: Permission): Promise<AdminAccess>
  * exist: `(list)` and `(detail)` are places to hang a gate that wraps ONE page
  * rather than a whole subtree, because /admin/users and /admin/users/<id> do
  * not require the same permission.
+ *
+ * ── WHAT THE 404 COSTS, AND WHAT IT IS NOT CAUSED BY ────────────────────
+ *
+ * A request-time notFound() returns `<html id="__next_error__">` with an EMPTY
+ * body; the 404 page is delivered as an RSC payload and drawn by the client.
+ * It is tempting to blame the layout for that, and a three-way probe on one
+ * route, one viewer, one missing permission says otherwise:
+ *
+ *   page gate, no loading.tsx       404   empty __next_error__ shell
+ *   page gate, with loading.tsx     200   fully server-rendered
+ *   layout gate, with loading.tsx   404   empty __next_error__ shell
+ *
+ * The blank body tracks the STATUS, not the position of the gate. It is the
+ * price of answering 404 at render time on this version of Next, and
+ * /admin/permissions — the one route that was already answering 404 before
+ * these layouts existed — was already paying it. Moving the gate up did not
+ * introduce it; it extended a correct status, and the cost that came with it,
+ * to the other twelve routes.
+ *
+ * The way out is not a different gate position. It is refusing BEFORE the
+ * route renders at all — see the proxy measurement in the header.
  *
  * THE PAGES STILL GATE THEMSELVES. This is not a replacement for that, and a
  * sweep asserts every page keeps its own call: a layout can be deleted, and a

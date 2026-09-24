@@ -39,13 +39,32 @@ import { visibleOperatorNav } from '@/domain/admin/navigation'
  * screen that would 404 them again. A viewer with no visible items gets no
  * links at all: omitted, never offered and then denied.
  *
- * ── WHAT IT DOES NOT FIX, measured rather than assumed ────────────────────
+ * ── WHAT IT DOES NOT FIX, re-measured rather than inherited ──────────────
  *
- * Next still wraps a request-time notFound() in its `<html id="__next_error__">`
- * shell instead of the root layout, so the response is 8,602 bytes against
- * 9,507 for a URL that genuinely has no route. Same status, same visible page,
- * different document shell — see the scope note in domain/admin/access.ts for
- * what that does and does not disclose.
+ * This note used to read "same status, same visible page, different document
+ * shell". The last clause is the only one still true, and it is doing more
+ * work than it looks. On Next 16.3.6 the `<html id="__next_error__">` shell
+ * has an EMPTY BODY: nothing below is server-rendered. Everything this file
+ * returns — the frame, the copy, the links, and the operator chrome around it
+ * — travels as an RSC payload in inline scripts and is drawn by the client.
+ *
+ *   refused operator, /admin/audit   404   17,205 bytes, <body> empty
+ *   missing URL                      404   10,292 bytes, the page, rendered
+ *
+ * So this component is correct and, for the first fraction of a second, it is
+ * also invisible: blank for 0.3s on this machine, 7s throttled to slow-3G,
+ * 15s on 2G, and permanently blank with JavaScript off. That is the price of
+ * the 404 status rather than of anything in this file — the same shell comes
+ * back when the gate sits in the page instead of the layout, and the only way
+ * to get a server-rendered body is to answer 200, which is the defect this
+ * arrangement exists to fix. domain/admin/access.ts carries the measurement
+ * and the one route out of the trade.
+ *
+ * IT ALSO MEANS A BROWSER CHECK CANNOT READ THIS PAGE ON `load`. The body is
+ * empty at that point and "" contains no copy at all, so an assertion of the
+ * form `phrase not in body` passes against it. tests/browser/
+ * admin-refusal-status.py waits for content and fails on an empty body for
+ * exactly that reason.
  */
 export default async function AdminNotFound() {
   const access = await getAdminAccess()

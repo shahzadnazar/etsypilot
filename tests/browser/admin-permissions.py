@@ -240,17 +240,34 @@ def main():
 
         # ---- a wrong password changes nothing, and is recorded (ACTION 3) ----
         before = sql("select permissions from admin_role_permissions where role='MANAGER'")
+        refusals_before = int(
+            sql(
+                "select count(*) from admin_permission_audit_events "
+                "where outcome_kind='REFUSED' and refusal_reason='WRONG_PASSWORD'"
+            )
+        )
         save_permissions(boss_page, "MANAGER", ticked=set(), password="not-the-password")
         refused = boss_page.inner_text("body")
         check("Not changed" in refused, "a wrong password is refused in words")
         check("Password did not match" in refused, "and says which check refused it")
         after = sql("select permissions from admin_role_permissions where role='MANAGER'")
         check(before == after, f"no permission changed ({before} -> {after})")
-        recorded = sql(
-            "select count(*) from admin_permission_audit_events "
-            "where outcome_kind='REFUSED' and refusal_reason='WRONG_PASSWORD'"
+        # A DELTA, not a total. This counted every WRONG_PASSWORD row the
+        # database had ever held and asserted it equalled 1, which is true only
+        # on a database this suite has run against exactly once — the second run
+        # reported 2, the third 3, and each one looked like a defect in the
+        # audit log rather than in the counting. The action under test produces
+        # ONE row; that is what is measured.
+        recorded = int(
+            sql(
+                "select count(*) from admin_permission_audit_events "
+                "where outcome_kind='REFUSED' and refusal_reason='WRONG_PASSWORD'"
+            )
         )
-        check(recorded == "1", f"the refused attempt is in the audit log ({recorded} record)")
+        check(
+            recorded - refusals_before == 1,
+            f"the refused attempt is in the audit log ({refusals_before} -> {recorded})",
+        )
         check(
             status_of(manager_page, "/admin/users") == 200,
             "and the manager still has the page the failed attempt would have taken",
@@ -297,18 +314,27 @@ def main():
             "while the SUPER_ADMIN still has the screen that would restore it",
         )
         # ---- ACTION 6 -------------------------------------------------------
+        #
+        # PUT BACK WHAT WAS THERE, read from the row this run started with.
+        #
+        # This was a literal set of seven keys — the 0005 seed — and by the time
+        # 0006 and 0007 had granted financials.view and metrics.view it was no
+        # longer a restore. It was a rollback: every run of this suite silently
+        # walked the ADMIN row back two migrations, and the assertion 150 lines
+        # above then failed on the NEXT run, reporting the migrations as
+        # missing. Repair the row, run once, pass; run again, fail. The suite
+        # was the thing breaking it.
+        #
+        # The assertion up there already learned this lesson — "derived from
+        # the code, not a literal", after a literal count went red on the
+        # migration that added the eighth permission. The restore beside it was
+        # left as a literal and grew the same defect in a worse shape, because
+        # a wrong assertion is loud and a wrong restore is silent until
+        # something else fails.
         save_permissions(
             boss_page,
             "ADMIN",
-            ticked={
-                "users.view",
-                "users.detail",
-                "subscriptions.view",
-                "usage.view",
-                "ai.view",
-                "etsy.view",
-                "operations.view",
-            },
+            ticked=set(seeded_admin.strip("{}").split(",")),
             password=SUPER[1],
         )
         check(
@@ -317,7 +343,20 @@ def main():
         )
 
         # ---- the audit log shows both kinds of change -------------------------
-        boss_page.goto(f"{BASE}/admin/audit", wait_until="load")
+        # WAITED FOR, not sampled. /admin/audit has a loading.tsx, so `load`
+        # fires with the SKELETON on screen and the rows still streaming —
+        # inner_text() at that moment returns placeholder text, and every
+        # `"X" in audit` below then fails for a reason that has nothing to do
+        # with the audit log. Measured: all three of these went red together
+        # while the page itself was correct.
+        boss_page.goto(f"{BASE}/admin/audit", wait_until="networkidle")
+        # The readiness signal is the SKELETON GOING AWAY, deliberately not any
+        # of the three strings below. Waiting for one of those would make that
+        # assertion unable to fail: the wait would time out instead, and the
+        # other two would then be measuring a page that arrived because they
+        # were waited for. loading.tsx marks itself aria-busy, so "the
+        # placeholder is gone" is a signal none of these checks depends on.
+        boss_page.wait_for_selector('[aria-busy="true"]', state="detached", timeout=30000)
         audit = boss_page.inner_text("body")
         check("Revoked" in audit or "Granted" in audit, "permission changes appear in the log")
         check("role, not a person" in audit, "and are marked as being about a role")
@@ -383,6 +422,49 @@ def main():
         check(
             sql(f"select platform_role from users where email='{SUBJECT[0]}'") == "USER",
             "with the audit table working again, the same change applies",
+        )
+
+        # ---- PUT THE MANAGER ROW BACK --------------------------------------
+        #
+        # The last action to touch it was ACTION 3's refused save, which leaves
+        # whatever ACTION 2 set. Unrestored, the next run reads that as the
+        # seed and the "MANAGER is seeded with users.view only" check fails —
+        # again reporting the database as wrong when the previous run was.
+        sql(
+            "update admin_role_permissions set permissions = "
+            f"'{seeded_manager}' where role = 'MANAGER'"
+        )
+        check(
+            sql("select permissions from admin_role_permissions where role='MANAGER'")
+            == seeded_manager,
+            f"the MANAGER row is left as this run found it ({seeded_manager})",
+        )
+
+        # ---- PUT THE SUBJECT BACK ------------------------------------------
+        #
+        # ACTION 8 above ends with promoted@example.com demoted to USER, which
+        # is the correct assertion and the wrong state to walk away from. Every
+        # other suite and every hand-check treats that address as "the manager
+        # holding only users.view"; left as USER it is not an operator at all,
+        # so /admin refuses it in the GROUP layout and the seller 404 renders —
+        # correct behaviour, from an account nobody meant to be testing.
+        #
+        # That is not hypothetical. A report of "the operator 404 regressed to
+        # the seller 404" was reproduced exactly, on a correct build, by
+        # running this file and then opening /admin/audit by hand: status 404,
+        # "the listing was deleted on Etsy", both buttons out to seller pages.
+        # The console was fine; the account was not a manager.
+        #
+        # A suite that leaves a shared fixture in a state its own name
+        # contradicts hands the next reader a false measurement, and this one
+        # did.
+        sql(
+            "update users set platform_role='MANAGER' "
+            f"where email='{SUBJECT[0]}'"
+        )
+        check(
+            sql(f"select platform_role from users where email='{SUBJECT[0]}'") == "MANAGER",
+            "the subject is left as the MANAGER every other suite expects",
         )
 
         browser.close()

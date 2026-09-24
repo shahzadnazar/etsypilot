@@ -1,4 +1,4 @@
-"""Every refused operator route answers 404 — the STATUS, not the page.
+"""Every refused operator route answers 404, AND shows the right 404.
 
     python3 tests/browser/fake-gotrue.py 5998 &
     AUTH_MODE=live NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:5998 \
@@ -28,10 +28,50 @@ the group layout runs above every boundary. The case the defect lived in, an
 operator who holds console access and lacks ONE permission, had its body
 asserted and its status skipped.
 
-So this file asserts one thing and asserts it from the outside: the number on
-the status line. It reads the route table from the app's own layout files
-rather than from a list written here, so a route added without a gate is a
-route this cannot silently skip.
+── AND THEN IT MADE THE SAME MISTAKE THE OTHER WAY ROUND ──────────────────
+
+The first version of this file asserted the status and nothing else, which is
+the identical gap with the arguments swapped. It would have gone green on a
+build where every refused operator saw the SELLER'S 404 — "the listing was
+deleted on Etsy", with buttons out to /dashboard and /listings/audit — because
+that page carries a 404 status too. Checking one property and assuming the
+other is what let the original defect through; asserting the other property and
+assuming the first would not be an improvement.
+
+So both are asserted, for three viewers, on every gated route:
+
+    operator lacking that permission   404   operator copy, links inside /admin
+    signed-in seller, no operator      404   seller copy, byte-for-byte the
+                                             page a missing URL gives
+    signed out                         404   seller copy, and the response is
+                                             SERVER-RENDERED (see below)
+
+THE CONVERSE IS ASSERTED TOO. The operator case must not contain the seller's
+sentence or a link to /listings/audit; the seller case must not contain the
+operator's sentence. Without those, one component rendering both bodies at once
+would satisfy every positive check.
+
+── THE BODY IS NOT IN THE HTML, WHICH IS WHY IT IS WAITED FOR ─────────────
+
+MEASURED on next start, Next 16.3.6: a request-time notFound() produces
+`<html id="__next_error__">` with an EMPTY body. The whole page — chrome, copy,
+links — travels as an RSC payload in inline scripts and is rendered by the
+client after hydration. With JavaScript disabled the refused operator's 404 is
+blank; with it on, it is blank for 0.3s here, 7s throttled to slow-3G, 15s on
+2G.
+
+That is a property of the 404 STATUS on this version, not of where the gate
+sits. Three-way probe, same viewer, same permission:
+
+    page gate, no loading.tsx     404   blank __next_error__ shell
+    page gate, with loading.tsx   200   fully server-rendered
+    layout gate, with loading.tsx 404   blank __next_error__ shell
+
+So `wait_until="load"` is not enough to read these pages, and it does not fail
+when it is wrong — it returns "". An earlier probe read exactly that and
+reported two routes as having no 404 copy at all. settled_body() waits for
+content and treats an empty body as a failure, because a body assertion that
+passes against "" is not a body assertion.
 """
 import os
 import re
@@ -65,6 +105,14 @@ DELEGATABLE = [
     "financials.view",
 ]
 
+# The two 404s, quoted from the components that render them. Fragments rather
+# than whole sentences so a typographic apostrophe or a re-wrap does not fail
+# the sweep for the wrong reason — but long enough that no other page contains
+# them by accident.
+OPERATOR_COPY = "No operator screen answers to that address"
+SELLER_COPY = "deleted on Etsy"
+SELLER_ONLY_LINK = "/listings/audit"
+
 fails, notes = [], []
 
 
@@ -96,6 +144,29 @@ def sign_in(page, email, password):
     page.fill('input[name="password"]', password)
     page.click('main button[type="submit"]')
     page.wait_for_url(f"{BASE}/dashboard", timeout=20000)
+
+
+def settled_body(page):
+    """The rendered text, waited for — never sampled and never empty.
+
+    A refused route's HTML carries no body (see the note at the top), so the
+    text only exists once the client has hydrated. page.inner_text("body")
+    immediately after wait_until="load" returns "", and "" satisfies every
+    `X not in body` assertion in this file. Waiting here is what stops a body
+    assertion from passing because there was no body.
+    """
+    page.wait_for_function(
+        "() => document.body && document.body.innerText.trim().length > 0",
+        timeout=30000,
+    )
+    return page.inner_text("body")
+
+
+def check_body(body, url, who, expected, forbidden):
+    """One viewer's 404 says its own words and none of the other's."""
+    check(expected in body, f"{url} tells a {who} {expected!r}")
+    for phrase in forbidden:
+        check(phrase not in body, f"{url} does not tell a {who} {phrase!r}")
 
 
 def strip_comments(text):
@@ -200,6 +271,32 @@ def main():
                 status == 404,
                 f"{route['url']} ({shape}) answers 404 to a manager {why} — got {status}",
             )
+
+            # ---- and the page underneath it -------------------------------
+            #
+            # A refused OPERATOR is already inside the console: the group
+            # layout admitted them, the banner and their rail are drawn around
+            # this. They get copy that is true where they are standing, and
+            # every way out leads back into /admin. The seller's words here
+            # would be false — there is no listing, and nothing was deleted on
+            # Etsy.
+            body = settled_body(page)
+            check_body(
+                body,
+                route["url"],
+                "refused operator",
+                OPERATOR_COPY,
+                (SELLER_COPY, SELLER_ONLY_LINK),
+            )
+            # The links are read from the DOM, not from the text, because the
+            # seller 404's buttons are LABELLED "Back to overview" and "Listing
+            # audit" — a check on the words alone would miss a correct-looking
+            # label pointing out of the console.
+            hrefs = page.eval_on_selector_all("main a", "els => els.map(e => e.getAttribute('href'))")
+            check(
+                len(hrefs) > 0 and all(h and h.startswith("/admin") for h in hrefs),
+                f"{route['url']} offers a refused operator only links inside the console — {hrefs}",
+            )
             context.close()
 
         # ---- the positive control --------------------------------------------
@@ -216,6 +313,14 @@ def main():
             response = page.goto(f"{BASE}{route['url']}", wait_until="load")
             status = response.status if response else 0
             check(status == 200, f"{route['url']} answers 200 to a super admin — got {status}")
+            # The status alone is not the control either. A build that served
+            # the 404 PAGE at status 200 is the exact defect this file was
+            # written for, and it would satisfy the line above.
+            body = settled_body(page)
+            check(
+                OPERATOR_COPY not in body and SELLER_COPY not in body,
+                f"{route['url']} gives a super admin the screen, not a 404 page at status 200",
+            )
         context.close()
 
         # ---- and a seller sees a missing URL, not a refused one ---------------
@@ -223,16 +328,61 @@ def main():
         page = context.new_page()
         sign_in(page, *SELLER)
         missing = page.goto(f"{BASE}/no-such-page-at-all", wait_until="load")
-        missing_body = page.inner_text("body")
+        missing_body = settled_body(page)
+        check(
+            SELLER_COPY in missing_body,
+            "the control URL really is the seller 404 and not some other page",
+        )
         for route in table:
             response = page.goto(f"{BASE}{route['url']}", wait_until="load")
             status = response.status if response else 0
             check(status == 404, f"{route['url']} answers 404 to a plain seller — got {status}")
+            body = settled_body(page)
             check(
-                page.inner_text("body") == missing_body,
+                body == missing_body,
                 f"{route['url']} is the same page a missing URL gives",
             )
+            # Equality with the control already implies both of these. They are
+            # written out anyway because equality is the assertion that goes
+            # vacuously true if the control page ever changes shape, and these
+            # two say what the property IS: a seller must not learn from the
+            # words on the page what the status code is careful not to tell
+            # them. "No operator screen answers to that address" announces that
+            # operator screens exist.
+            check_body(body, route["url"], "plain seller", SELLER_COPY, (OPERATOR_COPY,))
         check(missing.status == 404, "and that missing URL is itself a 404")
+        context.close()
+
+        # ---- and a signed-out visitor -----------------------------------
+        #
+        # STATED, because the prompt asked what this case currently does
+        # rather than assuming it does anything in particular. Measured: it
+        # never reaches the app. middleware.ts rewrites the request to a path
+        # with no route, so Next answers with its ordinary routing-level 404 —
+        # which, unlike either refusal above, is FULLY SERVER-RENDERED. 10,278
+        # bytes of real HTML against 8,088 for the same URL requested by a
+        # signed-in seller, whose refusal happens during render and therefore
+        # returns the empty __next_error__ shell.
+        #
+        # So the anonymous case is the strongest of the three and the only one
+        # that is genuinely indistinguishable from a URL nobody wrote.
+        # tests/browser/admin-hidden.py asserts that byte-for-byte; what is
+        # asserted here is only that this sweep's routes are covered by it too.
+        context = browser.new_context()
+        page = context.new_page()
+        anonymous_missing = page.goto(f"{BASE}/no-such-page-at-all", wait_until="load")
+        anonymous_missing_body = settled_body(page)
+        for route in table:
+            response = page.goto(f"{BASE}{route['url']}", wait_until="load")
+            status = response.status if response else 0
+            check(status == 404, f"{route['url']} answers 404 to a signed-out visitor — got {status}")
+            body = settled_body(page)
+            check(
+                body == anonymous_missing_body,
+                f"{route['url']} is the same page a missing URL gives a signed-out visitor",
+            )
+            check_body(body, route["url"], "signed-out visitor", SELLER_COPY, (OPERATOR_COPY,))
+        check(anonymous_missing.status == 404, "and that URL is a 404 when signed out too")
         context.close()
 
         browser.close()

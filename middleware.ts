@@ -107,11 +107,27 @@ export async function middleware(request: NextRequest) {
   /*
    * THEN the admin gate — after CSRF, which is untouched above.
    *
-   * This is the FIRST of two checks and deliberately the weaker one. Middleware
+   * This is the FIRST of two checks and deliberately the weaker one. THIS FILE
    * runs on the Edge runtime, which cannot reach Postgres (postgres-js is a TCP
    * driver), so it cannot resolve MANAGER — that role lives in a column. What
    * it CAN do without a database is tell a signed-out visitor from a signed-in
    * one, and that covers every anonymous probe and the whole of demo mode.
+   *
+   * "THIS FILE", not "middleware", and the distinction is new. Measured by
+   * probing the running server from inside this function:
+   *
+   *   middleware.ts   runtime "edge"     — "the edge runtime does not support
+   *                                        Node.js 'net' module"
+   *   proxy.ts        runtime "nodejs"   — node 22.22.2, and a live
+   *                   (same file,          `select platform_role` returning
+   *                   renamed export)      MANAGER
+   *
+   * Next 16 deprecates the `middleware` convention in favour of `proxy`, and
+   * the build says so on every run. Proxy defaults to Node. So the limitation
+   * above is now a property of the file name rather than of the feature, and
+   * the second check below is no longer the ONLY place a MANAGER can be
+   * recognised — it is only the only place THIS file can. What that makes
+   * possible, and why it has not been taken yet, is in domain/admin/access.ts.
    *
    * The authoritative check is requireAdmin() in each operator page,
    * server-side, with the database available. Two independent checks is the

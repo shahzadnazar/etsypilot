@@ -48,8 +48,22 @@ export default async function AdminLayout({ children }: { children: ReactNode })
    *
    * RE-MEASURED ON NEXT 16.3.6 AND IT IS NO LONGER TRUE. A notFound() thrown
    * here is caught by app/not-found.tsx in the parent segment and renders the
-   * ordinary 404 page: 8,798 bytes against 8,964 for a genuinely missing URL,
-   * the same visible text, and — the part that matters — the same 404 STATUS.
+   * ordinary 404 page, at the same 404 STATUS — which is the part that
+   * matters and the reason the line stays.
+   *
+   * WITH ONE CORRECTION THIS NOTE CARRIED FOR A WHILE. It claimed "the same
+   * visible text" at 8,798 bytes against 8,964. Measured again, against a
+   * signed-in seller on `next start`:
+   *
+   *   seller, /admin      404    8,088 bytes, <body> EMPTY
+   *   missing URL         404   10,292 bytes, the 404 page, server-rendered
+   *
+   * The text IS the same once the client has drawn it, and none of it is in
+   * the HTML. A request-time notFound() returns Next's `__next_error__` shell
+   * with no markup in it, so the refusal is distinguishable from a missing URL
+   * by anyone who looks at the response rather than the rendered page. That is
+   * a real disclosure, it is wider than the byte count this note used to give,
+   * and it is written up with the way to close it in domain/admin/access.ts.
    *
    * ── AND LEAVING IT WAS COSTING THE STATUS CODE ────────────────────────
    *
@@ -68,11 +82,12 @@ export default async function AdminLayout({ children }: { children: ReactNode })
    * shape of guard as the cross-shop import check, for the same reason.
    *
    * An operator who holds console access and lacks one permission is refused
-   * by their page instead, which streams and therefore answers 200 with the
-   * in-console 404. That is not a disclosure: they are already inside the
-   * console and the rail is drawn around them. The disclosure this rule
-   * exists to stop is a SELLER learning that /admin is there, and that
-   * request never reaches a page.
+   * by their ROUTE'S layout, one segment below this one, so they get 404 as
+   * well — see requireOperatorRoute(). They keep the full chrome around the
+   * 404, and that is not a disclosure: they are already inside the console and
+   * the rail is drawn around them. The disclosure this rule exists to stop is
+   * a SELLER learning that /admin is there, and that request never reaches a
+   * page.
    *
    * Note what still holds, stated for BOTH people who reach a 404 here,
    * because an earlier version of this note described only one of them and was
