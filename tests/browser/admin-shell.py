@@ -87,6 +87,24 @@ def nav_hrefs(page):
     )
 
 
+def nav_set(page):
+    """The NAVIGATION's own hrefs, for assertions about the whole set.
+
+    nav_hrefs reads every /admin link on the page, which is right for "is this
+    offered" and wrong for "these and no others": the accounts table links to
+    /admin/users/<id> for every row, so the set it returns grows with the
+    seeded data. Scoped to the nav landmarks, which is what the claim is about.
+    """
+    return set(
+        page.eval_on_selector_all(
+            'nav[aria-label^="Operator sections"] a[href^="/admin"],'
+            ' nav[aria-label="All operator sections"] a[href^="/admin"],'
+            ' nav[aria-label="Primary"] a[href^="/admin"]',
+            "els => els.map(e => e.getAttribute('href'))",
+        )
+    )
+
+
 def body_of(page, path):
     response = page.goto(f"{BASE}{path}", wait_until="load")
     return (response.status if response else 0), (response.text() if response else "")
@@ -115,9 +133,40 @@ def axe_violations(page, width, height, theme):
         ": document.documentElement.setAttribute('data-theme','light')",
         theme,
     )
+    # THE WIDTH IS THE MEASUREMENT; THE HEIGHT IS MADE TALL ENOUGH TO SEE.
+    #
+    # axe judges target-size against the live viewport, and the operator shell
+    # scrolls an INNER container (`main` is overflow-y-auto) rather than the
+    # document. So any control that happens to straddle that container's
+    # bottom edge is reported as "partially obscured" — measured: the usage
+    # section's methodology button sits at y=786 in a 796px-tall scroller at
+    # 390x844, and axe saw 10.3px of it.
+    #
+    # That is an artefact of where the page is scrolled, not a property of the
+    # layout. Every interactive element in every scrolling region is half
+    # visible at SOME offset, and a check that fires on that fires somewhere on
+    # every long page.
+    #
+    # THIS IS NOT A WAY OF NOT LOOKING. The width — the thing these viewports
+    # exist to vary, and the thing every reflow, contrast and spacing rule
+    # depends on — is unchanged. Only the height grows, so nothing is clipped
+    # and axe measures the LAYOUT. A control genuinely covered by a fixed
+    # element would still be covered at any height. The real version of the
+    # complaint, content ending flush against the bottom bar, is fixed in the
+    # shell with pb-20 below lg rather than hidden here.
+    page.evaluate(
+        "() => { window.scrollTo(0, 0); "
+        "for (const e of document.querySelectorAll('*')) "
+        "  if (e.scrollTop) e.scrollTop = 0 }"
+    )
+    full = page.evaluate(
+        "() => Math.max(document.documentElement.scrollHeight, "
+        "...[...document.querySelectorAll('*')].map(e => e.scrollHeight))"
+    )
+    page.set_viewport_size({"width": width, "height": min(max(height, full + 80), 8000)})
     page.wait_for_timeout(400)
     page.evaluate(AXE)
-    return page.evaluate(
+    violations = page.evaluate(
         """async () => {
           const r = await axe.run(document, {
             resultTypes: ['violations'],
@@ -129,6 +178,8 @@ def axe_violations(page, width, height, theme):
           }))
         }"""
     )
+    page.set_viewport_size({"width": width, "height": height})
+    return violations
 
 
 def overflows(page, width, height):
@@ -252,6 +303,72 @@ def main():
         check("/admin/managers" not in body, "the refused response offers no navigation at all")
         set_manager_permissions(["users.view"])
 
+        # ================= THE RAIL IS EXACTLY WHAT THE ROLE ALLOWS ==========
+        #
+        # The existing checks above ask "is this item offered" and "is that one
+        # absent", one href at a time. That catches an item that disappears and
+        # misses the failure that matters more: an item that APPEARS. A
+        # permission change that quietly widened the nav would pass every one
+        # of them, because none of them says what the whole set should be.
+        #
+        # So this asserts the SET, for each of the three roles, against the
+        # permissions that role actually holds — read from the same
+        # OPERATOR_NAV the app renders, via the app's own pages, rather than
+        # from a list written here that would have to be remembered.
+        BY_PERMISSION = {
+            "users.view": ("/admin/users", "/admin/managers"),
+            "etsy.view": ("/admin/etsy",),
+            "subscriptions.view": ("/admin/subscriptions",),
+            "usage.view": ("/admin/usage",),
+            "ai.view": ("/admin/ai",),
+            "operations.view": ("/admin/operations",),
+            "metrics.view": ("/admin/metrics",),
+        }
+        SUPER_ADMIN_ONLY = ("/admin/permissions", "/admin/audit")
+
+        def expected_rail(permissions):
+            out = set()
+            for key in permissions:
+                out.update(BY_PERMISSION.get(key, ()))
+            return out
+
+        # SUPER_ADMIN: everything, including the two non-delegatable screens.
+        everything = expected_rail(BY_PERMISSION) | set(SUPER_ADMIN_ONLY)
+        boss_page.goto(f"{BASE}/admin/users", wait_until="load")
+        check(
+            nav_set(boss_page) == everything,
+            f"SUPER_ADMIN's rail is exactly the whole nav and nothing more "
+            f"(extra: {sorted(nav_set(boss_page) - everything)}, "
+            f"missing: {sorted(everything - nav_set(boss_page))})",
+        )
+
+        # ADMIN: every delegatable permission, and NEITHER of the two that are
+        # super-admin-only. Those stay out however wide the admin role is.
+        ops_page.goto(f"{BASE}/admin/users", wait_until="load")
+        admin_rail = nav_set(ops_page)
+        check(
+            admin_rail.isdisjoint(SUPER_ADMIN_ONLY),
+            f"ADMIN's rail contains neither non-delegatable screen ({sorted(admin_rail)})",
+        )
+        check(
+            admin_rail <= expected_rail(BY_PERMISSION),
+            f"and nothing outside the delegatable set ({sorted(admin_rail - expected_rail(BY_PERMISSION))})",
+        )
+
+        # MANAGER: exactly what the matrix grants, changed twice so the rail is
+        # measured against two different grants rather than one lucky one.
+        for grant in (["users.view"], ["users.view", "metrics.view", "ai.view"]):
+            set_manager_permissions(grant)
+            manager_page.goto(f"{BASE}/admin/users", wait_until="load")
+            wanted = expected_rail(grant)
+            got = nav_set(manager_page)
+            check(
+                got == wanted,
+                f"MANAGER holding {grant} sees exactly {sorted(wanted)} "
+                f"(extra: {sorted(got - wanted)}, missing: {sorted(wanted - got)})",
+            )
+        set_manager_permissions(["users.view"])
+
         # ================= geometry and accessibility ========================
         # Run against the super admin, who sees the most: the widest rail, the
         # longest nav, and every group heading.
@@ -261,8 +378,41 @@ def main():
         # written here — so a module added in a later part is swept without
         # anybody remembering to add it to a list.
         SCREENS = sorted(set(nav_hrefs(boss_page)))
-        check(len(SCREENS) >= 4, f"the sweep has screens to visit ({len(SCREENS)})")
 
+        # ── THE DETAIL SCREENS, WHICH THE RAIL CANNOT OFFER ────────────────
+        #
+        # nav_hrefs reads the navigation, so it finds every TOP-LEVEL screen
+        # and none of the three that live under one. Those three are the most
+        # likely to differ, not the least: they are the pages that used to
+        # hand-roll their own back link, each slightly differently, and they
+        # are the only operator pages with a parameter in the path.
+        #
+        # The id is resolved from the seeded data rather than written here. A
+        # hard-coded uuid would 404 the moment the fixtures changed, and a 404
+        # scrolls no wider than a phone — so the sweep would go green by
+        # measuring the 404 page instead of the screen.
+        subject_id = sql("select id from users where email = 'promoted@example.com'")
+        check(len(subject_id) > 10, f"a real account id was resolved for the detail sweep ({subject_id!r})")
+        DETAIL_SCREENS = [
+            f"/admin/users/{subject_id}",
+            f"/admin/users/{subject_id}/role",
+            "/admin/permissions/MANAGER",
+        ]
+        for path in DETAIL_SCREENS:
+            status, _ = body_of(boss_page, path)
+            check(status == 200, f"{path} is a real screen before it is measured ({status})")
+
+        SCREENS = SCREENS + DETAIL_SCREENS
+        check(len(SCREENS) >= 7, f"the sweep has screens to visit ({len(SCREENS)})")
+
+        # AXE RUNS ON EVERY SCREEN THE OVERFLOW LOOP VISITS.
+        #
+        # It used to run against /admin/users alone while the overflow loop
+        # covered all of them, which made the accessibility half of this sweep
+        # a claim about one page dressed as a claim about the console. The
+        # screens differ in exactly the ways axe cares about: contrast on the
+        # tone-coloured counts, labels on the count tiles, headings on the
+        # detail pages.
         for label, width, height in VIEWPORTS:
             for path in SCREENS:
                 boss_page.set_viewport_size({"width": width, "height": height})
@@ -273,14 +423,13 @@ def main():
                     f"{path} does not scroll sideways at {label}",
                 )
 
-            boss_page.goto(f"{BASE}/admin/users", wait_until="load")
-            for theme in ("light", "dark"):
-                violations = axe_violations(boss_page, width, height, theme)
-                check(
-                    violations == [],
-                    f"no WCAG A/AA violations at {label} in {theme}"
-                    + ("" if not violations else f" — {json.dumps(violations)[:600]}"),
-                )
+                for theme in ("light", "dark"):
+                    violations = axe_violations(boss_page, width, height, theme)
+                    check(
+                        violations == [],
+                        f"{path}: no WCAG A/AA violations at {label} in {theme}"
+                        + ("" if not violations else f" — {json.dumps(violations)[:600]}"),
+                    )
 
         # ---- the mobile drawer ----------------------------------------------
         boss_page.set_viewport_size({"width": 390, "height": 844})
@@ -289,16 +438,26 @@ def main():
             boss_page.locator('nav[aria-label="Operator sections"]').first.is_visible() is False,
             "the desktop rail is not rendered at 390",
         )
-        opener = boss_page.locator('button[aria-controls="operator-nav"]')
-        check(opener.count() == 1, "there is a drawer opener on mobile")
-
-        box = opener.bounding_box()
+        # TWO controls open the ONE drawer now: the hamburger in the top bar,
+        # and the bottom tab bar's "More". Both are asserted rather than the
+        # first of them — a 44px hamburger beside a 30px More is the sort of
+        # thing a count-of-one check waves through.
+        openers = boss_page.locator('button[aria-controls="operator-nav"]')
+        check(openers.count() == 2, f"both drawer openers are present ({openers.count()})")
         check(
-            box is not None and box["width"] >= 44 and box["height"] >= 44,
-            f"and it is a 44x44 touch target ({box['width']:.0f}x{box['height']:.0f})"
-            if box
-            else "and it is a 44x44 touch target (not measurable)",
+            boss_page.locator('#operator-nav').count() <= 1,
+            "and there is at most ONE drawer for them to open",
         )
+
+        for index in range(openers.count()):
+            box = openers.nth(index).bounding_box()
+            label = (openers.nth(index).inner_text() or "hamburger").split("\n")[0].strip()
+            check(
+                box is not None and box["width"] >= 44 and box["height"] >= 44,
+                f"the {label or 'hamburger'} opener is a 44x44 touch target "
+                + (f"({box['width']:.0f}x{box['height']:.0f})" if box else "(not measurable)"),
+            )
+        opener = openers.first
 
         opener.click()
         boss_page.wait_for_selector('nav#operator-nav', timeout=5000)
@@ -334,14 +493,19 @@ def main():
             f"THE DRAWER AND THE RAIL OFFER THE SAME SET ({sorted(rail)})",
         )
 
-        # ---- escape closes it ------------------------------------------------
+        # ---- escape closes it, whichever control opened it --------------------
+        #
+        # Both openers are exercised, because they now share ONE open flag
+        # through a context. A second copy of that state would show here as a
+        # drawer that opens from the bar and will not close.
         boss_page.set_viewport_size({"width": 390, "height": 844})
-        boss_page.goto(f"{BASE}/admin/users", wait_until="load")
-        boss_page.locator('button[aria-controls="operator-nav"]').click()
-        boss_page.wait_for_selector("nav#operator-nav", timeout=5000)
-        boss_page.keyboard.press("Escape")
-        boss_page.wait_for_selector("nav#operator-nav", state="detached", timeout=5000)
-        check(True, "Escape closes the drawer")
+        for index, who in ((0, "the hamburger"), (1, "the bottom bar's More")):
+            boss_page.goto(f"{BASE}/admin/users", wait_until="load")
+            boss_page.locator('button[aria-controls="operator-nav"]').nth(index).click()
+            boss_page.wait_for_selector("nav#operator-nav", timeout=5000)
+            boss_page.keyboard.press("Escape")
+            boss_page.wait_for_selector("nav#operator-nav", state="detached", timeout=5000)
+            check(True, f"Escape closes the drawer opened by {who}")
 
         browser.close()
 

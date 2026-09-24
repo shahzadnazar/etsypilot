@@ -117,7 +117,9 @@ export function OperatorMobileBar({ groups }: { groups: OperatorNavGroup[] }) {
 
           <nav
             id="operator-nav"
-            aria-label="Operator sections"
+            /* Distinct from the bottom bar's "Primary": this one is all of
+               them, with their blurbs, rather than the first four. */
+            aria-label="All operator sections"
             className="absolute inset-y-0 left-0 flex w-[280px] max-w-[85vw] flex-col bg-surface shadow-overlay"
           >
             <div className="flex items-center gap-2.5 border-b border-line px-4 py-3">

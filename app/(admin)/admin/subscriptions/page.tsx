@@ -79,6 +79,7 @@ export default async function SubscriptionsPage() {
         <>
           <OperatorSection
             title="By plan"
+            methodology={{ key: 'operatorPlanMix', type: 'VERIFIED' }}
             blurb="Every plan, including the ones nobody is on. A breakdown that hides an empty tier reads exactly like one written before that tier existed."
           >
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
@@ -86,7 +87,6 @@ export default async function SubscriptionsPage() {
                 <Card key={entry.bucket} className="flex flex-col gap-1 p-3">
                   <OperatorFigure
                     frame="bare"
-                    metricKey="operatorPlanMix"
                     label={entry.label}
                     figure={entry.count}
                     valueClassName="text-[22px] font-semibold leading-none text-ink-1"
@@ -133,6 +133,7 @@ export default async function SubscriptionsPage() {
 
           <OperatorSection
             title="By status"
+            methodology={{ key: 'operatorSubscriptionStatus', type: 'VERIFIED' }}
             blurb="Every status the billing model defines, plus accounts with no record at all."
           >
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
@@ -140,7 +141,6 @@ export default async function SubscriptionsPage() {
                 <Card key={entry.bucket} className="p-3">
                   <OperatorFigure
                     frame="bare"
-                    metricKey="operatorSubscriptionStatus"
                     label={entry.label}
                     figure={entry.count}
                     valueClassName={`text-[22px] font-semibold leading-none ${toneInk(entry.tone)}`}

@@ -302,11 +302,31 @@ describe('the shell renders no padlock, because it cannot know of one', () => {
      */
     const source = code(LAYOUT)
     const resolved = source.indexOf('await getAdminAccess()')
-    const refusal = source.indexOf('if (!access) return')
+    const refusal = source.indexOf('if (!access)')
     expect(resolved).toBeGreaterThan(-1)
     expect(refusal).toBeGreaterThan(resolved)
     const between = source.slice(resolved + 'await getAdminAccess()'.length, refusal)
     expect(between.trim()).toBe('')
+  })
+
+  it('REFUSES WITH notFound(), so the status is decided before the first byte', () => {
+    /*
+     * This line used to pass `children` through and let the PAGE refuse, on a
+     * measurement that had expired: a notFound() from a layout no longer falls
+     * back to Next's bare error document. Re-measured on 16.3.6 — it renders
+     * the ordinary 404 page, 8,798 bytes against 8,964 for a genuinely missing
+     * URL, at the same 404 status.
+     *
+     * And leaving it was costing that status. Adding a loading.tsx to the
+     * operator routes put each page inside a Suspense boundary, so Next
+     * streams: the shell is flushed with 200 before the page's gate runs, and
+     * a notFound() cannot change a status already sent. Measured — every
+     * operator route with a skeleton answered 200 with 404 copy, and
+     * /admin/permissions, the one without a skeleton, answered 404. A 200 that
+     * says "not found" confirms /admin exists to any script that looks.
+     */
+    expect(code(LAYOUT)).toContain('if (!access) notFound()')
+    expect(code(LAYOUT)).toContain("from 'next/navigation'")
   })
 })
 
@@ -1053,7 +1073,13 @@ describe('an operator figure cannot render without its provenance', () => {
     const registry = code('lib/provenance/methodology.ts')
     const used = new Set<string>()
     for (const page of pagesUnder(ADMIN_ROOT)) {
-      for (const match of code(page).matchAll(/metricKey="([^"]+)"/g)) used.add(match[1]!)
+      const source = code(page)
+      // BOTH spellings. A figure standing alone keeps its own clickable badge
+      // (`metricKey="…"`); a dense grid of figures offers one for the panel
+      // through OperatorSection (`methodology={{ key: '…' }}`), because five
+      // 24px targets side by side fail WCAG 2.2 target-size — measured.
+      for (const match of source.matchAll(/metricKey="([^"]+)"/g)) used.add(match[1]!)
+      for (const match of source.matchAll(/key: '(operator\w+)'/g)) used.add(match[1]!)
     }
     expect(used.size).toBeGreaterThanOrEqual(6)
     for (const key of used) {
@@ -1321,5 +1347,59 @@ describe('no operator screen skips a heading level', () => {
   it('gives every operator section an h2 under the page h1', () => {
     const section = code(SECTION)
     expect(section).toContain('as="h2"')
+  })
+})
+
+/* ─────────────── one navigation per landmark name, on a phone ────────────── */
+
+describe('the three operator navigations do not share one name', () => {
+  /*
+   * FOUND WHILE ADDING THE BOTTOM BAR. The rail, the drawer and the new tab
+   * bar all carried aria-label="Operator sections", and at 390px the bar and
+   * the drawer can be in the document at the same time. A screen-reader user
+   * navigating by landmark was offered three identical choices.
+   */
+  it('gives each navigation its own label', () => {
+    const labels = [
+      code('components/admin/operator-sidebar.tsx'),
+      code(DRAWER),
+      code(MOBILE_TABS),
+    ].map((source) => source.match(/aria-label="([^"]+)"/)?.[1])
+
+    expect(labels.every(Boolean)).toBe(true)
+    expect(new Set(labels).size).toBe(labels.length)
+  })
+
+  it('names the bottom bar the way the seller app names its own', () => {
+    // The seller MobileTabs is aria-label="Primary". Matching it is the point
+    // of this whole pass — and it is distinct from the other two by doing so.
+    expect(code(MOBILE_TABS)).toContain('aria-label="Primary"')
+    expect(code('components/layout/mobile-tabs.tsx')).toContain('aria-label="Primary"')
+  })
+})
+
+/* ──────────── the gate decides before the response starts streaming ─────── */
+
+describe('a skeleton cannot cost the operator gate its status code', () => {
+  /*
+   * The regression this pair exists to prevent, because it happened:
+   * a loading.tsx under each operator route put every page inside a Suspense
+   * boundary,
+   * Next began streaming, and the 200 was on the wire before the page's
+   * requireAdmin() ran. Every skeletoned route answered 200 with 404 copy.
+   */
+  it('gates in the LAYOUT, above every route-level Suspense boundary', () => {
+    expect(code(LAYOUT)).toContain('notFound()')
+  })
+
+  it('still gates every page as well, so the layout is not the only check', () => {
+    /*
+     * The layout answers "is this an operator at all". Each page answers "may
+     * this operator see THIS", which the layout cannot know. Removing either
+     * leaves a hole, so both are asserted.
+     */
+    for (const page of pagesUnder(ADMIN_ROOT)) {
+      expect(code(page), page).toContain('requireAdmin(')
+    }
   })
 })

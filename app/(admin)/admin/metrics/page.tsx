@@ -114,9 +114,10 @@ export default async function MetricsPage() {
             <OperatorSection
               spaced={false}
               title="Onboarding"
+              methodology={{ key: 'operatorOnboarding', type: 'UNAVAILABLE' }}
               blurb="Every state, including the ones at zero, plus anything stored that the code does not recognise."
             >
-              <Buckets buckets={funnel} metricKey="operatorOnboarding" />
+              <Buckets buckets={funnel} />
               {/*
                 * The caveat is rendered from the same module the funnel is
                 * computed in, rather than as a sentence somebody remembered to
@@ -137,9 +138,10 @@ export default async function MetricsPage() {
             <OperatorSection
               spaced={false}
               title="Shops"
+              methodology={{ key: 'operatorShopMix', type: 'VERIFIED' }}
               blurb="A demo shop is neither connected nor unconnected — it is a shop with no Etsy behind it by design, and counting it as either would misstate the number this section exists to report."
             >
-              <Buckets buckets={shops} metricKey="operatorShopMix" />
+              <Buckets buckets={shops} />
             </OperatorSection>
           </div>
 
@@ -147,9 +149,10 @@ export default async function MetricsPage() {
             <OperatorSection
               spaced={false}
               title="Plan mix"
+              methodology={{ key: 'operatorPlanMix', type: 'VERIFIED' }}
               blurb="Every plan, plus accounts that have never been through billing — which is not the same as choosing the free tier."
             >
-              <Buckets buckets={plans} metricKey="operatorPlanMix" />
+              <Buckets buckets={plans} />
             </OperatorSection>
 
             <OperatorSection
@@ -200,7 +203,7 @@ export default async function MetricsPage() {
  * no accounts" is a division by zero dressed up as a measurement, and a reader
  * cannot tell it from a real nought (D34).
  */
-function Buckets({ buckets, metricKey }: { buckets: Bucket[]; metricKey: string }) {
+function Buckets({ buckets }: { buckets: Bucket[] }) {
   return (
     <ul className="flex flex-col gap-2">
       {buckets.map((bucket) => (
@@ -215,7 +218,6 @@ function Buckets({ buckets, metricKey }: { buckets: Bucket[]; metricKey: string 
             */}
           <OperatorFigure
             frame="bare"
-            metricKey={metricKey}
             label={bucket.label}
             figure={bucket.count}
             valueClassName="text-small text-ink-1"

@@ -56,7 +56,20 @@ export function ProvenanceButton({
          * comment re-emits the rule and fails that check - the fifth time a
          * comment promising the absence of a thing has recreated the thing.
          */
-        className="rounded-full transition-shadow hover:ring-2 hover:ring-brand/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+        /*
+         * p-1 is a TARGET-SIZE requirement, not padding for looks.
+         *
+         * The badge inside is 24px tall, which meets WCAG 2.2's minimum on
+         * paper and failed it in practice: axe reported "partially obscured"
+         * wherever a neighbour sat within the badge's own box — on
+         * /admin/usage at 390 and /admin/ai at 768, measured. Four pixels of
+         * padding gives the control its own clear space instead of borrowing
+         * whatever the layout happens to leave.
+         *
+         * It is on the BUTTON, so only the clickable form grows. A static
+         * badge is not a target and does not need it.
+         */
+        className="inline-flex rounded-full p-1 transition-shadow hover:ring-2 hover:ring-brand/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
       >
         <ProvenanceBadge type={type} demo={demo} />
         <span className="sr-only">

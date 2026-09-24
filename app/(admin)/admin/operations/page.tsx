@@ -1,3 +1,4 @@
+import { ProvenanceButton } from '@/components/provenance/provenance-button'
 import { OperatorSection } from '@/components/admin/operator-section'
 import { OperatorFigure } from '@/components/admin/operator-figure'
 import { Numeric } from '@/components/ui/numeric'
@@ -80,9 +81,17 @@ export default async function OperationsPage() {
       ) : (
         <>
           <section aria-labelledby="states-heading" className="mb-4">
-            <h2 id="states-heading" className="sr-only">
-              Operations by state
-            </h2>
+            {/*
+              * The heading stays sr-only and the methodology button does not.
+              * One clickable explanation for the row rather than one per tile
+              * — see the note in components/admin/operator-section.tsx.
+              */}
+            <div className="mb-2 flex justify-end">
+              <h2 id="states-heading" className="sr-only">
+                Operations by state
+              </h2>
+              <ProvenanceButton metricKey="operatorOperationState" type="VERIFIED" />
+            </div>
             {/*
               * Every state, including the ones at zero. D34: "Failed: —" and no
               * Failed row at all read identically to somebody scanning for
@@ -93,7 +102,6 @@ export default async function OperationsPage() {
                 <Card key={state} className="p-3">
                   <OperatorFigure
                     frame="bare"
-                    metricKey="operatorOperationState"
                     label={label}
                     figure={count}
                     valueClassName={`text-[20px] font-semibold leading-none ${

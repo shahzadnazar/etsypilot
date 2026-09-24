@@ -1,3 +1,4 @@
+import { ProvenanceButton } from '@/components/provenance/provenance-button'
 import { OperatorSection } from '@/components/admin/operator-section'
 import { OperatorFigure } from '@/components/admin/operator-figure'
 import { Numeric } from '@/components/ui/numeric'
@@ -206,13 +207,17 @@ function BandSummary({ title, bands }: { title: string; bands: BandCount[] }) {
   return (
     <Card>
       <CardBody>
-        <h2 className="text-small font-semibold text-ink-1">{title}</h2>
+        <div className="flex items-start justify-between gap-3">
+          <h2 className="text-small font-semibold text-ink-1">{title}</h2>
+          {/* One clickable methodology for the row, not five. See the note in
+              components/admin/operator-section.tsx. */}
+          <ProvenanceButton metricKey="operatorUsage" type="CALCULATED" />
+        </div>
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
           {bands.map(({ band, count }) => (
             <div key={band} className="flex flex-col gap-1">
               <OperatorFigure
                 frame="bare"
-                metricKey="operatorUsage"
                 label={BAND_COPY[band].label}
                 figure={count}
                 valueClassName={`text-[20px] font-semibold leading-none ${toneInk(BAND_COPY[band].tone)}`}

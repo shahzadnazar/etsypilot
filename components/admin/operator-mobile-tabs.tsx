@@ -46,7 +46,7 @@ import { useOperatorDrawer } from './operator-drawer'
  */
 export function OperatorMobileTabs({ groups }: { groups: OperatorNavGroup[] }) {
   const pathname = usePathname()
-  const { setOpen } = useOperatorDrawer()
+  const { open, setOpen } = useOperatorDrawer()
 
   const items = groups.flatMap((group) => group.items)
   if (items.length === 0) return null
@@ -61,7 +61,14 @@ export function OperatorMobileTabs({ groups }: { groups: OperatorNavGroup[] }) {
 
   return (
     <nav
-      aria-label="Operator sections"
+      /*
+       * "Primary", matching the seller app's MobileTabs, and NOT "Operator
+       * sections" — which the rail and the drawer already carry. Landmark
+       * labels are how a screen-reader user picks between navigations, and at
+       * 390px this bar and the drawer can both be in the document at once.
+       * Three landmarks with one name is a list of three identical choices.
+       */
+      aria-label="Primary"
       className="sticky bottom-0 z-10 flex border-t border-line bg-surface lg:hidden"
     >
       {shown.map((item) => {
@@ -86,6 +93,19 @@ export function OperatorMobileTabs({ groups }: { groups: OperatorNavGroup[] }) {
         <button
           type="button"
           onClick={() => setOpen(true)}
+          /*
+           * aria-expanded is not decoration here, it is what makes
+           * aria-controls valid.
+           *
+           * FOUND BY AXE, once it started running on every screen instead of
+           * on /admin/users alone: aria-valid-attr-value failed on this
+           * button at every width, on every screen. The drawer is unmounted
+           * while closed, so `operator-nav` refers to nothing — which ARIA
+           * permits only for a control that declares itself collapsed. The
+           * hamburger already did; this one did not, so it was pointing at an
+           * element that did not exist and saying nothing about why.
+           */
+          aria-expanded={open}
           aria-controls="operator-nav"
           className="flex min-h-[44px] flex-1 items-center justify-center gap-1 px-2 py-2.5 text-[11px] font-medium leading-tight text-muted-1"
         >

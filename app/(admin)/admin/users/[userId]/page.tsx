@@ -155,11 +155,24 @@ function Fact({
   children: React.ReactNode
   hint?: string
 }) {
+  /*
+   * The hint lives INSIDE the <dd>, not beside it.
+   *
+   * FOUND BY AXE, once it started running against the detail screens rather
+   * than /admin/users alone: `definition-list` failed at every width in both
+   * themes. A <dl> may group a <dt>/<dd> pair in a <div>, and that div may
+   * contain nothing else — a <p> sibling makes the list invalid, and a screen
+   * reader walking it by term and definition can lose the pairing.
+   *
+   * It reads the same: the hint was already directly under the value.
+   */
   return (
     <div className="flex flex-col gap-0.5">
       <dt className="text-label text-muted-1">{label}</dt>
-      <dd className="text-small leading-relaxed text-ink-1">{children}</dd>
-      {hint ? <p className="text-caption leading-relaxed text-muted-1">{hint}</p> : null}
+      <dd className="text-small leading-relaxed text-ink-1">
+        {children}
+        {hint ? <span className="mt-0.5 block text-caption leading-relaxed text-muted-1">{hint}</span> : null}
+      </dd>
     </div>
   )
 }

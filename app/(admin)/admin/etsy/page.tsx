@@ -1,3 +1,4 @@
+import { ProvenanceButton } from '@/components/provenance/provenance-button'
 import { OperatorSection } from '@/components/admin/operator-section'
 import { OperatorFigure } from '@/components/admin/operator-figure'
 import { Numeric } from '@/components/ui/numeric'
@@ -98,15 +99,22 @@ export default async function EtsyConnectionsPage() {
             * measurement; an absent row is not.
             */}
           <section aria-labelledby="summary-heading" className="mb-4">
-            <h2 id="summary-heading" className="sr-only">
-              Connections by state
-            </h2>
+            {/*
+              * The heading stays sr-only and the methodology button does not.
+              * One clickable explanation for the row rather than one per tile
+              * — see the note in components/admin/operator-section.tsx.
+              */}
+            <div className="mb-2 flex justify-end">
+              <h2 id="summary-heading" className="sr-only">
+                Connections by state
+              </h2>
+              <ProvenanceButton metricKey="operatorConnectionHealth" type="VERIFIED" />
+            </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
               {summary.map(({ health, count, copy }) => (
                 <Card key={health} className="p-3">
                   <OperatorFigure
                     frame="bare"
-                    metricKey="operatorConnectionHealth"
                     label={copy.label}
                     figure={count}
                     valueClassName={`text-[22px] font-semibold leading-none ${toneInk(copy.tone)}`}
