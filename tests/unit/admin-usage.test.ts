@@ -275,8 +275,8 @@ describe('the summary counts every band, including the empty ones', () => {
   it('SHOWS A ZERO rather than omitting the band', () => {
     const counted = countByBand([assessUsage(row(), NOW)], 'listings')
     expect(counted.map((entry) => entry.band)).toEqual([...BAND_ORDER])
-    expect(counted.find((entry) => entry.band === 'OVER')?.count).toBe(0)
-    expect(counted.find((entry) => entry.band === 'UNDER')?.count).toBe(1)
+    expect(counted.find((entry) => entry.band === 'OVER')?.count.value).toBe(0)
+    expect(counted.find((entry) => entry.band === 'UNDER')?.count.value).toBe(1)
   })
 
   it('counts an empty platform as every band at zero, not as an empty list', () => {
@@ -290,8 +290,8 @@ describe('the summary counts every band, including the empty ones', () => {
       aiGenerationsThisMonth: 1,
     })
     const assessed = [assessUsage(entry, NOW)]
-    expect(countByBand(assessed, 'listings').find((b) => b.band === 'OVER')?.count).toBe(1)
-    expect(countByBand(assessed, 'aiGenerations').find((b) => b.band === 'OVER')?.count).toBe(0)
+    expect(countByBand(assessed, 'listings').find((b) => b.band === 'OVER')?.count.value).toBe(1)
+    expect(countByBand(assessed, 'aiGenerations').find((b) => b.band === 'OVER')?.count.value).toBe(0)
   })
 })
 

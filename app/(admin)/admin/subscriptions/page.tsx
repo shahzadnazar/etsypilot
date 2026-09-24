@@ -1,3 +1,4 @@
+import { OperatorFigure } from '@/components/admin/operator-figure'
 import { Money, Numeric } from '@/components/ui/numeric'
 import { EmptyState } from '@/components/ui/states'
 import { OperatorTable } from '@/components/admin/operator-table'
@@ -82,10 +83,13 @@ export default async function SubscriptionsPage() {
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
               {plans.map((entry) => (
                 <Card key={entry.bucket} className="flex flex-col gap-1 p-3">
-                  <span className="text-label text-muted-1">{entry.label}</span>
-                  <Numeric className="text-[22px] font-semibold leading-none text-ink-1">
-                    {entry.count}
-                  </Numeric>
+                  <OperatorFigure
+                    frame="bare"
+                    metricKey="operatorPlanMix"
+                    label={entry.label}
+                    figure={entry.count}
+                    valueClassName="text-[22px] font-semibold leading-none text-ink-1"
+                  />
                   {entry.plan ? (
                     <>
                       <span className="text-caption text-muted-1">
@@ -132,11 +136,14 @@ export default async function SubscriptionsPage() {
           >
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
               {statuses.map((entry) => (
-                <Card key={entry.bucket} className="flex flex-col gap-1 p-3">
-                  <span className="text-label text-muted-1">{entry.label}</span>
-                  <Numeric className={`text-[22px] font-semibold leading-none ${toneInk(entry.tone)}`}>
-                    {entry.count}
-                  </Numeric>
+                <Card key={entry.bucket} className="p-3">
+                  <OperatorFigure
+                    frame="bare"
+                    metricKey="operatorSubscriptionStatus"
+                    label={entry.label}
+                    figure={entry.count}
+                    valueClassName={`text-[22px] font-semibold leading-none ${toneInk(entry.tone)}`}
+                  />
                 </Card>
               ))}
             </div>

@@ -1,4 +1,3 @@
-import { Numeric } from '@/components/ui/numeric'
 import { EmptyState } from '@/components/ui/states'
 import { Card } from '@/components/ui/card'
 import { PageHeader } from '@/components/layout/page-header'
@@ -113,7 +112,7 @@ export default async function MetricsPage() {
               title="Onboarding"
               blurb="Every state, including the ones at zero, plus anything stored that the code does not recognise."
             >
-              <Buckets buckets={funnel} />
+              <Buckets buckets={funnel} metricKey="operatorOnboarding" />
               {/*
                 * The caveat is rendered from the same module the funnel is
                 * computed in, rather than as a sentence somebody remembered to
@@ -135,7 +134,7 @@ export default async function MetricsPage() {
               title="Shops"
               blurb="A demo shop is neither connected nor unconnected — it is a shop with no Etsy behind it by design, and counting it as either would misstate the number this section exists to report."
             >
-              <Buckets buckets={shops} />
+              <Buckets buckets={shops} metricKey="operatorShopMix" />
             </Section>
           </div>
 
@@ -144,7 +143,7 @@ export default async function MetricsPage() {
               title="Plan mix"
               blurb="Every plan, plus accounts that have never been through billing — which is not the same as choosing the free tier."
             >
-              <Buckets buckets={plans} />
+              <Buckets buckets={plans} metricKey="operatorPlanMix" />
             </Section>
 
             <Section
@@ -211,29 +210,42 @@ function Section({
  * no accounts" is a division by zero dressed up as a measurement, and a reader
  * cannot tell it from a real nought (D34).
  */
-function Buckets({ buckets }: { buckets: Bucket[] }) {
+function Buckets({ buckets, metricKey }: { buckets: Bucket[]; metricKey: string }) {
   return (
     <ul className="flex flex-col gap-2">
       {buckets.map((bucket) => (
         <li key={bucket.key} className="flex flex-col gap-1">
-          <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-            <span className="text-caption text-muted-1">{bucket.label}</span>
-            <Numeric className="text-small text-ink-1">
-              {formatNumber(bucket.count)}
-              {bucket.percent === null ? (
-                <span className="ml-1.5 text-caption text-muted-2">
+          {/*
+            * One badge per bucket, because the buckets on this screen do not
+            * share a provenance. The onboarding funnel reads a column nothing
+            * writes and is UNAVAILABLE; the shop and plan breakdowns count
+            * real rows and are VERIFIED. A single badge over the section would
+            * have to be the weaker of the two, which understates three
+            * sections, or the stronger, which is a false claim about one.
+            */}
+          <OperatorFigure
+            frame="bare"
+            metricKey={metricKey}
+            label={bucket.label}
+            figure={bucket.count}
+            valueClassName="text-small text-ink-1"
+            footnote={
+              bucket.percent === null ? (
+                <>
                   <span aria-hidden>—</span>
-                  <span className="sr-only">no share, because there is nothing to take a share of</span>
-                </span>
+                  <span className="sr-only">
+                    no share, because there is nothing to take a share of
+                  </span>
+                </>
               ) : (
-                <span className="ml-1.5 text-caption text-muted-1">{bucket.percent}%</span>
-              )}
-            </Numeric>
-          </div>
+                `${bucket.percent}% of the total`
+              )
+            }
+          />
           <div
             className="h-1.5 w-full overflow-hidden rounded-full bg-canvas-soft"
             role="img"
-            aria-label={`${bucket.label}: ${formatNumber(bucket.count)}${
+            aria-label={`${bucket.label}: ${formatNumber(bucket.count.value ?? 0)}${
               bucket.percent === null ? '' : `, ${bucket.percent}%`
             }`}
           >

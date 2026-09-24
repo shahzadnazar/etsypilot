@@ -32,6 +32,23 @@ export interface Methodology {
   limitations?: string[]
   /** What is deliberately left out of the calculation. */
   exclusions?: string[]
+  /**
+   * What this provenance class means FOR THIS METRIC, where the canonical
+   * sentence is wrong here.
+   *
+   * FOUND BY READING THE DRAWER. PROVENANCE_DEFINITION.VERIFIED is "Etsy
+   * returned it for your own shop. Exact." — correct on every seller screen
+   * and false on every operator one, where a verified figure is a count of
+   * rows in OUR OWN tables and Etsy was never asked. The operator console
+   * makes no Etsy call at all, so the drawer was crediting a source the
+   * figure had not touched.
+   *
+   * An override rather than a broader canonical sentence: that sentence is
+   * the published definition on the Methodology page, and loosening it to
+   * cover both would make the seller-facing promise vaguer to fix an
+   * operator-facing screen.
+   */
+  definition?: string
   /** Anchor on the full Methodology page. */
   readMoreHref?: string
 }
@@ -40,6 +57,15 @@ export interface Methodology {
  * The catalogue. Keyed by metric so any surface can render the same explanation
  * without restating it - the Methodology page and the drawer read from here.
  */
+/**
+ * What VERIFIED means in the operator console.
+ *
+ * Written once rather than five times, because five copies of a definition
+ * become five definitions.
+ */
+const OUR_OWN_RECORDS =
+  'Counted from EtsyPilot\u2019s own tables, where we are the system of record. Nothing was modelled, and Etsy was not asked \u2014 the operator console makes no Etsy call at all.'
+
 export const METHODOLOGIES: Record<string, Methodology> = {
   grossSales: {
     metric: 'Gross sales',
@@ -207,6 +233,119 @@ export const METHODOLOGIES: Record<string, Methodology> = {
       'Etsy does not expose listing views through the public API, so EtsyPilot shows nothing rather than a modelled figure.',
     limitations: ['Import your Etsy Stats CSV to add this metric. It will not be estimated.'],
     readMoreHref: '/data/methodology#unavailable',
+  },
+
+  /* ─────────────────────── the operator console ─────────────────────────
+   *
+   * A badge promises an explanation; ProvenanceButton is what makes the
+   * promise clickable, and it renders a STATIC badge for any metric with no
+   * entry here — a dead control is worse than no control. So the operator
+   * figures had a badge and no explanation behind it until these existed.
+   *
+   * They are the same shape as the seller entries deliberately. The operator
+   * screens are where "why is this seller's figure wrong" gets answered, and
+   * an operator reading a looser explanation than the seller can read is the
+   * wrong way round.
+   */
+
+  operatorUsage: {
+    metric: 'Usage against a plan limit',
+    type: 'CALCULATED',
+    source: 'EtsyPilot database · listings, ai_generations, subscriptions',
+    method:
+      'Counted from the underlying rows at render time and compared with the limit on the plan in force. usage_records.used is never written by anything in the product, so there is no stored counter to read and this is not a reading of one.',
+    limitations: [
+      'Counted at render time, not stored. A figure the seller saw a moment ago can differ if a listing or a generation landed in between.',
+      'An account with no subscription row is measured against nothing rather than against Free. Never having been through billing and choosing the free tier are different facts.',
+    ],
+    readMoreHref: '/data/methodology#calculated',
+  },
+
+  operatorPlanMix: {
+    metric: 'Accounts by plan',
+    type: 'VERIFIED',
+    definition: OUR_OWN_RECORDS,
+    source: 'EtsyPilot database · subscriptions',
+    method:
+      'A count of subscription rows by plan, with every plan present including the ones at zero. Nothing is modelled: the row is there or it is not.',
+    coverage: 100,
+    coverageLabel: 'of accounts, including those with no billing row at all',
+    limitations: [
+      'This is EtsyPilot\u2019s own copy of the billing state, not the payment processor\u2019s. It is what the product enforces limits against, which is the right thing for this screen and the wrong thing for reconciling a charge.',
+    ],
+  },
+
+  operatorSubscriptionStatus: {
+    metric: 'Accounts by billing status',
+    type: 'VERIFIED',
+    definition: OUR_OWN_RECORDS,
+    source: 'EtsyPilot database · subscriptions',
+    method:
+      'A count of subscription rows by their CURRENT status. Every status is present, including the ones at zero, and rows with an unrecognised status are counted in their own bucket rather than dropped.',
+    limitations: [
+      'A subscription row carries its current status, not its history. An account that trialled and converted is indistinguishable from one that signed up paying.',
+    ],
+  },
+
+  operatorOperationState: {
+    metric: 'Bulk operations by state',
+    type: 'VERIFIED',
+    definition: OUR_OWN_RECORDS,
+    source: 'EtsyPilot database · bulk_operations',
+    method:
+      'A count of bulk_operations rows by their stored state, every state present. An unrecognised state is counted in its own bucket rather than folded into a neighbour.',
+    limitations: [
+      '"Stuck" is a separate, calculated view over the same rows: it compares how long a job has been applying against a threshold this product chose, and is not a state any row carries.',
+    ],
+  },
+
+  operatorConnectionHealth: {
+    metric: 'Etsy connections by state',
+    type: 'VERIFIED',
+    definition: OUR_OWN_RECORDS,
+    source: 'EtsyPilot database · etsy_connections, shops',
+    method:
+      'A count of shops by the connection state derived from their grant. Revoked, expired and never-connected are facts the row carries. Expiring soon and stale sync are comparisons against thresholds this product chose, and those two counts are reported as calculated rather than verified.',
+    limitations: [
+      'Nothing here is read from Etsy. The operator console makes no Etsy call at all, so every state is what OUR records say about a grant, not what Etsy currently thinks of it.',
+    ],
+  },
+
+  operatorOnboarding: {
+    metric: 'Onboarding funnel',
+    type: 'UNAVAILABLE',
+    definition:
+      'The column exists and nothing writes it. We show what it says rather than a number we worked out, because there is nothing here to work out.',
+    source: 'EtsyPilot database · users.onboarding_state',
+    method:
+      'Read from users.onboarding_state, which defaults to NOT_STARTED and which nothing in the product writes after provisioning sets it. The count is an accurate report of a stored value and not a measurement of how far anyone gets.',
+    limitations: [
+      'This is what the column says. Until something writes it, the funnel cannot tell a seller who stopped at step one from a seller who finished.',
+    ],
+  },
+
+  operatorAiAcceptance: {
+    metric: 'AI acceptance rate',
+    type: 'CALCULATED',
+    definition:
+      'A share of the generations a seller has actually DECIDED on, computed from EtsyPilot\u2019s own rows. Reproducible, and it is not a verdict on the AI where few have been decided.',
+    source: 'EtsyPilot database · ai_generations',
+    method:
+      'Accepted divided by decided, where decided is accepted plus rejected. Drafts are NOT in the denominator: a draft is undecided, and counting it as "not accepted" would report a shop that generated fifty drafts this morning as having a 0% acceptance rate — a claim about the AI made out of the seller not having got to them yet.',
+    coverageLabel: 'of generations have been decided',
+    limitations: [
+      'Unavailable, not zero, when nothing has been decided. A shop with only drafts has no acceptance rate, and 0% would be the most misleading number this screen could carry.',
+      'The generated text itself is never read to produce this. Only the status is.',
+    ],
+  },
+
+  operatorShopMix: {
+    metric: 'Shops by what is behind them',
+    type: 'VERIFIED',
+    definition: OUR_OWN_RECORDS,
+    source: 'EtsyPilot database · shops, etsy_connections',
+    method:
+      'A count of shop rows by whether they have a real Etsy grant, no grant, or are a demo shop. A demo shop is counted as neither connected nor unconnected: it is a shop with no Etsy behind it by design.',
   },
 }
 

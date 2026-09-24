@@ -310,14 +310,14 @@ describe('the summary counts every state, including the empty ones', () => {
      */
     const summary = summarise([assess(row(), NOW)])
     expect(summary.map((entry) => entry.health)).toEqual([...HEALTH_ORDER])
-    expect(summary.find((entry) => entry.health === 'TOKEN_EXPIRED')?.count).toBe(0)
-    expect(summary.find((entry) => entry.health === 'HEALTHY')?.count).toBe(1)
+    expect(summary.find((entry) => entry.health === 'TOKEN_EXPIRED')?.count.value).toBe(0)
+    expect(summary.find((entry) => entry.health === 'HEALTHY')?.count.value).toBe(1)
   })
 
   it('counts an empty platform as every state at zero, not as an empty list', () => {
     const summary = summarise([])
     expect(summary.length).toBe(HEALTH_ORDER.length)
-    expect(summary.every((entry) => entry.count === 0)).toBe(true)
+    expect(summary.every((entry) => entry.count.value === 0)).toBe(true)
   })
 })
 

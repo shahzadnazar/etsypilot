@@ -1,3 +1,4 @@
+import { OperatorFigure } from '@/components/admin/operator-figure'
 import { Numeric } from '@/components/ui/numeric'
 import { EmptyState } from '@/components/ui/states'
 import { OperatorTable } from '@/components/admin/operator-table'
@@ -101,11 +102,14 @@ export default async function EtsyConnectionsPage() {
             </h2>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
               {summary.map(({ health, count, copy }) => (
-                <Card key={health} className="flex flex-col gap-1 p-3">
-                  <span className="text-label text-muted-1">{copy.label}</span>
-                  <Numeric className={`text-[22px] font-semibold leading-none ${toneInk(copy.tone)}`}>
-                    {count}
-                  </Numeric>
+                <Card key={health} className="p-3">
+                  <OperatorFigure
+                    frame="bare"
+                    metricKey="operatorConnectionHealth"
+                    label={copy.label}
+                    figure={count}
+                    valueClassName={`text-[22px] font-semibold leading-none ${toneInk(copy.tone)}`}
+                  />
                 </Card>
               ))}
             </div>

@@ -121,7 +121,12 @@ export default async function AiActivityPage() {
             title="Acceptance"
             blurb="Accepted as a share of the generations a seller has actually decided on."
           >
-            <OperatorFigure label="Acceptance rate" figure={totals.acceptance} suffix="%" />
+            <OperatorFigure
+              metricKey="operatorAiAcceptance"
+              label="Acceptance rate"
+              figure={totals.acceptance}
+              suffix="%"
+            />
           </Section>
 
           {totals.unrecognised > 0 ? (

@@ -245,8 +245,8 @@ describe('the state counts cover everything', () => {
   it('SHOWS EVERY STATE, including the ones at zero', () => {
     const counted = countByState([assessOperation(row(), [], NOW)])
     expect(counted.map((entry) => entry.state)).toEqual([...OPERATION_STATES, 'UNKNOWN'])
-    expect(counted.find((entry) => entry.state === 'FAILED')?.count).toBe(0)
-    expect(counted.find((entry) => entry.state === 'COMPLETED')?.count).toBe(1)
+    expect(counted.find((entry) => entry.state === 'FAILED')?.count.value).toBe(0)
+    expect(counted.find((entry) => entry.state === 'COMPLETED')?.count.value).toBe(1)
   })
 
   it('counts an UNRECOGNISED state rather than dropping the row', () => {
@@ -254,7 +254,7 @@ describe('the state counts cover everything', () => {
     // the counts disagree with the table underneath for no visible reason.
     const entry = assessOperation(row({ state: 'QUEUED' }), [], NOW)
     expect(entry.state).toBe('UNKNOWN')
-    expect(countByState([entry]).find((c) => c.state === 'UNKNOWN')?.count).toBe(1)
+    expect(countByState([entry]).find((c) => c.state === 'UNKNOWN')?.count.value).toBe(1)
   })
 
   it('counts an empty platform as every state at zero', () => {

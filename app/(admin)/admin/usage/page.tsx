@@ -1,3 +1,4 @@
+import { OperatorFigure } from '@/components/admin/operator-figure'
 import { Numeric } from '@/components/ui/numeric'
 import { EmptyState } from '@/components/ui/states'
 import { Card } from '@/components/ui/card'
@@ -5,6 +6,7 @@ import { PageHeader } from '@/components/layout/page-header'
 import { requireAdmin } from '@/domain/admin/access'
 import {
   BAND_COPY,
+  type BandCount,
   NEAR_THRESHOLD,
   assessUsage,
   atOrOverLimit,
@@ -216,23 +218,20 @@ function toneInk(tone: 'ok' | 'info' | 'warn' | 'danger'): string {
  * summary rendered before the band existed, and a reader cannot tell which
  * they are looking at.
  */
-function BandSummary({
-  title,
-  bands,
-}: {
-  title: string
-  bands: { band: UsageBand; count: number }[]
-}) {
+function BandSummary({ title, bands }: { title: string; bands: BandCount[] }) {
   return (
     <Card className="p-[18px]">
       <h2 className="text-small font-semibold text-ink-1">{title}</h2>
       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
         {bands.map(({ band, count }) => (
           <div key={band} className="flex flex-col gap-1">
-            <span className="text-label leading-snug text-muted-1">{BAND_COPY[band].label}</span>
-            <Numeric className={`text-[20px] font-semibold leading-none ${toneInk(BAND_COPY[band].tone)}`}>
-              {count}
-            </Numeric>
+            <OperatorFigure
+              frame="bare"
+              metricKey="operatorUsage"
+              label={BAND_COPY[band].label}
+              figure={count}
+              valueClassName={`text-[20px] font-semibold leading-none ${toneInk(BAND_COPY[band].tone)}`}
+            />
           </div>
         ))}
       </div>

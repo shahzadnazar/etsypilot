@@ -30,6 +30,7 @@
 
 import { calculated, unavailable } from '@/lib/provenance/builders'
 import type { Provenanced } from '@/lib/provenance/types'
+import { countedRows, fromUnmaintainedColumn } from './provenance'
 import { PLANS, type PlanKey } from '@/domain/billing/plans'
 
 /**
@@ -83,7 +84,14 @@ export interface MetricsInput {
 export interface Bucket {
   key: string
   label: string
-  count: number
+  /*
+   * Provenanced, so a bucket count cannot reach a screen without saying where
+   * it came from. That matters more here than on any other operator screen:
+   * the onboarding funnel reads a column NOTHING WRITES, and it used to render
+   * with exactly the same weight as the shop breakdown, which counts real
+   * rows. The caveat was a paragraph underneath; now it is on the figure.
+   */
+  count: Provenanced<number>
   /** Share of the relevant total, 0–100. Null when the total is zero. */
   percent: number | null
 }
@@ -106,10 +114,33 @@ function share(count: number, total: number): number | null {
  */
 export function onboardingFunnel(input: MetricsInput): Bucket[] {
   const counted = new Map(input.onboardingCounts.map((entry) => [entry.state, entry.count]))
+  /*
+   * UNAVAILABLE, not CALCULATED, and the count travels alongside.
+   *
+   * Nothing in the product writes users.onboarding_state after provisioning
+   * sets it. So the number is an accurate report of a stored value and NOT a
+   * measurement of how far anyone gets — and CALCULATED would say "we worked
+   * this out", which invites the reader to believe the result. There is no
+   * result here to believe.
+   *
+   * The figure is still shown. Hiding it would leave a reader unable to tell
+   * that the funnel exists; showing it unbadged was the state this pass found.
+   */
+  const fromColumn = (count: number): Provenanced<number> => ({
+    value: count,
+    provenance: {
+      ...fromUnmaintainedColumn(
+        'Read from users.onboarding_state, which nothing in the product writes after provisioning sets it.',
+        'This is what the column says. It is not a measurement of how far anyone actually gets.',
+      ).provenance,
+      source: 'EtsyPilot database · users.onboarding_state',
+    },
+  })
+
   const known = ONBOARDING_STATES.map((state) => ({
     key: state,
     label: ONBOARDING_LABEL[state],
-    count: counted.get(state) ?? 0,
+    count: fromColumn(counted.get(state) ?? 0),
     percent: share(counted.get(state) ?? 0, input.totalAccounts),
   }))
 
@@ -123,7 +154,7 @@ export function onboardingFunnel(input: MetricsInput): Bucket[] {
     {
       key: 'UNKNOWN',
       label: 'Unrecognised state',
-      count: other,
+      count: fromColumn(other),
       percent: share(other, input.totalAccounts),
     },
   ]
@@ -142,19 +173,19 @@ export function shopBreakdown(input: MetricsInput): Bucket[] {
     {
       key: 'CONNECTED',
       label: 'Connected to a real Etsy shop',
-      count: input.connectedShops,
+      count: countedRows(input.connectedShops, 'shops'),
       percent: share(input.connectedShops, input.totalShops),
     },
     {
       key: 'NOT_CONNECTED',
       label: 'No Etsy connection',
-      count: input.shopsWithNoConnection,
+      count: countedRows(input.shopsWithNoConnection, 'shops'),
       percent: share(input.shopsWithNoConnection, input.totalShops),
     },
     {
       key: 'DEMO',
       label: 'Demo shop',
-      count: input.demoShops,
+      count: countedRows(input.demoShops, 'shops'),
       percent: share(input.demoShops, input.totalShops),
     },
   ]
@@ -166,7 +197,7 @@ export function planDistribution(input: MetricsInput): Bucket[] {
   const known = PLANS.map((plan) => ({
     key: plan.key as PlanKey,
     label: plan.name,
-    count: counted.get(plan.key) ?? 0,
+    count: countedRows(counted.get(plan.key) ?? 0, 'subscriptions'),
     percent: share(counted.get(plan.key) ?? 0, input.totalAccounts),
   }))
 
@@ -176,7 +207,7 @@ export function planDistribution(input: MetricsInput): Bucket[] {
     {
       key: 'NO_RECORD',
       label: 'No billing record',
-      count: noRecord,
+      count: countedRows(noRecord, 'users left outer join subscriptions'),
       percent: share(noRecord, input.totalAccounts),
     },
   ]

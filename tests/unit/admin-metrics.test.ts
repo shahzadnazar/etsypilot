@@ -221,7 +221,7 @@ describe('the onboarding funnel is honest about its source', () => {
   it('lists every state, including the ones at zero, plus an unknown bucket', () => {
     const funnel = onboardingFunnel(input({ onboardingCounts: [] }))
     expect(funnel.map((bucket) => bucket.key)).toEqual([...ONBOARDING_STATES, 'UNKNOWN'])
-    expect(funnel.every((bucket) => bucket.count === 0)).toBe(true)
+    expect(funnel.every((bucket) => bucket.count.value === 0)).toBe(true)
   })
 
   it('COUNTS AN UNRECOGNISED STATE rather than dropping it', () => {
@@ -236,8 +236,8 @@ describe('the onboarding funnel is honest about its source', () => {
         ],
       }),
     )
-    expect(funnel.find((bucket) => bucket.key === 'UNKNOWN')?.count).toBe(3)
-    expect(funnel.reduce((total, bucket) => total + bucket.count, 0)).toBe(10)
+    expect(funnel.find((bucket) => bucket.key === 'UNKNOWN')?.count.value).toBe(3)
+    expect(funnel.reduce((total, bucket) => total + (bucket.count.value ?? 0), 0)).toBe(10)
   })
 })
 
@@ -272,7 +272,7 @@ describe('a demo shop is neither connected nor unconnected', () => {
   it('COUNTS IT IN ITS OWN BUCKET', () => {
     const shops = shopBreakdown(input())
     expect(shops.map((bucket) => bucket.key)).toEqual(['CONNECTED', 'NOT_CONNECTED', 'DEMO'])
-    expect(shops.find((bucket) => bucket.key === 'DEMO')?.count).toBe(30)
+    expect(shops.find((bucket) => bucket.key === 'DEMO')?.count.value).toBe(30)
   })
 
   it('EXCLUDES DEMO SHOPS FROM THE CONNECTED COUNT in the query', () => {
@@ -307,8 +307,8 @@ describe('the plan mix covers every plan and the accounts with no record', () =>
     const plans = planDistribution(
       input({ totalAccounts: 10, planCounts: [{ plan: null, count: 4 }, { plan: 'FREE', count: 6 }] }),
     )
-    expect(plans.find((bucket) => bucket.key === 'FREE')?.count).toBe(6)
-    expect(plans.find((bucket) => bucket.key === 'NO_RECORD')?.count).toBe(4)
+    expect(plans.find((bucket) => bucket.key === 'FREE')?.count.value).toBe(6)
+    expect(plans.find((bucket) => bucket.key === 'NO_RECORD')?.count.value).toBe(4)
   })
 })
 

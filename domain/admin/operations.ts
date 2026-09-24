@@ -31,6 +31,9 @@
  * end.
  */
 
+import { countedRows } from './provenance'
+import type { Provenanced } from '@/lib/provenance/types'
+
 /** The nine states an operation can be in. Checked against both sources. */
 export const OPERATION_STATES = [
   'DRAFT',
@@ -156,7 +159,8 @@ export function assessOperation(
 export interface StateCount {
   state: OperationStateValue | 'UNKNOWN'
   label: string
-  count: number
+  /** Provenanced, so a state count cannot render without saying where from. */
+  count: Provenanced<number>
 }
 
 /**
@@ -170,14 +174,17 @@ export function countByState(assessed: readonly AssessedOperation[]): StateCount
   const known: StateCount[] = OPERATION_STATES.map((state) => ({
     state,
     label: STATE_LABEL[state],
-    count: assessed.filter((entry) => entry.state === state).length,
+    count: countedRows(assessed.filter((entry) => entry.state === state).length, 'bulk_operations'),
   }))
   return [
     ...known,
     {
       state: 'UNKNOWN',
       label: 'Unrecognised state',
-      count: assessed.filter((entry) => entry.state === 'UNKNOWN').length,
+      count: countedRows(
+        assessed.filter((entry) => entry.state === 'UNKNOWN').length,
+        'bulk_operations',
+      ),
     },
   ]
 }

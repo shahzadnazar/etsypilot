@@ -90,7 +90,7 @@ export function MethodologyDrawer({
             <div className="flex items-center gap-2">
               <ProvenanceBadge type={methodology.type} demo={demo} />
               <span className="text-caption text-muted-1">
-                {PROVENANCE_DEFINITION[methodology.type]}
+                {methodology.definition ?? PROVENANCE_DEFINITION[methodology.type]}
               </span>
             </div>
           </div>

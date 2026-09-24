@@ -34,6 +34,9 @@
  * not pretend to. It reports what we last recorded, and says so.
  */
 
+import { countedAgainstThreshold, countedRows } from './provenance'
+import type { Provenanced } from '@/lib/provenance/types'
+
 /**
  * The connection vocabulary, as the product already defines it.
  *
@@ -312,14 +315,42 @@ export function assess<T extends ConnectionRow>(row: T, now: Date): AssessedConn
  * reads identically to a summary rendered before that state was implemented.
  * A visible zero is a measurement. An absent row is not.
  */
-export function summarise(
-  assessed: readonly AssessedConnection<ConnectionRow>[],
-): { health: ConnectionHealth; count: number; copy: HealthCopy }[] {
-  return HEALTH_ORDER.map((health) => ({
-    health,
-    count: assessed.filter((entry) => entry.health === health).length,
-    copy: HEALTH_COPY[health],
-  }))
+export interface HealthCount {
+  health: ConnectionHealth
+  /** Provenanced, so a health count cannot render without saying where from. */
+  count: Provenanced<number>
+  copy: HealthCopy
+}
+
+export function summarise(assessed: readonly AssessedConnection<ConnectionRow>[]): HealthCount[] {
+  return HEALTH_ORDER.map((health) => {
+    const count = assessed.filter((entry) => entry.health === health).length
+    /*
+     * CALCULATED for the two states that come from a THRESHOLD, VERIFIED for
+     * the ones a row carries outright.
+     *
+     * "Never connected" and "Revoked" are facts in the table: there is a row
+     * or there is not, revoked_at is set or it is not. "Expiring soon" and
+     * "Stale" are comparisons against EXPIRING_SOON_DAYS and
+     * STALE_AFTER_DAYS — numbers this product chose, and a different choice
+     * would give a different count. Badging those VERIFIED would put our own
+     * editorial judgement behind the word Etsy's data earns.
+     */
+    return {
+      health,
+      count:
+        health === 'EXPIRING_SOON' || health === 'STALE'
+          ? countedAgainstThreshold(
+              count,
+              HEALTH_COPY[health].detail,
+              health === 'EXPIRING_SOON'
+                ? `${EXPIRING_SOON_DAYS} days`
+                : `${STALE_AFTER_DAYS} days`,
+            )
+          : countedRows(count, 'etsy_connections'),
+      copy: HEALTH_COPY[health],
+    }
+  })
 }
 
 /**

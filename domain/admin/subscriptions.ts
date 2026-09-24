@@ -35,6 +35,8 @@
  */
 
 import { PLANS, type Plan, type PlanKey } from '@/domain/billing/plans'
+import { type Provenanced } from '@/lib/provenance/types'
+import { countedRows } from './provenance'
 import type { SubscriptionStatus } from '@/lib/billing/interface'
 
 /**
@@ -160,7 +162,8 @@ export interface PlanCount {
   /** The plan itself, where there is one. Null for NO_RECORD and UNKNOWN. */
   plan: Plan | null
   label: string
-  count: number
+  /** Provenanced: a plan count cannot reach a screen without saying so. */
+  count: Provenanced<number>
 }
 
 /**
@@ -176,7 +179,7 @@ export function countByPlan(rows: readonly SubscriptionRow[]): PlanCount[] {
     bucket: plan.key,
     plan,
     label: plan.name,
-    count: counted.filter((bucket) => bucket === plan.key).length,
+    count: countedRows(counted.filter((bucket) => bucket === plan.key).length, 'subscriptions'),
   }))
 
   return [
@@ -185,13 +188,13 @@ export function countByPlan(rows: readonly SubscriptionRow[]): PlanCount[] {
       bucket: 'NO_RECORD',
       plan: null,
       label: 'No billing record',
-      count: counted.filter((bucket) => bucket === 'NO_RECORD').length,
+      count: countedRows(counted.filter((bucket) => bucket === 'NO_RECORD').length, 'users left outer join subscriptions'),
     },
     {
       bucket: 'UNKNOWN',
       plan: null,
       label: 'Unrecognised plan',
-      count: counted.filter((bucket) => bucket === 'UNKNOWN').length,
+      count: countedRows(counted.filter((bucket) => bucket === 'UNKNOWN').length, 'subscriptions'),
     },
   ]
 }
@@ -200,7 +203,7 @@ export interface StatusCount {
   bucket: KnownSubscriptionStatus | 'NO_RECORD' | 'UNKNOWN'
   label: string
   tone: 'ok' | 'info' | 'warn' | 'danger'
-  count: number
+  count: Provenanced<number>
 }
 
 export function countByStatus(rows: readonly SubscriptionRow[]): StatusCount[] {
@@ -209,7 +212,7 @@ export function countByStatus(rows: readonly SubscriptionRow[]): StatusCount[] {
     bucket: status,
     label: STATUS_COPY[status].label,
     tone: STATUS_COPY[status].tone,
-    count: counted.filter((bucket) => bucket === status).length,
+    count: countedRows(counted.filter((bucket) => bucket === status).length, 'subscriptions'),
   }))
 
   return [
@@ -218,13 +221,13 @@ export function countByStatus(rows: readonly SubscriptionRow[]): StatusCount[] {
       bucket: 'NO_RECORD',
       label: 'No billing record',
       tone: 'info',
-      count: counted.filter((bucket) => bucket === 'NO_RECORD').length,
+      count: countedRows(counted.filter((bucket) => bucket === 'NO_RECORD').length, 'users left outer join subscriptions'),
     },
     {
       bucket: 'UNKNOWN',
       label: 'Unrecognised status',
       tone: 'warn',
-      count: counted.filter((bucket) => bucket === 'UNKNOWN').length,
+      count: countedRows(counted.filter((bucket) => bucket === 'UNKNOWN').length, 'subscriptions'),
     },
   ]
 }

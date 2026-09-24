@@ -38,6 +38,8 @@
  */
 
 import { buildMeters, type MetricKey, type UsageMeter } from '@/domain/billing/usage'
+import { countedUsage } from './provenance'
+import type { Provenanced } from '@/lib/provenance/types'
 import { PLANS, type PlanKey } from '@/domain/billing/plans'
 
 /**
@@ -180,7 +182,12 @@ export function firstOfNextMonth(now: Date): string {
 export interface BandCount {
   band: UsageBand
   metric: MetricKey
-  count: number
+  /*
+   * Provenanced, so the count cannot reach a screen without saying where it
+   * came from. components/admin/operator-figure.tsx only accepts
+   * Provenanced<T>, so a bare number here would not compile against it.
+   */
+  count: Provenanced<number>
 }
 
 /**
@@ -197,9 +204,12 @@ export function countByBand(
   return BAND_ORDER.map((band) => ({
     band,
     metric,
-    count: assessed.filter((entry) =>
-      entry.meters.some((m) => m.meter.metric === metric && m.band === band),
-    ).length,
+    count: countedUsage(
+      assessed.filter((entry) =>
+        entry.meters.some((m) => m.meter.metric === metric && m.band === band),
+      ).length,
+      `Shops whose ${metric === 'listings' ? 'active listing' : 'AI generation'} meter is ${BAND_COPY[band].label.toLowerCase()}.`,
+    ),
   }))
 }
 

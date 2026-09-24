@@ -63,7 +63,7 @@ function row(overrides: Partial<SubscriptionRow> = {}): SubscriptionRow {
 }
 
 const countFor = (rows: SubscriptionRow[], bucket: string) =>
-  countByPlan(rows).find((entry) => entry.bucket === bucket)?.count
+  countByPlan(rows).find((entry) => entry.bucket === bucket)?.count.value
 
 /* ───────────────────────── the vocabulary is the product's ───────────────── */
 
@@ -299,7 +299,7 @@ describe('the breakdowns count every bucket, including the empty ones', () => {
       'NO_RECORD',
       'UNKNOWN',
     ])
-    expect(counted.every((entry) => entry.count === 0)).toBe(true)
+    expect(counted.every((entry) => entry.count.value === 0)).toBe(true)
   })
 
   it('lists EVERY STATUS, in the order the model declares', () => {
@@ -319,8 +319,8 @@ describe('the breakdowns count every bucket, including the empty ones', () => {
       row({ userId: '4', plan: null, status: null }),
     ]
     expect(countFor(rows, 'SOLO')).toBe(1)
-    expect(countByStatus(rows).find((e) => e.bucket === 'PAST_DUE')?.count).toBe(1)
-    expect(countByStatus(rows).find((e) => e.bucket === 'TRIALING')?.count).toBe(0)
+    expect(countByStatus(rows).find((e) => e.bucket === 'PAST_DUE')?.count.value).toBe(1)
+    expect(countByStatus(rows).find((e) => e.bucket === 'TRIALING')?.count.value).toBe(0)
   })
 })
 

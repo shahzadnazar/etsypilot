@@ -1,3 +1,4 @@
+import { OperatorFigure } from '@/components/admin/operator-figure'
 import { Numeric } from '@/components/ui/numeric'
 import { EmptyState } from '@/components/ui/states'
 import { Card } from '@/components/ui/card'
@@ -88,19 +89,20 @@ export default async function OperationsPage() {
               */}
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
               {states.map(({ state, label, count }) => (
-                <Card key={state} className="flex flex-col gap-1 p-3">
-                  <span className="text-label leading-snug text-muted-1">{label}</span>
-                  <Numeric
-                    className={`text-[20px] font-semibold leading-none ${
+                <Card key={state} className="p-3">
+                  <OperatorFigure
+                    frame="bare"
+                    metricKey="operatorOperationState"
+                    label={label}
+                    figure={count}
+                    valueClassName={`text-[20px] font-semibold leading-none ${
                       state === 'FAILED' || state === 'PARTIAL_SUCCESS'
                         ? 'text-danger-strong'
                         : state === 'UNKNOWN'
                           ? 'text-warning-strong'
                           : 'text-ink-1'
                     }`}
-                  >
-                    {count}
-                  </Numeric>
+                  />
                 </Card>
               ))}
             </div>

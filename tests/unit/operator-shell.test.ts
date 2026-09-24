@@ -943,3 +943,204 @@ describe('the operator console formats no number of its own', () => {
     expect(code(posixJoin(ADMIN_ROOT, 'admin/usage/page.tsx'))).toContain('<code>usage_records</code>')
   })
 })
+
+/* ───────────────── every operator number says where it came from ─────────── */
+
+describe('an operator figure cannot render without its provenance', () => {
+  /*
+   * ══════════════════════════════════════════════════════════════════════
+   *   THE OPERATOR SCREENS ARE WHERE "WHY IS THIS SELLER'S FIGURE WRONG"
+   *   IS ANSWERED, AND THEY WERE THE ONES NOT SAYING WHERE A FIGURE CAME
+   *   FROM.
+   * ══════════════════════════════════════════════════════════════════════
+   *
+   * A seller saw a chip on every figure and a clickable methodology on four
+   * screens. An operator saw a bare number on 7 of 13, and the clickable
+   * methodology on none. That is worse than an inconsistency: the person
+   * asked to explain a discrepancy was the one working from numbers that did
+   * not say whether they were measured or inferred.
+   */
+
+  const COUNTING_MODULES = [
+    'domain/admin/usage.ts',
+    'domain/admin/subscriptions.ts',
+    'domain/admin/operations.ts',
+    'domain/admin/etsy-health.ts',
+    'domain/admin/metrics.ts',
+  ]
+
+  it('finds the modules it is meant to be checking', () => {
+    for (const module of COUNTING_MODULES) expect(existsSync(module), module).toBe(true)
+  })
+
+  it('RETURNS Provenanced COUNTS, never a bare number', () => {
+    /*
+     * The structural half, and the reason there is so little test here: the
+     * TYPE does the work. `count: Provenanced<number>` on every count row
+     * means a bare number cannot reach OperatorFigure, which accepts only
+     * Provenanced<T>. Four pages failed to compile the moment these changed,
+     * which is the check — this assertion only stops the types being quietly
+     * loosened back.
+     */
+    for (const module of COUNTING_MODULES) {
+      expect(code(module), module).toMatch(/count:\s*Provenanced<number>/)
+      expect(code(module), module).not.toMatch(/^\s*count:\s*number$/m)
+    }
+  })
+
+  it('takes ONLY a Provenanced figure, so a bare number does not compile', () => {
+    const figure = code('components/admin/operator-figure.tsx')
+    expect(figure).toMatch(/figure:\s*Provenanced<string \| number>/)
+    expect(figure).not.toMatch(/figure\?:/)
+  })
+
+  it('CLASSIFIES BY WHAT IS TRUE, not by what flatters', () => {
+    /*
+     * Each of these is a decision that could have gone the comfortable way.
+     *
+     * Usage is CALCULATED because usage_records.used is never written — the
+     * screen counts rows and compares them with a limit, and calling that
+     * verified would be the single most misleading badge in the console,
+     * since usage is exactly what an operator is asked to check when a seller
+     * says a limit is wrong.
+     */
+    expect(code('domain/admin/usage.ts')).toContain('countedUsage(')
+    expect(code('domain/admin/usage.ts')).not.toContain('countedRows(')
+
+    // Subscriptions and operations count rows in our own tables: VERIFIED.
+    expect(code('domain/admin/subscriptions.ts')).toContain('countedRows(')
+    expect(code('domain/admin/operations.ts')).toContain('countedRows(')
+
+    // Etsy health is BOTH, and that is the point: a state a row carries is
+    // verified, a state that comes from a threshold we chose is calculated.
+    const health = code('domain/admin/etsy-health.ts')
+    expect(health).toContain('countedRows(')
+    expect(health).toContain('countedAgainstThreshold(')
+
+    // Onboarding is UNAVAILABLE, because nothing writes the column.
+    expect(code('domain/admin/metrics.ts')).toContain('fromUnmaintainedColumn(')
+  })
+
+  it('does not badge the onboarding funnel as CALCULATED', () => {
+    /*
+     * The one that would be easiest to get wrong and hardest to notice.
+     * Calculated says "we worked this out", which invites the reader to
+     * believe the result. There is no result here to believe: the column
+     * defaults to NOT_STARTED and nothing writes it.
+     */
+    const provenance = code('domain/admin/provenance.ts')
+    const start = provenance.indexOf('export function fromUnmaintainedColumn')
+    expect(start).toBeGreaterThan(-1)
+    const body = provenance.slice(start, start + 260)
+    expect(body).toContain('unavailable(')
+    expect(body).not.toContain('calculated(')
+  })
+
+  it('RENDERS A BADGE ON EVERY SCREEN THE REPORT NAMED', () => {
+    for (const screen of ['usage', 'subscriptions', 'operations', 'etsy', 'metrics', 'ai']) {
+      const page = posixJoin(ADMIN_ROOT, `admin/${screen}/page.tsx`)
+      expect(code(page), page).toContain('<OperatorFigure')
+    }
+  })
+
+  it('gives every operator metricKey a real methodology behind it', () => {
+    /*
+     * ProvenanceButton renders a STATIC badge for a key with no entry — a
+     * dead control is worse than no control — so a typo here would silently
+     * leave the figure unclickable and every other assertion would still
+     * pass. This is what catches that.
+     */
+    const registry = code('lib/provenance/methodology.ts')
+    const used = new Set<string>()
+    for (const page of pagesUnder(ADMIN_ROOT)) {
+      for (const match of code(page).matchAll(/metricKey="([^"]+)"/g)) used.add(match[1]!)
+    }
+    expect(used.size).toBeGreaterThanOrEqual(6)
+    for (const key of used) {
+      expect(registry, key).toMatch(new RegExp(`\\n  ${key}:\\s*\\{`))
+    }
+  })
+
+  it('writes no operator methodology that contradicts its own figure', () => {
+    /*
+     * The badge type comes from the DOMAIN and the drawer's type comes from
+     * the REGISTRY, so the two can disagree — and a drawer headed "Verified"
+     * over a figure badged "Calculated" is worse than either alone. Checked
+     * on the two where the classification is the whole argument.
+     */
+    const registry = code('lib/provenance/methodology.ts')
+    const entryFor = (key: string) => {
+      const at = registry.indexOf(`\n  ${key}: {`)
+      return registry.slice(at, at + 400)
+    }
+    expect(entryFor('operatorUsage')).toContain("type: 'CALCULATED'")
+    expect(entryFor('operatorOnboarding')).toContain("type: 'UNAVAILABLE'")
+    expect(entryFor('operatorPlanMix')).toContain("type: 'VERIFIED'")
+  })
+})
+
+/* ──────── the definition under the badge is true where it is rendered ────── */
+
+describe('a methodology drawer credits the source the figure actually used', () => {
+  /*
+   * FOUND BY READING THE DRAWER on a running server, not by any test.
+   *
+   * PROVENANCE_DEFINITION.VERIFIED is "Etsy returned it for your own shop.
+   * Exact." — correct on every seller screen, and FALSE on every operator one.
+   * A verified operator figure is a count of rows in our own tables, and the
+   * operator console makes no Etsy call at all (D94/D94a). The drawer was
+   * crediting a source the figure had not touched, under a heading that says
+   * Verified, on the screens whose whole job is to be trusted about where a
+   * number came from.
+   *
+   * An override on the entry rather than a broader canonical sentence: that
+   * sentence is the published definition on the Methodology page, and
+   * loosening it to cover both would make a seller-facing promise vaguer in
+   * order to fix an operator-facing screen.
+   */
+
+  const REGISTRY = 'lib/provenance/methodology.ts'
+
+  function operatorEntries(): [string, string][] {
+    const source = code(REGISTRY)
+    const out: [string, string][] = []
+    for (const match of source.matchAll(/\n {2}(operator\w+): \{([\s\S]*?)\n {2}\},/g)) {
+      out.push([match[1]!, match[2]!])
+    }
+    return out
+  }
+
+  it('finds the operator entries it is meant to be checking', () => {
+    expect(operatorEntries().length).toBeGreaterThanOrEqual(7)
+  })
+
+  it('CREDITS ETSY FOR NOTHING, on any operator metric', () => {
+    for (const [key, body] of operatorEntries()) {
+      expect(body, `${key} source`).toMatch(/source:\s*['"]EtsyPilot database/)
+    }
+  })
+
+  it('overrides the canonical definition wherever it names Etsy as the source', () => {
+    const canonicalCreditsEtsy = new Set(['VERIFIED', 'UNAVAILABLE'])
+    for (const [key, body] of operatorEntries()) {
+      const type = body.match(/type:\s*'(\w+)'/)?.[1]
+      if (!type || !canonicalCreditsEtsy.has(type)) continue
+      expect(body, `${key} (${type}) must not inherit the Etsy-crediting definition`).toContain(
+        'definition:',
+      )
+    }
+  })
+
+  it('has a drawer that prefers the override', () => {
+    const drawer = code('components/provenance/methodology-drawer.tsx')
+    expect(drawer).toContain('methodology.definition ?? PROVENANCE_DEFINITION')
+  })
+
+  it('leaves the published seller definitions exactly as they were', () => {
+    // The override exists so this sentence did not have to change. If it ever
+    // does, the Methodology page and this constant have to move together.
+    const types = code('lib/provenance/types.ts')
+    expect(types).toContain("VERIFIED: 'Etsy returned it for your own shop. Exact.'")
+    expect(types).toContain("UNAVAILABLE: 'Etsy does not expose it. We show nothing, not a guess.'")
+  })
+})

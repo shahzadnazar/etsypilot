@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { ProvenanceBadge } from '@/components/provenance/provenance-badge'
+import { ProvenanceButton } from '@/components/provenance/provenance-button'
 import { UnavailableCard } from '@/components/ui/states'
 import { Numeric } from '@/components/ui/numeric'
 import { formatNumber } from '@/lib/utils/format'
@@ -37,6 +38,9 @@ export function OperatorFigure({
   figure,
   suffix,
   footnote,
+  valueClassName,
+  frame = 'card',
+  metricKey,
 }: {
   label: string
   figure: Provenanced<string | number>
@@ -44,8 +48,30 @@ export function OperatorFigure({
   suffix?: string
   /** The denominator, the coverage, whatever makes the number readable. */
   footnote?: ReactNode
+  /** The tone the count is rendered in, where the screen has one. */
+  valueClassName?: string
+  /**
+   * 'bare' for a tile already inside a Card grid.
+   *
+   * The count grids on usage, subscriptions, operations and etsy are five to
+   * seven tiles wide and already sit inside a bordered panel. Drawing another
+   * border around each one would be a card in a card five times across.
+   */
+  frame?: 'card' | 'bare'
+  /**
+   * A key in lib/provenance/methodology.ts, where the metric has a full
+   * explanation.
+   *
+   * With one, the badge becomes a button that opens the methodology drawer —
+   * the seller app's "see how this is calculated", which no operator screen
+   * had. Without one it stays a static badge: ProvenanceButton falls back to
+   * exactly that rather than rendering a control that does nothing.
+   */
+  metricKey?: string
 }) {
-  const badge = (
+  const badge = metricKey ? (
+    <ProvenanceButton metricKey={metricKey} type={figure.provenance.type} />
+  ) : (
     <ProvenanceBadge
       type={figure.provenance.type}
       srDetail={`${label}: ${figure.provenance.methodology}`}
@@ -71,12 +97,18 @@ export function OperatorFigure({
   }
 
   return (
-    <div className="flex flex-col gap-1 rounded-card border border-line bg-canvas-soft p-3">
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="text-label text-muted-1">{label}</span>
+    <div
+      className={
+        frame === 'bare'
+          ? 'flex flex-col gap-1'
+          : 'flex flex-col gap-1 rounded-card border border-line bg-canvas-soft p-3'
+      }
+    >
+      <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
+        <span className="text-label leading-snug text-muted-1">{label}</span>
         {badge}
       </div>
-      <Numeric className="text-[18px] font-semibold text-ink-1">
+      <Numeric className={valueClassName ?? 'text-[18px] font-semibold text-ink-1'}>
         {typeof figure.value === 'number' ? formatNumber(figure.value) : figure.value}
         {suffix}
       </Numeric>
