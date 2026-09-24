@@ -58,9 +58,19 @@ export default async function AdminLayout({ children }: { children: ReactNode })
    * shape of guard as the cross-shop import check, for the same reason: a rule
    * nothing enforces is a rule until the day someone forgets.
    *
-   * Note what still holds: no operator chrome renders for a refused request.
-   * The banner, the email, the role and the navigation are all inside the
-   * branch below, which only a real operator reaches.
+   * Note what still holds, stated for BOTH people who reach a 404 here,
+   * because an earlier version of this note described only one of them and was
+   * therefore false about the case that actually happens.
+   *
+   *   A REFUSED REQUEST gets no operator chrome at all. The banner, the email,
+   *   the role and the navigation are inside the branch below, which only a
+   *   real operator reaches, and app/(admin)/not-found.tsx renders the seller
+   *   404 for them — the same response any other missing URL gives.
+   *
+   *   AN OPERATOR WHO LACKS ONE PERMISSION keeps the full chrome around the
+   *   404, and that is correct rather than a leak. They have already been
+   *   admitted to the console by this layout; hiding the rail from them would
+   *   tell them nothing they do not know and would lose them the way back.
    */
   if (!access) return <>{children}</>
 
@@ -79,7 +89,12 @@ export default async function AdminLayout({ children }: { children: ReactNode })
        * distinguishes two operator logins on one machine.
        */
       userInitials={initialsFor('', access.email)}
-      userName={access.email}
+      /*
+       * Null, not the address. The menu shows the address on its own line
+       * already; passing it as the NAME too printed it twice, once in the
+       * shape of a name it is not.
+       */
+      userName={null}
     >
       {children}
     </OperatorShell>

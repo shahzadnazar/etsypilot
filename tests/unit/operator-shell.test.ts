@@ -441,3 +441,96 @@ describe('the open item stays lit two clicks in', () => {
     expect(isCurrentNavItem('/admin/audit', '/admin/users')).toBe(false)
   })
 })
+
+/* ────────────────────────── the 404 inside the console ───────────────────── */
+
+const OPERATOR_404 = posixJoin(ADMIN_ROOT, 'not-found.tsx')
+const SELLER_404 = 'app/not-found.tsx'
+const FRAME = 'components/layout/not-found-frame.tsx'
+
+describe('a 404 in the operator console says something true there', () => {
+  /*
+   * FOUND BY HAND ON THE RUNNING PANEL. app/(admin)/not-found.tsx was a
+   * one-line re-export of the seller's 404, so a manager who typed
+   * /admin/audit was told "the listing was deleted on Etsy" and offered
+   * [Back to overview] and [Listing audit] — two buttons out of the console,
+   * for a thing that does not exist in it.
+   *
+   * The re-export's stated reason was that one page cannot drift into two
+   * different-looking 404s. That reason survives: the layout is shared and
+   * only the words differ.
+   */
+
+  it('finds the two 404s it is meant to be checking', () => {
+    // The anti-vacuity guard. Every assertion below is of the form "the
+    // operator 404 does not say X", and a missing file satisfies all of them.
+    for (const file of [OPERATOR_404, SELLER_404, FRAME]) {
+      expect(existsSync(file), file).toBe(true)
+    }
+  })
+
+  it('SENDS NOBODY TO THE SELLER APP, and names no listing', () => {
+    const source = code(OPERATOR_404)
+    for (const seller of ['/dashboard', '/listings', 'listing', 'Etsy shop']) {
+      expect(source, seller).not.toContain(seller)
+    }
+  })
+
+  it('still says all of that on the SELLER 404, which is where it is true', () => {
+    /*
+     * The converse. Without it the assertion above would pass just as well
+     * against a 404 that had lost its links entirely, or against a repository
+     * where nothing anywhere mentioned a listing.
+     */
+    const source = code(SELLER_404)
+    expect(source).toContain('/dashboard')
+    expect(source).toContain('/listings/audit')
+    expect(source).toContain('listing was deleted on Etsy')
+  })
+
+  it('RENDERS THE SELLER 404 ITSELF for a viewer with no operator access', () => {
+    /*
+     * The disclosure rule, in prose rather than in a status code.
+     *
+     * /admin answers 404 rather than 403 because a 403 confirms /admin
+     * exists. Operator-flavoured copy would confirm it just as loudly: "no
+     * such operator screen" tells a signed-in seller that there ARE operator
+     * screens. So the refused branch renders the seller component — not a
+     * copy of its words, which would be one edit away from diverging.
+     */
+    const source = code(OPERATOR_404)
+    expect(source).toContain("from '@/app/not-found'")
+    expect(source).toMatch(/if\s*\(!access\)\s*return\s*<SellerNotFound\s*\/>/)
+  })
+
+  it('OFFERS THIS VIEWER’S OWN DESTINATIONS, not a fixed pair', () => {
+    /*
+     * A hardcoded [Accounts] [Audit log] would 404 a manager on the second
+     * button — the failure the nav itself is built to avoid. The links come
+     * from visibleOperatorNav, so there is no second opinion about what this
+     * viewer may reach, and no /admin href is written in this file at all.
+     */
+    const source = code(OPERATOR_404)
+    expect(source).toContain('visibleOperatorNav(access)')
+    expect(source).not.toMatch(/['"]\/admin\//)
+  })
+
+  it('draws both 404s with ONE component, so they cannot drift apart', () => {
+    for (const file of [OPERATOR_404, SELLER_404]) {
+      expect(code(file), file).toContain('not-found-frame')
+    }
+    // And the frame is the only place the layout is written down.
+    expect(code(FRAME)).toContain('min-h-screen')
+    for (const file of [OPERATOR_404, SELLER_404]) {
+      expect(code(file), file).not.toContain('min-h-screen')
+    }
+  })
+
+  it('renders no button for a viewer with nowhere to go', () => {
+    // An operator whose role has been stripped of every permission still
+    // reaches the console; a link to a screen that would refuse them is the
+    // padlock this panel does not have.
+    expect(visibleOperatorNav(viewer()).flatMap((group) => group.items)).toEqual([])
+    expect(code(FRAME)).toContain('links.length > 0')
+  })
+})

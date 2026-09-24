@@ -1,28 +1,20 @@
-import Link from 'next/link'
+import { NotFoundFrame } from '@/components/layout/not-found-frame'
 
+/*
+ * The seller app's 404.
+ *
+ * The operator console has its own, next to its own layout, because these
+ * words are false there. The two share NotFoundFrame, so they still look like
+ * one page.
+ */
 export default function NotFound() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center gap-4 px-6">
-      <p className="tnum text-metric text-muted-2">404</p>
-      <h1 className="text-page text-ink-1">That page doesn&rsquo;t exist</h1>
-      <p className="text-body text-ink-2">
-        The link may be outdated, or the listing was deleted on Etsy. Nothing is broken with your
-        account.
-      </p>
-      <div className="flex gap-2">
-        <Link
-          href="/dashboard"
-          className="rounded-control bg-brand px-3.5 py-2.5 text-[12.5px] font-semibold text-brand-on"
-        >
-          Back to overview
-        </Link>
-        <Link
-          href="/listings/audit"
-          className="rounded-control border border-line px-3.5 py-2.5 text-[12.5px] font-semibold text-ink-2"
-        >
-          Listing audit
-        </Link>
-      </div>
-    </main>
+    <NotFoundFrame
+      body="The link may be outdated, or the listing was deleted on Etsy. Nothing is broken with your account."
+      links={[
+        { href: '/dashboard', label: 'Back to overview' },
+        { href: '/listings/audit', label: 'Listing audit' },
+      ]}
+    />
   )
 }
