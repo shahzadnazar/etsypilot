@@ -1,3 +1,4 @@
+import { Money, Numeric } from '@/components/ui/numeric'
 import { EmptyState } from '@/components/ui/states'
 import { OperatorTable } from '@/components/admin/operator-table'
 import { Card } from '@/components/ui/card'
@@ -16,7 +17,7 @@ import {
   type SubscriptionRow,
 } from '@/domain/admin/subscriptions'
 import { adminListSubscriptions } from '@/lib/repositories/admin-reads-every-shop'
-import { formatCurrency, formatDate } from '@/lib/utils/format'
+import { formatDate } from '@/lib/utils/format'
 
 /*
  * Every account's plan and status. READ-ONLY.
@@ -82,13 +83,25 @@ export default async function SubscriptionsPage() {
               {plans.map((entry) => (
                 <Card key={entry.bucket} className="flex flex-col gap-1 p-3">
                   <span className="text-label text-muted-1">{entry.label}</span>
-                  <span className="tnum text-[22px] font-semibold leading-none text-ink-1">
+                  <Numeric className="text-[22px] font-semibold leading-none text-ink-1">
                     {entry.count}
-                  </span>
+                  </Numeric>
                   {entry.plan ? (
                     <>
-                      <span className="tnum text-caption text-muted-1">
-                        {formatCurrency(entry.plan.priceMonthly, 'USD')} / month
+                      <span className="text-caption text-muted-1">
+                        {/*
+                          * Money, not formatCurrency.
+                          *
+                          * A price is the one figure on this screen where a
+                          * missing value has a plausible wrong reading: a
+                          * blank or a 0.00 next to a plan name says FREE, and
+                          * "we do not know what this costs" is not free. Money
+                          * renders null as an em dash with "Not known" behind
+                          * it, and there is no prop through which a caller can
+                          * substitute a fallback figure.
+                          */}
+                        <Money value={entry.plan.priceMonthly} unknownLabel="Price not known" /> /
+                        month
                       </span>
                       {/*
                         * Read from PLANS, never restated. D46: the limit is
@@ -121,9 +134,9 @@ export default async function SubscriptionsPage() {
               {statuses.map((entry) => (
                 <Card key={entry.bucket} className="flex flex-col gap-1 p-3">
                   <span className="text-label text-muted-1">{entry.label}</span>
-                  <span className={`tnum text-[22px] font-semibold leading-none ${toneInk(entry.tone)}`}>
+                  <Numeric className={`text-[22px] font-semibold leading-none ${toneInk(entry.tone)}`}>
                     {entry.count}
-                  </span>
+                  </Numeric>
                 </Card>
               ))}
             </div>
@@ -161,9 +174,9 @@ export default async function SubscriptionsPage() {
                           {mayNameAccounts ? (row.email ?? '—') : (row.shopName ?? 'A shop')}
                         </span>
                         {copy ? <StatusChip status={status as keyof typeof STATUS_COPY} /> : null}
-                        <span className="tnum text-caption text-muted-1">
+                        <Numeric className="text-caption text-muted-1">
                           {(row.plan && planBucket(row.plan) !== 'UNKNOWN' ? row.plan : 'unknown plan').toLowerCase()}
-                        </span>
+                        </Numeric>
                       </span>
                       {copy ? (
                         <span className="max-w-prose text-caption leading-relaxed text-muted-1">
@@ -197,13 +210,13 @@ export default async function SubscriptionsPage() {
                     <span className="text-small font-medium text-ink-1">
                       {mayNameAccounts ? (entry.row.email ?? '—') : (entry.row.shopName ?? 'A shop')}
                     </span>
-                    <span className="tnum text-small" style={{ color: 'var(--warning-ink)' }}>
+                    <Numeric className="text-small" style={{ color: 'var(--warning-ink)' }}>
                       {entry.daysLeft === 0
                         ? 'Ends today'
                         : entry.daysLeft === 1
                           ? 'Ends tomorrow'
                           : `Ends in ${entry.daysLeft} days`}
-                    </span>
+                    </Numeric>
                   </li>
                 ))}
               </ul>
@@ -356,16 +369,16 @@ function SubscriptionTable({
                     <StatusChip status={status} />
                   )}
                 </td>
-                <td className="tnum px-3 py-3 text-small text-ink-2">
+                <td className="px-3 py-3 text-small text-ink-2">
                   {row.renewsAt ? (
-                    formatDate(row.renewsAt.toISOString())
+                    <Numeric>{formatDate(row.renewsAt.toISOString())}</Numeric>
                   ) : (
                     <Absent reason="No renewal date — this plan does not renew, or there is no record" />
                   )}
                 </td>
-                <td className="tnum px-4 py-3 text-small text-ink-2">
+                <td className="px-4 py-3 text-small text-ink-2">
                   {row.trialEndsAt ? (
-                    formatDate(row.trialEndsAt.toISOString())
+                    <Numeric>{formatDate(row.trialEndsAt.toISOString())}</Numeric>
                   ) : (
                     <Absent reason="Not on a trial" />
                   )}

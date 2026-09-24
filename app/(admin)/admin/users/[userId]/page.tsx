@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { Numeric } from '@/components/ui/numeric'
 import { EmptyState } from '@/components/ui/states'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
@@ -409,7 +410,7 @@ function Connection({ detail }: { detail: AdminAccountDetail }) {
           {connection.scopes.map((scope) => (
             <li
               key={scope}
-              className="tnum rounded-[6px] border border-line bg-canvas-soft px-2 py-0.5 text-caption text-ink-2"
+              className="rounded-[6px] border border-line bg-canvas-soft px-2 py-0.5 text-caption text-ink-2"
             >
               {scope}
             </li>
@@ -492,9 +493,9 @@ function Usage({ detail }: { detail: AdminAccountDetail }) {
           className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 border-b border-line pb-2 last:border-0 last:pb-0"
         >
           <span className="text-small text-ink-1">{record.metric.replace(/_/g, ' ').toLowerCase()}</span>
-          <span className="tnum text-small text-ink-2">
+          <Numeric className="text-small text-ink-2">
             {formatNumber(record.used)} of {formatNumber(record.limit)}
-          </span>
+          </Numeric>
           <span className="w-full text-caption text-muted-1">
             {formatDate(record.periodStart.toISOString())} –{' '}
             {formatDate(record.periodEnd.toISOString())}

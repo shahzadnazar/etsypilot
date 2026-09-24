@@ -1,3 +1,4 @@
+import { Numeric } from '@/components/ui/numeric'
 import { EmptyState } from '@/components/ui/states'
 import { OperatorTable } from '@/components/admin/operator-table'
 import { Card } from '@/components/ui/card'
@@ -102,9 +103,9 @@ export default async function EtsyConnectionsPage() {
               {summary.map(({ health, count, copy }) => (
                 <Card key={health} className="flex flex-col gap-1 p-3">
                   <span className="text-label text-muted-1">{copy.label}</span>
-                  <span className={`tnum text-[22px] font-semibold leading-none ${toneInk(copy.tone)}`}>
+                  <Numeric className={`text-[22px] font-semibold leading-none ${toneInk(copy.tone)}`}>
                     {count}
-                  </span>
+                  </Numeric>
                 </Card>
               ))}
             </div>
@@ -164,13 +165,13 @@ export default async function EtsyConnectionsPage() {
                     className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 border-b border-line pb-2 last:border-0 last:pb-0"
                   >
                     <span className="text-small font-medium text-ink-1">{entry.row.shopName}</span>
-                    <span className="tnum text-small" style={{ color: 'var(--warning-ink)' }}>
+                    <Numeric className="text-small" style={{ color: 'var(--warning-ink)' }}>
                       {entry.daysToExpiry === 0
                         ? 'Lapses today'
                         : entry.daysToExpiry === 1
                           ? 'Lapses tomorrow'
                           : `Lapses in ${entry.daysToExpiry} days`}
-                    </span>
+                    </Numeric>
                     <span className="w-full text-caption text-muted-1">
                       {entry.row.expiresAt ? formatDateTime(entry.row.expiresAt.toISOString()) : null}
                     </span>
@@ -376,9 +377,9 @@ function ConnectionTable({
                 * the same dash.
                 */}
               <td className="px-3 py-3 text-small text-ink-2">{syncStatement(entry)}</td>
-              <td className="tnum px-3 py-3 text-small text-ink-2">
+              <td className="px-3 py-3 text-small text-ink-2">
                 {entry.row.expiresAt ? (
-                  formatDate(entry.row.expiresAt.toISOString())
+                  <Numeric>{formatDate(entry.row.expiresAt.toISOString())}</Numeric>
                 ) : (
                   <Absent reason="No expiry on record — not the same as an expiry far in the future" />
                 )}
@@ -391,7 +392,7 @@ function ConnectionTable({
                     Authorised with no scopes — a broken grant, not a restrictive one
                   </span>
                 ) : (
-                  <span className="tnum text-caption">{entry.row.scopes.join(' · ')}</span>
+                  <Numeric className="text-caption">{entry.row.scopes.join(' · ')}</Numeric>
                 )}
               </td>
             </tr>

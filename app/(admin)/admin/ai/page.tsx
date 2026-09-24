@@ -1,3 +1,4 @@
+import { Numeric } from '@/components/ui/numeric'
 import { EmptyState } from '@/components/ui/states'
 import { Card } from '@/components/ui/card'
 import { PageHeader } from '@/components/layout/page-header'
@@ -216,10 +217,10 @@ function Bar({ label, value, total }: { label: string; value: number; total: num
     <li className="flex flex-col gap-1">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3">
         <span className="text-caption text-muted-1">{label}</span>
-        <span className="tnum text-small text-ink-1">
+        <Numeric className="text-small text-ink-1">
           {formatNumber(value)}
           <span className="ml-1.5 text-caption text-muted-1">{percent}%</span>
-        </span>
+        </Numeric>
       </div>
       <div
         className="h-1.5 w-full overflow-hidden rounded-full bg-canvas-soft"
@@ -245,26 +246,26 @@ function ShopRow({ shop, mayNameOwners }: { shop: ShopActivity; mayNameOwners: b
         {mayNameOwners && shop.ownerEmail ? (
           <span className="text-caption text-muted-1">{shop.ownerEmail}</span>
         ) : null}
-        <span className="tnum ml-auto text-small text-ink-2">
+        <Numeric className="ml-auto text-small text-ink-2">
           {formatNumber(shop.total)} generations
-        </span>
+        </Numeric>
       </div>
 
       <div className="flex flex-wrap gap-x-4 gap-y-1">
         {GENERATION_KINDS.map((kind) => (
-          <span key={kind} className="tnum text-caption text-muted-1">
+          <Numeric key={kind} className="text-caption text-muted-1">
             {KIND_LABEL[kind]} {formatNumber(shop.byKind[kind])}
-          </span>
+          </Numeric>
         ))}
       </div>
 
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
         {GENERATION_STATUSES.map((status) => (
-          <span key={status} className="tnum text-caption text-muted-1">
+          <Numeric key={status} className="text-caption text-muted-1">
             {STATUS_LABEL[status]} {formatNumber(shop.byStatus[status])}
-          </span>
+          </Numeric>
         ))}
-        <span className="tnum text-caption font-semibold text-ink-2">
+        <Numeric className="text-caption font-semibold text-ink-2">
           {/*
             * UNAVAILABLE, not 0%. A shop with only drafts has no acceptance
             * rate; rendering nought would report the seller not having got to
@@ -273,7 +274,7 @@ function ShopRow({ shop, mayNameOwners }: { shop: ShopActivity; mayNameOwners: b
           {shop.acceptance.value === null
             ? 'No rate yet'
             : `${shop.acceptance.value}% accepted`}
-        </span>
+        </Numeric>
       </div>
     </div>
   )

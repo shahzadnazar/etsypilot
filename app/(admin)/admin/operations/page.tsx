@@ -1,3 +1,4 @@
+import { Numeric } from '@/components/ui/numeric'
 import { EmptyState } from '@/components/ui/states'
 import { Card } from '@/components/ui/card'
 import { PageHeader } from '@/components/layout/page-header'
@@ -89,8 +90,8 @@ export default async function OperationsPage() {
               {states.map(({ state, label, count }) => (
                 <Card key={state} className="flex flex-col gap-1 p-3">
                   <span className="text-label leading-snug text-muted-1">{label}</span>
-                  <span
-                    className={`tnum text-[20px] font-semibold leading-none ${
+                  <Numeric
+                    className={`text-[20px] font-semibold leading-none ${
                       state === 'FAILED' || state === 'PARTIAL_SUCCESS'
                         ? 'text-danger-strong'
                         : state === 'UNKNOWN'
@@ -99,7 +100,7 @@ export default async function OperationsPage() {
                     }`}
                   >
                     {count}
-                  </span>
+                  </Numeric>
                 </Card>
               ))}
             </div>
@@ -125,13 +126,13 @@ export default async function OperationsPage() {
                     <span className="text-small font-medium text-ink-1">
                       {entry.row.shopName ?? <Orphaned />}
                     </span>
-                    <span className="tnum text-small" style={{ color: 'var(--danger-ink)' }}>
+                    <Numeric className="text-small" style={{ color: 'var(--danger-ink)' }}>
                       Running {formatNumber(entry.minutesRunning ?? 0)} minutes
-                    </span>
-                    <span className="tnum w-full text-caption text-muted-1">
+                    </Numeric>
+                    <Numeric className="w-full text-caption text-muted-1">
                       {formatNumber(entry.row.listingCount)} listings ·{' '}
                       {formatDateTime(entry.row.createdAt.toISOString())}
-                    </span>
+                    </Numeric>
                   </li>
                 ))}
               </ul>
@@ -158,9 +159,9 @@ export default async function OperationsPage() {
                     <span className="max-w-prose text-small leading-relaxed text-ink-2">
                       {reason}
                     </span>
-                    <span className="tnum text-small font-semibold text-ink-1">
+                    <Numeric className="text-small font-semibold text-ink-1">
                       {formatNumber(count)}
-                    </span>
+                    </Numeric>
                   </li>
                 ))}
               </ul>
@@ -305,13 +306,13 @@ function OperationRow({
           <span className="text-caption text-muted-1">{entry.row.ownerEmail}</span>
         ) : null}
         <StateChip state={entry.state} stuck={entry.stuck} />
-        <span className="tnum ml-auto text-caption text-muted-1">
+        <Numeric className="ml-auto text-caption text-muted-1">
           {formatDateTime(entry.row.createdAt.toISOString())}
-        </span>
+        </Numeric>
       </div>
 
       <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-caption text-muted-1">
-        <span className="tnum">{formatNumber(entry.row.listingCount)} listings</span>
+        <Numeric>{formatNumber(entry.row.listingCount)} listings</Numeric>
         {/*
           * The field NAMES the job touches — price, tags — never their values.
           * "What was it changing" is answerable without reading what it was
@@ -321,7 +322,7 @@ function OperationRow({
           {entry.row.fields.length > 0 ? entry.row.fields.join(', ') : 'No fields recorded'}
         </span>
         {entry.row.completedAt ? (
-          <span className="tnum">Completed {formatDateTime(entry.row.completedAt.toISOString())}</span>
+          <Numeric>Completed {formatDateTime(entry.row.completedAt.toISOString())}</Numeric>
         ) : (
           <span>
             <span aria-hidden>Not completed</span>
@@ -339,7 +340,7 @@ function OperationRow({
         </p>
       ) : (
         <p className="max-w-prose text-caption leading-relaxed" style={{ color: 'var(--warning-ink)' }}>
-          The stored state is <span className="tnum">{entry.row.state}</span>, which the code does
+          The stored state is <Numeric>{entry.row.state}</Numeric>, which the code does
           not recognise. It is counted and not interpreted.
         </p>
       )}
@@ -353,7 +354,7 @@ function OperationRow({
           <ul className="mt-1 flex flex-col gap-1">
             {entry.failures.slice(0, 10).map((failure) => (
               <li key={`${failure.operationId}-${failure.listingId}`} className="text-caption leading-relaxed text-muted-1">
-                <span className="tnum">{failure.listingId}</span>
+                <Numeric>{failure.listingId}</Numeric>
                 {' — '}
                 {/*
                   * The reason, never the before and after values. An operator
@@ -362,7 +363,7 @@ function OperationRow({
                   */}
                 {failure.error ?? 'No reason was recorded with the failure.'}
                 {failure.attempts > 1 ? (
-                  <span className="tnum"> · {failure.attempts} attempts</span>
+                  <Numeric> · {failure.attempts} attempts</Numeric>
                 ) : null}
               </li>
             ))}

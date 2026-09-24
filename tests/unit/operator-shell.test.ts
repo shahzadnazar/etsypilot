@@ -872,3 +872,74 @@ describe('the operator console uses the shared state surfaces', () => {
     }
   })
 })
+
+/* ────────────────── numbers formatted by the shared rule ─────────────────── */
+
+describe('the operator console formats no number of its own', () => {
+  /*
+   * components/ui/numeric.tsx was used by 12 seller pages and 20 seller
+   * components, and by ZERO operator files — which wrote the `tnum` class out
+   * by hand 38 times instead.
+   *
+   * THIS IS NOT STYLING. Those primitives carry two rules that cannot be
+   * remembered one cell at a time:
+   *
+   *   a figure never wraps, because "−$13.42" broken across two lines reads as
+   *   a dash and then a number;
+   *
+   *   a null money value renders as an em dash and NEVER 0.00, because a zero
+   *   in a money column is a claim and "we do not know" is not zero.
+   *
+   * admin/subscriptions rendered a plan price as raw formatCurrency. A missing
+   * price there would have read as FREE.
+   */
+
+  it('CONTAINS NO LITERAL tnum ON ANY OPERATOR PAGE', () => {
+    for (const page of pagesUnder(ADMIN_ROOT)) {
+      expect(code(page), page).not.toContain('tnum')
+    }
+  })
+
+  it('keeps tnum in the primitives, which is the only place it belongs', () => {
+    // The converse: "no tnum" is satisfied by a console that lost tabular
+    // figures altogether, which is a silent visual regression.
+    const numeric = code('components/ui/numeric.tsx')
+    expect(numeric.match(/tnum/g)?.length ?? 0).toBeGreaterThanOrEqual(2)
+  })
+
+  it('renders every operator figure through Numeric, Money or a cell', () => {
+    const users = pagesUnder(ADMIN_ROOT).filter((page) =>
+      /<(Numeric|Money|NumericCell)\b/.test(code(page)),
+    )
+    expect(users.length).toBeGreaterThanOrEqual(9)
+  })
+
+  it('SENDS THE ONE PRICE THROUGH Money, so a missing one cannot read as free', () => {
+    const page = posixJoin(ADMIN_ROOT, 'admin/subscriptions/page.tsx')
+    const source = code(page)
+    expect(source).toContain('<Money value={entry.plan.priceMonthly}')
+    // formatCurrency has no fallback shape at all: it takes a number and
+    // returns a string, so there is nowhere for "not known" to go.
+    expect(source).not.toContain('formatCurrency')
+  })
+
+  it('leaves formatCurrency nowhere in the operator console', () => {
+    for (const page of pagesUnder(ADMIN_ROOT)) {
+      expect(code(page), page).not.toContain('formatCurrency(')
+    }
+  })
+
+  it('does not dress non-numbers as numerals', () => {
+    /*
+     * Three of the 38 were not figures at all: an OAuth scope, and two table
+     * names in prose. Turning those into <Numeric> would have satisfied the
+     * rule above while making the rule mean nothing — `tnum` on a word is a
+     * class that does nothing, and a Numeric around one is a lie about what
+     * the element holds. They lost the class instead.
+     */
+    const detail = code(posixJoin(ADMIN_ROOT, 'admin/users/[userId]/page.tsx'))
+    expect(detail).toMatch(/<li[\s\S]{0,200}\{scope\}/)
+    expect(detail).not.toMatch(/<Numeric[^>]*>\s*\{scope\}/)
+    expect(code(posixJoin(ADMIN_ROOT, 'admin/usage/page.tsx'))).toContain('<code>usage_records</code>')
+  })
+})

@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import { Numeric } from '@/components/ui/numeric'
 import { EmptyState } from '@/components/ui/states'
 import { OperatorTable } from '@/components/admin/operator-table'
 import { PageHeader } from '@/components/layout/page-header'
@@ -122,8 +123,8 @@ export default async function AdminAuditPage() {
             <tbody>
               {entries.map((entry) => (
                 <tr key={`${entry.kind}:${entry.id}`} className="border-t border-line align-top">
-                  <td className="tnum whitespace-nowrap px-4 py-3 text-small text-ink-2">
-                    {entry.at.toISOString().slice(0, 16).replace('T', ' ')}
+                  <td className="px-4 py-3 text-small text-ink-2">
+                    <Numeric>{entry.at.toISOString().slice(0, 16).replace('T', ' ')}</Numeric>
                     <span className="block text-caption text-muted-1">UTC</span>
                   </td>
                   <td className="px-3 py-3 text-small text-ink-2">

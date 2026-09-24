@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Numeric } from '@/components/ui/numeric'
 import { EmptyState } from '@/components/ui/states'
 import { OperatorTable } from '@/components/admin/operator-table'
 import { PageHeader } from '@/components/layout/page-header'
@@ -168,8 +169,10 @@ export default async function AdminUsersPage({
                       <span style={{ color: 'var(--warning-ink)' }}>No shop — setup unfinished</span>
                     )}
                   </td>
-                  <td className="tnum px-4 py-3 text-small text-ink-2">
-                    {formatCalendarDate(user.signedUpAt.toISOString().slice(0, 10))}
+                  <td className="px-4 py-3 text-small text-ink-2">
+                    <Numeric>
+                      {formatCalendarDate(user.signedUpAt.toISOString().slice(0, 10))}
+                    </Numeric>
                   </td>
                   {mayChangeRoles ? (
                     <td className="px-4 py-3 text-small">

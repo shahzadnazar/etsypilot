@@ -18,11 +18,27 @@ import { formatSignedCurrency } from '@/lib/utils/format'
 export function Numeric({
   children,
   className,
+  style,
 }: {
   children: React.ReactNode
   className?: string
+  /**
+   * A tone colour, and only that.
+   *
+   * Several operator figures carry `--danger-ink` or `--warning-ink` as an
+   * inline value rather than a class, which is this codebase's convention for
+   * tones (D1/D10: a token background with a literal foreground breaks on
+   * theme flip). Without this prop those figures had to stay hand-written
+   * spans, which is exactly how the two rules above get forgotten one cell at
+   * a time.
+   */
+  style?: React.CSSProperties
 }) {
-  return <span className={cn('tnum whitespace-nowrap', className)}>{children}</span>
+  return (
+    <span className={cn('tnum whitespace-nowrap', className)} style={style}>
+      {children}
+    </span>
+  )
 }
 
 /**

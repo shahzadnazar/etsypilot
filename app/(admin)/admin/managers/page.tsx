@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Numeric } from '@/components/ui/numeric'
 import { EmptyState } from '@/components/ui/states'
 import { OperatorTable } from '@/components/admin/operator-table'
 import { PageHeader } from '@/components/layout/page-header'
@@ -94,9 +95,11 @@ export default async function AdminManagersPage() {
                         <span className="text-muted-1">Not recorded</span>
                       )}
                     </td>
-                    <td className="tnum px-4 py-3 text-small text-ink-2">
+                    <td className="px-4 py-3 text-small text-ink-2">
                       {promotion ? (
-                        formatCalendarDate(promotion.at.toISOString().slice(0, 10))
+                        <Numeric>
+                          {formatCalendarDate(promotion.at.toISOString().slice(0, 10))}
+                        </Numeric>
                       ) : (
                         <span className="text-muted-1">—</span>
                       )}

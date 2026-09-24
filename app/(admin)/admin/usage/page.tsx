@@ -1,3 +1,4 @@
+import { Numeric } from '@/components/ui/numeric'
 import { EmptyState } from '@/components/ui/states'
 import { Card } from '@/components/ui/card'
 import { PageHeader } from '@/components/layout/page-header'
@@ -76,7 +77,7 @@ export default async function UsagePage() {
       >
         <strong className="font-semibold text-ink-2">These figures are counts.</strong> Active
         listings are counted from the shop; AI generations are counted from the generations
-        recorded this calendar month. The <code className="tnum">usage_records</code> table has a
+        recorded this calendar month. The <code>usage_records</code> table has a
         stored counter and nothing in the product writes it, so reading that would have reported a
         number that is not usage — stale where rows exist and blank where they do not.
       </Card>
@@ -133,10 +134,10 @@ export default async function UsagePage() {
                     className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 border-b border-line pb-2 last:border-0 last:pb-0"
                   >
                     <span className="text-small font-medium text-ink-1">{entry.row.shopName}</span>
-                    <span className="tnum text-caption text-muted-1">
+                    <Numeric className="text-caption text-muted-1">
                       {formatNumber(entry.row.activeListings)} active listings ·{' '}
                       {formatNumber(entry.row.aiGenerationsThisMonth)} generations this month
-                    </span>
+                    </Numeric>
                   </li>
                 ))}
               </ul>
@@ -159,7 +160,7 @@ export default async function UsagePage() {
         <h2 className="text-small font-semibold text-ink-1">What this screen cannot do</h2>
         <p className="mt-1 max-w-prose text-caption leading-relaxed text-muted-1">
           No quota reset, no top-up, no grant of extra generations and no exemption.{' '}
-          <code className="tnum">usage_records</code> and <code className="tnum">subscriptions</code>{' '}
+          <code>usage_records</code> and <code>subscriptions</code>{' '}
           are not on the operator write allowlist, so any of those from here is refused by
           construction rather than by policy.
         </p>
@@ -229,9 +230,9 @@ function BandSummary({
         {bands.map(({ band, count }) => (
           <div key={band} className="flex flex-col gap-1">
             <span className="text-label leading-snug text-muted-1">{BAND_COPY[band].label}</span>
-            <span className={`tnum text-[20px] font-semibold leading-none ${toneInk(BAND_COPY[band].tone)}`}>
+            <Numeric className={`text-[20px] font-semibold leading-none ${toneInk(BAND_COPY[band].tone)}`}>
               {count}
-            </span>
+            </Numeric>
           </div>
         ))}
       </div>
@@ -298,7 +299,7 @@ function ShopMeters({
               <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
                 <span className="text-caption text-muted-1">{meter.label}</span>
                 <span className="flex items-center gap-2">
-                  <span className="tnum text-small text-ink-2">
+                  <Numeric className="text-small text-ink-2">
                     {/*
                       * A limit of 0 means "not offered on this plan" rather
                       * than "none allowed", so it renders as a count with no
@@ -309,7 +310,7 @@ function ShopMeters({
                     {meter.limit === 0
                       ? formatNumber(meter.used)
                       : `${formatNumber(meter.used)} / ${formatNumber(meter.limit)}`}
-                  </span>
+                  </Numeric>
                   <BandChip band={band} />
                 </span>
               </div>

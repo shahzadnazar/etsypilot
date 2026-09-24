@@ -1,3 +1,4 @@
+import { Numeric } from '@/components/ui/numeric'
 import { EmptyState } from '@/components/ui/states'
 import { Card } from '@/components/ui/card'
 import { PageHeader } from '@/components/layout/page-header'
@@ -217,7 +218,7 @@ function Buckets({ buckets }: { buckets: Bucket[] }) {
         <li key={bucket.key} className="flex flex-col gap-1">
           <div className="flex flex-wrap items-baseline justify-between gap-x-3">
             <span className="text-caption text-muted-1">{bucket.label}</span>
-            <span className="tnum text-small text-ink-1">
+            <Numeric className="text-small text-ink-1">
               {formatNumber(bucket.count)}
               {bucket.percent === null ? (
                 <span className="ml-1.5 text-caption text-muted-2">
@@ -227,7 +228,7 @@ function Buckets({ buckets }: { buckets: Bucket[] }) {
               ) : (
                 <span className="ml-1.5 text-caption text-muted-1">{bucket.percent}%</span>
               )}
-            </span>
+            </Numeric>
           </div>
           <div
             className="h-1.5 w-full overflow-hidden rounded-full bg-canvas-soft"
