@@ -1189,7 +1189,6 @@ describe('a methodology drawer credits the source the figure actually used', () 
 
 /* ──────────────── card internals, and the phone navigation ───────────────── */
 
-const MOBILE_TABS = 'components/admin/operator-mobile-tabs.tsx'
 const SECTION = 'components/admin/operator-section.tsx'
 
 describe('the operator console composes cards rather than padding them', () => {
@@ -1238,87 +1237,58 @@ describe('the operator console composes cards rather than padding them', () => {
   })
 })
 
-describe('the phone gets a tab bar built from the viewer, not from five', () => {
+describe('the phone navigates through the drawer, and nothing else', () => {
   /*
-   * operator-mobile-bar.tsx argued against a bottom bar, and it was right
-   * about the thing it was arguing against: five FIXED tabs would show a
-   * manager four that 404 them — D54a, and worse here, because a padlocked
-   * operator screen is reconnaissance (D91).
+   * A permission-derived bottom tab bar was built here and then removed: it
+   * worked as specified — four visible items plus a More for a super admin,
+   * two and no More for a manager — and the owner did not want it. Operator
+   * navigation is the rail and its drawer, for all three roles, which is what
+   * it was before the bar.
    *
-   * The fix is not to hard-code five. It is to build the bar from the same
-   * visibleOperatorNav list the rail and the drawer render.
+   * The tests that asserted the bar's own behaviour went with it rather than
+   * being left pointing at a file that does not exist. What survives is the
+   * part that was never about the bar: the DRAWER offers exactly what each
+   * role may see, which is the claim the bar borrowed from it.
    */
 
-  it('finds the bar', () => {
-    expect(existsSync(MOBILE_TABS)).toBe(true)
+  it('renders no bottom tab bar in the operator shell', () => {
+    expect(existsSync('components/admin/operator-mobile-tabs.tsx')).toBe(false)
+    const shell = code(SHELL)
+    expect(shell).not.toContain('MobileTabs')
+    // And the seller app keeps its own, which this decision does not touch.
+    expect(existsSync('components/layout/mobile-tabs.tsx')).toBe(true)
   })
 
-  it('TAKES ALREADY-FILTERED GROUPS, never an access object', () => {
-    const bar = code(MOBILE_TABS)
-    expect(bar).toContain('groups: OperatorNavGroup[]')
-    for (const forbidden of ['AdminAccess', 'canSuperAdminOnly', 'access.can', 'requireAdmin']) {
-      expect(bar, forbidden).not.toContain(forbidden)
-    }
-  })
-
-  it('HARD-CODES NO HREF, so nothing in it can be a link the viewer is refused', () => {
-    const bar = code(MOBILE_TABS)
-    expect(bar).not.toMatch(/['"]\/admin\//)
-    expect(bar).toContain('groups.flatMap')
-  })
-
-  it('draws no padlock, no disabled tab and no "soon"', () => {
-    const bar = code(MOBILE_TABS)
-    for (const forbidden of ['disabled', 'Lock', 'padlock', 'soon', 'aria-disabled']) {
-      expect(bar.toLowerCase(), forbidden).not.toContain(forbidden.toLowerCase())
-    }
-  })
-
-  it('renders nothing at all for a viewer with nothing', () => {
-    // The bar shrinks; it does not pad. A viewer with no visible items gets
-    // no bar, rather than a bar of five dead slots.
-    expect(visibleOperatorNav(viewer()).flatMap((group) => group.items)).toEqual([])
-    expect(code(MOBILE_TABS)).toContain('if (items.length === 0) return null')
-  })
-
-  it('shows at most four, then More, and only when More reveals something', () => {
-    const bar = code(MOBILE_TABS)
-    expect(bar).toContain('items.slice(0, 4)')
-    expect(bar).toContain('items.length - shown.length')
-    expect(bar).toContain('hidden > 0 ?')
-  })
-
-  it('opens the EXISTING drawer rather than a second one', () => {
-    const bar = code(MOBILE_TABS)
-    expect(bar).toContain('useOperatorDrawer')
-    expect(bar).toContain('aria-controls="operator-nav"')
-    // And the drawer no longer owns the flag privately.
-    expect(code(DRAWER)).toContain('useOperatorDrawer')
-    expect(code(DRAWER)).not.toMatch(/useState\(false\)/)
-  })
-
-  it('shrinks to exactly what each role may see', () => {
+  it('leaves the drawer owning its own open state, with no second opener', () => {
     /*
-     * The measured half. A MANAGER with users.view sees two operator screens,
-     * so the bar holds two tabs and no More — there is nothing behind it.
-     * A SUPER_ADMIN sees ten, so the bar holds four and a More for six.
+     * The shared context existed only so the bar's "More" could open this
+     * drawer. One opener again, so the flag lives where it is used — a context
+     * nobody needs is a place for two components to disagree later.
+     */
+    expect(existsSync('components/admin/operator-drawer.tsx')).toBe(false)
+    expect(code(DRAWER)).toContain('useState(false)')
+    expect(code(DRAWER).match(/aria-controls="operator-nav"/g)?.length ?? 0).toBe(1)
+  })
+
+  it('reserves no room below lg for a bar that is not there', () => {
+    // The scroller carried pb-20 so content could clear the bar.
+    expect(code(SHELL)).not.toContain('pb-20')
+  })
+
+  it('OFFERS EXACTLY WHAT EACH ROLE MAY SEE, which is the drawer\u2019s job now', () => {
+    /*
+     * Kept from the deleted block, because it was never a claim about the bar:
+     * visibleOperatorNav is what the rail and the drawer both render.
      */
     const forManager = visibleOperatorNav(viewer('users.view')).flatMap((g) => g.items)
     expect(forManager.map((item) => item.href)).toEqual(['/admin/users', '/admin/managers'])
-    expect(Math.max(0, forManager.length - 4)).toBe(0)
 
-    const everything = {
+    const forSuper = visibleOperatorNav({
       can: () => true,
       canSuperAdminOnly: () => true,
-    }
-    const forSuper = visibleOperatorNav(everything).flatMap((g) => g.items)
+    }).flatMap((g) => g.items)
     expect(forSuper.length).toBeGreaterThan(4)
-    expect(forSuper.slice(0, 4).every((item) => item.href.startsWith('/admin/'))).toBe(true)
-  })
-
-  it('keeps every target at the 44px the design asks for', () => {
-    const bar = code(MOBILE_TABS)
-    expect(bar.match(/min-h-\[44px\]/g)?.length ?? 0).toBeGreaterThanOrEqual(2)
+    expect(forSuper.every((item) => item.href.startsWith('/admin/'))).toBe(true)
   })
 })
 
@@ -1368,28 +1338,25 @@ describe('no operator screen skips a heading level', () => {
 
 /* ─────────────── one navigation per landmark name, on a phone ────────────── */
 
-describe('the three operator navigations do not share one name', () => {
+describe('the two operator navigations do not share one name', () => {
   /*
-   * FOUND WHILE ADDING THE BOTTOM BAR. The rail, the drawer and the new tab
-   * bar all carried aria-label="Operator sections", and at 390px the bar and
-   * the drawer can be in the document at the same time. A screen-reader user
-   * navigating by landmark was offered three identical choices.
+   * FOUND WHILE ADDING A BOTTOM BAR, and it outlived the bar. The rail and the
+   * drawer both carried aria-label="Operator sections"; a third nav made that
+   * three identical choices for anyone navigating by landmark. The bar is gone
+   * and the distinct names stay, because the rail and the drawer can still
+   * both be in the document — the rail is rendered at every width and hidden
+   * below lg by CSS, not omitted.
    */
   it('gives each navigation its own label', () => {
-    const labels = [
-      code('components/admin/operator-sidebar.tsx'),
-      code(DRAWER),
-      code(MOBILE_TABS),
-    ].map((source) => source.match(/aria-label="([^"]+)"/)?.[1])
-
+    const labels = [code('components/admin/operator-sidebar.tsx'), code(DRAWER)].map(
+      (source) => source.match(/aria-label="([^"]+)"/)?.[1],
+    )
     expect(labels.every(Boolean)).toBe(true)
     expect(new Set(labels).size).toBe(labels.length)
   })
 
-  it('names the bottom bar the way the seller app names its own', () => {
-    // The seller MobileTabs is aria-label="Primary". Matching it is the point
-    // of this whole pass — and it is distinct from the other two by doing so.
-    expect(code(MOBILE_TABS)).toContain('aria-label="Primary"')
+  it('leaves the seller app\u2019s own bar alone', () => {
+    // Removing the operator bar was an operator-side decision.
     expect(code('components/layout/mobile-tabs.tsx')).toContain('aria-label="Primary"')
   })
 })

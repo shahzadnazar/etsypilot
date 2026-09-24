@@ -97,9 +97,8 @@ def nav_set(page):
     """
     return set(
         page.eval_on_selector_all(
-            'nav[aria-label^="Operator sections"] a[href^="/admin"],'
-            ' nav[aria-label="All operator sections"] a[href^="/admin"],'
-            ' nav[aria-label="Primary"] a[href^="/admin"]',
+            'nav[aria-label="Operator sections"] a[href^="/admin"],'
+            ' nav[aria-label="All operator sections"] a[href^="/admin"]',
             "els => els.map(e => e.getAttribute('href'))",
         )
     )
@@ -152,8 +151,9 @@ def axe_violations(page, width, height, theme):
     # depends on — is unchanged. Only the height grows, so nothing is clipped
     # and axe measures the LAYOUT. A control genuinely covered by a fixed
     # element would still be covered at any height. The real version of the
-    # complaint, content ending flush against the bottom bar, is fixed in the
-    # shell with pb-20 below lg rather than hidden here.
+    # complaint it stood for — a control clipped at the scroller's edge — is a
+    # property of an inner scroller, not of any one component, and outlived the
+    # bottom tab bar that first surfaced it.
     page.evaluate(
         "() => { window.scrollTo(0, 0); "
         "for (const e of document.querySelectorAll('*')) "
@@ -438,25 +438,28 @@ def main():
             boss_page.locator('nav[aria-label="Operator sections"]').first.is_visible() is False,
             "the desktop rail is not rendered at 390",
         )
-        # TWO controls open the ONE drawer now: the hamburger in the top bar,
-        # and the bottom tab bar's "More". Both are asserted rather than the
-        # first of them — a 44px hamburger beside a 30px More is the sort of
-        # thing a count-of-one check waves through.
+        # ONE control opens the drawer: the hamburger in the top bar. A second
+        # one existed while the bottom tab bar did — its "More" opened this
+        # same drawer through a shared context — and both went together. The
+        # count is asserted rather than assumed, because two openers sharing
+        # one flag was the arrangement that made the context necessary.
         openers = boss_page.locator('button[aria-controls="operator-nav"]')
-        check(openers.count() == 2, f"both drawer openers are present ({openers.count()})")
+        check(openers.count() == 1, f"there is one drawer opener on mobile ({openers.count()})")
         check(
             boss_page.locator('#operator-nav').count() <= 1,
-            "and there is at most ONE drawer for them to open",
+            "and at most ONE drawer for it to open",
+        )
+        check(
+            boss_page.locator('nav[aria-label="Primary"]').count() == 0,
+            "and no operator bottom tab bar",
         )
 
-        for index in range(openers.count()):
-            box = openers.nth(index).bounding_box()
-            label = (openers.nth(index).inner_text() or "hamburger").split("\n")[0].strip()
-            check(
-                box is not None and box["width"] >= 44 and box["height"] >= 44,
-                f"the {label or 'hamburger'} opener is a 44x44 touch target "
-                + (f"({box['width']:.0f}x{box['height']:.0f})" if box else "(not measurable)"),
-            )
+        box = openers.first.bounding_box()
+        check(
+            box is not None and box["width"] >= 44 and box["height"] >= 44,
+            "the hamburger opener is a 44x44 touch target "
+            + (f"({box['width']:.0f}x{box['height']:.0f})" if box else "(not measurable)"),
+        )
         opener = openers.first
 
         opener.click()
@@ -493,19 +496,14 @@ def main():
             f"THE DRAWER AND THE RAIL OFFER THE SAME SET ({sorted(rail)})",
         )
 
-        # ---- escape closes it, whichever control opened it --------------------
-        #
-        # Both openers are exercised, because they now share ONE open flag
-        # through a context. A second copy of that state would show here as a
-        # drawer that opens from the bar and will not close.
+        # ---- escape closes it ------------------------------------------------
         boss_page.set_viewport_size({"width": 390, "height": 844})
-        for index, who in ((0, "the hamburger"), (1, "the bottom bar's More")):
-            boss_page.goto(f"{BASE}/admin/users", wait_until="load")
-            boss_page.locator('button[aria-controls="operator-nav"]').nth(index).click()
-            boss_page.wait_for_selector("nav#operator-nav", timeout=5000)
-            boss_page.keyboard.press("Escape")
-            boss_page.wait_for_selector("nav#operator-nav", state="detached", timeout=5000)
-            check(True, f"Escape closes the drawer opened by {who}")
+        boss_page.goto(f"{BASE}/admin/users", wait_until="load")
+        boss_page.locator('button[aria-controls="operator-nav"]').click()
+        boss_page.wait_for_selector("nav#operator-nav", timeout=5000)
+        boss_page.keyboard.press("Escape")
+        boss_page.wait_for_selector("nav#operator-nav", state="detached", timeout=5000)
+        check(True, "Escape closes the drawer")
 
         browser.close()
 

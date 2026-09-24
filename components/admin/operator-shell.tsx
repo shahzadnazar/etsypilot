@@ -1,8 +1,6 @@
 import type { ReactNode } from 'react'
 import { OperatorBanner } from './operator-banner'
-import { OperatorDrawerProvider } from './operator-drawer'
 import { OperatorMobileBar } from './operator-mobile-bar'
-import { OperatorMobileTabs } from './operator-mobile-tabs'
 import { OperatorSidebar } from './operator-sidebar'
 import { OperatorTopBar } from './operator-top-bar'
 import type { OperatorNavGroup } from '@/domain/admin/navigation'
@@ -80,44 +78,24 @@ export function OperatorShell({
 
       <OperatorBanner email={email} role={role} />
 
-      {/*
-        * The provider wraps both mobile controls and nothing else. `groups` is
-        * still computed on the SERVER and handed down already filtered, so the
-        * browser bundle never learns which items this viewer was refused —
-        * putting the open/closed flag in a context is what keeps that true
-        * while letting the bar's "More" open the drawer.
-        */}
-      <OperatorDrawerProvider>
-        <div className="flex flex-1 overflow-hidden">
-          <OperatorSidebar groups={groups} />
+      <div className="flex flex-1 overflow-hidden">
+        <OperatorSidebar groups={groups} />
 
-          <div className="flex min-w-0 flex-1 flex-col">
-            <OperatorMobileBar groups={groups} />
-            <OperatorTopBar userInitials={userInitials} userName={userName} userEmail={email} />
-            {/*
-              * pb-20 below lg, for the bar that is now underneath.
-              *
-              * FOUND BY AXE once it swept every screen: target-size failed on
-              * /admin/usage, /admin/operations and /admin/permissions/MANAGER
-              * at 390 — and the obscuring neighbour, when the failures were
-              * traced rather than guessed at, was the new bottom tab bar in
-              * every case. The last control on a scrolled page ended up flush
-              * against it with no clear space, so a 24px target was a 12px
-              * target to anyone with a thumb.
-              *
-              * Two wrong fixes were tried first: widening the permission rows
-              * and padding the figure's badge. Both treated the symptom on one
-              * screen; one of them made the measurement WORSE. The bar is the
-              * cause, so the room belongs at the bottom of the scroller.
-              */}
-            <main id="main" className="flex-1 overflow-y-auto px-4 pb-20 pt-5 md:px-6 lg:pb-5">
-              <div className="mx-auto w-full max-w-content">{children}</div>
-            </main>
-          </div>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <OperatorMobileBar groups={groups} />
+          <OperatorTopBar userInitials={userInitials} userName={userName} userEmail={email} />
+          {/*
+            * No bottom padding reserved below lg any more.
+            *
+            * It was `pb-20` for the bottom tab bar, which content had to clear.
+            * The bar is gone — operator navigation is the rail and its drawer,
+            * for every role — so the room it needed goes with it.
+            */}
+          <main id="main" className="flex-1 overflow-y-auto px-4 py-5 md:px-6">
+            <div className="mx-auto w-full max-w-content">{children}</div>
+          </main>
         </div>
-
-        <OperatorMobileTabs groups={groups} />
-      </OperatorDrawerProvider>
+      </div>
     </div>
   )
 }
