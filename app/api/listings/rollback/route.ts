@@ -13,7 +13,7 @@
 import { NextResponse } from 'next/server'
 import { getChangeHistory } from '@/domain/change-history/service'
 import { applyRollback, RollbackRefused } from '@/domain/change-history/rollback'
-import { getProfile } from '@/domain/profile/service'
+import { auditActor } from '@/domain/profile/service'
 import { getSession } from '@/lib/auth'
 import { getEtsyService } from '@/lib/etsy'
 import { DEMO_NOW } from '@/lib/etsy/demo-dataset'
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
         listings,
         confirmedFingerprint: fingerprint,
         acknowledged,
-        actor: (await getProfile(session)).displayName,
+        actor: await auditActor(session),
         now: DEMO_NOW,
       })
     } catch (error) {

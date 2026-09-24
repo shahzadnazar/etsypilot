@@ -34,7 +34,7 @@ export function OperatorTopBar({
   userEmail,
 }: {
   userInitials: string
-  userName: string
+  userName: string | null
   userEmail: string
 }) {
   return (

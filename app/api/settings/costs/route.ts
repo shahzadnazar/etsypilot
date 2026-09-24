@@ -17,7 +17,7 @@ import { appendAuditRecord } from '@/domain/audit-log/store'
 import { costChangeRecord } from '@/domain/audit-log/events'
 import { parseCostSettings, CostValidationError } from '@/domain/costs/validate'
 import { readCostSettings, writeCostSettings } from '@/domain/costs/store'
-import { getProfile } from '@/domain/profile/service'
+import { auditActor } from '@/domain/profile/service'
 import { getSession } from '@/lib/auth'
 import { getEtsyService } from '@/lib/etsy'
 import { errorResponse } from '@/lib/errors/api'
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       const record = costChangeRecord({
         before,
         after,
-        actor: (await getProfile(session)).displayName,
+        actor: await auditActor(session),
         currency: shop.currency,
       })
       if (record) appendAuditRecord(ctx.shopId, record)

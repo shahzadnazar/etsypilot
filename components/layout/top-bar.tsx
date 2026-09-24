@@ -18,7 +18,7 @@ export function TopBar({
   isDemo: boolean
   userInitials: string
   /** For the accessible name. Initials alone are not one. */
-  userName: string
+  userName: string | null
   /** Shown in the menu. The one identifier that is never derived. */
   userEmail: string
 }) {

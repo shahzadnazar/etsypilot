@@ -72,3 +72,94 @@ describe('avatar initials are letters, and always two when there are two', () =>
     }
   })
 })
+
+/* ───────────────── no name is ever cut out of an email address ───────────── */
+
+import { existsSync, readFileSync } from 'node:fs'
+import { getProfile, auditActor } from '@/domain/profile/service'
+
+/** Source with comments removed, so a guard cannot match its own reasoning. */
+function code(file: string): string {
+  return readFileSync(file, 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '')
+}
+
+describe('an email address is not a name', () => {
+  /*
+   * FOUND ON THE RUNNING APP. An account with no name was greeted
+   *
+   *     Good morning, malikfarhanjamal7229
+   *
+   * which is the local part of the address. It is not a name, it is not what
+   * that person is called, and for a great many addresses it is a string
+   * nobody would want on their own screen: a year, a nickname, a former
+   * surname, a number someone was assigned.
+   */
+
+  it('CUTS NO NAME OUT OF AN ADDRESS, anywhere that resolves an identity', () => {
+    const suspects = [
+      'lib/auth/index.ts',
+      'domain/profile/service.ts',
+      'domain/auth/provision.ts',
+      'app/(dashboard)/layout.tsx',
+      'app/(dashboard)/dashboard/page.tsx',
+      'app/(admin)/layout.tsx',
+      'components/layout/user-menu.tsx',
+    ]
+    // Anti-vacuity: a renamed file would make every assertion below pass.
+    for (const file of suspects) expect(existsSync(file), file).toBe(true)
+
+    for (const file of suspects) {
+      expect(code(file), file).not.toMatch(/email[\w.]*\s*\.\s*split\s*\(\s*['"]@['"]/)
+      expect(code(file), file).not.toMatch(/split\s*\(\s*['"]@['"]\s*\)\s*\[\s*0\s*\]/)
+    }
+  })
+
+  it('catches the shape it is looking for when it is really there', () => {
+    /*
+     * The positive control. Without it this rule passes on a repository where
+     * the pattern was renamed rather than removed — and it is the rule, not
+     * the spelling, that has to survive.
+     */
+    const rule = /email[\w.]*\s*\.\s*split\s*\(\s*['"]@['"]/
+    expect(rule.test("const local = user.email.split('@')[0] ?? ''")).toBe(true)
+    expect(rule.test('const local = session.email.split("@")[0]')).toBe(true)
+    expect(rule.test("const domain = host.split('.')[0]")).toBe(false)
+  })
+
+  it('leaves the profile form EMPTY rather than pre-filled with a guess', async () => {
+    /*
+     * The second half of the same defect, and the worse one: the profile form
+     * pre-filled from the same derived value, so pressing Save would have
+     * STORED the fragment of the address as the seller's name — turning a
+     * display fallback into a fact about them.
+     */
+    const profile = await getProfile({ userId: 'no-such-user', name: null, email: 'a1b2@x.com' })
+    expect(profile.fullName).toBe('')
+    expect(profile.displayName).toBe('')
+    expect(profile.email).toBe('a1b2@x.com')
+  })
+
+  it('still uses a real name when there is one', async () => {
+    // The converse, so the assertion above is not satisfied by a function that
+    // returns empty strings for everybody.
+    const profile = await getProfile({ userId: 'no-such-user', name: 'Jo Ann', email: 'j@x.com' })
+    expect(profile.fullName).toBe('Jo Ann')
+    expect(profile.displayName).toBe('Jo')
+  })
+
+  it('names the ADDRESS in the audit log rather than nobody', async () => {
+    /*
+     * Where the empty string would be worse than the derived one. An audit
+     * entry has to say who acted, so the fallback is the address SHOWN AS AN
+     * ADDRESS — a different thing from an address dressed as a name.
+     */
+    expect(await auditActor({ userId: 'no-such-user', name: null, email: 'a1b2@x.com' })).toBe(
+      'a1b2@x.com',
+    )
+    expect(await auditActor({ userId: 'no-such-user', name: 'Jo Ann', email: 'j@x.com' })).toBe(
+      'Jo',
+    )
+  })
+})

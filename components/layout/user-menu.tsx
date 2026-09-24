@@ -31,9 +31,19 @@ export function UserMenu({
   prefetch,
 }: {
   userInitials: string
-  /** A display label. May be derived from the email when no name is set. */
-  userName: string
-  /** Always shown in full, so the label above it is never the only identifier. */
+  /**
+   * The name this account told us, or null when it has not told us one.
+   *
+   * NEVER SOMETHING DERIVED FROM THE ADDRESS. It used to arrive here as the
+   * email's local part, which put "malikfarhanjamal7229" above the address it
+   * was cut from — a line that says nothing the line below it does not, in the
+   * shape of a name.
+   *
+   * Null renders no name line at all. The address is then the identity, which
+   * it was already carrying.
+   */
+  userName: string | null
+  /** Always shown in full, so it is never the label above that identifies. */
   userEmail: string
   /**
    * Passed through to the Profile link. Defaults to Next's behaviour, which is
@@ -50,7 +60,7 @@ export function UserMenu({
   return (
     <details className="relative shrink-0 [&_summary::-webkit-details-marker]:hidden">
       <summary
-        title={`${userName} — account menu`}
+        title={userName ? `${userName} — account menu` : `${userEmail} — account menu`}
         className="flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-control text-[11px] font-semibold transition-shadow hover:shadow-[0_0_0_2px_var(--brand)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         style={{ background: '#241B12', color: '#F7F3ED' }}
       >
@@ -60,14 +70,22 @@ export function UserMenu({
 
       <div className="absolute right-0 z-50 mt-2 w-[260px] overflow-hidden rounded-card border border-line bg-surface shadow-[0_8px_24px_rgba(0,0,0,.12)]">
         <div className="flex flex-col gap-0.5 border-b border-line px-3.5 py-3">
-          <span className="truncate text-small font-semibold text-ink-1">{userName}</span>
+          {userName ? (
+            <span className="truncate text-small font-semibold text-ink-1">{userName}</span>
+          ) : null}
           {/*
-            * The full address, never truncated away to nothing. The label above
-            * is derived from it when no name is set, so this is the line that
-            * actually tells a seller which account they are in — which matters
-            * most to anyone who keeps a second one.
+            * The full address, never truncated away to nothing — and the only
+            * line here when no name is set. It is what tells a seller which
+            * account they are in, which matters most to anyone who keeps two.
             */}
-          <span className="truncate text-caption text-muted-1" title={userEmail}>
+          <span
+            className={
+              userName
+                ? 'truncate text-caption text-muted-1'
+                : 'truncate text-small font-semibold text-ink-1'
+            }
+            title={userEmail}
+          >
             {userEmail}
           </span>
         </div>

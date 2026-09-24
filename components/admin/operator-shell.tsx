@@ -58,7 +58,7 @@ export function OperatorShell({
   email: string
   role: string
   userInitials: string
-  userName: string
+  userName: string | null
 }) {
   return (
     <div className="flex min-h-screen flex-col bg-canvas">

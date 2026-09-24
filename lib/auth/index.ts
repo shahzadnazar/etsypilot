@@ -44,7 +44,8 @@ function isDemoAuth(): boolean {
 export interface Session {
   userId: string
   email: string
-  name: string
+  /** The name this account told us, or null when it has not told us one. */
+  name: string | null
   /** The shop this request operates on. Single-shop in MVP (D20). */
   shopId: string
   isDemo: boolean
@@ -59,22 +60,32 @@ const DEMO_SESSION: Session = {
 }
 
 /**
- * A display label for an account with no name.
+ * The stored name, or null. NEVER ANYTHING DERIVED FROM THE ADDRESS.
  *
- * `users.name` is null for every provisioned account — sign-up collects an
- * email and a password, and no screen sets a display name. Session.name is
- * typed `string`, so something has to go there, and the choice is between
- * inventing a name and deriving one.
+ * This used to return the local part of the email when `users.name` was null,
+ * and the argument for it was that the value is the seller's own text rather
+ * than something invented. What that missed is how it reads. An account with
+ * no name saw:
  *
- * The local part of the address it is, then. Derived, never invented: it is
- * the seller's own text, it is stable, and it cannot be mistaken for a name
- * the product was told. The menu shows the full address underneath, so the
- * abbreviation is never the only thing on screen.
+ *     Good morning, malikfarhanjamal7229
+ *
+ * which is not a name, is not what that person is called, and for a great many
+ * addresses is a string nobody would want greeting them on their own screen —
+ * a childhood nickname, a birth year, a former surname, a number. The product
+ * had not been told a name; the honest thing is to act like it.
+ *
+ * So the type is `string | null` now, and null travels all the way to the
+ * screens. Each one says what it means by it: the greeting drops the comma and
+ * the name, the account menu shows the address it was already showing, and the
+ * profile form offers an empty field to fill rather than a pre-filled guess it
+ * would have saved on the next submit.
+ *
+ * The AVATAR is a separate question and still falls back to the address, which
+ * is not a contradiction: two letters in a circle is a swatch, not a claim
+ * about what someone is called, and the alternative is a blank circle.
  */
-function displayName(user: { name: string | null; email: string }): string {
-  if (user.name && user.name.trim()) return user.name.trim()
-  const local = user.email.split('@')[0] ?? ''
-  return local || user.email
+function storedName(user: { name: string | null; email: string }): string | null {
+  return user.name?.trim() || null
 }
 
 /**
@@ -187,7 +198,7 @@ export const getSession = cache(async function getSession(): Promise<Session | n
   return {
     userId: user.id,
     email: user.email || email,
-    name: displayName(user),
+    name: storedName(user),
     shopId: shop.id,
     /*
      * FROM THE SHOP, not from the auth mode.

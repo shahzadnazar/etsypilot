@@ -25,7 +25,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
    * disagree about where a name ends. See lib/utils/name.ts for the two defects
    * that came out of running it over real shapes.
    */
-  const initials = initialsFor(session.name, session.email)
+  /*
+   * The avatar still falls back to the address, and that is not the thing
+   * lib/auth/index.ts stopped doing. Two letters in a circle is a swatch, not
+   * a claim about what someone is called; the alternative is a blank circle.
+   */
+  const initials = initialsFor(session.name ?? '', session.email)
 
   /*
    * Usage is passed structured, not pre-formatted, so the shell can render an

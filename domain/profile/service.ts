@@ -68,20 +68,48 @@ function firstWord(name: string): string {
   return name.split(/\s+/)[0] ?? name
 }
 
-export async function getProfile(session: {
+/**
+ * The session fields a profile is built from.
+ *
+ * `name` is nullable because an account that has not told us a name has not
+ * told us a name. It used to arrive here as the email's local part, which made
+ * both fields below pre-fill with a fragment of the address — and the form
+ * would have SAVED it on the next submit, turning a display fallback into a
+ * stored name nobody chose.
+ */
+export interface ProfileSession {
   userId: string
-  name: string
+  name: string | null
   email: string
-}): Promise<Profile> {
+}
+
+export async function getProfile(session: ProfileSession): Promise<Profile> {
   const stored = await readStored(session.userId)
   return {
-    fullName: stored?.fullName ?? session.name,
-    displayName: stored?.displayName ?? firstWord(session.name),
+    // Empty, not a guess. The form renders an empty required field, which asks
+    // the question instead of answering it wrongly.
+    fullName: stored?.fullName ?? session.name ?? '',
+    displayName: stored?.displayName ?? (session.name ? firstWord(session.name) : ''),
     email: session.email,
     emailVerified: true,
     language: 'English (UK)',
     timeZone: DISPLAY_TIMEZONE,
   }
+}
+
+/**
+ * Who to name beside an action in the seller's audit log.
+ *
+ * ONE FUNCTION, because there are two call sites and an audit log with two
+ * opinions about who someone is cannot be read. Falls back to the ADDRESS,
+ * which is not the same move as the one removed from lib/auth/index.ts: an
+ * email address is an identifier and is shown as one, where "malikfarhan7229"
+ * was an address pretending to be a name. An empty actor would be worse than
+ * either.
+ */
+export async function auditActor(session: ProfileSession): Promise<string> {
+  const profile = await getProfile(session)
+  return profile.displayName || session.email
 }
 
 /**

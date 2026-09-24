@@ -29,7 +29,7 @@ export function AppShell({
   lastSyncedAt: string | null
   isDemo: boolean
   userInitials: string
-  userName: string
+  userName: string | null
   userEmail: string
   plan: string
   usage: { used: number; limit: number }

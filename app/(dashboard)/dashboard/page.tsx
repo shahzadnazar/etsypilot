@@ -33,7 +33,14 @@ export default async function DashboardPage() {
   return (
     <>
       <PageHeader
-        title={`Good morning, ${greetingName(session.name)}`}
+        /*
+         * No name, no comma. An account that has not told us a name is
+         * greeted "Good morning" and nothing else, which reads perfectly
+         * well — and is what stopped the screen saying "Good morning,
+         * malikfarhanjamal7229" at someone who never chose that string as
+         * a name.
+         */
+        title={session.name ? `Good morning, ${greetingName(session.name)}` : 'Good morning'}
         subtitle={`${overview.shopName} · ${period} · all figures in ${overview.currency}`}
       />
 
