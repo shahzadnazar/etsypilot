@@ -50,7 +50,7 @@ export function ChangeRoleSubmit({ currentRole }: { currentRole: string }) {
 
   return (
     <>
-      <Button type="submit" variant="primary" disabled={sameAsNow}>
+      <Button ref={ref} type="submit" variant="primary" disabled={sameAsNow}>
         Change role
       </Button>
       {/*

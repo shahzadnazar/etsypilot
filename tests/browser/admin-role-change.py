@@ -265,6 +265,69 @@ def main():
         check("Demoted to user" in page.inner_text("body"), "the demotion is recorded as its own event")
         context.close()
 
+        # ---- a submission that changes nothing ------------------------------------
+        #
+        # FOUND BY HAND: a super admin submitted "Manager" for an account already
+        # holding manager, and the log read "manager -> manager  Promoted to
+        # manager". The change column was honest and the sentence was not.
+        #
+        # THREE THINGS HAVE TO HOLD AND ONLY THE THIRD IS SERVER-SIDE, which is why
+        # this block is here and not in a unit test. The disabling is a client
+        # component that listens to the form; the first version of it created a ref
+        # and never attached it, so it rendered a button that was never disabled and
+        # every unit assertion about it still passed. Nothing but a browser sees
+        # that.
+        context = browser.new_context()
+        page = context.new_page()
+        sign_in(page, *SUPER)
+        page.goto(f"{BASE}/admin/users/{subject_id}/role", wait_until="load")
+        page.wait_for_timeout(800)  # the control disables after hydration, not before
+
+        submit = "form:has(input[name='role']) button[type='submit']"
+        checked = page.eval_on_selector_all(
+            "input[name='role']", "els => els.filter(e => e.checked).map(e => e.value)"
+        )
+        check(checked == ["USER"], f"the form pre-selects the role already held ({checked})")
+        check(
+            page.eval_on_selector(submit, "e => e.disabled") is True,
+            "the submit is disabled while the selection would change nothing",
+        )
+        check(
+            "Already a user" in page.inner_text("form:has(input[name='role'])"),
+            "and it says why, rather than greying out with no explanation",
+        )
+        page.check("input[name='role'][value='MANAGER']")
+        page.wait_for_timeout(300)
+        check(
+            page.eval_on_selector(submit, "e => e.disabled") is False,
+            "and re-enables the moment the selection would change something",
+        )
+
+        # Back to the role already held, which is the whole point: what is about
+        # to be submitted is a no-op.
+        page.check("input[name='role'][value='USER']")
+        page.wait_for_timeout(300)
+
+        # Submitted anyway. A disabled button is a convenience, not a gate: a form
+        # can be posted without one, and with JavaScript off this button is never
+        # disabled at all. What the server does with it is the part that matters.
+        page.fill("form input[name='password']", SUPER[1])
+        page.eval_on_selector(submit, "e => { e.disabled = false; e.click() }")
+        page.wait_for_url("**/admin/users?changed=*", timeout=15000)
+
+        page.goto(f"{BASE}/admin/audit", wait_until="load")
+        log = page.inner_text("body")
+        check("No change" in log, "a submitted no-op is RECORDED, and recorded as 'No change'")
+        check(
+            "user \u2192 to user No change" in " ".join(log.split()),
+            "the change column stays honest: it still says user to user",
+        )
+        check(
+            log.count("Promoted to manager") == 1,
+            "and it did not add a second 'Promoted to manager' to the log",
+        )
+        context.close()
+
         browser.close()
 
 
