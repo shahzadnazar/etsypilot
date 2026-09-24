@@ -627,3 +627,88 @@ describe('the operator console writes no heading of its own', () => {
     }
   })
 })
+
+/* ───────────────────────── one table in the console ──────────────────────── */
+
+const OPERATOR_TABLE = 'components/admin/operator-table.tsx'
+
+describe('every operator table goes through one wrapper', () => {
+  /*
+   * Six pages wrote out the same scroll region by hand, and one class in it is
+   * load-bearing: `relative`. Without it the sr-only spans inside the rows —
+   * position:absolute, with no positioned ancestor to clip them — dragged the
+   * DOCUMENT's scroll width to 778px in a 390px viewport. Measured, and fixed
+   * in commit 81852ac.
+   *
+   * A fix remembered in six places is a fix that will be forgotten in the
+   * seventh, and this one is invisible at 1440.
+   */
+
+  it('finds the wrapper and the pages it is meant to be checking', () => {
+    expect(existsSync(OPERATOR_TABLE)).toBe(true)
+    expect(pagesUnder(ADMIN_ROOT).length).toBeGreaterThan(10)
+  })
+
+  it('LEAVES NO RAW <table UNDER app/(admin)', () => {
+    for (const page of pagesUnder(ADMIN_ROOT)) {
+      expect(code(page), page).not.toContain('<table')
+    }
+  })
+
+  it('still has six tables, so none was deleted rather than moved', () => {
+    /*
+     * The converse. "No raw <table" is satisfied by an operator console with
+     * no tables in it at all, which is exactly what a bad refactor produces.
+     */
+    const users = pagesUnder(ADMIN_ROOT).filter((page) => code(page).includes('<OperatorTable'))
+    expect(users.map((page) => page.replace(`${ADMIN_ROOT}/`, '')).sort()).toEqual([
+      'admin/audit/page.tsx',
+      'admin/etsy/page.tsx',
+      'admin/managers/page.tsx',
+      'admin/permissions/page.tsx',
+      'admin/subscriptions/page.tsx',
+      'admin/users/page.tsx',
+    ])
+  })
+
+  it('keeps `relative` in the ONE place, with the scroll plumbing', () => {
+    const wrapper = code(OPERATOR_TABLE)
+    for (const needed of [
+      'relative',
+      'overflow-x-auto',
+      'tabIndex={0}',
+      'role="region"',
+      'scrolls horizontally',
+      '<caption className="sr-only">',
+    ]) {
+      expect(wrapper, needed).toContain(needed)
+    }
+  })
+
+  it('takes its caption and its label as REQUIRED props', () => {
+    /*
+     * Optional is how a hurried copy-paste ships a table with no caption and
+     * no region label — the two things a screen-reader user has instead of the
+     * layout. The `?` is what this asserts is absent.
+     */
+    const wrapper = code(OPERATOR_TABLE)
+    expect(wrapper).toMatch(/\blabel: string\b/)
+    expect(wrapper).toMatch(/\bcaption: ReactNode\b/)
+    expect(wrapper).not.toMatch(/\b(label|caption|minWidth)\?:/)
+  })
+
+  it('gives every table a caption and a min-width of its own', () => {
+    // The widths were hand-picked per table and those numbers were right; it
+    // was the plumbing copied alongside them that was wrong.
+    const widths: number[] = []
+    for (const page of pagesUnder(ADMIN_ROOT)) {
+      const source = code(page)
+      if (!source.includes('<OperatorTable')) continue
+      expect(source, page).toMatch(/caption="[^"]{20,}"/)
+      const width = source.match(/minWidth=\{(\d+)\}/)
+      expect(width, page).not.toBeNull()
+      widths.push(Number(width![1]))
+    }
+    expect(widths.sort((a, b) => a - b)).toEqual([720, 760, 820, 860, 860, 900])
+  })
+})

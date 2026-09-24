@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { OperatorTable } from '@/components/admin/operator-table'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
 import { requireAdmin } from '@/domain/admin/access'
@@ -54,16 +55,11 @@ export default async function AdminManagersPage() {
           .
         </Card>
       ) : (
-        <Card
-          tabIndex={0}
-          role="region"
-          aria-label="Managers, scrolls horizontally"
-          className="relative w-full max-w-full overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+        <OperatorTable
+          label="Managers"
+          minWidth={720}
+          caption="Every account holding the manager role, with who promoted them and when."
         >
-          <table className="w-full min-w-[720px] border-collapse text-body">
-            <caption className="sr-only">
-              Every account holding the manager role, with who promoted them and when.
-            </caption>
             <thead>
               <tr className="bg-canvas-soft text-left text-label text-muted-1">
                 <th scope="col" className="px-4 py-2.5 font-semibold">Email</th>
@@ -104,8 +100,7 @@ export default async function AdminManagersPage() {
                 )
               })}
             </tbody>
-          </table>
-        </Card>
+        </OperatorTable>
       )}
 
       <p className="mt-3 max-w-prose text-caption leading-relaxed text-muted-1">

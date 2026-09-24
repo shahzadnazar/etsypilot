@@ -1,3 +1,4 @@
+import { OperatorTable } from '@/components/admin/operator-table'
 import { Card } from '@/components/ui/card'
 import { PageHeader } from '@/components/layout/page-header'
 import { requireAdmin } from '@/domain/admin/access'
@@ -317,19 +318,12 @@ function ConnectionTable({
   mayNameOwners: boolean
 }) {
   return (
-    <Card
-      tabIndex={0}
-      role="region"
-      aria-label="Etsy connections, scrolls horizontally"
-      /* `relative` so the sr-only cells cannot widen the document. See the note
-         in app/(admin)/admin/users/page.tsx. */
-      className="relative w-full max-w-full overflow-x-auto border-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+    <OperatorTable
+      label="Etsy connections"
+      minWidth={860}
+      borderless
+      caption="Every shop with its derived connection state, granted scopes, last sync and token expiry."
     >
-      <table className="w-full min-w-[860px] border-collapse text-body">
-        <caption className="sr-only">
-          Every shop with its derived connection state, granted scopes, last sync and token
-          expiry.
-        </caption>
         <thead>
           <tr className="bg-canvas-soft text-left text-label text-muted-1">
             <th scope="col" className="px-4 py-2.5 font-semibold">Shop</th>
@@ -404,8 +398,7 @@ function ConnectionTable({
             </tr>
           ))}
         </tbody>
-      </table>
-    </Card>
+    </OperatorTable>
   )
 }
 

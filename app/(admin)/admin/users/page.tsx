@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { OperatorTable } from '@/components/admin/operator-table'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
 import { requireAdmin } from '@/domain/admin/access'
@@ -102,36 +103,11 @@ export default async function AdminUsersPage({
           nothing that is not really in the database.
         </Card>
       ) : (
-        <Card
-          /*
-            * `relative`, and it is load-bearing rather than cosmetic.
-            *
-            * MEASURED at 390 and 768: this page scrolled SIDEWAYS as a whole,
-            * 778px of document in a 390px viewport, while the table inside its
-            * own scroll container behaved perfectly. The cause is the sr-only
-            * spans in the rows — "open account detail", "for <email>". Tailwind's
-            * sr-only is position:absolute, and an absolutely positioned element
-            * is only clipped by an overflow ancestor that is also its CONTAINING
-            * BLOCK. With no positioned ancestor between them and the root, those
-            * 1px spans sat at x=777 in the document and dragged the page's
-            * scroll width out with them.
-            *
-            * Making the scroll container positioned gives them a containing
-            * block that clips. Nothing about the announcement changes: they are
-            * still in the accessibility tree, still read, still not visible.
-            *
-            * Found by the operator shell's own 390/768 sweep, which is the
-            * point of D56 — a geometric defect is invisible at 1440.
-            */
-          tabIndex={0}
-          role="region"
-          aria-label="Accounts, scrolls horizontally"
-          className="relative w-full max-w-full overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+        <OperatorTable
+          label="Accounts"
+          minWidth={820}
+          caption="Every EtsyPilot account with its platform role, its shop and when it was created."
         >
-          <table className="w-full min-w-[820px] border-collapse text-body">
-            <caption className="sr-only">
-              Every EtsyPilot account with its platform role, its shop and when it was created.
-            </caption>
             <thead>
               <tr className="bg-canvas-soft text-left text-label text-muted-1">
                 <th scope="col" className="px-4 py-2.5 font-semibold">Email</th>
@@ -219,8 +195,7 @@ export default async function AdminUsersPage({
                 </tr>
               ))}
             </tbody>
-          </table>
-        </Card>
+        </OperatorTable>
       )}
 
       <p className="mt-3 max-w-prose text-caption leading-relaxed text-muted-1">

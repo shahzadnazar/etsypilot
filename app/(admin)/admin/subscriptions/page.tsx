@@ -1,3 +1,4 @@
+import { OperatorTable } from '@/components/admin/operator-table'
 import { Card } from '@/components/ui/card'
 import { PageHeader } from '@/components/layout/page-header'
 import { requireAdmin } from '@/domain/admin/access'
@@ -292,17 +293,12 @@ function SubscriptionTable({
   mayNameAccounts: boolean
 }) {
   return (
-    <Card
-      tabIndex={0}
-      role="region"
-      aria-label="Subscriptions, scrolls horizontally"
-      /* `relative` so the sr-only cells cannot widen the document. */
-      className="relative w-full max-w-full overflow-x-auto border-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+    <OperatorTable
+      label="Subscriptions"
+      minWidth={760}
+      borderless
+      caption="Every account with its plan, billing status, renewal date and trial end."
     >
-      <table className="w-full min-w-[760px] border-collapse text-body">
-        <caption className="sr-only">
-          Every account with its plan, billing status, renewal date and trial end.
-        </caption>
         <thead>
           <tr className="bg-canvas-soft text-left text-label text-muted-1">
             {mayNameAccounts ? (
@@ -373,8 +369,7 @@ function SubscriptionTable({
             )
           })}
         </tbody>
-      </table>
-    </Card>
+    </OperatorTable>
   )
 }
 

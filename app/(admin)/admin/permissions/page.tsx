@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { OperatorTable } from '@/components/admin/operator-table'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
 import { requireAdmin } from '@/domain/admin/access'
@@ -81,16 +82,11 @@ export default async function AdminPermissionsPage({
         </Card>
       ) : null}
 
-      <Card
-        tabIndex={0}
-        role="region"
-        aria-label="Permission matrix, scrolls horizontally"
-        className="relative w-full max-w-full overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+      <OperatorTable
+        label="Permission matrix"
+        minWidth={860}
+        caption="Each platform role and the permissions it holds. Super admin is not editable."
       >
-        <table className="w-full min-w-[860px] border-collapse text-body">
-          <caption className="sr-only">
-            Each platform role and the permissions it holds. Super admin is not editable.
-          </caption>
           <thead>
             <tr className="bg-canvas-soft text-left text-label text-muted-1">
               <th scope="col" className="px-4 py-2.5 font-semibold">Role</th>
@@ -152,8 +148,7 @@ export default async function AdminPermissionsPage({
               </tr>
             ))}
           </tbody>
-        </table>
-      </Card>
+      </OperatorTable>
 
       <Card className="mt-3 max-w-prose p-[18px] text-small leading-relaxed text-ink-2">
         <p className="font-semibold text-ink-1">Two capabilities are not in this table.</p>
