@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import { Card, CardBody } from '@/components/ui/card'
 import { requireAdmin } from '@/domain/admin/access'
 import { isRefusalReason, REFUSAL_COPY } from '@/domain/admin/audit'
 import {
@@ -92,81 +92,83 @@ export default async function EditRolePermissionsPage({
       <form action={changePermissions} className="mt-4 flex flex-col gap-4">
         <input type="hidden" name="role" value={role} />
 
-        <Card className="flex flex-col gap-4 p-[18px]">
-          <fieldset className="flex flex-col gap-2.5">
-            <legend className="pb-1.5 text-label font-semibold text-ink-1">
-              What this role may do
-            </legend>
-            {PERMISSIONS.map((permission) => (
-              <label key={permission} className="flex items-start gap-2.5 text-small text-ink-2">
-                <input
-                  type="checkbox"
-                  name="permissions"
-                  value={permission}
-                  defaultChecked={granted.includes(permission)}
-                  className="mt-px h-6 w-6 shrink-0 accent-[var(--brand)]"
-                />
-                <span>
-                  <span className="font-semibold text-ink-1">
-                    {PERMISSION_LABELS[permission].title}
+        <Card>
+          <CardBody className="flex flex-col gap-4">
+            <fieldset className="flex flex-col gap-2.5">
+              <legend className="pb-1.5 text-label font-semibold text-ink-1">
+                What this role may do
+              </legend>
+              {PERMISSIONS.map((permission) => (
+                <label key={permission} className="flex items-start gap-2.5 text-small text-ink-2">
+                  <input
+                    type="checkbox"
+                    name="permissions"
+                    value={permission}
+                    defaultChecked={granted.includes(permission)}
+                    className="mt-px h-6 w-6 shrink-0 accent-[var(--brand)]"
+                  />
+                  <span>
+                    <span className="font-semibold text-ink-1">
+                      {PERMISSION_LABELS[permission].title}
+                    </span>
+                    <span className="block text-caption leading-relaxed text-muted-1">
+                      {PERMISSION_LABELS[permission].detail}
+                    </span>
                   </span>
-                  <span className="block text-caption leading-relaxed text-muted-1">
-                    {PERMISSION_LABELS[permission].detail}
-                  </span>
+                </label>
+              ))}
+            </fieldset>
+
+            <div className="border-t border-line pt-3 text-caption leading-relaxed text-muted-1">
+              {/*
+                * Named, not silently absent. A reader who knows these exist
+                * should see that leaving them out was a decision.
+                */}
+              <span className="font-semibold text-ink-2">Not available to grant:</span>{' '}
+              {NON_DELEGATABLE.map((capability, index) => (
+                <span key={capability}>
+                  {index > 0 ? ', ' : ''}
+                  <code className="text-ink-2">{capability}</code> (
+                  {NON_DELEGATABLE_LABELS[capability].toLowerCase()})
                 </span>
+              ))}
+              . They answer only to super admin and cannot be delegated to anyone.
+            </div>
+
+            <div className="flex flex-col gap-1.5 border-t border-line pt-4">
+              <label htmlFor="password" className="text-label font-semibold text-ink-1">
+                Confirm your password
               </label>
-            ))}
-          </fieldset>
+              <p className="text-caption leading-relaxed text-muted-1">
+                Yours — {access.email}. The same check a role change asks for, for the same reason: a
+                session cookie shows someone signed in on this machine, not who is at the keyboard
+                now.
+              </p>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                autoComplete="current-password"
+                className="mt-1 h-11 rounded-control border border-line bg-surface px-3 text-body text-ink-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              />
+            </div>
 
-          <div className="border-t border-line pt-3 text-caption leading-relaxed text-muted-1">
-            {/*
-              * Named, not silently absent. A reader who knows these exist
-              * should see that leaving them out was a decision.
-              */}
-            <span className="font-semibold text-ink-2">Not available to grant:</span>{' '}
-            {NON_DELEGATABLE.map((capability, index) => (
-              <span key={capability}>
-                {index > 0 ? ', ' : ''}
-                <code className="text-ink-2">{capability}</code> (
-                {NON_DELEGATABLE_LABELS[capability].toLowerCase()})
+            <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
+              <Button type="submit" variant="primary">
+                Save permissions
+              </Button>
+              <Link
+                href="/admin/permissions"
+                className="inline-flex h-11 items-center rounded-control px-3.5 text-[12.5px] font-semibold text-ink-2 hover:bg-canvas-soft"
+              >
+                Cancel
+              </Link>
+              <span className="text-caption text-muted-1">
+                Recorded either way, including if the password is wrong.
               </span>
-            ))}
-            . They answer only to super admin and cannot be delegated to anyone.
-          </div>
-
-          <div className="flex flex-col gap-1.5 border-t border-line pt-4">
-            <label htmlFor="password" className="text-label font-semibold text-ink-1">
-              Confirm your password
-            </label>
-            <p className="text-caption leading-relaxed text-muted-1">
-              Yours — {access.email}. The same check a role change asks for, for the same reason: a
-              session cookie shows someone signed in on this machine, not who is at the keyboard
-              now.
-            </p>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              autoComplete="current-password"
-              className="mt-1 h-11 rounded-control border border-line bg-surface px-3 text-body text-ink-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-            />
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
-            <Button type="submit" variant="primary">
-              Save permissions
-            </Button>
-            <Link
-              href="/admin/permissions"
-              className="inline-flex h-11 items-center rounded-control px-3.5 text-[12.5px] font-semibold text-ink-2 hover:bg-canvas-soft"
-            >
-              Cancel
-            </Link>
-            <span className="text-caption text-muted-1">
-              Recorded either way, including if the password is wrong.
-            </span>
-          </div>
+            </div>
+          </CardBody>
         </Card>
       </form>
     </div>

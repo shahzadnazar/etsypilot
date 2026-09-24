@@ -1144,3 +1144,182 @@ describe('a methodology drawer credits the source the figure actually used', () 
     expect(types).toContain("UNAVAILABLE: 'Etsy does not expose it. We show nothing, not a guess.'")
   })
 })
+
+/* ──────────────── card internals, and the phone navigation ───────────────── */
+
+const MOBILE_TABS = 'components/admin/operator-mobile-tabs.tsx'
+const SECTION = 'components/admin/operator-section.tsx'
+
+describe('the operator console composes cards rather than padding them', () => {
+  /*
+   * A sixth identical helper. `function Section({ title, blurb, children })`
+   * existed verbatim in five operator pages and a sixth time in metrics,
+   * differing only by a missing `mb-3` — after the local `Nothing()` empty
+   * state and the table wrapper, which is three.
+   */
+
+  it('finds the shared section', () => {
+    expect(existsSync(SECTION)).toBe(true)
+  })
+
+  it('WRITES p-[18px] ON NO OPERATOR PAGE', () => {
+    for (const page of pagesUnder(ADMIN_ROOT)) {
+      expect(code(page), page).not.toContain('p-[18px]')
+    }
+  })
+
+  it('keeps the padding in the primitives', () => {
+    // The converse: "no p-[18px]" is satisfied by a console with no padding.
+    const card = code('components/ui/card.tsx')
+    expect(card.match(/p-\[18px\]/g)?.length ?? 0).toBeGreaterThanOrEqual(2)
+  })
+
+  it('declares no local Section helper anywhere', () => {
+    for (const page of pagesUnder(ADMIN_ROOT)) {
+      expect(code(page), page).not.toMatch(/^function Section\(/m)
+    }
+  })
+
+  it('keeps the heading LEVEL with the page and the SIZE with the component', () => {
+    /*
+     * CardTitle renders an h3 by default. Adopting it unchanged would have
+     * made every operator section skip from the page's h1 to an h3 — a worse
+     * outcome than the hand-rolled heading it replaced. And its 15px would
+     * have grown six screens' section titles as a side effect of a refactor
+     * nobody asked to change the design.
+     */
+    const card = code('components/ui/card.tsx')
+    expect(card).toMatch(/as: Tag = 'h3'/)
+    const section = code(SECTION)
+    expect(section).toContain('as="h2"')
+    expect(section).toContain('text-small')
+  })
+})
+
+describe('the phone gets a tab bar built from the viewer, not from five', () => {
+  /*
+   * operator-mobile-bar.tsx argued against a bottom bar, and it was right
+   * about the thing it was arguing against: five FIXED tabs would show a
+   * manager four that 404 them — D54a, and worse here, because a padlocked
+   * operator screen is reconnaissance (D91).
+   *
+   * The fix is not to hard-code five. It is to build the bar from the same
+   * visibleOperatorNav list the rail and the drawer render.
+   */
+
+  it('finds the bar', () => {
+    expect(existsSync(MOBILE_TABS)).toBe(true)
+  })
+
+  it('TAKES ALREADY-FILTERED GROUPS, never an access object', () => {
+    const bar = code(MOBILE_TABS)
+    expect(bar).toContain('groups: OperatorNavGroup[]')
+    for (const forbidden of ['AdminAccess', 'canSuperAdminOnly', 'access.can', 'requireAdmin']) {
+      expect(bar, forbidden).not.toContain(forbidden)
+    }
+  })
+
+  it('HARD-CODES NO HREF, so nothing in it can be a link the viewer is refused', () => {
+    const bar = code(MOBILE_TABS)
+    expect(bar).not.toMatch(/['"]\/admin\//)
+    expect(bar).toContain('groups.flatMap')
+  })
+
+  it('draws no padlock, no disabled tab and no "soon"', () => {
+    const bar = code(MOBILE_TABS)
+    for (const forbidden of ['disabled', 'Lock', 'padlock', 'soon', 'aria-disabled']) {
+      expect(bar.toLowerCase(), forbidden).not.toContain(forbidden.toLowerCase())
+    }
+  })
+
+  it('renders nothing at all for a viewer with nothing', () => {
+    // The bar shrinks; it does not pad. A viewer with no visible items gets
+    // no bar, rather than a bar of five dead slots.
+    expect(visibleOperatorNav(viewer()).flatMap((group) => group.items)).toEqual([])
+    expect(code(MOBILE_TABS)).toContain('if (items.length === 0) return null')
+  })
+
+  it('shows at most four, then More, and only when More reveals something', () => {
+    const bar = code(MOBILE_TABS)
+    expect(bar).toContain('items.slice(0, 4)')
+    expect(bar).toContain('items.length - shown.length')
+    expect(bar).toContain('hidden > 0 ?')
+  })
+
+  it('opens the EXISTING drawer rather than a second one', () => {
+    const bar = code(MOBILE_TABS)
+    expect(bar).toContain('useOperatorDrawer')
+    expect(bar).toContain('aria-controls="operator-nav"')
+    // And the drawer no longer owns the flag privately.
+    expect(code(DRAWER)).toContain('useOperatorDrawer')
+    expect(code(DRAWER)).not.toMatch(/useState\(false\)/)
+  })
+
+  it('shrinks to exactly what each role may see', () => {
+    /*
+     * The measured half. A MANAGER with users.view sees two operator screens,
+     * so the bar holds two tabs and no More — there is nothing behind it.
+     * A SUPER_ADMIN sees ten, so the bar holds four and a More for six.
+     */
+    const forManager = visibleOperatorNav(viewer('users.view')).flatMap((g) => g.items)
+    expect(forManager.map((item) => item.href)).toEqual(['/admin/users', '/admin/managers'])
+    expect(Math.max(0, forManager.length - 4)).toBe(0)
+
+    const everything = {
+      can: () => true,
+      canSuperAdminOnly: () => true,
+    }
+    const forSuper = visibleOperatorNav(everything).flatMap((g) => g.items)
+    expect(forSuper.length).toBeGreaterThan(4)
+    expect(forSuper.slice(0, 4).every((item) => item.href.startsWith('/admin/'))).toBe(true)
+  })
+
+  it('keeps every target at the 44px the design asks for', () => {
+    const bar = code(MOBILE_TABS)
+    expect(bar.match(/min-h-\[44px\]/g)?.length ?? 0).toBeGreaterThanOrEqual(2)
+  })
+})
+
+/* ──────────────────── the heading outline of a screen ────────────────────── */
+
+describe('no operator screen skips a heading level', () => {
+  /*
+   * FOUND BY SWEEPING THE RENDERED PAGES, not by reading the source. A sweep
+   * of the ten operator screens reported the outline "H1,H3" on /admin/audit
+   * and a clean "H1,H2,H2…" everywhere else — and /admin/audit was the one
+   * page whose entire content was an empty state.
+   *
+   * EmptyState rendered an h3. Every page that uses it has exactly one other
+   * heading, the h1 in PageHeader, so the h3 skipped a level — on 23 seller
+   * screens as well as the nine operator ones that had just adopted it. A
+   * screen reader navigating by heading is told there is a section it missed.
+   */
+
+  it('renders the page-level empty AND error states as an h2', () => {
+    /*
+     * Both, because they are the same shape in the same place: a block that
+     * replaces a page's content under that page's single h1. ErrorState had
+     * the same skip and the sweep could not see it — an error boundary only
+     * renders when something throws.
+     */
+    const states = code('components/ui/states.tsx')
+    expect(states.match(/<h2 className="text-section text-ink-1">/g)?.length).toBe(2)
+    expect(states).not.toContain('<h3 className="text-section')
+  })
+
+  it('renders the QUIET one as an h3, because it sits under a section h2', () => {
+    // Not the same fix twice. The quiet form is inside a panel whose own title
+    // is an h2, so h3 is the level that does NOT skip there.
+    const states = code('components/ui/states.tsx')
+    expect(states).toContain('<h3 className="text-small font-semibold text-ink-1">')
+  })
+
+  it('leaves the size alone: this changed what the heading is, not how it looks', () => {
+    expect(code('components/ui/states.tsx')).toContain('text-section')
+  })
+
+  it('gives every operator section an h2 under the page h1', () => {
+    const section = code(SECTION)
+    expect(section).toContain('as="h2"')
+  })
+})

@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import { OperatorBanner } from './operator-banner'
+import { OperatorDrawerProvider } from './operator-drawer'
 import { OperatorMobileBar } from './operator-mobile-bar'
+import { OperatorMobileTabs } from './operator-mobile-tabs'
 import { OperatorSidebar } from './operator-sidebar'
 import { OperatorTopBar } from './operator-top-bar'
 import type { OperatorNavGroup } from '@/domain/admin/navigation'
@@ -78,17 +80,28 @@ export function OperatorShell({
 
       <OperatorBanner email={email} role={role} />
 
-      <div className="flex flex-1 overflow-hidden">
-        <OperatorSidebar groups={groups} />
+      {/*
+        * The provider wraps both mobile controls and nothing else. `groups` is
+        * still computed on the SERVER and handed down already filtered, so the
+        * browser bundle never learns which items this viewer was refused —
+        * putting the open/closed flag in a context is what keeps that true
+        * while letting the bar's "More" open the drawer.
+        */}
+      <OperatorDrawerProvider>
+        <div className="flex flex-1 overflow-hidden">
+          <OperatorSidebar groups={groups} />
 
-        <div className="flex min-w-0 flex-1 flex-col">
-          <OperatorMobileBar groups={groups} />
-          <OperatorTopBar userInitials={userInitials} userName={userName} userEmail={email} />
-          <main id="main" className="flex-1 overflow-y-auto px-4 py-5 md:px-6">
-            <div className="mx-auto w-full max-w-content">{children}</div>
-          </main>
+          <div className="flex min-w-0 flex-1 flex-col">
+            <OperatorMobileBar groups={groups} />
+            <OperatorTopBar userInitials={userInitials} userName={userName} userEmail={email} />
+            <main id="main" className="flex-1 overflow-y-auto px-4 py-5 md:px-6">
+              <div className="mx-auto w-full max-w-content">{children}</div>
+            </main>
+          </div>
         </div>
-      </div>
+
+        <OperatorMobileTabs groups={groups} />
+      </OperatorDrawerProvider>
     </div>
   )
 }

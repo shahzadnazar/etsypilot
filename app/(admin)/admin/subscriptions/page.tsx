@@ -1,8 +1,9 @@
+import { OperatorSection } from '@/components/admin/operator-section'
 import { OperatorFigure } from '@/components/admin/operator-figure'
 import { Money, Numeric } from '@/components/ui/numeric'
 import { EmptyState } from '@/components/ui/states'
 import { OperatorTable } from '@/components/admin/operator-table'
-import { Card } from '@/components/ui/card'
+import { Card, CardBody } from '@/components/ui/card'
 import { PageHeader } from '@/components/layout/page-header'
 import { requireAdmin } from '@/domain/admin/access'
 import {
@@ -76,7 +77,7 @@ export default async function SubscriptionsPage() {
         />
       ) : (
         <>
-          <Section
+          <OperatorSection
             title="By plan"
             blurb="Every plan, including the ones nobody is on. A breakdown that hides an empty tier reads exactly like one written before that tier existed."
           >
@@ -128,9 +129,9 @@ export default async function SubscriptionsPage() {
                 </Card>
               ))}
             </div>
-          </Section>
+          </OperatorSection>
 
-          <Section
+          <OperatorSection
             title="By status"
             blurb="Every status the billing model defines, plus accounts with no record at all."
           >
@@ -147,9 +148,9 @@ export default async function SubscriptionsPage() {
                 </Card>
               ))}
             </div>
-          </Section>
+          </OperatorSection>
 
-          <Section
+          <OperatorSection
             title="Needs attention"
             blurb="Past due and cancelling, worst first. Both are worth knowing before the seller writes in — and neither is fixable from here."
           >
@@ -195,9 +196,9 @@ export default async function SubscriptionsPage() {
                 })}
               </ul>
             )}
-          </Section>
+          </OperatorSection>
 
-          <Section
+          <OperatorSection
             title={`Trials ending within ${TRIAL_ENDING_SOON_DAYS} days`}
             blurb="Only accounts whose status is actually trialing. A trial date left behind on an account that has since converted is a stale column, not a trial."
           >
@@ -228,51 +229,34 @@ export default async function SubscriptionsPage() {
                 ))}
               </ul>
             )}
-          </Section>
+          </OperatorSection>
 
-          <Section title="Every account" blurb="Alphabetical by address.">
+          <OperatorSection title="Every account" blurb="Alphabetical by address.">
             <SubscriptionTable rows={rows} mayNameAccounts={mayNameAccounts} />
-          </Section>
+          </OperatorSection>
         </>
       )}
 
-      <Card className="mt-4 p-[18px]">
-        <h2 className="text-small font-semibold text-ink-1">What this screen cannot do</h2>
-        <p className="mt-1 max-w-prose text-caption leading-relaxed text-muted-1">
-          No upgrade, no downgrade, no cancel, no reactivate and no comp. Subscriptions are not on
-          the operator write allowlist, so a plan change from here is refused by construction
-          rather than by policy — a test walks every module reachable from this page and fails if
-          one could write the table.
-        </p>
-        <p className="mt-2 max-w-prose text-caption leading-relaxed text-muted-1">
-          There is no refund either, and that is not a missing feature: EtsyPilot does not refund
-          plan charges at all, for anyone, and the seller agrees to that when they agree to the
-          charge. Nothing in the product can produce a credit, so nothing here can show one.
-        </p>
+      <Card className="mt-4">
+        <CardBody>
+          <h2 className="text-small font-semibold text-ink-1">What this screen cannot do</h2>
+          <p className="mt-1 max-w-prose text-caption leading-relaxed text-muted-1">
+            No upgrade, no downgrade, no cancel, no reactivate and no comp. Subscriptions are not on
+            the operator write allowlist, so a plan change from here is refused by construction
+            rather than by policy — a test walks every module reachable from this page and fails if
+            one could write the table.
+          </p>
+          <p className="mt-2 max-w-prose text-caption leading-relaxed text-muted-1">
+            There is no refund either, and that is not a missing feature: EtsyPilot does not refund
+            plan charges at all, for anyone, and the seller agrees to that when they agree to the
+            charge. Nothing in the product can produce a credit, so nothing here can show one.
+          </p>
+        </CardBody>
       </Card>
     </>
   )
 }
 
-/* ------------------------------------------------------------------ pieces */
-
-function Section({
-  title,
-  blurb,
-  children,
-}: {
-  title: string
-  blurb: string
-  children: React.ReactNode
-}) {
-  return (
-    <Card className="mb-3 p-[18px]">
-      <h2 className="text-small font-semibold text-ink-1">{title}</h2>
-      <p className="mt-0.5 max-w-prose text-caption leading-relaxed text-muted-1">{blurb}</p>
-      <div className="mt-3">{children}</div>
-    </Card>
-  )
-}
 
 
 function toneInk(tone: 'ok' | 'info' | 'warn' | 'danger'): string {

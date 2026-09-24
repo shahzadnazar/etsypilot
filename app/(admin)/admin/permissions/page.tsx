@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { OperatorTable } from '@/components/admin/operator-table'
 import { PageHeader } from '@/components/layout/page-header'
-import { Card } from '@/components/ui/card'
+import { Card, CardBody } from '@/components/ui/card'
 import { requireAdmin } from '@/domain/admin/access'
 import {
   EDITABLE_ROLES,
@@ -150,25 +150,27 @@ export default async function AdminPermissionsPage({
           </tbody>
       </OperatorTable>
 
-      <Card className="mt-3 max-w-prose p-[18px] text-small leading-relaxed text-ink-2">
-        <p className="font-semibold text-ink-1">Two capabilities are not in this table.</p>
-        <ul className="mt-1.5 flex flex-col gap-1">
-          {NON_DELEGATABLE.map((capability) => (
-            <li key={capability} className="flex gap-2">
-              <span aria-hidden className="text-muted-2">·</span>
-              <span>
-                <code className="text-ink-1">{capability}</code> —{' '}
-                {NON_DELEGATABLE_LABELS[capability]}
-              </span>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-2 text-muted-1">
-          They answer only to super admin and cannot be granted to anyone, including by this
-          screen. Both are how someone covers their tracks: whoever can change these permissions
-          can grant themselves the rest, and whoever can read the audit log can see who noticed.
-          They are named here so their absence reads as a decision rather than a gap.
-        </p>
+      <Card className="mt-3 max-w-prose">
+        <CardBody className="text-small leading-relaxed text-ink-2">
+          <p className="font-semibold text-ink-1">Two capabilities are not in this table.</p>
+          <ul className="mt-1.5 flex flex-col gap-1">
+            {NON_DELEGATABLE.map((capability) => (
+              <li key={capability} className="flex gap-2">
+                <span aria-hidden className="text-muted-2">·</span>
+                <span>
+                  <code className="text-ink-1">{capability}</code> —{' '}
+                  {NON_DELEGATABLE_LABELS[capability]}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-muted-1">
+            They answer only to super admin and cannot be granted to anyone, including by this
+            screen. Both are how someone covers their tracks: whoever can change these permissions
+            can grant themselves the rest, and whoever can read the audit log can see who noticed.
+            They are named here so their absence reads as a decision rather than a gap.
+          </p>
+        </CardBody>
       </Card>
 
       {/*
@@ -184,32 +186,34 @@ export default async function AdminPermissionsPage({
         * one is rendered, so a stale entry is visible to whoever is looking at
         * the screen, not just to whoever runs the suite.
         */}
-      <Card className="mt-3 max-w-prose p-[18px] text-small leading-relaxed text-ink-2">
-        <p className="font-semibold text-ink-1">
-          Every permission above is a permission to LOOK.
-        </p>
-        <p className="mt-1.5">
-          Whatever is ticked, this panel can change exactly {OPERATOR_WRITABLE.length} things, and
-          none of them is seller data:
-        </p>
-        <ul className="mt-1.5 flex flex-col gap-1">
-          {OPERATOR_WRITABLE.map((entry) => (
-            <li key={entry.table} className="flex gap-2">
-              <span aria-hidden className="text-muted-2">·</span>
-              <span>
-                <span className="font-semibold text-ink-1">{entry.label}</span>
-                <span className="block text-caption leading-relaxed text-muted-1">{entry.why}</span>
-              </span>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-2.5 font-semibold text-ink-1">Which means it cannot do these.</p>
-        <p className="mt-1 text-muted-1">
-          {FORECLOSED_BY_DESIGN.join(' · ')}. Each is a real support request and each is refused
-          by design, not by omission — a seller&rsquo;s data is written by the seller, or not at
-          all. Adding any of them means changing the rule, its guard and its decision record
-          together.
-        </p>
+      <Card className="mt-3 max-w-prose">
+        <CardBody className="text-small leading-relaxed text-ink-2">
+          <p className="font-semibold text-ink-1">
+            Every permission above is a permission to LOOK.
+          </p>
+          <p className="mt-1.5">
+            Whatever is ticked, this panel can change exactly {OPERATOR_WRITABLE.length} things, and
+            none of them is seller data:
+          </p>
+          <ul className="mt-1.5 flex flex-col gap-1">
+            {OPERATOR_WRITABLE.map((entry) => (
+              <li key={entry.table} className="flex gap-2">
+                <span aria-hidden className="text-muted-2">·</span>
+                <span>
+                  <span className="font-semibold text-ink-1">{entry.label}</span>
+                  <span className="block text-caption leading-relaxed text-muted-1">{entry.why}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2.5 font-semibold text-ink-1">Which means it cannot do these.</p>
+          <p className="mt-1 text-muted-1">
+            {FORECLOSED_BY_DESIGN.join(' · ')}. Each is a real support request and each is refused
+            by design, not by omission — a seller&rsquo;s data is written by the seller, or not at
+            all. Adding any of them means changing the rule, its guard and its decision record
+            together.
+          </p>
+        </CardBody>
       </Card>
 
       <p className="mt-3 max-w-prose text-caption leading-relaxed text-muted-1">

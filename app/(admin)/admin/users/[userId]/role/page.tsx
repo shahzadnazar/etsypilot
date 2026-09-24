@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { PageHeader } from '@/components/layout/page-header'
-import { Card } from '@/components/ui/card'
+import { Card, CardBody } from '@/components/ui/card'
 import { requireAdmin } from '@/domain/admin/access'
 import { isRefusalReason, REFUSAL_COPY } from '@/domain/admin/audit'
 import { ASSIGNABLE_ROLES, roleSource } from '@/domain/admin/roles'
@@ -125,91 +125,95 @@ export default async function ChangeRolePage({
          * available outcome. The domain action refuses it too; this is the
          * half that explains it.
          */
-        <Card className="mt-4 p-[18px] text-small leading-relaxed text-ink-2">
-          <p className="font-semibold text-ink-1">This role cannot be changed here.</p>
-          <p className="mt-1.5">
-            {target.email} resolves to {target.resolvedRole.replace('_', ' ').toLowerCase()} from an
-            environment variable, not from the database. The panel writes one column and that
-            column does not decide this account&rsquo;s access — editing it would change the row
-            and change nothing else.
-          </p>
-          <p className="mt-1.5 text-muted-1">
-            Change it by editing <code className="text-ink-2">SUPER_ADMIN_EMAILS</code> or{' '}
-            <code className="text-ink-2">ADMIN_EMAILS</code> where this deployment is configured,
-            and restarting. That is deliberate: it is what stops a database compromise from
-            minting an administrator, and it is the way back in if this panel is ever locked.
-          </p>
+        <Card className="mt-4">
+          <CardBody className="text-small leading-relaxed text-ink-2">
+            <p className="font-semibold text-ink-1">This role cannot be changed here.</p>
+            <p className="mt-1.5">
+              {target.email} resolves to {target.resolvedRole.replace('_', ' ').toLowerCase()} from an
+              environment variable, not from the database. The panel writes one column and that
+              column does not decide this account&rsquo;s access — editing it would change the row
+              and change nothing else.
+            </p>
+            <p className="mt-1.5 text-muted-1">
+              Change it by editing <code className="text-ink-2">SUPER_ADMIN_EMAILS</code> or{' '}
+              <code className="text-ink-2">ADMIN_EMAILS</code> where this deployment is configured,
+              and restarting. That is deliberate: it is what stops a database compromise from
+              minting an administrator, and it is the way back in if this panel is ever locked.
+            </p>
+          </CardBody>
         </Card>
       ) : (
         <form action={changeRole} className="mt-4 flex flex-col gap-4">
           <input type="hidden" name="targetUserId" value={target.id} />
 
-          <Card className="flex flex-col gap-4 p-[18px]">
-            <fieldset className="flex flex-col gap-2">
-              <legend className="pb-1.5 text-label font-semibold text-ink-1">New role</legend>
-              {ASSIGNABLE_ROLES.map((role) => (
-                <label key={role} className="flex items-start gap-2.5 text-small text-ink-2">
-                  <input
-                    type="radio"
-                    name="role"
-                    value={role}
-                    required
-                    defaultChecked={currentRole === role}
-                    className="mt-px h-6 w-6 shrink-0 accent-[var(--brand)]"
-                  />
-                  <span>
-                    <span className="font-semibold text-ink-1">
-                      {role === 'MANAGER' ? 'Manager' : 'User'}
+          <Card>
+            <CardBody className="flex flex-col gap-4">
+              <fieldset className="flex flex-col gap-2">
+                <legend className="pb-1.5 text-label font-semibold text-ink-1">New role</legend>
+                {ASSIGNABLE_ROLES.map((role) => (
+                  <label key={role} className="flex items-start gap-2.5 text-small text-ink-2">
+                    <input
+                      type="radio"
+                      name="role"
+                      value={role}
+                      required
+                      defaultChecked={currentRole === role}
+                      className="mt-px h-6 w-6 shrink-0 accent-[var(--brand)]"
+                    />
+                    <span>
+                      <span className="font-semibold text-ink-1">
+                        {role === 'MANAGER' ? 'Manager' : 'User'}
+                      </span>
+                      <span className="block text-caption leading-relaxed text-muted-1">
+                        {role === 'MANAGER'
+                          ? 'Sees the account list. No money, no seller data, no audit log.'
+                          : 'No operator access at all. /admin does not exist for them.'}
+                      </span>
                     </span>
-                    <span className="block text-caption leading-relaxed text-muted-1">
-                      {role === 'MANAGER'
-                        ? 'Sees the account list. No money, no seller data, no audit log.'
-                        : 'No operator access at all. /admin does not exist for them.'}
-                    </span>
-                  </span>
+                  </label>
+                ))}
+                {/*
+                 * Only two options, and there is no third for a reason worth
+                 * stating on the screen an operator is looking at: the list is
+                 * ASSIGNABLE_ROLES, and super admin and admin are not in it.
+                 */}
+                <p className="pt-1 text-caption leading-relaxed text-muted-1">
+                  Super admin and admin are not offered here. They are set by environment variable so
+                  that writing a database row cannot grant them — including from this panel.
+                </p>
+              </fieldset>
+
+              <div className="flex flex-col gap-1.5 border-t border-line pt-4">
+                <label htmlFor="password" className="text-label font-semibold text-ink-1">
+                  Confirm your password
                 </label>
-              ))}
-              {/*
-               * Only two options, and there is no third for a reason worth
-               * stating on the screen an operator is looking at: the list is
-               * ASSIGNABLE_ROLES, and super admin and admin are not in it.
-               */}
-              <p className="pt-1 text-caption leading-relaxed text-muted-1">
-                Super admin and admin are not offered here. They are set by environment variable so
-                that writing a database row cannot grant them — including from this panel.
-              </p>
-            </fieldset>
+                <p className="text-caption leading-relaxed text-muted-1">
+                  Yours — {access.email} — not theirs. A session cookie shows someone signed in on
+                  this machine at some point; it cannot show who is at the keyboard now.
+                </p>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  autoComplete="current-password"
+                  className="mt-1 h-11 rounded-control border border-line bg-surface px-3 text-body text-ink-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                />
+              </div>
 
-            <div className="flex flex-col gap-1.5 border-t border-line pt-4">
-              <label htmlFor="password" className="text-label font-semibold text-ink-1">
-                Confirm your password
-              </label>
-              <p className="text-caption leading-relaxed text-muted-1">
-                Yours — {access.email} — not theirs. A session cookie shows someone signed in on
-                this machine at some point; it cannot show who is at the keyboard now.
-              </p>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                autoComplete="current-password"
-                className="mt-1 h-11 rounded-control border border-line bg-surface px-3 text-body text-ink-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-              />
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
-              <ChangeRoleSubmit currentRole={currentRole} />
-              <Link
-                href="/admin/users"
-                className="inline-flex h-11 items-center rounded-control px-3.5 text-[12.5px] font-semibold text-ink-2 hover:bg-canvas-soft"
-              >
-                Cancel
-              </Link>
-              <span className="text-caption text-muted-1">
-                Recorded either way, including if the password is wrong.
-              </span>
-            </div>
+              <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
+                <ChangeRoleSubmit currentRole={currentRole} />
+                <Link
+                  href="/admin/users"
+                  className="inline-flex h-11 items-center rounded-control px-3.5 text-[12.5px] font-semibold text-ink-2 hover:bg-canvas-soft"
+                >
+                  Cancel
+                </Link>
+                <span className="text-caption text-muted-1">
+                  Recorded either way, including if the password is wrong.
+                </span>
+              </div>
+            </CardBody>
           </Card>
         </form>
       )}

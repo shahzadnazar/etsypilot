@@ -1,6 +1,7 @@
+import { OperatorSection } from '@/components/admin/operator-section'
 import { Numeric } from '@/components/ui/numeric'
 import { EmptyState } from '@/components/ui/states'
-import { Card } from '@/components/ui/card'
+import { Card, CardBody } from '@/components/ui/card'
 import { PageHeader } from '@/components/layout/page-header'
 import { OperatorFigure } from '@/components/admin/operator-figure'
 import { requireAdmin } from '@/domain/admin/access'
@@ -87,7 +88,7 @@ export default async function AiActivityPage() {
       ) : (
         <>
           <div className="mb-3 grid gap-3 lg:grid-cols-2">
-            <Section title="By kind" blurb="Every kind the product can generate, including the ones at zero.">
+            <OperatorSection title="By kind" blurb="Every kind the product can generate, including the ones at zero.">
               <ul className="flex flex-col gap-2">
                 {GENERATION_KINDS.map((kind) => (
                   <Bar
@@ -98,9 +99,9 @@ export default async function AiActivityPage() {
                   />
                 ))}
               </ul>
-            </Section>
+            </OperatorSection>
 
-            <Section
+            <OperatorSection
               title="By status"
               blurb="A draft is undecided — not a rejection. There is no failure state, because a generation that failed leaves no record."
             >
@@ -114,10 +115,10 @@ export default async function AiActivityPage() {
                   />
                 ))}
               </ul>
-            </Section>
+            </OperatorSection>
           </div>
 
-          <Section
+          <OperatorSection
             title="Acceptance"
             blurb="Accepted as a share of the generations a seller has actually decided on."
           >
@@ -127,7 +128,7 @@ export default async function AiActivityPage() {
               figure={totals.acceptance}
               suffix="%"
             />
-          </Section>
+          </OperatorSection>
 
           {totals.unrecognised > 0 ? (
             <Card
@@ -148,7 +149,7 @@ export default async function AiActivityPage() {
             </Card>
           ) : null}
 
-          <Section
+          <OperatorSection
             title="By shop"
             blurb="Busiest first. Only shops that generated something in the window appear."
           >
@@ -167,45 +168,28 @@ export default async function AiActivityPage() {
                 ))}
               </ul>
             )}
-          </Section>
+          </OperatorSection>
         </>
       )}
 
-      <Card className="mt-4 p-[18px]">
-        <h2 className="text-small font-semibold text-ink-1">What these figures are, and are not</h2>
-        <p className="mt-1 max-w-prose text-caption leading-relaxed text-muted-1">
-          {COST_STATEMENT}
-        </p>
-        <p className="mt-2 max-w-prose text-caption leading-relaxed text-muted-1">
-          Nothing on this screen changes anything. There is no way to retry a generation, approve
-          a draft on a seller&rsquo;s behalf, or clear their history — AI drafts reach Etsy through
-          the bulk editor&rsquo;s confirmation gate or not at all, and the operator area is outside
-          that gate by construction.
-        </p>
+      <Card className="mt-4">
+        <CardBody>
+          <h2 className="text-small font-semibold text-ink-1">What these figures are, and are not</h2>
+          <p className="mt-1 max-w-prose text-caption leading-relaxed text-muted-1">
+            {COST_STATEMENT}
+          </p>
+          <p className="mt-2 max-w-prose text-caption leading-relaxed text-muted-1">
+            Nothing on this screen changes anything. There is no way to retry a generation, approve
+            a draft on a seller&rsquo;s behalf, or clear their history — AI drafts reach Etsy through
+            the bulk editor&rsquo;s confirmation gate or not at all, and the operator area is outside
+            that gate by construction.
+          </p>
+        </CardBody>
       </Card>
     </>
   )
 }
 
-/* ------------------------------------------------------------------ pieces */
-
-function Section({
-  title,
-  blurb,
-  children,
-}: {
-  title: string
-  blurb: string
-  children: React.ReactNode
-}) {
-  return (
-    <Card className="mb-3 p-[18px]">
-      <h2 className="text-small font-semibold text-ink-1">{title}</h2>
-      <p className="mt-0.5 max-w-prose text-caption leading-relaxed text-muted-1">{blurb}</p>
-      <div className="mt-3">{children}</div>
-    </Card>
-  )
-}
 
 
 /**

@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Menu, X } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { isCurrentNavItem, type OperatorNavGroup } from '@/domain/admin/navigation'
+import { useOperatorDrawer } from './operator-drawer'
 
 /*
  * The operator panel below `lg`: a 56px bar and a drawer.
@@ -15,15 +16,21 @@ import { isCurrentNavItem, type OperatorNavGroup } from '@/domain/admin/navigati
  * different order, and expressing that as a pile of hidden/lg:flex on shared
  * markup produces something nobody can read or change safely.
  *
- * ── NO BOTTOM TAB BAR, DELIBERATELY ───────────────────────────────────────
+ * ── THERE IS A BOTTOM TAB BAR NOW, AND IT IS NOT FIVE FIXED TABS ──────────
  *
- * The seller app has five fixed tabs because every seller has the same five
- * destinations. An operator's do not: a manager holding one permission has one
- * screen, a super admin has all of them. A tab bar whose contents change per
- * viewer is a tab bar that moves under people between sessions, and with one
- * visible item it would be a single tab pretending to be navigation. The
- * drawer carries everything, and it carries the same set the desktop rail does
- * — which is the property that actually matters.
+ * This file used to argue against one, and it was right about the thing it
+ * was arguing against: the seller app has FIVE FIXED tabs because every
+ * seller has the same five destinations, and an operator's are not fixed. A
+ * hard-coded bar would show a manager four tabs that 404 them.
+ *
+ * What it got wrong was the conclusion. operator-mobile-tabs.tsx builds the
+ * bar from the same visibleOperatorNav list this drawer renders, so it holds
+ * the first four screens THIS viewer may reach and shrinks when there are
+ * fewer. Its fifth slot opens this drawer, through the shared context rather
+ * than a second copy of the state.
+ *
+ * The drawer still carries everything, with each item's blurb, which the bar
+ * has no room for — so the hamburger above is not redundant.
  *
  * Every control is 44×44 (D56/D61), which is the design's own figure and
  * comfortably past WCAG 2.2's 24×24. The negative margins are the design's
@@ -31,12 +38,17 @@ import { isCurrentNavItem, type OperatorNavGroup } from '@/domain/admin/navigati
  * looking inset.
  */
 export function OperatorMobileBar({ groups }: { groups: OperatorNavGroup[] }) {
-  const [open, setOpen] = useState(false)
+  /*
+   * The open flag is shared, not owned. The bottom tab bar's "More" opens this
+   * same drawer, and a second copy of the state is how two navigations come to
+   * disagree about what is open.
+   */
+  const { open, setOpen } = useOperatorDrawer()
   const pathname = usePathname()
 
   // Any navigation closes it. Without this the drawer stays open over the page
   // it just navigated to, which reads as the tap having failed.
-  useEffect(() => setOpen(false), [pathname])
+  useEffect(() => setOpen(false), [pathname, setOpen])
 
   // Escape closes it, and the page behind must not scroll while it is open.
   useEffect(() => {
@@ -51,7 +63,7 @@ export function OperatorMobileBar({ groups }: { groups: OperatorNavGroup[] }) {
       document.removeEventListener('keydown', onKey)
       document.body.style.overflow = previous
     }
-  }, [open])
+  }, [open, setOpen])
 
   /*
    * The open item's label, so the bar says where you are.

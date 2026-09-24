@@ -1,8 +1,9 @@
+import { OperatorSection } from '@/components/admin/operator-section'
 import { OperatorFigure } from '@/components/admin/operator-figure'
 import { Numeric } from '@/components/ui/numeric'
 import { EmptyState } from '@/components/ui/states'
 import { OperatorTable } from '@/components/admin/operator-table'
-import { Card } from '@/components/ui/card'
+import { Card, CardBody } from '@/components/ui/card'
 import { PageHeader } from '@/components/layout/page-header'
 import { requireAdmin } from '@/domain/admin/access'
 import type { AdminConnectionRow } from '@/lib/repositories/admin-reads-every-shop'
@@ -136,7 +137,7 @@ export default async function EtsyConnectionsPage() {
             </Card>
           ) : null}
 
-          <Section
+          <OperatorSection
             title="Needs attention"
             blurb="Everything that is not healthy, most urgent first. Every one of these is resolved by the seller."
           >
@@ -149,9 +150,9 @@ export default async function EtsyConnectionsPage() {
             ) : (
               <ConnectionTable rows={attention} mayNameOwners={mayNameOwners} />
             )}
-          </Section>
+          </OperatorSection>
 
-          <Section
+          <OperatorSection
             title={`Expiring within ${EXPIRING_SOON_DAYS} days`}
             blurb="Authorisations that lapse soon and can still be saved by the seller opening the app. Already-expired shops are in the table above, not here."
           >
@@ -183,14 +184,14 @@ export default async function EtsyConnectionsPage() {
                 ))}
               </ul>
             )}
-          </Section>
+          </OperatorSection>
 
-          <Section
+          <OperatorSection
             title="Every shop"
             blurb="Alphabetical. Demo shops are listed and marked — a demo shop is not a broken connection."
           >
             <ConnectionTable rows={assessed} mayNameOwners={mayNameOwners} />
-          </Section>
+          </OperatorSection>
         </>
       )}
 
@@ -204,7 +205,7 @@ export default async function EtsyConnectionsPage() {
         * the same sentence the seller will see — and D46: the copy is written
         * once and read everywhere.
         */}
-      <Section
+      <OperatorSection
         title="What the seller sees when a reconnection ends"
         blurb="Verbatim from the same constant the OAuth routes use, so nothing here is a paraphrase that can drift from what they are actually shown."
       >
@@ -218,46 +219,29 @@ export default async function EtsyConnectionsPage() {
             </li>
           ))}
         </ul>
-      </Section>
+      </OperatorSection>
 
-      <Card className="mt-4 p-[18px]">
-        <h2 className="text-small font-semibold text-ink-1">What this screen cannot do</h2>
-        <p className="mt-1 max-w-prose text-caption leading-relaxed text-muted-1">
-          Not a list of things not built yet. The operator area holds no Etsy connection of its
-          own and can make no call to Etsy, read or write — so there is no reconnect, no token
-          refresh, no force-sync and no revoke here, for anyone, including a super admin. A test
-          walks every module reachable from this page and fails if one could obtain an Etsy
-          service at all.
-        </p>
-        <p className="mt-2 max-w-prose text-caption leading-relaxed text-muted-1">
-          It also means this page cannot tell you whether a token still works — only what we last
-          recorded about it. A grant the seller revoked on Etsy this morning still reads as
-          authorised here until something tries to use it.
-        </p>
+      <Card className="mt-4">
+        <CardBody>
+          <h2 className="text-small font-semibold text-ink-1">What this screen cannot do</h2>
+          <p className="mt-1 max-w-prose text-caption leading-relaxed text-muted-1">
+            Not a list of things not built yet. The operator area holds no Etsy connection of its
+            own and can make no call to Etsy, read or write — so there is no reconnect, no token
+            refresh, no force-sync and no revoke here, for anyone, including a super admin. A test
+            walks every module reachable from this page and fails if one could obtain an Etsy
+            service at all.
+          </p>
+          <p className="mt-2 max-w-prose text-caption leading-relaxed text-muted-1">
+            It also means this page cannot tell you whether a token still works — only what we last
+            recorded about it. A grant the seller revoked on Etsy this morning still reads as
+            authorised here until something tries to use it.
+          </p>
+        </CardBody>
       </Card>
     </>
   )
 }
 
-/* ------------------------------------------------------------------ pieces */
-
-function Section({
-  title,
-  blurb,
-  children,
-}: {
-  title: string
-  blurb: string
-  children: React.ReactNode
-}) {
-  return (
-    <Card className="mb-3 p-[18px]">
-      <h2 className="text-small font-semibold text-ink-1">{title}</h2>
-      <p className="mt-0.5 max-w-prose text-caption leading-relaxed text-muted-1">{blurb}</p>
-      <div className="mt-3">{children}</div>
-    </Card>
-  )
-}
 
 
 /** Tone to a token pair (D1). Never a literal, and never colour alone. */

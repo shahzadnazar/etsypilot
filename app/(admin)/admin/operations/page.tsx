@@ -1,7 +1,8 @@
+import { OperatorSection } from '@/components/admin/operator-section'
 import { OperatorFigure } from '@/components/admin/operator-figure'
 import { Numeric } from '@/components/ui/numeric'
 import { EmptyState } from '@/components/ui/states'
-import { Card } from '@/components/ui/card'
+import { Card, CardBody } from '@/components/ui/card'
 import { PageHeader } from '@/components/layout/page-header'
 import { requireAdmin } from '@/domain/admin/access'
 import {
@@ -108,7 +109,7 @@ export default async function OperationsPage() {
             </div>
           </section>
 
-          <Section
+          <OperatorSection
             title={`Stuck in applying for over ${STUCK_AFTER_MINUTES} minutes`}
             blurb="An apply is rate-limited against Etsy, so a large job legitimately takes a while. Past this window it is not running, it is stuck."
           >
@@ -139,9 +140,9 @@ export default async function OperationsPage() {
                 ))}
               </ul>
             )}
-          </Section>
+          </OperatorSection>
 
-          <Section
+          <OperatorSection
             title="Why items failed"
             blurb="Grouped by reason. Forty listings failing for one reason is one finding; reading it forty times buries the second reason underneath."
           >
@@ -168,9 +169,9 @@ export default async function OperationsPage() {
                 ))}
               </ul>
             )}
-          </Section>
+          </OperatorSection>
 
-          <Section
+          <OperatorSection
             title="Needs attention"
             blurb="Partially succeeded, failed, or still applying. Partial success first: a wholly failed job is obvious and the seller knows, while a partial one leaves a shop in a state nobody chose."
           >
@@ -194,9 +195,9 @@ export default async function OperationsPage() {
                 ))}
               </ul>
             )}
-          </Section>
+          </OperatorSection>
 
-          <Section title="Every operation" blurb="Newest first, capped at the most recent 200.">
+          <OperatorSection title="Every operation" blurb="Newest first, capped at the most recent 200.">
             <ul className="flex flex-col gap-3">
               {assessed.map((entry) => (
                 <li key={entry.row.id} className="border-b border-line pb-3 last:border-0 last:pb-0">
@@ -204,52 +205,35 @@ export default async function OperationsPage() {
                 </li>
               ))}
             </ul>
-          </Section>
+          </OperatorSection>
         </>
       )}
 
-      <Card className="mt-4 p-[18px]">
-        <h2 className="text-small font-semibold text-ink-1">What this screen cannot do</h2>
-        <p className="mt-1 max-w-prose text-caption leading-relaxed text-muted-1">
-          There is no retry, no clear, no cancel and no rollback here, and that is not work left
-          undone. Every one of those is an Etsy write against a real seller&rsquo;s live listings,
-          and a bulk change reaches Etsy only through the seller confirming a diff they have read.
-          An operator control here would be a way to the far end of that gate without its near
-          end.
-        </p>
-        <p className="mt-2 max-w-prose text-caption leading-relaxed text-muted-1">
-          A stuck or failed job is the seller&rsquo;s to retry from the bulk editor, where they
-          see what will change before it does. The reasons above are what makes that conversation
-          possible.
-        </p>
-        <p className="mt-2 max-w-prose text-caption leading-relaxed text-muted-1">
-          The listing values a job was changing are not read either — not the old title and not
-          the new one. A failure is diagnosed by its reason, not by the seller&rsquo;s copy.
-        </p>
+      <Card className="mt-4">
+        <CardBody>
+          <h2 className="text-small font-semibold text-ink-1">What this screen cannot do</h2>
+          <p className="mt-1 max-w-prose text-caption leading-relaxed text-muted-1">
+            There is no retry, no clear, no cancel and no rollback here, and that is not work left
+            undone. Every one of those is an Etsy write against a real seller&rsquo;s live listings,
+            and a bulk change reaches Etsy only through the seller confirming a diff they have read.
+            An operator control here would be a way to the far end of that gate without its near
+            end.
+          </p>
+          <p className="mt-2 max-w-prose text-caption leading-relaxed text-muted-1">
+            A stuck or failed job is the seller&rsquo;s to retry from the bulk editor, where they
+            see what will change before it does. The reasons above are what makes that conversation
+            possible.
+          </p>
+          <p className="mt-2 max-w-prose text-caption leading-relaxed text-muted-1">
+            The listing values a job was changing are not read either — not the old title and not
+            the new one. A failure is diagnosed by its reason, not by the seller&rsquo;s copy.
+          </p>
+        </CardBody>
       </Card>
     </>
   )
 }
 
-/* ------------------------------------------------------------------ pieces */
-
-function Section({
-  title,
-  blurb,
-  children,
-}: {
-  title: string
-  blurb: string
-  children: React.ReactNode
-}) {
-  return (
-    <Card className="mb-3 p-[18px]">
-      <h2 className="text-small font-semibold text-ink-1">{title}</h2>
-      <p className="mt-0.5 max-w-prose text-caption leading-relaxed text-muted-1">{blurb}</p>
-      <div className="mt-3">{children}</div>
-    </Card>
-  )
-}
 
 
 /**

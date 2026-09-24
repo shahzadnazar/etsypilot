@@ -1,5 +1,6 @@
+import { OperatorSection } from '@/components/admin/operator-section'
 import { EmptyState } from '@/components/ui/states'
-import { Card } from '@/components/ui/card'
+import { Card, CardBody } from '@/components/ui/card'
 import { PageHeader } from '@/components/layout/page-header'
 import { MonthlySeriesChart } from '@/components/charts/monthly-series'
 import { OperatorFigure } from '@/components/admin/operator-figure'
@@ -80,35 +81,38 @@ export default async function MetricsPage() {
         />
       ) : (
         <>
-          <Card className="mb-3 p-[18px]">
-            <h2 className="text-small font-semibold text-ink-1">Signups</h2>
-            <p className="mt-0.5 max-w-prose text-caption leading-relaxed text-muted-1">
-              The last {MONTHS} months, counted from when each account was created.
-            </p>
-            <div className="mt-3">
-              {/*
-                * The one chart on the screen, because the SHAPE over time is
-                * the thing. A month with no signups is plotted at zero rather
-                * than breaking the line — the month was in the window we
-                * queried, so nought is an observation, not an absence.
-                */}
-              <MonthlySeriesChart
-                points={signups}
-                stroke="var(--success)"
-                description={`Accounts created in each of the last ${MONTHS} months. ${formatNumber(signedUpInWindow)} in total across the window.`}
-                caption={
-                  <>
-                    Counted, not modelled. {formatNumber(signedUpInWindow)} accounts created in
-                    this window, of {formatNumber(metrics.totalAccounts)} in total — the
-                    difference is accounts created before it.
-                  </>
-                }
-              />
-            </div>
+          <Card className="mb-3">
+            <CardBody>
+              <h2 className="text-small font-semibold text-ink-1">Signups</h2>
+              <p className="mt-0.5 max-w-prose text-caption leading-relaxed text-muted-1">
+                The last {MONTHS} months, counted from when each account was created.
+              </p>
+              <div className="mt-3">
+                {/*
+                  * The one chart on the screen, because the SHAPE over time is
+                  * the thing. A month with no signups is plotted at zero rather
+                  * than breaking the line — the month was in the window we
+                  * queried, so nought is an observation, not an absence.
+                  */}
+                <MonthlySeriesChart
+                  points={signups}
+                  stroke="var(--success)"
+                  description={`Accounts created in each of the last ${MONTHS} months. ${formatNumber(signedUpInWindow)} in total across the window.`}
+                  caption={
+                    <>
+                      Counted, not modelled. {formatNumber(signedUpInWindow)} accounts created in
+                      this window, of {formatNumber(metrics.totalAccounts)} in total — the
+                      difference is accounts created before it.
+                    </>
+                  }
+                />
+              </div>
+            </CardBody>
           </Card>
 
           <div className="mb-3 grid gap-3 lg:grid-cols-2">
-            <Section
+            <OperatorSection
+              spaced={false}
               title="Onboarding"
               blurb="Every state, including the ones at zero, plus anything stored that the code does not recognise."
             >
@@ -128,25 +132,28 @@ export default async function MetricsPage() {
               >
                 {ONBOARDING_CAVEAT}
               </p>
-            </Section>
+            </OperatorSection>
 
-            <Section
+            <OperatorSection
+              spaced={false}
               title="Shops"
               blurb="A demo shop is neither connected nor unconnected — it is a shop with no Etsy behind it by design, and counting it as either would misstate the number this section exists to report."
             >
               <Buckets buckets={shops} metricKey="operatorShopMix" />
-            </Section>
+            </OperatorSection>
           </div>
 
           <div className="mb-3 grid gap-3 lg:grid-cols-2">
-            <Section
+            <OperatorSection
+              spaced={false}
               title="Plan mix"
               blurb="Every plan, plus accounts that have never been through billing — which is not the same as choosing the free tier."
             >
               <Buckets buckets={plans} metricKey="operatorPlanMix" />
-            </Section>
+            </OperatorSection>
 
-            <Section
+            <OperatorSection
+              spaced={false}
               title="Trial conversion"
               blurb="Of the accounts with a trial still visible on their subscription, the share now paying."
             >
@@ -161,47 +168,30 @@ export default async function MetricsPage() {
                   </>
                 }
               />
-            </Section>
+            </OperatorSection>
           </div>
         </>
       )}
 
-      <Card className="mt-4 p-[18px]">
-        <h2 className="text-small font-semibold text-ink-1">What is on this screen, and what is not</h2>
-        <p className="mt-1 max-w-prose text-caption leading-relaxed text-muted-1">
-          Totals only. No account is named here and none can be — every figure arrives as a count,
-          and nothing on this page has a field an address could occupy. If you need to know who an
-          account is, that is what the accounts list is for, and it is gated separately.
-        </p>
-        <p className="mt-2 max-w-prose text-caption leading-relaxed text-muted-1">
-          Nothing here is a forecast. Every number is a count of rows that exist, over a window
-          that is stated — there is no projection, no target and no trend line fitted through the
-          signups.
-        </p>
+      <Card className="mt-4">
+        <CardBody>
+          <h2 className="text-small font-semibold text-ink-1">What is on this screen, and what is not</h2>
+          <p className="mt-1 max-w-prose text-caption leading-relaxed text-muted-1">
+            Totals only. No account is named here and none can be — every figure arrives as a count,
+            and nothing on this page has a field an address could occupy. If you need to know who an
+            account is, that is what the accounts list is for, and it is gated separately.
+          </p>
+          <p className="mt-2 max-w-prose text-caption leading-relaxed text-muted-1">
+            Nothing here is a forecast. Every number is a count of rows that exist, over a window
+            that is stated — there is no projection, no target and no trend line fitted through the
+            signups.
+          </p>
+        </CardBody>
       </Card>
     </>
   )
 }
 
-/* ------------------------------------------------------------------ pieces */
-
-function Section({
-  title,
-  blurb,
-  children,
-}: {
-  title: string
-  blurb: string
-  children: React.ReactNode
-}) {
-  return (
-    <Card className="p-[18px]">
-      <h2 className="text-small font-semibold text-ink-1">{title}</h2>
-      <p className="mt-0.5 max-w-prose text-caption leading-relaxed text-muted-1">{blurb}</p>
-      <div className="mt-3">{children}</div>
-    </Card>
-  )
-}
 
 /**
  * A list of counts with proportion bars.

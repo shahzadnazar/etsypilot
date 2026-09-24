@@ -1,9 +1,10 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { OperatorSection } from '@/components/admin/operator-section'
 import { Numeric } from '@/components/ui/numeric'
 import { EmptyState } from '@/components/ui/states'
 import { PageHeader } from '@/components/layout/page-header'
-import { Card } from '@/components/ui/card'
+import { Card, CardBody } from '@/components/ui/card'
 import { OperatorFigure } from '@/components/admin/operator-figure'
 import { requireAdmin } from '@/domain/admin/access'
 import {
@@ -99,57 +100,41 @@ export default async function AccountDetailPage({
 
       <div className="mt-4 flex flex-col gap-3">
         {sections.map((section) => (
-          <Section key={section.key} title={section.title} blurb={section.blurb}>
+          <OperatorSection spaced={false} key={section.key} title={section.title} blurb={section.blurb}>
             <SectionBody
               section={section.key}
               detail={detail}
               mayChangeRole={mayChangeRole}
             />
-          </Section>
+          </OperatorSection>
         ))}
       </div>
 
-      <Card className="mt-4 p-[18px]">
-        <h2 className="text-small font-semibold text-ink-1">What this panel cannot do</h2>
-        <p className="mt-1 max-w-prose text-caption leading-relaxed text-muted-1">
-          Not a list of things not built yet. The operator area can write four things — a platform
-          role and three audit logs — and a test walks every module reachable from here to prove
-          it. These are refused by construction, for every operator including a super admin:
-        </p>
-        <ul className="mt-2 flex flex-wrap gap-1.5">
-          {FORECLOSED_BY_DESIGN.map((item) => (
-            <li
-              key={item}
-              className="rounded-[6px] border border-line bg-canvas-soft px-2 py-0.5 text-caption text-muted-1"
-            >
-              {item}
-            </li>
-          ))}
-        </ul>
+      <Card className="mt-4">
+        <CardBody>
+          <h2 className="text-small font-semibold text-ink-1">What this panel cannot do</h2>
+          <p className="mt-1 max-w-prose text-caption leading-relaxed text-muted-1">
+            Not a list of things not built yet. The operator area can write four things — a platform
+            role and three audit logs — and a test walks every module reachable from here to prove
+            it. These are refused by construction, for every operator including a super admin:
+          </p>
+          <ul className="mt-2 flex flex-wrap gap-1.5">
+            {FORECLOSED_BY_DESIGN.map((item) => (
+              <li
+                key={item}
+                className="rounded-[6px] border border-line bg-canvas-soft px-2 py-0.5 text-caption text-muted-1"
+              >
+                {item}
+              </li>
+            ))}
+          </ul>
+        </CardBody>
       </Card>
     </div>
   )
 }
 
 /* ------------------------------------------------------------------ shell */
-
-function Section({
-  title,
-  blurb,
-  children,
-}: {
-  title: string
-  blurb: string
-  children: React.ReactNode
-}) {
-  return (
-    <Card className="p-[18px]">
-      <h2 className="text-small font-semibold text-ink-1">{title}</h2>
-      <p className="mt-0.5 max-w-prose text-caption leading-relaxed text-muted-1">{blurb}</p>
-      <div className="mt-3">{children}</div>
-    </Card>
-  )
-}
 
 /**
  * One label and one value.
@@ -197,8 +182,6 @@ function Absent({ reason }: { reason: string }) {
     </>
   )
 }
-
-/** A whole section with nothing in it, said in words rather than left blank. */
 
 /* ------------------------------------------------------------- the bodies */
 

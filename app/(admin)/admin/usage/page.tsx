@@ -1,7 +1,8 @@
+import { OperatorSection } from '@/components/admin/operator-section'
 import { OperatorFigure } from '@/components/admin/operator-figure'
 import { Numeric } from '@/components/ui/numeric'
 import { EmptyState } from '@/components/ui/states'
-import { Card } from '@/components/ui/card'
+import { Card, CardBody } from '@/components/ui/card'
 import { PageHeader } from '@/components/layout/page-header'
 import { requireAdmin } from '@/domain/admin/access'
 import {
@@ -96,7 +97,7 @@ export default async function UsagePage() {
             <BandSummary title="AI generations this month" bands={aiBands} />
           </div>
 
-          <Section
+          <OperatorSection
             title="At, over, or near a limit"
             blurb={`Anything past its cap, exactly at it, or within ${Math.round(NEAR_THRESHOLD * 100)}% of it. Worst first.`}
           >
@@ -122,10 +123,10 @@ export default async function UsagePage() {
                 ))}
               </ul>
             )}
-          </Section>
+          </OperatorSection>
 
           {unknownPlan.length > 0 ? (
-            <Section
+            <OperatorSection
               title="Nothing to measure against"
               blurb="Shops whose owner has no billing record at all. They are not on the free tier — they have never been through billing — so there is no limit to compare a count with."
             >
@@ -143,10 +144,10 @@ export default async function UsagePage() {
                   </li>
                 ))}
               </ul>
-            </Section>
+            </OperatorSection>
           ) : null}
 
-          <Section title="Every shop" blurb="Alphabetical. Demo shops are counted and marked.">
+          <OperatorSection title="Every shop" blurb="Alphabetical. Demo shops are counted and marked.">
             <ul className="flex flex-col gap-3">
               {assessed.map((entry) => (
                 <li key={entry.row.shopId} className="border-b border-line pb-3 last:border-0 last:pb-0">
@@ -154,48 +155,31 @@ export default async function UsagePage() {
                 </li>
               ))}
             </ul>
-          </Section>
+          </OperatorSection>
         </>
       )}
 
-      <Card className="mt-4 p-[18px]">
-        <h2 className="text-small font-semibold text-ink-1">What this screen cannot do</h2>
-        <p className="mt-1 max-w-prose text-caption leading-relaxed text-muted-1">
-          No quota reset, no top-up, no grant of extra generations and no exemption.{' '}
-          <code>usage_records</code> and <code>subscriptions</code>{' '}
-          are not on the operator write allowlist, so any of those from here is refused by
-          construction rather than by policy.
-        </p>
-        <p className="mt-2 max-w-prose text-caption leading-relaxed text-muted-1">
-          A failed AI generation is never counted, and that is structural rather than filtered:
-          the generation record has no failure state, so a generation that failed leaves no row.
-          A rejected draft does count — the seller declined something that was produced, and it
-          spent the allowance.
-        </p>
+      <Card className="mt-4">
+        <CardBody>
+          <h2 className="text-small font-semibold text-ink-1">What this screen cannot do</h2>
+          <p className="mt-1 max-w-prose text-caption leading-relaxed text-muted-1">
+            No quota reset, no top-up, no grant of extra generations and no exemption.{' '}
+            <code>usage_records</code> and <code>subscriptions</code>{' '}
+            are not on the operator write allowlist, so any of those from here is refused by
+            construction rather than by policy.
+          </p>
+          <p className="mt-2 max-w-prose text-caption leading-relaxed text-muted-1">
+            A failed AI generation is never counted, and that is structural rather than filtered:
+            the generation record has no failure state, so a generation that failed leaves no row.
+            A rejected draft does count — the seller declined something that was produced, and it
+            spent the allowance.
+          </p>
+        </CardBody>
       </Card>
     </>
   )
 }
 
-/* ------------------------------------------------------------------ pieces */
-
-function Section({
-  title,
-  blurb,
-  children,
-}: {
-  title: string
-  blurb: string
-  children: React.ReactNode
-}) {
-  return (
-    <Card className="mb-3 p-[18px]">
-      <h2 className="text-small font-semibold text-ink-1">{title}</h2>
-      <p className="mt-0.5 max-w-prose text-caption leading-relaxed text-muted-1">{blurb}</p>
-      <div className="mt-3">{children}</div>
-    </Card>
-  )
-}
 
 
 function toneInk(tone: 'ok' | 'info' | 'warn' | 'danger'): string {
@@ -220,21 +204,23 @@ function toneInk(tone: 'ok' | 'info' | 'warn' | 'danger'): string {
  */
 function BandSummary({ title, bands }: { title: string; bands: BandCount[] }) {
   return (
-    <Card className="p-[18px]">
-      <h2 className="text-small font-semibold text-ink-1">{title}</h2>
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
-        {bands.map(({ band, count }) => (
-          <div key={band} className="flex flex-col gap-1">
-            <OperatorFigure
-              frame="bare"
-              metricKey="operatorUsage"
-              label={BAND_COPY[band].label}
-              figure={count}
-              valueClassName={`text-[20px] font-semibold leading-none ${toneInk(BAND_COPY[band].tone)}`}
-            />
-          </div>
-        ))}
-      </div>
+    <Card>
+      <CardBody>
+        <h2 className="text-small font-semibold text-ink-1">{title}</h2>
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
+          {bands.map(({ band, count }) => (
+            <div key={band} className="flex flex-col gap-1">
+              <OperatorFigure
+                frame="bare"
+                metricKey="operatorUsage"
+                label={BAND_COPY[band].label}
+                figure={count}
+                valueClassName={`text-[20px] font-semibold leading-none ${toneInk(BAND_COPY[band].tone)}`}
+              />
+            </div>
+          ))}
+        </div>
+      </CardBody>
     </Card>
   )
 }
