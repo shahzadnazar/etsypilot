@@ -319,59 +319,127 @@ server.
 
 ## Step 3 — Token store
 
-Only now does `DATABASE_URL` + live Etsy work. Implement `DatabaseTokenStore` in
-`lib/etsy/tokens.ts`, replacing the three `refuse()` calls:
-
-```ts
-export class DatabaseTokenStore implements TokenStore {
-  describe() { return 'Tokens are stored encrypted in your database.' }
-
-  async read(shopId: string): Promise<TokenSet | null> {
-    const key = encryptionKey()
-    if (!key) throw new Error('TOKEN_ENCRYPTION_KEY is required to read stored tokens.')
-    const [row] = await getDb()
-      .select({ sealed: schema.etsyConnections.tokenRef })
-      .from(schema.etsyConnections)
-      .where(eq(schema.etsyConnections.shopId, shopId))
-      .limit(1)
-    return row?.sealed ? openTokens(row.sealed, key) : null
-  }
-
-  async write(shopId: string, tokens: TokenSet): Promise<void> {
-    const key = encryptionKey()
-    if (!key) throw new Error('TOKEN_ENCRYPTION_KEY is required to store tokens.')
-    await getDb()
-      .insert(schema.etsyConnections)
-      .values({
-        shopId,
-        tokenRef: sealTokens(tokens, key),
-        scopes: tokens.scopes,
-        expiresAt: new Date(tokens.expiresAt),
-      })
-      .onConflictDoUpdate({
-        target: schema.etsyConnections.shopId,
-        set: { tokenRef: sealTokens(tokens, key), expiresAt: new Date(tokens.expiresAt) },
-      })
-  }
-
-  async forget(shopId: string): Promise<void> {
-    // Clears the token, keeps the row: revocation is a fact worth recording.
-    await getDb()
-      .update(schema.etsyConnections)
-      .set({ tokenRef: null, revokedAt: new Date() })
-      .where(eq(schema.etsyConnections.shopId, shopId))
-  }
-}
-```
-
-Generate the key and put it in `.env.local`:
+**Implemented.** `DatabaseTokenStore` in `lib/etsy/tokens.ts` is real; the only
+thing you have to do is set the key:
 
 ```bash
-openssl rand -base64 32     # → TOKEN_ENCRYPTION_KEY
+openssl rand -base64 32     # → TOKEN_ENCRYPTION_KEY in .env.local
 ```
 
-Exactly 32 bytes. Anything else raises at startup rather than storing plaintext. Rotating it
-invalidates stored tokens — sellers reconnect, no shop data is lost.
+Exactly 32 bytes. Anything else — or nothing at all — and every token read,
+write and disconnect refuses with a message naming the variable. Nothing is
+ever stored unencrypted, and nothing returns "not connected" to cover up a
+missing key. Rotating the key invalidates stored tokens: sellers reconnect, no
+shop data is lost.
+
+### 3.1 Which store runs
+
+`DATABASE_URL` decides, **alone**:
+
+| DATABASE_URL | TOKEN_ENCRYPTION_KEY | Store | Behaviour |
+| --- | --- | --- | --- |
+| unset | — | `MemoryTokenStore` | Works for one process; tokens lost on restart, and it says so on the connect screen |
+| set | set | `DatabaseTokenStore` | Encrypted rows in `etsy_connections` |
+| set | unset/malformed | `DatabaseTokenStore` | Refuses every call, naming the variable |
+
+The key deliberately does **not** take part in the choice. Falling back to the
+in-memory store when the key is missing would be a silent downgrade: a
+deployment that set `DATABASE_URL` asked for persistence, and giving it a store
+that loses every token at the next deploy — with nothing saying why — is worse
+than a store that refuses and explains. `lib/etsy/tokens.ts` argues this at the
+`getTokenStore()` definition.
+
+### 3.2 Three things the old sketch in this file got wrong
+
+This step used to carry a code sketch. It was written before the schema
+settled, and it was wrong in ways worth naming, because each one would have
+shipped:
+
+1. **`revoked_at` was not cleared on reconnection.** Its `onConflictDoUpdate`
+   set only `token_ref` and `expires_at`, so a shop that reconnected after
+   disconnecting kept its old revocation date — a row carrying a live token and
+   a revocation date at the same time. Every screen reading it has to pick one,
+   which means different screens pick differently.
+2. **`scopes` was not updated on reconnection either**, so Settings would tell
+   a seller what breaks if they revoke a scope they no longer hold.
+3. **It called `sealTokens()` twice** — once for the insert, once for the
+   conflict branch. The IV is random per call, so those are two different
+   ciphertexts. Only one is ever stored, so it worked; but it invites the
+   assumption that the two match, and they never will.
+
+### 3.3 What a failed write must not say
+
+Found while testing rather than by reading the code: **drizzle's query error
+message contains the SQL and the bound parameters**, and one of those
+parameters is the sealed token.
+
+```
+Failed query: insert into "etsy_connections" (...) values ($1, $2, $3, ...)
+params: shop-123,["listings_r"],kmCl7LHYpA4VxBH+.z/zMmwQK77+JEPWeZFDg4A==.tI3Ww…
+                                ^ the sealed token
+```
+
+Re-throwing that would put a sealed credential into every log line and error
+reporter that records `error.message`. It is ciphertext, not plaintext — but
+the whole argument for encrypting at rest is that the stored value should not
+be lying around in places nobody audited, and logs outlive key rotations. No
+query error leaves the store now; what replaces it carries the SQLSTATE and the
+constraint name and nothing else. `tests/integration/etsy-tokens.int.ts`
+asserts the ciphertext appears in no part of the thrown error.
+
+### 3.4 Row-level security on `etsy_connections` — check this on your project
+
+**What was verified here**, against the repository and the local development
+database:
+
+- No migration in `db/migrations/` enables RLS or creates any policy. None.
+- In the local database: `relrowsecurity = false` on **all 27 tables**, and
+  `pg_policies` is empty for the whole `public` schema.
+- `etsy_connections` grants privileges to the connecting role only; no `anon`,
+  `authenticated` or `service_role` role exists in that database at all.
+
+So the narrow question — does any policy grant someone else read access to the
+sealed tokens? — answers **no**. But for the opposite reason to the expected
+one: there are no policies because RLS is switched off everywhere, so the table
+is protected by who holds database credentials rather than by RLS.
+
+**That distinction matters on Supabase, and I could not check your project from
+here.** A standard Supabase project does have `anon` and `authenticated` roles,
+the `public` schema grants them table privileges by default, and PostgREST
+serves `public` tables over HTTP at `/rest/v1`. With RLS **off**, there is no
+row filter in the way. Run this against your project and read the first column:
+
+```sql
+select relname, relrowsecurity from pg_class c
+  join pg_namespace n on n.oid = c.relnamespace
+ where n.nspname = 'public' and relname = 'etsy_connections';
+
+select grantee, privilege_type from information_schema.role_table_grants
+ where table_name = 'etsy_connections' and grantee in ('anon','authenticated');
+```
+
+If `relrowsecurity` is `false` **and** `anon` or `authenticated` holds `SELECT`,
+then your sealed tokens, scopes and expiry dates are readable with the
+publishable key. Close it with:
+
+```sql
+alter table public.etsy_connections enable row level security;
+-- No policy. With RLS on and no policy, every non-bypassing role sees nothing.
+```
+
+**Check one thing before you run that**: the role in your `DATABASE_URL` needs
+`BYPASSRLS`, or the app stops being able to read its own tokens. Supabase's
+`postgres` role has it; a custom role may not.
+
+```sql
+select current_user, (select rolbypassrls from pg_roles where rolname = current_user);
+```
+
+This repository does **not** ship that migration. The hole it closes lives in a
+database I cannot inspect, and a migration whose effect cannot be verified
+where it matters is the kind of unmeasured change that goes wrong quietly. The
+same question applies to the other 26 tables and is a larger decision than this
+one table.
 
 ---
 
