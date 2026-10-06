@@ -57,6 +57,13 @@
       "when": 1790110521154,
       "tag": "0007_grant_metrics_view",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790110522154,
+      "tag": "0008_enable_row_level_security",
+      "breakpoints": true
     }
   ]
 }

@@ -84,8 +84,37 @@ describe('the seeded matrix grants exactly what the code knows about', () => {
     .filter((name) => name.endsWith('.sql'))
     .sort()
 
+  /*
+   * ── COMMENTS STRIPPED BEFORE ANY OF THIS DECIDES ANYTHING ──────────────
+   *
+   * This read the raw file, and a migration that merely MENTIONED
+   * admin_role_permissions in a comment was pulled in as one that writes to
+   * it. 0008 does exactly that: its header records that migrations 0002-0005
+   * created admin_audit_events, admin_permission_audit_events and
+   * admin_role_permissions with RLS off. That one sentence of history put the
+   * RLS migration in this list, where "cannot overwrite a matrix an operator
+   * has since edited" and "adds only new tables" both failed on it — the
+   * second because an `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` is, of
+   * course, an ALTER TABLE.
+   *
+   * Neither failure was real. A guard satisfied — or in this case BROKEN — by
+   * its own documentation is the nineteenth instance of that shape found in
+   * this repository, and the fix is the same every time: decide on code, never
+   * on prose. grantsByRole() already stripped comments internally, which is
+   * why the grant assertions were unaffected and only the file SELECTION was
+   * wrong.
+   *
+   * This cannot quietly empty the list: 'finds the migrations it is meant to
+   * be reading' below requires at least two, and 0005-0007 name the table in
+   * real statements.
+   */
   const touching = files
-    .map((name) => ({ name, sql: readFileSync(posixJoin('db/migrations', name), 'utf8') }))
+    .map((name) => ({
+      name,
+      sql: readFileSync(posixJoin('db/migrations', name), 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/--.*$/gm, ''),
+    }))
     .filter((file) => file.sql.includes('admin_role_permissions'))
 
   /** The union across every migration, which is what a fresh database ends at. */

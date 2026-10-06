@@ -387,59 +387,116 @@ query error leaves the store now; what replaces it carries the SQLSTATE and the
 constraint name and nothing else. `tests/integration/etsy-tokens.int.ts`
 asserts the ciphertext appears in no part of the thrown error.
 
-### 3.4 Row-level security on `etsy_connections` — check this on your project
+### 3.4 Row-level security — enforced by a migration, not remembered
 
-**What was verified here**, against the repository and the local development
-database:
+This section used to describe a manual fix. It is a migration now:
+`db/migrations/0008_enable_row_level_security.sql`. The queries below became
+the *verification* step rather than the fix.
 
-- No migration in `db/migrations/` enables RLS or creates any policy. None.
-- In the local database: `relrowsecurity = false` on **all 27 tables**, and
-  `pg_policies` is empty for the whole `public` schema.
-- `etsy_connections` grants privileges to the connecting role only; no `anon`,
-  `authenticated` or `service_role` role exists in that database at all.
+#### Why this is enforced rather than remembered
 
-So the narrow question — does any policy grant someone else read access to the
-sealed tokens? — answers **no**. But for the opposite reason to the expected
-one: there are no policies because RLS is switched off everywhere, so the table
-is protected by who holds database credentials rather than by RLS.
+It has been left off by accident **twice**, and the second time nothing in the
+repository was looking:
 
-**That distinction matters on Supabase, and I could not check your project from
-here.** A standard Supabase project does have `anon` and `authenticated` roles,
-the `public` schema grants them table privileges by default, and PostgREST
-serves `public` tables over HTTP at `/rest/v1`. With RLS **off**, there is no
-row filter in the way. Run this against your project and read the first column:
+| When | What |
+| --- | --- |
+| **23 Sep 2026** | Every table had RLS off, and it was exploitable rather than theoretical — a `/rest/v1/` URL loaded with the **publishable** key returned an account row as JSON. Fixed by running an `alter table … enable row level security` loop by hand in the SQL Editor. |
+| **24 Sep onward** | Migrations `0002`–`0005` added `admin_audit_events`, `admin_permission_audit_events` and `admin_role_permissions`. No migration enabled RLS, so the audit log, the permission-change log and the permission matrix all arrived with it **off** — silently reopening what the 23rd had closed. |
+| **7 Oct 2026** | A `pg_tables` query returned exactly those three as `rowsecurity = false`. Found by hand. Fixed by hand. |
 
-```sql
-select relname, relrowsecurity from pg_class c
-  join pg_namespace n on n.oid = c.relnamespace
- where n.nspname = 'public' and relname = 'etsy_connections';
+Both fixes lived in a shell history, which closes today's hole and guarantees
+tomorrow's: the next migration that adds a table reopens it, silently, again.
+So there are now three things, and they catch different routes in:
 
-select grantee, privilege_type from information_schema.role_table_grants
- where table_name = 'etsy_connections' and grantee in ('anon','authenticated');
-```
+| | What it does | Catches |
+| --- | --- | --- |
+| `db/migrations/0008_…sql` | Loops over `pg_tables` and enables RLS on every table in `public`. Re-runnable; names no table. Raises if any table is still unprotected when it finishes, so it cannot succeed quietly. | Today's tables |
+| `tests/unit/rls.test.ts` | Reads `db/schema/index.ts` and every migration. Fails if a table arrives in a migration **later** than 0008 without its own `ENABLE ROW LEVEL SECURITY`. No database needed, so it runs on every commit. | The commit that caused 7 October |
+| `tests/integration/rls.int.ts` | Queries `pg_tables` against a real database and fails if anything in `public` has `rowsecurity = false`. | Drift from **any** source — a migration, `drizzle-kit push`, or a hand-run `CREATE TABLE` |
 
-If `relrowsecurity` is `false` **and** `anon` or `authenticated` holds `SELECT`,
-then your sealed tokens, scopes and expiry dates are readable with the
-publishable key. Close it with:
+**If you add a table, add one line to its migration.** `drizzle-kit` does not
+generate it; the unit test is what tells you.
 
 ```sql
-alter table public.etsy_connections enable row level security;
--- No policy. With RLS on and no policy, every non-bypassing role sees nothing.
+ALTER TABLE "your_new_table" ENABLE ROW LEVEL SECURITY;
 ```
 
-**Check one thing before you run that**: the role in your `DATABASE_URL` needs
-`BYPASSRLS`, or the app stops being able to read its own tokens. Supabase's
-`postgres` role has it; a custom role may not.
+#### No policies, deliberately
+
+RLS with no policy means every role **except** one holding `BYPASSRLS` sees
+nothing. That is right for every table here: every row is reached through the
+application's own connection, and the application does its own authorisation —
+`shopContext()` is the seller-isolation boundary and `getAdminAccess()` the
+operator one. There is no caller that should reach these rows directly, so
+there is nothing for a policy to permit. A policy granting `anon` or
+`authenticated` any access would hand back exactly what 23 September proved was
+reachable. Both tests fail if one appears.
+
+#### Check this BEFORE you apply it
+
+The role in your `DATABASE_URL` must hold `BYPASSRLS`:
 
 ```sql
-select current_user, (select rolbypassrls from pg_roles where rolname = current_user);
+select current_user,
+       (select rolbypassrls from pg_roles where rolname = current_user) as bypasses_rls;
 ```
 
-This repository does **not** ship that migration. The hole it closes lives in a
-database I cannot inspect, and a migration whose effect cannot be verified
-where it matters is the kind of unmeasured change that goes wrong quietly. The
-same question applies to the other 26 tables and is a larger decision than this
-one table.
+**`bypasses_rls` must be `t`.** Supabase's `postgres` role has it; a custom
+role may not.
+
+This matters more than it looks, and it was measured rather than assumed —
+against a **non-superuser** role, because a superuser bypasses RLS for reasons
+that would not transfer to your project:
+
+| Role | `select count(*) from users` |
+| --- | --- |
+| `nosuperuser bypassrls` | **5** |
+| `nosuperuser nobypassrls` | **0** |
+
+Note the second row. It is **not an error — it is zero rows.** A deployment
+whose role lacks `BYPASSRLS` does not crash; it quietly reads an empty
+database, every screen says "no data", and nothing anywhere says why. If
+`bypasses_rls` comes back `f`, stop and fix that first.
+
+#### Applying it to your Supabase project
+
+The migration runs with the rest of them (`drizzle-kit migrate`, or however you
+apply `db/migrations`). If you prefer to paste it into the SQL Editor, paste
+the whole file — the second `DO` block is the self-check that makes it refuse
+to succeed without having worked.
+
+**What you should see when you verify.** Run this afterwards:
+
+```sql
+select count(*) as total,
+       count(*) filter (where rowsecurity)     as rls_on,
+       count(*) filter (where not rowsecurity) as still_off
+  from pg_tables where schemaname = 'public';
+
+select count(*) as policies from pg_policies where schemaname = 'public';
+```
+
+Expected: `still_off = 0`, `policies = 0`, and `rls_on = total`. On the
+development database here that reads `27 | 27 | 0` and `0`. Your project may
+have a different total — what matters is that `still_off` is `0`.
+
+Then confirm the hole is actually shut, from outside, the same way it was
+originally found — load a `/rest/v1/` URL with the publishable key:
+
+```bash
+curl -s "https://<project>.supabase.co/rest/v1/users?select=*" \
+  -H "apikey: <publishable key>" -H "Authorization: Bearer <publishable key>"
+```
+
+Expected: `[]`. Before the fix it returned account rows. An empty array is RLS
+working — the rows are there, and that key may not see them. (A `42501` or a
+permission error is also fine; what is **not** fine is JSON with data in it.)
+
+**One caveat, stated plainly: I cannot reach your Supabase project from here.**
+Everything above was verified against this repository and the local development
+database — 27 of 27 tables, 0 policies, the suites re-run afterwards. The
+numbers your project returns are yours to read, which is why the expected
+output is written out above rather than described.
 
 ---
 
