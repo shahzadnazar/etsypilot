@@ -10,7 +10,7 @@
  *      one so it stays additive at no cost.
  */
 
-import { relations } from 'drizzle-orm'
+import { relations, sql } from 'drizzle-orm'
 import {
   boolean,
   index,
@@ -67,19 +67,53 @@ export const users = pgTable('users', {
   createdAt: createdAt(),
 })
 
-export const shops = pgTable('shops', {
-  id: text('id').primaryKey(),
-  ownerId: text('owner_id').references(() => users.id),
-  etsyShopId: text('etsy_shop_id'),
-  name: text('name').notNull(),
-  currency: text('currency').notNull().default('USD'),
-  timezone: text('timezone').notNull().default('America/New_York'),
-  connectionStatus: text('connection_status').notNull().default('DEMO'),
-  lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
-  /** True for the Willow & Fern dataset. Drives the D11 provenance override. */
-  isDemo: boolean('is_demo').notNull().default(false),
-  createdAt: createdAt(),
-})
+export const shops = pgTable(
+  'shops',
+  {
+    id: text('id').primaryKey(),
+    ownerId: text('owner_id').references(() => users.id),
+    /**
+     * Etsy's own numeric shop id, as text. NULL until a connection is made.
+     *
+     * NOT the key anything joins on — `shops.id` is. This column exists so one
+     * EtsyPilot shop can say which Etsy shop it is, which is the direction the
+     * product needs: a seller has one shop row from signup and connecting Etsy
+     * updates it.
+     */
+    etsyShopId: text('etsy_shop_id'),
+    name: text('name').notNull(),
+    currency: text('currency').notNull().default('USD'),
+    timezone: text('timezone').notNull().default('America/New_York'),
+    connectionStatus: text('connection_status').notNull().default('DEMO'),
+    lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
+    /** True for the Willow & Fern dataset. Drives the D11 provenance override. */
+    isDemo: boolean('is_demo').notNull().default(false),
+    createdAt: createdAt(),
+  },
+  (t) => ({
+    /*
+     * ONE ETSY SHOP BELONGS TO ONE ETSYPILOT ACCOUNT, AND THE DATABASE IS WHAT
+     * MAKES THAT TRUE.
+     *
+     * Two sellers connecting the same Etsy shop is a real case — a shop sold,
+     * an agency and its client, one person with two accounts — and without this
+     * both connections succeed and the shop's data moves to whoever connected
+     * last. The callback also SELECTs for an existing owner so it can say
+     * something useful instead of surfacing a constraint, but a SELECT then an
+     * INSERT is a race: two callbacks interleaving between the two statements
+     * both see nothing and both write. The constraint is the only part that
+     * holds under concurrency; the SELECT is only there for the wording.
+     *
+     * PARTIAL, on `etsy_shop_id is not null`. A plain unique index already
+     * permits many NULLs in Postgres, and every shop starts NULL — but spelling
+     * out the predicate means nobody has to remember that rule to read this,
+     * and it is the smaller index.
+     */
+    uniqueEtsyShop: uniqueIndex('shops_etsy_shop_id_idx')
+      .on(t.etsyShopId)
+      .where(sql`${t.etsyShopId} is not null`),
+  }),
+)
 
 /**
  * D20: single-owner membership. Needed regardless of multi-user, and the role

@@ -126,20 +126,66 @@ Two known gaps, both deliberate and both marked in `live.ts`:
 
 ---
 
-## 4a. One thing that is NOT finished, and would block you
+## 4a. What a successful connection writes
 
-`getSession()` in `lib/auth/index.ts` returns a fixed demo session in demo mode and
-**`null` in live mode**, because the Supabase auth provider is not wired yet. Both
-`/api/etsy/connect` and `/api/etsy/callback` require a session and redirect to `/` without
-one.
+**One shop row per account, updated — never a second row.** A seller has a
+`shops` row from the moment they sign up: the one that reads "My demo shop".
+Connecting Etsy updates it. Three things already assume that: `plans.ts` sells
+"Connect one Etsy shop" and lists "One shop" as the Solo limit, the seller's
+memberships hang off that row, and `shops.etsy_shop_id` was put in the schema
+for exactly this.
 
-So with `ETSY_MODE=live` and no auth provider, the connect flow is unreachable. That is
-deliberate — a connect flow that could not say which user a shop belongs to would be worse
-than one that refuses — but it means live mode needs the auth branch of `getSession()` filled
-in before the Etsy key is useful. It is a few lines in one file, and the signature does not
-change.
+On `connect=connected`, in **one transaction**:
 
-Everything else in this document applies as written.
+| Column | Becomes | Why |
+| --- | --- | --- |
+| `etsy_connections.shop_id` | the **session's** shop id | It is a foreign key to `shops.id`. See the warning below. |
+| `etsy_connections.token_ref` | the sealed token | AES-256-GCM, `TOKEN_ENCRYPTION_KEY` |
+| `etsy_connections.scopes` | what the flow asked for | So Settings can say what breaks if one is revoked |
+| `shops.etsy_shop_id` | Etsy's numeric id, as text | The link between the two namespaces |
+| `shops.name`, `shops.currency` | Etsy's values | The seller's real shop is not called "My demo shop" |
+| `shops.connection_status` | `CONNECTED` | An existing `ConnectionStatus` value, which `live.ts` already reports |
+| `shops.is_demo` | `false` | It drives the demo banner, the D11 provenance override and `readOnly`. A real shop must not claim demo figures. |
+
+**`shops.timezone` is NOT written, and that is not an oversight.** Etsy's shop
+payload has `shop_name` and `currency_code` and no timezone — `live.ts` says so
+and uses `'UTC'`, which is this product's single basis (D24). Two of the three
+is what the API permits.
+
+### ⚠️ The bug this replaced, so it is not reintroduced
+
+The callback used to store tokens under **Etsy's** shop id:
+
+```
+our shop ids    ['shop_72d56f17-b51f-4978-beed-7c609eed1ac4', ...]
+callback wrote  '48123456'
+result          there is no shop in EtsyPilot with that id
+```
+
+`etsy_connections.shop_id` is a foreign key to `shops.id`, so every real
+connection failed the key. The comment that caused it was half right — it
+argued that a shop id a caller could supply is a cross-shop write waiting to
+happen, which is true. The fix is **not** to accept a shop id from the request:
+it is `session.shopId`, resolved server-side from the caller's own memberships,
+which no query parameter, header or cookie field can influence.
+
+### Two refusals that are not failures
+
+**`connect=shop_already_linked`** — that Etsy shop is attached to a different
+EtsyPilot account. A real case: a shop sold, an agency and its client, one
+person with two accounts. Attaching it to whoever connected last would move a
+shop's data between accounts. Enforced by a unique index on
+`shops.etsy_shop_id` (migration `0009`), with a `SELECT` for the wording —
+because a `SELECT` then an `UPDATE` is a race and only the index holds under
+concurrency.
+
+**`connect=demo_mode`** — `ETSY_MODE` is not `live`. A connection sets
+`is_demo = false`, which removes the demo banner and the demo provenance badge
+from every figure; if the adapter is still the mock one, the seller would be
+shown the Willow & Fern catalogue as their own shop. **Set `ETSY_API_KEY` and
+`ETSY_MODE=live` together** — this is that pairing enforced rather than
+documented. Refused before the code is exchanged, so no token is minted for a
+connection that will not be saved.
 
 ---
 
@@ -149,16 +195,22 @@ Everything else in this document applies as written.
 component is a build error. That is the only reliable way to keep a refresh
 token out of a bundle.
 
-Until `DATABASE_URL` is set, `MemoryTokenStore` runs: tokens are held in the
-server process, encrypted, and lost on restart. It says exactly that in
-`describe()`, and the connect screen shows that description — a store that
-silently loses tokens while reporting "connected" would have a seller
-reconnecting every deploy without knowing why.
+Which store runs is decided by `DATABASE_URL` **alone**:
 
-With `DATABASE_URL` set, `DatabaseTokenStore` takes over. It is currently
-unimplemented and refuses every call with its own `describe()` as the message,
-rather than returning `null` — a store that answered "no tokens" would present
-a configured shop as disconnected.
+| `DATABASE_URL` | `TOKEN_ENCRYPTION_KEY` | Store | Behaviour |
+| --- | --- | --- | --- |
+| unset | — | `MemoryTokenStore` | One process; tokens lost on restart, and the connect screen says so |
+| set | set | `DatabaseTokenStore` | Encrypted rows in `etsy_connections` |
+| set | unset/malformed | `DatabaseTokenStore` | Refuses every call, naming the variable |
+
+The key deliberately does not take part in that choice: falling back to the
+in-memory store would be a silent downgrade for a deployment that asked for
+persistence. `docs/DATABASE-AND-AUTH-SETUP.md` §3 has the full argument and the
+generation command.
+
+**This section used to say `DatabaseTokenStore` was unimplemented and refused
+every call.** That stopped being true when it was implemented; the line is
+corrected here rather than left to mislead whoever reads this next.
 
 ---
 

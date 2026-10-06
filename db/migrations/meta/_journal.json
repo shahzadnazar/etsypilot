@@ -64,6 +64,13 @@
       "when": 1790110522154,
       "tag": "0008_enable_row_level_security",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790110523154,
+      "tag": "0009_one_etsy_shop_per_account",
+      "breakpoints": true
     }
   ]
 }

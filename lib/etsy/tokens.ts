@@ -118,6 +118,41 @@ export class MemoryTokenStore implements TokenStore {
 }
 
 /**
+ * The key, or a refusal that names the variable.
+ *
+ * Lifted out of DatabaseTokenStore so the ONE other writer of this column —
+ * lib/repositories/etsy-connection.ts, which seals a token inside the same
+ * transaction that updates the shop row — gets the identical refusal rather
+ * than its own wording. There is still exactly one place the env var is read.
+ *
+ * `action` is in the message so a log line says which call was refused without
+ * the caller having to add it.
+ */
+export function requireEncryptionKey(action: string): Buffer {
+  const key = encryptionKey()
+  if (key) return key
+  throw new AppError({
+    kind: 'EXTERNAL_SERVICE',
+    code: 'TOKEN_ENCRYPTION_KEY_MISSING',
+    message: `TOKEN_ENCRYPTION_KEY is not set, so Etsy tokens cannot be ${action}.`,
+    recovery:
+      'Set TOKEN_ENCRYPTION_KEY to 32 bytes of base64 (openssl rand -base64 32) and restart the server. Nothing was stored unencrypted.',
+    retryable: false,
+  })
+}
+
+/**
+ * A token set sealed for the `etsy_connections.token_ref` column.
+ *
+ * The only thing a caller outside this module needs in order to write that
+ * column, and deliberately all it gets: the key never leaves this file, and
+ * there is no exported way to obtain one.
+ */
+export function sealForStorage(tokens: TokenSet, action = 'stored'): string {
+  return sealTokens(tokens, requireEncryptionKey(action))
+}
+
+/**
  * Postgres error codes this store has to tell apart.
  *
  * By CODE, never by message. A message is a localised, version-dependent
@@ -257,23 +292,9 @@ export class DatabaseTokenStore implements TokenStore {
     return 'Tokens are stored in your database, encrypted with AES-256-GCM, and are readable only by this server. Disconnecting removes the token and keeps a dated record that you disconnected.'
   }
 
-  /**
-   * The key, or a refusal that names the variable.
-   *
-   * `action` goes in the message so a log line says which call was refused
-   * without the caller having to add it.
-   */
+  /** One wording for the refusal, shared with the connection repository. */
   private requireKey(action: string): Buffer {
-    const key = encryptionKey()
-    if (key) return key
-    throw new AppError({
-      kind: 'EXTERNAL_SERVICE',
-      code: 'TOKEN_ENCRYPTION_KEY_MISSING',
-      message: `TOKEN_ENCRYPTION_KEY is not set, so Etsy tokens cannot be ${action}.`,
-      recovery:
-        'Set TOKEN_ENCRYPTION_KEY to 32 bytes of base64 (openssl rand -base64 32) and restart the server. Nothing was stored unencrypted.',
-      retryable: false,
-    })
+    return requireEncryptionKey(action)
   }
 
   async read(shopId: string): Promise<TokenSet | null> {

@@ -173,6 +173,41 @@ export const CONNECT_OUTCOMES = {
     title: 'No Etsy app is configured on this server',
     detail: 'EtsyPilot has no Etsy API credentials yet, so there is no shop to connect to. Demo mode needs none and stays fully usable.',
   },
+  shop_already_linked: {
+    tone: 'warn',
+    /*
+     * Its own outcome, not a generic failure, because this is a real situation
+     * rather than an error: a shop that changed hands, an agency and its
+     * client, one person with two EtsyPilot accounts. Silently attaching the
+     * shop to whoever connected last would move a seller's data between
+     * accounts, and the seller who connected first would just stop seeing
+     * their shop.
+     *
+     * It says WHICH shop is involved only as "that Etsy shop" — naming the
+     * other EtsyPilot account would tell one seller about another's.
+     */
+    title: 'That Etsy shop is already connected to another EtsyPilot account',
+    detail:
+      'Nothing was connected and nothing was changed on Etsy. An Etsy shop can be connected to one EtsyPilot account at a time. Disconnect it from the other account first, or contact us if you think it is connected somewhere it should not be.',
+  },
+  demo_mode: {
+    tone: 'info',
+    /*
+     * The inverse of the provenance lie that `is_demo` exists to prevent, and
+     * it is worth refusing rather than papering over. A successful connection
+     * sets is_demo = false — which removes the demo banner and the demo
+     * provenance badge from every figure. If ETSY_MODE is not 'live', those
+     * figures still come from the Willow & Fern catalogue, so the seller would
+     * be shown demo data presented as their own real shop.
+     *
+     * One direction of that rule is "a shop that has become real must not keep
+     * claiming demo figures". This is the other direction, and fixing only one
+     * would be the kind of half-measure that reads as fixed.
+     */
+    title: 'This server is still serving demo data',
+    detail:
+      'Etsy approved the connection, but EtsyPilot is running on the demo catalogue, so connecting would show you sample data as though it were your shop. Nothing was connected. ETSY_MODE needs to be set to live on the server first.',
+  },
 } as const
 
 export type ConnectOutcome = keyof typeof CONNECT_OUTCOMES
