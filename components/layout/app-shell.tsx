@@ -35,7 +35,7 @@ export function AppShell({
   /** Server-computed. See TopBar. */
   isOperator?: boolean
   plan: string
-  usage: { used: number; limit: number }
+  usage: { used: number | null; limit: number }
   /** Drives the bell's dot on mobile. */
   openActionCount: number
   /** Measured nav counts by href. Never authored — see navigation.ts. */

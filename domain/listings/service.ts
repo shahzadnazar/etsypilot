@@ -13,6 +13,8 @@ import { getEtsyService } from '@/lib/etsy'
 import { demoConfirmedCosts, DEMO_NOW } from '@/lib/etsy/demo-dataset'
 import type { EtsyListing } from '@/lib/etsy/interface'
 import type { ShopContext } from '@/lib/permissions'
+import { readListings } from '@/lib/repositories/listings'
+import { shopDataSource, type ShopDataSource } from '@/domain/sync/source'
 import {
   LISTING_STATUSES,
   HEALTH_KINDS,
@@ -52,6 +54,16 @@ export interface ListingsView {
   page: number
   pageCount: number
   currency: string
+  /**
+   * Where these rows came from, so the screen can say the true thing when
+   * there are none.
+   *
+   * "No listings yet" is a CLAIM, and it is false for a seller whose sync has
+   * not run. The table has to tell that apart from a shop that synced and
+   * genuinely has none — and a count cannot, only `shops.last_synced_at` can.
+   * domain/sync/source.ts carries the argument.
+   */
+  source: ShopDataSource
   /*
    * The instant "2 d ago" is measured from.
    *
@@ -66,13 +78,19 @@ export async function getListingsView(
   ctx: ShopContext,
   query: Record<string, string | undefined> = {},
 ): Promise<ListingsView> {
-  const etsy = getEtsyService()
-  const [shop, catalogue] = await Promise.all([
-    etsy.getShop(ctx.shopId),
-    etsy.getListings(ctx.shopId, { limit: 500 }),
-  ])
-  const listings = catalogue.listings
-  const costs = demoConfirmedCosts(listings)
+  /*
+   * ══════════════════════════════════════════════════════════════════════
+   *   THE ONLY THING THAT CHANGED IN THIS SERVICE: WHERE THE ARRAY COMES
+   *   FROM. EVERYTHING BELOW IS UNTOUCHED.
+   * ══════════════════════════════════════════════════════════════════════
+   *
+   * The repository returns `EtsyListing[]` — the same type the adapter
+   * returns — so the audit rules, the status derivation, the margin rule, the
+   * search index, the filters and the paging all run on exactly what they ran
+   * on before. That is the shape the other four aggregates are meant to copy:
+   * one branch at the top, no second row model, and no mapper to keep in step.
+   */
+  const { listings, costs, currency, now, source } = await loadCatalogue(ctx)
 
   const ruleCtx: RuleContext = {
     costs,
@@ -118,8 +136,82 @@ export async function getListingsView(
     filters: { ...filters, page },
     page,
     pageCount,
-    currency: shop.currency,
-    now: DEMO_NOW,
+    currency,
+    now,
+    source,
+  }
+}
+
+interface Catalogue {
+  listings: EtsyListing[]
+  /** Confirmed costs, which only the demo dataset has today. */
+  costs: Map<string, number>
+  currency: string
+  now: string
+  source: ShopDataSource
+}
+
+/**
+ * The catalogue, from wherever this deployment keeps it.
+ *
+ * ── DEMO AND DATABASE NEVER MEET ──────────────────────────────────────────
+ *
+ * The DEMO branch calls the adapter and never touches a table. Every other
+ * branch reads the table and never calls the adapter. There is no path that
+ * mixes them, which is what keeps a demo figure out of a seller's own numbers
+ * and a seller's numbers out of the demo shop. domain/sync/source.ts explains
+ * why ETSY_MODE decides that and `shops.is_demo` deliberately does not.
+ *
+ * ── MARGINS ARE NULL ON A SYNCED SHOP, AND THAT IS CORRECT ────────────────
+ *
+ * `demoConfirmedCosts()` is the demo dataset's own fixture. A synced shop has
+ * no confirmed costs at all yet — `cost_rules` is a later aggregate and
+ * nothing writes it — so the map is empty and every margin is null. That is
+ * exactly what D65 requires: null wherever no confirmed cost exists, never the
+ * default rule's figure. The page's own footnote already counts and explains
+ * those rows, so the screen says it rather than leaving a blank column.
+ */
+async function loadCatalogue(ctx: ShopContext): Promise<Catalogue> {
+  const { source, currency } = await shopDataSource(ctx)
+
+  if (source.kind === 'DEMO') {
+    const etsy = getEtsyService()
+    const [shop, catalogue] = await Promise.all([
+      etsy.getShop(ctx.shopId),
+      etsy.getListings(ctx.shopId, { limit: 500 }),
+    ])
+    const listings = catalogue.listings
+    return {
+      listings,
+      costs: demoConfirmedCosts(listings),
+      currency: shop.currency,
+      now: DEMO_NOW,
+      source,
+    }
+  }
+
+  /*
+   * NOT_SYNCED and NO_SHOP read nothing: there is provably nothing to read,
+   * and a query that returns an empty array would make the two
+   * indistinguishable from a synced-and-empty shop at the only place the
+   * difference is still knowable.
+   */
+  if (source.kind !== 'SYNCED') {
+    return {
+      listings: [],
+      costs: new Map(),
+      currency: currency ?? 'USD',
+      now: new Date().toISOString(),
+      source,
+    }
+  }
+
+  return {
+    listings: await readListings(ctx.shopId),
+    costs: new Map(),
+    currency: currency ?? 'USD',
+    now: new Date().toISOString(),
+    source,
   }
 }
 

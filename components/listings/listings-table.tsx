@@ -36,17 +36,88 @@ const HEALTH_DOT: Record<HealthKind, string> = {
 }
 
 export function ListingsTable({ view }: { view: ListingsView }) {
-  if (view.total === 0) {
+  /*
+   * ══════════════════════════════════════════════════════════════════════
+   *   "NO LISTINGS YET" IS A CLAIM, AND IT WAS BEING MADE ABOUT A SHOP
+   *   NOBODY HAD READ.
+   * ══════════════════════════════════════════════════════════════════════
+   *
+   * One empty state served three different facts: a shop that has never
+   * synced, a shop whose sync found nothing, and a shop row that is gone.
+   * Only the middle one is "no listings" — the first is "we have not looked",
+   * and telling a seller they have no listings when their catalogue simply has
+   * not been read is exactly the kind of false figure the rest of this product
+   * refuses to print.
+   *
+   * The line this follows is already written on the operator account page:
+   * "No usage records. That means nothing has been metered for this account —
+   * not that every meter reads zero."
+   */
+  if (view.total === 0 && view.source.kind === 'NOT_SYNCED') {
     return (
       <EmptyState
-        title="No listings yet"
-        description="Connect a shop and sync it, and every listing appears here with its status, renewal date and cost coverage. Nothing on this page is written back to Etsy."
+        title="Not synced yet"
+        description="Your shop is connected, but EtsyPilot has not read your catalogue yet — so this is not a claim that you have no listings. Once a sync runs, every listing appears here with its status, renewal date and cost coverage."
         action={
           <Link
             href="/settings/shops"
             className="inline-flex h-11 items-center rounded-control border border-line px-3 text-[12px] font-semibold text-ink-2 hover:bg-canvas-soft md:h-[38px]"
           >
-            Connect a shop
+            Shop connections
+          </Link>
+        }
+      />
+    )
+  }
+
+  if (view.total === 0 && view.source.kind === 'NO_SHOP') {
+    /*
+     * The shop row is gone. Not "not synced" — that is a thing a seller can
+     * fix, and this is not, so it does not borrow that copy.
+     */
+    return (
+      <EmptyState
+        title="This shop could not be found"
+        description="The shop this page was opened for is no longer in EtsyPilot. Nothing is wrong with your listings on Etsy. Open Shop connections to pick a shop."
+        action={
+          <Link
+            href="/settings/shops"
+            className="inline-flex h-11 items-center rounded-control border border-line px-3 text-[12px] font-semibold text-ink-2 hover:bg-canvas-soft md:h-[38px]"
+          >
+            Shop connections
+          </Link>
+        }
+      />
+    )
+  }
+
+  if (view.total === 0) {
+    /*
+     * Two sources land here and they are not the same sentence. SYNCED means
+     * we read the shop and it holds nothing. DEMO means the sample catalogue
+     * is empty (DEMO_DATASET=empty), where "your shop synced" would be false
+     * twice over — nothing synced, and it is not their shop.
+     *
+     * Caught by reading this diff back rather than by a test: the empty-state
+     * browser sweep runs in demo mode and only asserts that the page answers
+     * and offers a next step, so it was perfectly happy with the wrong
+     * sentence.
+     */
+    const synced = view.source.kind === 'SYNCED'
+    return (
+      <EmptyState
+        title="No listings yet"
+        description={
+          synced
+            ? 'Your shop synced and has no listings in it. Add one on Etsy and it appears here with its status, renewal date and cost coverage. Nothing on this page is written back to Etsy.'
+            : 'This sample shop has no listings in it. Connect your own shop and sync it, and every listing appears here with its status, renewal date and cost coverage. Nothing on this page is written back to Etsy.'
+        }
+        action={
+          <Link
+            href="/settings/shops"
+            className="inline-flex h-11 items-center rounded-control border border-line px-3 text-[12px] font-semibold text-ink-2 hover:bg-canvas-soft md:h-[38px]"
+          >
+            Shop connections
           </Link>
         }
       />
@@ -176,7 +247,27 @@ export function ListingsTable({ view }: { view: ListingsView }) {
                         <span aria-hidden className="text-muted-1">
                           —
                         </span>
-                        <span className="sr-only">Not renewing — this listing is not active</span>
+                        {/*
+                          THE REASON IS ONLY GIVEN WHEN IT IS THE REASON.
+
+                          This said "Not renewing — this listing is not
+                          active" for every missing date, which was true of
+                          every row the demo dataset produces: the mock omits
+                          renewsAt only for inactive listings. A synced shop
+                          breaks that coupling — Etsy does not always send a
+                          renewal date for an active listing — and the cell
+                          then told a screen reader a listing was not active
+                          while the status column two cells left said Active.
+                          Seen on a real synced row in a browser, not reasoned
+                          about. So an inactive listing keeps the explanation
+                          and an active one states the absence without
+                          inventing a cause for it.
+                        */}
+                        <span className="sr-only">
+                          {row.status === 'ACTIVE'
+                            ? 'No renewal date'
+                            : 'Not renewing — this listing is not active'}
+                        </span>
                       </>
                     )}
                   </td>

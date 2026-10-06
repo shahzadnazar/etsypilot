@@ -44,7 +44,16 @@ export default async function ListingsPage({
    */
   const summary =
     view.total === 0
-      ? 'No listings synced yet'
+      ? /*
+         * The subtitle said "No listings synced yet" for all three empty
+         * cases, which reads as a count for the one case where no count
+         * exists. Each says only what is known. See the table's own note.
+         */
+        view.source.kind === 'NOT_SYNCED'
+        ? 'Not synced yet'
+        : view.source.kind === 'NO_SHOP'
+          ? 'Shop not found'
+          : 'No listings in this shop'
       : [
           `${view.counts.active.toLocaleString('en-US')} active`,
           `${view.counts.drafts.toLocaleString('en-US')} drafts`,
@@ -56,7 +65,11 @@ export default async function ListingsPage({
       <PageHeader
         title="Listings"
         subtitle={
-          view.total === 0 ? summary : `${summary} · verified from your connected shop`
+          view.total === 0
+            ? summary
+            : view.source.kind === 'DEMO'
+              ? `${summary} · sample catalogue`
+              : `${summary} · verified from your connected shop`
         }
         actions={
           <>

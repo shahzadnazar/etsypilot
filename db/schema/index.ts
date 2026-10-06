@@ -164,6 +164,18 @@ export const listings = pgTable(
     photoCount: integer('photo_count').notNull().default(0),
     renewsAt: timestamp('renews_at', { withTimezone: true }),
     lastChangedAt: timestamp('last_changed_at', { withTimezone: true }),
+    /**
+     * When a sync last found this listing GONE from Etsy. Null while present.
+     *
+     * Not a delete, and not a sixth ListingStatus. Eight tables carry a foreign
+     * key to this one — including `events`, which is append-only, and
+     * `order_items`, which records that the listing sold — so removing the row
+     * would destroy history that removing a listing from Etsy does not undo.
+     * Same shape as etsy_connections.revoked_at: date the disappearance, keep
+     * the fact. The seller's views filter this out; a relisted listing has it
+     * cleared by the next sync.
+     */
+    removedAt: timestamp('removed_at', { withTimezone: true }),
   },
   (t) => ({
     byShop: index('listings_shop_idx').on(t.shopId),

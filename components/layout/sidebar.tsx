@@ -28,15 +28,34 @@ function isActive(pathname: string, href: string): boolean {
  * A limit of 0 means "not offered on this plan" rather than "none allowed", so
  * it renders as a count with no denominator instead of a division by zero.
  */
-export function PlanUsage({ usage }: { usage: { used: number; limit: number } }) {
-  const over = usage.limit > 0 && usage.used > usage.limit
+export function PlanUsage({ usage }: { usage: { used: number | null; limit: number } }) {
+  /*
+   * `used` NULL IS "WE HAVE NOT LOOKED", AND IT IS NOT ZERO.
+   *
+   * A shop that has never synced has no listing count — not a count of none.
+   * Rendering 0 here would put "0 / 2,000 listings" under the plan name for a
+   * seller whose catalogue simply has not been read yet, which is the same
+   * false claim the listings table refuses to make two screens away.
+   *
+   * So it renders the denominator and withholds the numerator, the way the
+   * provenance classes withhold an unavailable figure rather than defaulting
+   * it. `over` is false in that state because nothing is known to be over.
+   */
+  const unknown = usage.used === null
+  const over = !unknown && usage.limit > 0 && usage.used! > usage.limit
+  const used = unknown ? '—' : usage.used!.toLocaleString('en-US')
   return (
     <>
       <div className={cn('tnum text-caption', over ? 'font-semibold text-danger' : 'text-muted-1')}>
         {usage.limit > 0
-          ? `${usage.used.toLocaleString('en-US')} / ${usage.limit.toLocaleString('en-US')} listings`
-          : `${usage.used.toLocaleString('en-US')} listings`}
+          ? `${used} / ${usage.limit.toLocaleString('en-US')} listings`
+          : `${used} listings`}
       </div>
+      {unknown ? (
+        <p className="mt-1 text-[10.5px] leading-relaxed text-muted-1">
+          Not synced yet, so this is not a count of zero.
+        </p>
+      ) : null}
       {over ? (
         <p className="mt-1 text-[10.5px] leading-relaxed text-muted-1">
           Over your plan limit. New bulk jobs pause — nothing is deleted, and you choose what to
@@ -65,7 +84,7 @@ export function Sidebar({
    * on every screen — did not, so the one number a seller sees constantly was
    * the one that could not tell them anything was wrong.
    */
-  usage: { used: number; limit: number }
+  usage: { used: number | null; limit: number }
   /*
    * Measured counts, keyed by href. Empty is a valid state and renders no
    * chip — the alternative was the literal badges this replaces, which said

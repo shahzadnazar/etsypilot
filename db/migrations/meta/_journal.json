@@ -71,6 +71,13 @@
       "when": 1790110523154,
       "tag": "0009_one_etsy_shop_per_account",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790110524154,
+      "tag": "0010_listings_removed_at",
+      "breakpoints": true
     }
   ]
 }

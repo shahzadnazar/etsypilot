@@ -2,8 +2,8 @@ import { redirect } from 'next/navigation'
 import { AppShell } from '@/components/layout/app-shell'
 import { getSession } from '@/lib/auth'
 import { initialsFor } from '@/lib/utils/name'
-import { getEtsyService } from '@/lib/etsy'
 import { shopContext } from '@/lib/permissions'
+import { shopHeader } from '@/domain/sync/source'
 import { currentPlan } from '@/domain/billing/service'
 import { getActions } from '@/domain/action-center/service'
 import { getAdminAccess } from '@/domain/admin/access'
@@ -55,7 +55,20 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const ctx = shopContext(session, session.shopId)
   const [shop, plan, actions, operator] = await Promise.all([
-    getEtsyService().getShop(ctx.shopId),
+    /*
+     * OUR OWN ROW IN LIVE MODE, THE ADAPTER IN DEMO MODE.
+     *
+     * This was `getEtsyService().getShop(ctx.shopId)` on every seller page,
+     * and in a live deployment without an ETSY_API_KEY that throws — so every
+     * screen 500'd in the shell before reaching its own data. Measured in a
+     * browser against a live-mode server while building the listings slice.
+     *
+     * The shell needs a name and a sync time. Both are columns on `shops`:
+     * the connection writes the name, and the listings sync writes
+     * `last_synced_at`, which is what retires the shell's permanent
+     * "Static data · no sync". domain/sync/source.ts has the argument.
+     */
+    shopHeader(ctx),
     // Read, not restated: the chip and the billing page share one source.
     currentPlan(ctx),
     // Same rule for the bell: the dot and the Action Center count one set.
@@ -96,8 +109,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
    */
   return (
     <AppShell
-      shopName={shop.name}
-      lastSyncedAt={shop.lastSyncedAt}
+      /*
+       * `shop` is null only when the session names a shop row that is gone.
+       * "Shop not found" rather than an empty header, which would read as a
+       * shop with no name. The listings table says the same thing in its own
+       * words for the same case.
+       */
+      shopName={shop?.name ?? 'Shop not found'}
+      lastSyncedAt={shop?.lastSyncedAt ?? null}
       isDemo={session.isDemo}
       userInitials={initials}
       userName={session.name}
@@ -112,7 +131,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
        * catalogue it is counting, on every page. Exactly the defect the mock's
        * activeListingCount was fixed for (D57); this was the other end of it.
        */
-      usage={{ used: shop.activeListingCount, limit: plan.limits.listings }}
+      usage={{ used: shop?.activeListingCount ?? null, limit: plan.limits.listings }}
       /* A boolean, not the access object: see TopBar. */
       isOperator={operator !== null}
       openActionCount={actions.counts.OPEN ?? 0}
