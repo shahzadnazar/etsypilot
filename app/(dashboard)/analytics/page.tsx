@@ -35,6 +35,34 @@ export default async function AnalyticsPage() {
   const view = await getAnalytics(ctx)
   const period = `${formatDate(view.periodStart)} – ${formatDate(view.periodEnd)}`
 
+  /*
+   * ANALYTICS IS ALMOST ENTIRELY SUMS AND DELTAS, AND EVERY ONE OF THEM
+   * READS AS A MEASUREMENT.
+   *
+   * Gross sales, order count, refunds, average order value, net margin: with
+   * no orders they are all zero or null, under a subtitle promising "verified
+   * orders and payments from your connected shop". A shop nobody has read is
+   * told, in the product's own voice, that it sold nothing.
+   */
+  if (view.source.kind === 'NOT_SYNCED' || view.source.kind === 'NO_SHOP') {
+    return (
+      <>
+        <PageHeader
+          title="Shop analytics"
+          subtitle="Your own orders and payments, summed over the reporting period."
+        />
+        <EmptyState
+          title={view.source.kind === 'NO_SHOP' ? 'This shop could not be found' : 'Not synced yet'}
+          description={
+            view.source.kind === 'NO_SHOP'
+              ? 'The shop this page was opened for is no longer in EtsyPilot. Nothing is wrong with your shop on Etsy.'
+              : 'Every figure on this page is summed from your own order receipts, and EtsyPilot has not read them yet. Zeroes here would read as a shop that sold nothing, which is not what is being reported.'
+          }
+        />
+      </>
+    )
+  }
+
   return (
     <>
       <PageHeader

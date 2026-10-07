@@ -13,7 +13,21 @@ export function WaterfallTable({
   currency: string
   demo: boolean
 }) {
-  const max = Math.max(...result.lines.map((l) => Math.abs(l.amount))) || 1
+  /*
+   * A LINE WITH NO AMOUNT IS WITHHELD, NOT DRAWN AS ZERO.
+   *
+   * `line.amount` is null when the figure is not known — the fee lines, when
+   * Etsy's payment-account ledger has not been read, and net profit with them.
+   * A zero-length bar and a "$0.00" in the amount column would say the fee was
+   * nothing, which is the claim the nullable columns exist to prevent. The
+   * UNAVAILABLE badge in the Source column is already carrying the reason, so
+   * the row renders an em dash and no bar.
+   *
+   * Unknown lines are also out of the `max`, or one null would make every bar
+   * on the screen the wrong length via NaN.
+   */
+  const known = result.lines.filter((l) => l.amount !== null)
+  const max = Math.max(...known.map((l) => Math.abs(l.amount ?? 0))) || 1
 
   return (
     <Card className="p-[18px]">
@@ -40,24 +54,35 @@ export function WaterfallTable({
               <tr key={line.key} className="border-t border-line">
                 <td className={`py-2.5 ${isNet ? 'font-semibold text-ink-1' : 'text-ink-2'}`}>
                   {line.label}
-                  <span
-                    aria-hidden
-                    className="mt-1.5 block h-1 rounded-full"
-                    style={{
-                      width: `${Math.max(2, (Math.abs(line.amount) / max) * 100)}%`,
-                      background:
-                        line.amount < 0 ? 'var(--muted-2)' : isNet ? 'var(--success)' : 'var(--brand)',
-                      opacity: line.amount < 0 ? 0.45 : 1,
-                    }}
-                  />
+                  {line.amount === null ? null : (
+                    <span
+                      aria-hidden
+                      className="mt-1.5 block h-1 rounded-full"
+                      style={{
+                        width: `${Math.max(2, (Math.abs(line.amount) / max) * 100)}%`,
+                        background:
+                          line.amount < 0 ? 'var(--muted-2)' : isNet ? 'var(--success)' : 'var(--brand)',
+                        opacity: line.amount < 0 ? 0.45 : 1,
+                      }}
+                    />
+                  )}
                 </td>
                 <td className="py-2.5 text-right">
-                  <Money
-                    value={line.amount}
-                    currency={currency}
-                    negate={line.amount < 0}
-                    className={isNet ? 'font-semibold text-ink-1' : 'text-ink-2'}
-                  />
+                  {line.amount === null ? (
+                    <>
+                      <span aria-hidden className={isNet ? 'font-semibold text-ink-1' : 'text-muted-1'}>
+                        —
+                      </span>
+                      <span className="sr-only">Not known. {line.provenance.methodology}</span>
+                    </>
+                  ) : (
+                    <Money
+                      value={line.amount}
+                      currency={currency}
+                      negate={line.amount < 0}
+                      className={isNet ? 'font-semibold text-ink-1' : 'text-ink-2'}
+                    />
+                  )}
                 </td>
                 <td className="py-2.5 pl-4">
                   <ProvenanceBadge

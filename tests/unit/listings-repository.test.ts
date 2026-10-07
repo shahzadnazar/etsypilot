@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { code, exportedFunctions, isScoped, statements } from '../support/shop-scoping'
 
 /*
  * ██████████████████████████████████████████████████████████████████████████
@@ -31,23 +31,6 @@ import { readFileSync } from 'node:fs'
 
 const REPOSITORY = 'lib/repositories/listings.ts'
 
-/** Source with comments removed, the same way the write-boundary sweep does it. */
-function code(file: string): string {
-  return readFileSync(file, 'utf8')
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/^\s*\/\/.*$/gm, '')
-}
-
-/** Every `export ... function name(` in the file, with its parameter list. */
-function exportedFunctions(source: string): { name: string; params: string }[] {
-  const out: { name: string; params: string }[] = []
-  const pattern = /export\s+(?:async\s+)?function\s+(\w+)\s*\(([^)]*)\)/g
-  for (const match of source.matchAll(pattern)) {
-    out.push({ name: match[1] ?? '', params: match[2] ?? '' })
-  }
-  return out
-}
-
 describe('every way into the listings repository names a shop', () => {
   const source = code(REPOSITORY)
 
@@ -74,34 +57,22 @@ describe('every way into the listings repository names a shop', () => {
 
   it('carries a shop predicate on every statement it issues', () => {
     /*
-     * Per statement, not a count of predicates. The dangerous one is the
-     * removal UPDATE: its other predicate is `notInArray(seen)`, so unscoped
-     * it would date every OTHER shop's catalogue as removed on the first sync
-     * of this one. The integration suite asserts that case behaviourally; this
-     * asserts the predicate is there at all, for statements not yet written.
+     * Per statement, via the shared sweep in tests/support/shop-scoping.ts.
+     * The dangerous one is the removal UPDATE: its other predicate is
+     * `notInArray(seen)`, so unscoped it would date every OTHER shop's
+     * catalogue as removed on the first sync of this one.
      *
-     * An INSERT is the one exception and not a loophole: it has no WHERE to
-     * carry a predicate, and its scope is `shopId` in the values it writes —
-     * which is what this requires of it instead.
+     * This used to carry a hardcoded floor of eight statements and went red
+     * when the shops-timestamp write moved into lib/repositories/sync-state.ts
+     * — a change that moved no risk. The floor is gone; the positive control
+     * is that the sweep finds statements at all.
      */
-    const statements = [...source.matchAll(/\.(select|insert|update|delete)\(/g)]
-    expect(statements.length, 'the sweep found no statements to check').toBeGreaterThanOrEqual(8)
-
-    for (const [index, statement] of statements.entries()) {
-      const from = statement.index ?? 0
-      const next = statements[index + 1]?.index ?? source.length
-      const chain = source.slice(from, next)
-      const kind = statement[1]
-
-      if (kind === 'insert') {
-        expect(chain, 'an insert does not carry shopId in its values').toMatch(/\bshopId,/)
-        continue
-      }
-
+    expect(statements(source).length, 'the sweep found no statements').toBeGreaterThan(0)
+    for (const statement of statements(source)) {
       expect(
-        chain,
-        `a ${kind} at offset ${from} has no shop predicate: ${chain.slice(0, 80)}`,
-      ).toMatch(/eq\(schema\.(listings|shops)\.(shopId|id),\s*shopId\)/)
+        isScoped(statement),
+        `a ${statement.kind} at offset ${statement.offset} is not shop-scoped: ${statement.chain.slice(0, 90)}`,
+      ).toBe(true)
     }
   })
 

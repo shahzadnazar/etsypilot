@@ -19,11 +19,12 @@
  * and for the same reason.
  */
 
-import { getEtsyService } from '@/lib/etsy'
+import { loadListings } from '@/domain/listings/load'
+import { loadOrders } from '@/domain/orders/load'
 import { DEMO_NOW, narrativeGroups, PERIOD_END } from '@/lib/etsy/demo-dataset'
 import { DEMO_EVENTS } from '@/lib/etsy/demo-events'
 import type { DomainEvent } from '@/lib/events/types'
-import type { EtsyOrder } from '@/lib/etsy/interface'
+import type { StoredOrder } from '@/domain/orders/types'
 import type { ShopContext } from '@/lib/permissions'
 
 export const VERDICTS = ['POSITIVE', 'NEGATIVE', 'INCONCLUSIVE'] as const
@@ -98,13 +99,12 @@ export interface ExperimentsView {
 }
 
 export async function getExperiments(ctx: ShopContext): Promise<ExperimentsView> {
-  const etsy = getEtsyService()
-  const [orders, catalogue] = await Promise.all([
+  const [{ orders }, catalogue] = await Promise.all([
     // A wide window: an experiment's "before" reaches behind the reporting
     // period, and reading only the period would compare against a truncated
     // history without saying so.
-    etsy.getOrders(ctx.shopId, { since: '2026-04-15T00:00:00.000Z', until: PERIOD_END }),
-    etsy.getListings(ctx.shopId, { limit: 500 }),
+    loadOrders(ctx, { since: '2026-04-15T00:00:00.000Z', until: PERIOD_END }),
+    loadListings(ctx),
   ])
 
   const groups = narrativeGroups(catalogue.listings)
@@ -131,7 +131,7 @@ export async function getExperiments(ctx: ShopContext): Promise<ExperimentsView>
  */
 export function evaluate(
   experiment: Experiment,
-  orders: EtsyOrder[],
+  orders: readonly StoredOrder[],
   now: string,
   events: DomainEvent[] = [],
 ): ExperimentResult {
@@ -143,7 +143,7 @@ export function evaluate(
   const beforeStart = startMs - beforeDays * 86_400_000
   const afterDays = Math.max(0, Math.round((endMs - startMs) / 86_400_000))
 
-  const inWindow = (order: EtsyOrder, from: number, to: number) => {
+  const inWindow = (order: StoredOrder, from: number, to: number) => {
     const at = Date.parse(order.placedAt)
     if (at < from || at >= to) return false
     return affected.has(order.items[0]?.etsyListingId ?? '')

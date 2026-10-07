@@ -43,9 +43,16 @@ describe('a seller can never adjust a verified figure', () => {
     const doubledCosts = { ...assumptions, cogsPercent: assumptions.cogsPercent * 2 }
     const b = computeScenario(verified, doubledCosts, { scenario: 'BASE', coverage: 0.62, missingData: [] })
 
-    const fees = (r: typeof a) => Math.abs(r.lines.find((l) => l.key === 'etsyFees')!.amount)
+    /*
+     * `verified` here is built from the demo dataset, whose receipts carry
+     * real fees — stated rather than assumed, because a null fee would make
+     * every assertion below compare two absences and pass.
+     */
+    expect(verified.etsyFees, 'this fixture is meant to have known fees').not.toBeNull()
+
+    const fees = (r: typeof a) => Math.abs(r.lines.find((l) => l.key === 'etsyFees')!.amount ?? NaN)
     expect(fees(a)).toBe(fees(b))
-    expect(fees(a)).toBeCloseTo(verified.etsyFees, 2)
+    expect(fees(a)).toBeCloseTo(verified.etsyFees!, 2)
   })
 })
 
@@ -73,9 +80,14 @@ describe('the rendered waterfall subtracts what the receipts say was given back'
 
   it('reconciles: gross minus every cost line equals net', () => {
     const base = computeScenario(verified, assumptions, { scenario: 'BASE', coverage: 0.62, missingData: [] })
+    expect(base.netProfit, 'a reconciliation needs a net to reconcile to').not.toBeNull()
     const costs = base.lines.filter((l) => l.key !== 'gross' && l.key !== 'net')
-    const sum = costs.reduce((s, l) => s + l.amount, 0)
-    expect(base.grossRevenue + sum).toBeCloseTo(base.netProfit, 2)
+    const sum = costs.reduce((s, l) => {
+      // A null amount summed as 0 is exactly the defect under test elsewhere.
+      expect(l.amount, `${l.key} has no amount`).not.toBeNull()
+      return s + (l.amount ?? 0)
+    }, 0)
+    expect(base.grossRevenue + sum).toBeCloseTo(base.netProfit!, 2)
     expect(base.totalCosts).toBeCloseTo(-sum, 2)
   })
 
@@ -91,7 +103,9 @@ describe('the rendered waterfall subtracts what the receipts say was given back'
       { scenario: 'BASE', coverage: 0.62, missingData: [] })
     const withBoth = computeScenario(verified, assumptions,
       { scenario: 'BASE', coverage: 0.62, missingData: [] })
-    expect(withNone.netProfit - withBoth.netProfit).toBeCloseTo(412 + 602, 2)
+    expect(withNone.netProfit).not.toBeNull()
+    expect(withBoth.netProfit).not.toBeNull()
+    expect(withNone.netProfit! - withBoth.netProfit!).toBeCloseTo(412 + 602, 2)
   })
 })
 
@@ -114,7 +128,8 @@ describe('a projected fee is not a verified one', () => {
   it('scales fees with volume, because more sales means more fees', () => {
     const base = computeScenario(verified, assumptions, { scenario: 'BASE', coverage: 0.62, missingData: [] })
     const up = computeScenario(verified, assumptions, { scenario: 'OPTIMISTIC', coverage: 0.62, missingData: [] })
-    const fees = (r: typeof base) => Math.abs(r.lines.find((l) => l.key === 'etsyFees')!.amount)
+    const fees = (r: typeof base) => Math.abs(r.lines.find((l) => l.key === 'etsyFees')!.amount ?? NaN)
+    expect(fees(base), 'a null fee would make this compare NaN to NaN').not.toBeNaN()
     expect(fees(up)).toBeCloseTo(fees(base) * SCENARIO_SHAPES.OPTIMISTIC.salesMultiplier, 1)
   })
 
@@ -130,18 +145,25 @@ describe('scenarios order sensibly', () => {
   it('conservative is worst, optimistic best, base between', () => {
     const { comparison } = buildScenarios(verified, assumptions, { coverage: 0.62, missingData: [] })
     const [cons, base, opt] = comparison
-    expect(cons!.netProfit).toBeLessThan(base!.netProfit)
-    expect(base!.netProfit).toBeLessThan(opt!.netProfit)
+    for (const row of [cons, base, opt]) {
+      expect(row?.netProfit, `${row?.kind} has no net profit`).not.toBeNull()
+    }
+    expect(cons!.netProfit!).toBeLessThan(base!.netProfit!)
+    expect(base!.netProfit!).toBeLessThan(opt!.netProfit!)
   })
 
   it('every scenario still reconciles: gross minus costs equals net', () => {
     const { results } = buildScenarios(verified, assumptions, { coverage: 0.62, missingData: [] })
     for (const kind of ['CONSERVATIVE', 'BASE', 'OPTIMISTIC'] as const) {
       const r = results[kind]
+      expect(r.netProfit, `${kind} has no net profit to reconcile to`).not.toBeNull()
       const costs = r.lines
         .filter((l) => l.key !== 'gross' && l.key !== 'net')
-        .reduce((s, l) => s + Math.abs(l.amount), 0)
-      expect(Math.round((r.grossRevenue - costs) * 100) / 100, kind).toBeCloseTo(r.netProfit, 1)
+        .reduce((s, l) => {
+          expect(l.amount, `${kind}/${l.key} has no amount`).not.toBeNull()
+          return s + Math.abs(l.amount ?? 0)
+        }, 0)
+      expect(Math.round((r.grossRevenue - costs) * 100) / 100, kind).toBeCloseTo(r.netProfit!, 1)
     }
   })
 
@@ -254,8 +276,35 @@ describe('missing data is a first-class state', () => {
 
   it('drops a gap once it no longer applies', () => {
     const summary = reconcile({ orders: [], listings: [], costs: new Map() })
-    const items = missingDataFrom({ summary, listingsWithoutCost: 0, labourRecorded: true })
+    const items = missingDataFrom({
+      summary,
+      listingsWithoutCost: 0,
+      labourRecorded: true,
+      feesKnown: true,
+    })
     expect(items.map((i) => i.code)).toEqual(['ADS_NOT_PER_LISTING'])
+  })
+
+  it('raises the fee gap when the ledger has not been read, and only then', () => {
+    /*
+     * Both directions. The item existing is the new behaviour; the item being
+     * ABSENT when fees are known is what stops it becoming a permanent notice
+     * that every seller learns to scroll past.
+     *
+     * It is also the only gap in this list with no resolution, deliberately:
+     * there is nothing the seller can do, and handing them a button that
+     * cannot help would be worse than saying so.
+     */
+    const summary = reconcile({ orders: [], listings: [], costs: new Map() })
+    const base = { summary, listingsWithoutCost: 0, labourRecorded: true }
+
+    const unknown = missingDataFrom({ ...base, feesKnown: false })
+    expect(unknown.map((i) => i.code)).toEqual(['FEES_NOT_LOADED', 'ADS_NOT_PER_LISTING'])
+    expect(unknown[0]?.resolutions).toEqual([])
+    expect(unknown[0]?.detail).toMatch(/payment-account ledger/)
+
+    const known = missingDataFrom({ ...base, feesKnown: true })
+    expect(known.map((i) => i.code)).not.toContain('FEES_NOT_LOADED')
   })
 })
 

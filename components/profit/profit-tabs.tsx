@@ -39,6 +39,21 @@ function tabFrom(value: string | null): Tab {
   return match ?? 'Waterfall'
 }
 
+/**
+ * Why there is no net margin, which depends on which input is missing.
+ *
+ * Ordered by what the reader can act on: an unknown net profit is the bigger
+ * fact, and it subsumes the revenue question — a shop with no revenue AND no
+ * fee data is better told about the fees, because that is the one that will
+ * still be true after their first sale.
+ */
+function marginAbsence(result: { netProfit: number | null; grossRevenue: number }): string {
+  if (result.netProfit === null) {
+    return 'Net profit is not known for this period, so there is no margin to show.'
+  }
+  return 'No revenue in this period, so there is no margin.'
+}
+
 export function ProfitTabs({ view, demo }: { view: ProfitView; demo: boolean }) {
   const params = useSearchParams()
   const [tab, setTab] = useState<Tab>(() => tabFrom(params.get('tab')))
@@ -89,38 +104,54 @@ export function ProfitTabs({ view, demo }: { view: ProfitView; demo: boolean }) 
           type={shown === 'BASE' ? 'VERIFIED' : 'CALCULATED'}
           demo={demo}
         />
+        {/*
+          THE BADGE HAS TO AGREE WITH THE VALUE.
+
+          These were hardcoded `type="CALCULATED"`, and with the fee lines
+          unknown the tiles rendered "Calculated — Not known": a provenance
+          badge asserting a calculation beside an em dash saying there wasn't
+          one. Seen in a browser on a shop with synced orders and no fee
+          ledger. A badge that contradicts the figure next to it is worse than
+          no badge, because the badge is the thing this product asks sellers to
+          trust.
+        */}
         <Kpi
           label="Total costs"
           value={<Money value={result.totalCosts} currency={view.currency} negate />}
-          type="CALCULATED"
+          type={result.totalCosts === null ? 'UNAVAILABLE' : 'CALCULATED'}
           demo={demo}
         />
         <Kpi
           label="Net profit"
           value={<Money value={result.netProfit} currency={view.currency} />}
-          type="CALCULATED"
+          type={result.netProfit === null ? 'UNAVAILABLE' : 'CALCULATED'}
           demo={demo}
         />
         <Kpi
           label="Net margin"
           /*
-           * An em dash with a reason, not "0.0%". There is no margin without
-           * revenue to be a margin of, and printing zero there reads as
-           * breaking even beside a net profit of −$1,322.05.
+           * An em dash with THE RIGHT reason, not "0.0%".
+           *
+           * There are now two ways to have no margin and they are not the same
+           * sentence. The reason used to be hardcoded to "no revenue in this
+           * period", which was read out on a shop with $18,420.65 of revenue
+           * whose margin was absent because its NET PROFIT was — the fees had
+           * not been read. A screen reader was told something flatly false
+           * while the sighted copy said nothing at all.
            */
           value={
             result.marginPercent === null ? (
               <Numeric className="text-muted-1">
-                <span title="No revenue in this period" aria-hidden>
+                <span title={marginAbsence(result)} aria-hidden>
                   —
                 </span>
-                <span className="sr-only">No revenue in this period, so there is no margin</span>
+                <span className="sr-only">{marginAbsence(result)}</span>
               </Numeric>
             ) : (
               formatPercent(result.marginPercent)
             )
           }
-          type="CALCULATED"
+          type={result.marginPercent === null ? 'UNAVAILABLE' : 'CALCULATED'}
           demo={demo}
         />
       </section>
@@ -206,7 +237,8 @@ function Kpi({
 }: {
   label: string
   value: React.ReactNode
-  type: 'VERIFIED' | 'CALCULATED'
+  /** UNAVAILABLE included, because a tile whose value is absent must say so. */
+  type: 'VERIFIED' | 'CALCULATED' | 'UNAVAILABLE'
   demo: boolean
 }) {
   return (

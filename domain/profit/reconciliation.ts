@@ -16,7 +16,8 @@
  * assumption, so there is no row where a plausible-looking figure hides a gap.
  */
 
-import type { EtsyListing, EtsyOrder } from '@/lib/etsy/interface'
+import type { EtsyListing } from '@/lib/etsy/interface'
+import type { StoredOrder } from '@/domain/orders/types'
 import type {
   MissingDataItem,
   ReconciliationSummary,
@@ -25,7 +26,7 @@ import type {
 } from './types'
 
 export interface ReconcileArgs {
-  orders: EtsyOrder[]
+  orders: readonly StoredOrder[]
   listings: EtsyListing[]
   /** Confirmed per-listing costs. Absence is meaningful, not a zero. */
   costs: Map<string, number>
@@ -41,7 +42,17 @@ export function reconcile(args: ReconcileArgs): ReconciliationSummary {
     const item = order.items[0]
     const listingId = item?.etsyListingId ?? ''
     const title = titles.get(listingId) ?? 'Unknown listing'
-    const fees = round2(order.etsyFees + order.paymentProcessing + order.offsiteAds)
+    /*
+     * NULL WHEN ANY OF THE THREE IS UNKNOWN, and that is not pedantry: this
+     * row's `profit` is `gross - fees - cost`, so treating an unknown fee as 0
+     * would print a per-order profit above the truth in the ledger a seller
+     * reconciles against. The column already distinguishes an absent cost from
+     * a zero one; fees now do the same.
+     */
+    const fees =
+      order.etsyFees === null || order.paymentProcessing === null || order.offsiteAds === null
+        ? null
+        : round2(order.etsyFees + order.paymentProcessing + order.offsiteAds)
 
     if (unmatchedIds.has(order.etsyReceiptId)) {
       return {
@@ -83,9 +94,20 @@ export function reconcile(args: ReconcileArgs): ReconciliationSummary {
       gross: order.gross,
       fees,
       cost,
-      profit: round2(order.gross - fees - cost),
-      status: 'MATCHED',
-      resolutions: [],
+      /*
+       * A confirmed cost is not enough on its own. Profit needs the fees too,
+       * so an order with a known cost and unknown fees is still PARTIAL in
+       * substance — it has a gross and nothing that can be subtracted with
+       * confidence. Null here rather than a figure, same rule as the cost.
+       */
+      profit: fees === null ? null : round2(order.gross - fees - cost),
+      status: fees === null ? 'PARTIAL' : 'MATCHED',
+      ...(fees === null
+        ? {
+            reason: 'Etsy fees for this order have not been read, so profit cannot be computed.',
+            resolutions: [],
+          }
+        : { resolutions: [] }),
     }
   })
 
@@ -148,8 +170,44 @@ export function missingDataFrom(args: {
   summary: ReconciliationSummary
   listingsWithoutCost: number
   labourRecorded: boolean
+  /** False when the payment-account ledger has not been read for the period. */
+  feesKnown: boolean
 }): MissingDataItem[] {
   const items: MissingDataItem[] = []
+
+  /*
+   * ── FIRST, BECAUSE IT IS THE BIGGEST GAP WHEN IT APPLIES ──────────────
+   *
+   * This list had NO_PRODUCT_COST, NO_LABOUR, UNMATCHED_TRANSACTIONS and a
+   * fixed note about ad spend — and no fee code at all. Meanwhile
+   * docs/ETSY-SETUP.md and lib/etsy/live.ts's toOrder() both asserted that
+   * "the profit domain treats a period with no fee data as incomplete rather
+   * than as fee-free". It did not. This item, and the null net profit beside
+   * it, are what make that sentence true.
+   *
+   * No resolution the seller can take, which is why `resolutions` is empty
+   * and the detail says so outright. Every other item here hands them a
+   * button; pretending this one does would be worse than admitting it does
+   * not — the ad-spend note below already set that precedent.
+   */
+  if (!args.feesKnown) {
+    items.push({
+      code: 'FEES_NOT_LOADED',
+      title: 'Etsy fees for this period have not been read',
+      detail:
+        'Etsy reports fees through the payment-account ledger, which is a separate read from your order receipts. Until it has been read, net profit is withheld rather than calculated without the fees — a net profit missing its fees reads higher than the truth.',
+      /*
+       * EVERY order in the period, not just the uncosted ones. Fees are
+       * charged on all of them, so the value whose profit is unknowable for
+       * want of a fee is the whole period — unlike NO_PRODUCT_COST below,
+       * which affects only the orders missing a cost.
+       */
+      affectedValue: round2(
+        args.summary.confirmedGross + args.summary.ruleCostedGross + args.summary.excludedValue,
+      ),
+      resolutions: [],
+    })
+  }
 
   if (args.listingsWithoutCost > 0) {
     items.push({

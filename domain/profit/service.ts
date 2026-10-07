@@ -5,15 +5,16 @@
  * the three scenarios, the cost setup summary and the reconciliation.
  */
 
-import { getEtsyService } from '@/lib/etsy'
+import { loadListings } from '@/domain/listings/load'
+import { loadOrders } from '@/domain/orders/load'
+import { shopHeader, type ShopDataSource } from '@/domain/sync/source'
 import {
   DEMO_COST_INPUTS,
-  demoConfirmedCosts,
   demoUnmatchedOrderIds,
   PERIOD_END,
   PERIOD_START,
 } from '@/lib/etsy/demo-dataset'
-import type { EtsyOrder } from '@/lib/etsy/interface'
+import { feeTotals, feesAreKnown, type StoredOrder } from '@/domain/orders/types'
 import type { ShopContext } from '@/lib/permissions'
 import { missingDataFrom, reconcile } from './reconciliation'
 import { buildScenarios, inputRows, type InputRow, type ScenarioComparison } from './scenarios'
@@ -39,6 +40,14 @@ export interface ProfitView {
   periodStart: string
   periodEnd: string
   currency: string
+  /**
+   * Where the orders behind every figure here came from.
+   *
+   * NOT_SYNCED is not "you made no profit". The screen renders it as its own
+   * state; without this it would show a complete waterfall of zeroes, which
+   * for a profit screen is the most misleading possible output.
+   */
+  source: ShopDataSource
   verified: VerifiedTotals
   assumptions: SellerAssumptions
   results: Record<ScenarioKind, ProfitResult>
@@ -49,10 +58,12 @@ export interface ProfitView {
 }
 
 export async function getProfitView(ctx: ShopContext): Promise<ProfitView> {
-  const etsy = getEtsyService()
-  const shop = await etsy.getShop(ctx.shopId)
-  const orders = await etsy.getOrders(ctx.shopId, { since: PERIOD_START, until: PERIOD_END })
-  const { listings } = await etsy.getListings(ctx.shopId, { limit: 500 })
+  const [shop, { orders, source }, catalogue] = await Promise.all([
+    shopHeader(ctx),
+    loadOrders(ctx, { since: PERIOD_START, until: PERIOD_END }),
+    loadListings(ctx),
+  ])
+  const listings = catalogue.listings
 
   const verified = totalsFrom(orders)
 
@@ -66,7 +77,13 @@ export async function getProfitView(ctx: ShopContext): Promise<ProfitView> {
   // Costs exist for most listings, not all. The gap is the point of the screen.
   // One resolver supplies the confirmed-cost set everywhere it is needed, so
   // the coverage figure and the ledger can never describe different sets.
-  const costs = demoConfirmedCosts(listings)
+  /*
+   * From the loader. Empty on a synced shop, because cost rules are a later
+   * aggregate — so coverage reads 0% and the ledger excludes every order
+   * rather than costing it from the demo fixture. That is the honest state of
+   * a freshly connected shop and the screen is built to say it.
+   */
+  const costs = catalogue.costs
   /*
    * Counted here, from the same catalogue the ledger below is built from.
    *
@@ -85,6 +102,7 @@ export async function getProfitView(ctx: ShopContext): Promise<ProfitView> {
     summary: reconciliation,
     listingsWithoutCost: listingsMissingCost,
     labourRecorded: false,
+    feesKnown: feesAreKnown(orders),
   })
 
   // Measured from the reconciliation, not stated. See D34.
@@ -94,12 +112,13 @@ export async function getProfitView(ctx: ShopContext): Promise<ProfitView> {
   return {
     periodStart: PERIOD_START,
     periodEnd: PERIOD_END,
-    currency: shop.currency,
+    currency: shop?.currency ?? 'USD',
+    source,
     verified,
     assumptions,
     results,
     comparison,
-    inputs: inputRows(verified, assumptions, shop.currency),
+    inputs: inputRows(verified, assumptions, shop?.currency ?? 'USD'),
     reconciliation,
     costSetup: {
       coveragePercent: reconciliation.coveragePercent,
@@ -131,14 +150,23 @@ export async function getProfitView(ctx: ShopContext): Promise<ProfitView> {
  * Built here and passed as a readonly value so nothing downstream can adjust a
  * figure Etsy reported.
  */
-export function totalsFrom(orders: EtsyOrder[]): VerifiedTotals {
+export function totalsFrom(orders: readonly StoredOrder[]): VerifiedTotals {
+  /*
+   * Fees via feeTotals, which returns null unless EVERY order has all three.
+   *
+   * The three `reduce` calls this replaces could not fail: a period whose
+   * fees had never been read summed to 0, and every downstream line labelled
+   * that 0 VERIFIED. A partial period is worse still — the sum would be a real
+   * number, smaller than the truth, and indistinguishable from a complete one.
+   */
+  const fees = feeTotals(orders)
   return {
     grossRevenue: round2(orders.reduce((s, o) => s + o.gross, 0)),
     discounts: round2(orders.reduce((s, o) => s + o.discounts, 0)),
     refunds: round2(orders.reduce((s, o) => s + o.refunds, 0)),
-    etsyFees: round2(orders.reduce((s, o) => s + o.etsyFees, 0)),
-    paymentProcessing: round2(orders.reduce((s, o) => s + o.paymentProcessing, 0)),
-    offsiteAds: round2(orders.reduce((s, o) => s + o.offsiteAds, 0)),
+    etsyFees: fees === null ? null : round2(fees.etsyFees),
+    paymentProcessing: fees === null ? null : round2(fees.paymentProcessing),
+    offsiteAds: fees === null ? null : round2(fees.offsiteAds),
     orderCount: orders.length,
   }
 }

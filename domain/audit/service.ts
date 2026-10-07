@@ -27,9 +27,12 @@
  * separately, so the score never silently speaks for revenue it never saw.
  */
 
-import { getEtsyService } from '@/lib/etsy'
-import { demoConfirmedCosts, PERIOD_END, PERIOD_START } from '@/lib/etsy/demo-dataset'
-import type { EtsyListing, EtsyOrder } from '@/lib/etsy/interface'
+import { loadListings } from '@/domain/listings/load'
+import { loadOrders } from '@/domain/orders/load'
+import type { ShopDataSource } from '@/domain/sync/source'
+import { PERIOD_END, PERIOD_START } from '@/lib/etsy/demo-dataset'
+import type { EtsyListing } from '@/lib/etsy/interface'
+import type { StoredOrder } from '@/domain/orders/types'
 import type { ShopContext } from '@/lib/permissions'
 import { calculated, unavailable, verified } from '@/lib/provenance/builders'
 import type { Provenanced } from '@/lib/provenance/types'
@@ -56,6 +59,10 @@ export interface RuleResult {
 }
 
 export interface AuditView {
+  /** Where the audited catalogue came from. NOT_SYNCED is not "0 problems". */
+  source?: ShopDataSource
+  /** Where the revenue figures came from, which can differ from the catalogue. */
+  ordersSource?: ShopDataSource
   listingsChecked: number
   ruleCount: number
   errors: number
@@ -87,16 +94,38 @@ export interface AuditView {
 const SEVERITY_WEIGHT: Record<Severity, number> = { ERROR: 1, WARNING: 0.35 }
 
 export async function getAuditView(ctx: ShopContext): Promise<AuditView> {
-  const etsy = getEtsyService()
-  const { listings } = await etsy.getListings(ctx.shopId, { limit: 500 })
-  const orders = await etsy.getOrders(ctx.shopId, { since: PERIOD_START, until: PERIOD_END })
+  /*
+   * Through the loaders, so this screen reads our own tables on a synced shop
+   * and the adapter only in demo mode. It called getListings and getOrders
+   * directly, which is a 500 in a live deployment with no ETSY_API_KEY.
+   *
+   * `costs` comes back from the listings loader rather than being computed
+   * here: on a synced shop it is empty, because cost rules are a later
+   * aggregate — and pairing a synced catalogue with the demo cost fixture
+   * would put invented margins on a real seller's listings.
+   */
+  const [catalogue, { orders, source }] = await Promise.all([
+    loadListings(ctx),
+    loadOrders(ctx, { since: PERIOD_START, until: PERIOD_END }),
+  ])
 
-  return auditListings(listings, orders, demoConfirmedCosts(listings))
+  return {
+    ...auditListings(catalogue.listings, orders, catalogue.costs),
+    /*
+     * The audit's own source is the LISTINGS one — it audits a catalogue, and
+     * the orders only supply the revenue figure beside each finding. A shop
+     * with listings read and orders not read still has a real audit; it is the
+     * revenue column that is unknown, which `listingsWithoutRevenue` already
+     * expresses as a count rather than a claim.
+     */
+    source: catalogue.source,
+    ordersSource: source,
+  }
 }
 
 export function auditListings(
   listings: EtsyListing[],
-  orders: EtsyOrder[],
+  orders: readonly StoredOrder[],
   costs: Map<string, number>,
   thresholds = DEFAULT_THRESHOLDS,
 ): AuditView {
@@ -276,7 +305,7 @@ function suggestFromText(listing: EtsyListing, attribute: string): string | null
   return null
 }
 
-function revenueFrom(orders: EtsyOrder[]): Map<string, number> {
+function revenueFrom(orders: readonly StoredOrder[]): Map<string, number> {
   const map = new Map<string, number>()
   for (const order of orders) {
     for (const item of order.items) {

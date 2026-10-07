@@ -20,7 +20,7 @@ export default async function DashboardPage() {
   if (!session) redirect('/login')
 
   const ctx = shopContext(session, session.shopId)
-  const [overview, { actions, counts }] = await Promise.all([
+  const [overview, { actions, counts, source }] = await Promise.all([
     getShopOverview(ctx),
     getActions(ctx),
   ])
@@ -88,7 +88,7 @@ export default async function DashboardPage() {
       */}
       <section aria-label="Action Center" className="mt-5">
         <h2 className="mb-3 text-section text-ink-1">What needs your attention</h2>
-        <ActionList actions={actions} counts={counts} demo={session.isDemo} />
+        <ActionList actions={actions} counts={counts} demo={session.isDemo} source={source} />
       </section>
 
       {/* Etsy does not expose views. We say so rather than estimating them. */}

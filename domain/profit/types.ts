@@ -32,9 +32,21 @@ export interface VerifiedTotals {
    */
   readonly discounts: number
   readonly refunds: number
-  readonly etsyFees: number
-  readonly paymentProcessing: number
-  readonly offsiteAds: number
+  /**
+   * NULL when the payment-account ledger has not been read for this period.
+   *
+   * ── THIS TYPE IS THE ONE THAT RENDERS, AND THAT HAS BITTEN BEFORE ──────
+   *
+   * The comment on `discounts` above records it: D74 added those lines to
+   * computeWaterfall and missed this type, "which is what Profit Reality
+   * actually renders — so the flagship screen went on overstating net profit
+   * by exactly their sum while a passing test covered the other
+   * implementation." The fee fix is the same shape, so it was made in both
+   * places at once rather than in the one with the better tests.
+   */
+  readonly etsyFees: number | null
+  readonly paymentProcessing: number | null
+  readonly offsiteAds: number | null
   readonly orderCount: number
 }
 
@@ -55,7 +67,8 @@ export type ScenarioKind = (typeof SCENARIO_KINDS)[number]
 export interface WaterfallLine {
   key: string
   label: string
-  amount: number
+  /** NULL when the figure is not known. Never 0 standing in for unknown. */
+  amount: number | null
   provenance: Provenance
 }
 
@@ -85,8 +98,17 @@ export interface ProfitResult {
   scenario: ScenarioKind
   lines: WaterfallLine[]
   grossRevenue: number
-  totalCosts: number
-  netProfit: number
+  /** NULL when a cost line is unknown, so the total cannot be stated. */
+  totalCosts: number | null
+  /**
+   * NULL when Etsy's fees for the period are unknown.
+   *
+   * Not a figure with a caveat beside it. Without the fees, gross minus the
+   * costs we DO have lands above the truth, and this is the number sellers
+   * act on. The operator console already refuses the name on the mirror-image
+   * case (0% cost coverage); this is the fee half.
+   */
+  netProfit: number | null
   /*
    * Null when there is no revenue to be a margin OF.
    *
@@ -110,10 +132,18 @@ export interface TransactionRow {
   listingTitle: string
   placedAt: string
   gross: number
-  fees: number
+  /**
+   * null when Etsy's fees for this order are not known.
+   *
+   * Sits beside `cost` and `profit` below for the same reason they are
+   * nullable: a figure this product does not hold must not be rendered as a
+   * figure it does. The ledger row then shows an em dash for the fee and for
+   * the profit that depended on it.
+   */
+  fees: number | null
   /** null when no confirmed cost exists — never a guessed figure. */
   cost: number | null
-  /** null whenever cost is null: profit is not computed from an assumption. */
+  /** null whenever cost or fees is null: profit is never computed from a gap. */
   profit: number | null
   status: ReconciliationStatus
   /** Why it is not matched, in plain language. Empty for MATCHED. */

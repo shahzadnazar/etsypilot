@@ -9,7 +9,7 @@
  * most shops, and a flat mean would flag every weekend as a deviation.
  */
 
-import type { EtsyOrder } from '@/lib/etsy/interface'
+import type { StoredOrder } from '@/domain/orders/types'
 import type { Baseline, BaselinePoint } from './types'
 
 /**
@@ -22,8 +22,8 @@ const BAND_SIGMA = 2
 
 interface BaselineArgs {
   metric: 'orders' | 'revenue'
-  priorOrders: EtsyOrder[]
-  periodOrders: EtsyOrder[]
+  priorOrders: readonly StoredOrder[]
+  periodOrders: readonly StoredOrder[]
   periodStart: string
   periodDays: number
   /** Retained from the shop record, but display and bucketing are UTC (D24). */
@@ -33,7 +33,7 @@ interface BaselineArgs {
 }
 
 export function computeBaseline(args: BaselineArgs): Baseline {
-  const value = (o: EtsyOrder) => (args.metric === 'orders' ? 1 : o.gross)
+  const value = (o: StoredOrder) => (args.metric === 'orders' ? 1 : o.gross)
 
   // Group the prior window by weekday, so each day is compared against its own kind.
   const priorByWeekday = new Map<number, number[]>()
@@ -95,8 +95,8 @@ export function computeBaseline(args: BaselineArgs): Baseline {
  * timestamp in its evidence refer to the same day.
  */
 function bucketByDay(
-  orders: EtsyOrder[],
-  value: (o: EtsyOrder) => number,
+  orders: readonly StoredOrder[],
+  value: (o: StoredOrder) => number,
 ): Map<string, number> {
   const out = new Map<string, number>()
   for (const o of orders) {

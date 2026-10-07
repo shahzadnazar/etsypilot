@@ -16,9 +16,12 @@
  * to lift in November" are different claims and only one is about this shop.
  */
 
-import { getEtsyService } from '@/lib/etsy'
+import { loadListings } from '@/domain/listings/load'
+import type { ShopDataSource } from '@/domain/sync/source'
+import { loadOrders } from '@/domain/orders/load'
 import { BASELINE_START, DEMO_NOW, PERIOD_END } from '@/lib/etsy/demo-dataset'
-import type { EtsyListing, EtsyOrder } from '@/lib/etsy/interface'
+import type { EtsyListing } from '@/lib/etsy/interface'
+import type { StoredOrder } from '@/domain/orders/types'
 import type { Confidence } from '@/lib/provenance/types'
 import type { ShopContext } from '@/lib/permissions'
 
@@ -54,6 +57,15 @@ export interface SeasonalView {
   /** Months of the seller's own history behind these windows. */
   historyMonths: number
   empty: boolean
+  /**
+   * Where the orders and the catalogue came from.
+   *
+   * `empty` is true both for a demo shop with no listings and for a shop
+   * nobody has read, and those want different sentences: "no seasonal pattern
+   * in your catalogue yet" against "we have not read your sales history".
+   */
+  source?: ShopDataSource
+  ordersSource?: ShopDataSource
 }
 
 export const MONTH_INITIALS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D']
@@ -62,10 +74,16 @@ export async function getSeasonalCalendar(
   ctx: ShopContext,
   query: { category?: string } = {},
 ): Promise<SeasonalView> {
-  const etsy = getEtsyService()
-  const [orders, catalogue] = await Promise.all([
-    etsy.getOrders(ctx.shopId, { since: BASELINE_START, until: PERIOD_END }),
-    etsy.getListings(ctx.shopId, { limit: 500 }),
+  /*
+   * Through the loaders. `buildWindows` already returns no windows for an
+   * empty catalogue, so an unread shop renders the calendar with no windows
+   * rather than inventing a season — but the empty-catalogue guard was there
+   * for a demo shop with no listings, which is a different fact, so the
+   * sources travel with the view.
+   */
+  const [{ orders, source: ordersSource }, catalogue] = await Promise.all([
+    loadOrders(ctx, { since: BASELINE_START, until: PERIOD_END }),
+    loadListings(ctx),
   ])
   const listings = catalogue.listings
 
@@ -82,6 +100,8 @@ export async function getSeasonalCalendar(
     windows,
     historyMonths,
     empty: windows.length === 0,
+    source: catalogue.source,
+    ordersSource,
   }
 }
 
@@ -94,7 +114,7 @@ export async function getSeasonalCalendar(
  * confidence being quietly upgraded to make the screen look better.
  */
 function buildWindows(args: {
-  orders: EtsyOrder[]
+  orders: readonly StoredOrder[]
   listings: EtsyListing[]
   category: string
   historyMonths: number
@@ -218,8 +238,8 @@ function buildWindows(args: {
  * only the window being longer.
  */
 export function liftOf(
-  inWindow: EtsyOrder[],
-  outWindow: EtsyOrder[],
+  inWindow: StoredOrder[],
+  outWindow: StoredOrder[],
   windowMonths: number,
 ): number | null {
   if (inWindow.length === 0 || outWindow.length === 0) return null

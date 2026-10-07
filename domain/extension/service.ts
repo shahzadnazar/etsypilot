@@ -16,8 +16,10 @@
  */
 
 import { auditListings } from '@/domain/audit/service'
-import { getEtsyService } from '@/lib/etsy'
-import { demoConfirmedCosts, PERIOD_END, PERIOD_START } from '@/lib/etsy/demo-dataset'
+import { loadListings } from '@/domain/listings/load'
+import { loadOrders } from '@/domain/orders/load'
+import type { StoredOrder } from '@/domain/orders/types'
+import { PERIOD_END, PERIOD_START } from '@/lib/etsy/demo-dataset'
 import type { EtsyListing } from '@/lib/etsy/interface'
 import type { ShopContext } from '@/lib/permissions'
 import { getSignalsService } from '@/lib/signals'
@@ -44,13 +46,12 @@ export async function getListingIntelligence(
   ctx: ShopContext,
   etsyListingId: string,
 ): Promise<ListingIntelligence | null> {
-  const etsy = getEtsyService()
-  const { listings } = await etsy.getListings(ctx.shopId, { limit: 500 })
+  const { listings, costs } = await loadListings(ctx)
   const own = listings.find((l) => l.etsyListingId === etsyListingId)
+  if (!own) return otherListing(etsyListingId)
 
-  return own
-    ? ownListing(own, listings, await etsy.getOrders(ctx.shopId, { since: PERIOD_START, until: PERIOD_END }))
-    : otherListing(etsyListingId)
+  const { orders } = await loadOrders(ctx, { since: PERIOD_START, until: PERIOD_END })
+  return ownListing(own, listings, orders, costs)
 }
 
 /* -------------------------------------------------------- the seller's own */
@@ -58,11 +59,18 @@ export async function getListingIntelligence(
 async function ownListing(
   listing: EtsyListing,
   listings: EtsyListing[],
-  orders: Awaited<ReturnType<ReturnType<typeof getEtsyService>['getOrders']>>,
+  orders: readonly StoredOrder[],
+  /*
+   * Passed in from the loader rather than computed here. On a synced shop the
+   * map is empty, because cost rules are a later aggregate — and running
+   * `demoConfirmedCosts` over a real seller's catalogue would hand the browser
+   * extension invented margins for their live listings.
+   */
+  costs: Map<string, number>,
 ): Promise<ListingIntelligence> {
   // One audit run, then read this listing's findings out of it. The popup and
   // the audit page therefore cannot disagree — they are the same computation.
-  const audit = auditListings(listings, orders, demoConfirmedCosts(listings))
+  const audit = auditListings(listings, orders, costs)
   const findings = audit.results.filter((r) =>
     r.findings.some((f) => f.listingId === listing.etsyListingId),
   )

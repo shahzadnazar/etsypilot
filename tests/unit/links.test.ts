@@ -195,7 +195,7 @@ describe('resolutions', () => {
     })
 
     const lists: { where: string; hrefs: string[] }[] = [
-      ...missingDataFrom({ summary, listingsWithoutCost: 38, labourRecorded: false }).map((item) => ({
+      ...missingDataFrom({ summary, listingsWithoutCost: 38, labourRecorded: false, feesKnown: false }).map((item) => ({
         where: item.code,
         hrefs: item.resolutions.map((r) => r.href),
       })),
@@ -227,7 +227,7 @@ describe('resolutions', () => {
     })
 
     const all = [
-      ...missingDataFrom({ summary, listingsWithoutCost: 38, labourRecorded: false }).map(
+      ...missingDataFrom({ summary, listingsWithoutCost: 38, labourRecorded: false, feesKnown: false }).map(
         (i) => i.resolutions,
       ),
       ...summary.rows.map((r) => r.resolutions),

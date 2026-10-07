@@ -90,6 +90,16 @@ function fakeAdapter(listings: EtsyListing[]) {
 async function clean() {
   const db = getDb()
   await db.delete(schema.listings).where(inArray(schema.listings.shopId, OURS))
+  /*
+   * sync_state, or `delete from shops` fails the foreign key.
+   *
+   * Added when the listings sync started writing a per-aggregate sync row:
+   * the orders slice needed one timestamp per aggregate, and this teardown
+   * did not know about the new table. The whole suite went red in `clean()`,
+   * which is the right failure — a suite that leaves its fixtures half
+   * deleted poisons every file that runs after it.
+   */
+  await db.delete(schema.syncState).where(inArray(schema.syncState.shopId, OURS))
   await db.delete(schema.memberships).where(inArray(schema.memberships.shopId, OURS))
   await db.delete(schema.shops).where(inArray(schema.shops.id, OURS))
   await db.delete(schema.users).where(inArray(schema.users.id, [USER_A, USER_B]))
@@ -399,7 +409,7 @@ describe('the repository cannot be asked for another shop', () => {
 
 describe('what a seller sees before their first sync', () => {
   it('says NOT SYNCED, not "no listings"', async () => {
-    const { source } = await shopDataSource(ctxFor(SHOP_A))
+    const { source } = await shopDataSource(ctxFor(SHOP_A), 'LISTINGS')
     expect(source.kind).toBe('NOT_SYNCED')
 
     const view = await getListingsView(ctxFor(SHOP_A))
@@ -424,7 +434,7 @@ describe('what a seller sees before their first sync', () => {
   })
 
   it('reports a shop that is gone as its own thing', async () => {
-    const { source } = await shopDataSource(ctxFor('shop-that-does-not-exist'))
+    const { source } = await shopDataSource(ctxFor('shop-that-does-not-exist'), 'LISTINGS')
     expect(source.kind).toBe('NO_SHOP')
   })
 

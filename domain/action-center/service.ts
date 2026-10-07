@@ -12,8 +12,9 @@
 
 import { computeWaterfall } from '@/domain/profit/waterfall'
 import { getShopPulse } from '@/domain/shop-pulse/service'
-import { getEtsyService } from '@/lib/etsy'
-import type { EtsyOrder } from '@/lib/etsy/interface'
+import { loadOrders, ordersWereRead } from '@/domain/orders/load'
+import type { StoredOrder } from '@/domain/orders/types'
+import type { ShopDataSource } from '@/domain/sync/source'
 import {
   DEMO_ACTOR_ID,
   DEMO_COST_INPUTS,
@@ -31,11 +32,50 @@ import { compareActions, matchesFilter } from './types'
 export interface ActionCenterView {
   actions: Action[]
   counts: Record<ActionFilter, number>
+  /**
+   * Where the orders behind these actions came from.
+   *
+   * On the view, not inferred by the screen from `actions.length === 0`. An
+   * empty queue has two completely different meanings and the count cannot
+   * tell them apart.
+   */
+  source: ShopDataSource
 }
 
+/**
+ * The queue.
+ *
+ * ══════════════════════════════════════════════════════════════════════════
+ *   "NOTHING NEEDS YOUR ATTENTION" IS A CLAIM, AND THIS IS THE SCREEN THAT
+ *   MOST MUST NOT MAKE IT FALSELY.
+ * ══════════════════════════════════════════════════════════════════════════
+ *
+ * Every generator below derives an action from observed shop state. Given an
+ * empty order list they observe nothing wrong and produce nothing — so a shop
+ * whose orders have never been read got a clean, confident, empty queue. That
+ * is the worst possible failure for a screen whose entire purpose is to say
+ * what the seller should look at: silence that reads as reassurance.
+ *
+ * So when the orders were not read, the generators that depend on them do not
+ * run at all, and the view says NOT_SYNCED. The screen renders that as its own
+ * state rather than as an empty list. The generators that do not look at
+ * orders are a separate question and are handled in the branch below.
+ */
 export async function getActions(ctx: ShopContext): Promise<ActionCenterView> {
-  const etsy = getEtsyService()
-  const orders = await etsy.getOrders(ctx.shopId, { since: PERIOD_START, until: PERIOD_END })
+  const { orders, source } = await loadOrders(ctx, { since: PERIOD_START, until: PERIOD_END })
+
+  if (!ordersWereRead(source)) {
+    /*
+     * No actions, and the source says why. Not even the order-independent
+     * generators run: every one of them is currently built from the demo
+     * dataset's own constants (DEMO_COUNTS, a hardcoded renewal count), so on
+     * a real unsynced shop they would be inventing findings about a catalogue
+     * nobody has read — which is a worse lie than an empty queue, because an
+     * action is an instruction.
+     */
+    return { actions: [], counts: { OPEN: 0, DONE: 0, DISMISSED: 0 }, source }
+  }
+
   const profit = computeWaterfall(orders, DEMO_COST_INPUTS)
 
   // Shop Pulse is a generator like any other: its findings enter the same
@@ -57,6 +97,7 @@ export async function getActions(ctx: ShopContext): Promise<ActionCenterView> {
       DONE: actions.filter((a) => matchesFilter(a, 'DONE')).length,
       DISMISSED: actions.filter((a) => matchesFilter(a, 'DISMISSED')).length,
     },
+    source,
   }
 }
 
@@ -151,7 +192,7 @@ function belowCost(ctx: ShopContext): Action {
  * between two measured numbers, which is the worst place for one: it inherits
  * their credibility and none of their accuracy.
  */
-function uncoveredValue(orders: EtsyOrder[], coveragePercent: number): number {
+function uncoveredValue(orders: readonly StoredOrder[], coveragePercent: number): number {
   const gross = orders.reduce((sum, o) => sum + o.gross, 0)
   return Math.round(gross * ((100 - coveragePercent) / 100))
 }

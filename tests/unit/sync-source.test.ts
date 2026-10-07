@@ -103,7 +103,7 @@ describe('the data source decision', () => {
     const getDb = vi.spyOn(db, 'getDb')
 
     const { shopDataSource } = await import('@/domain/sync/source')
-    const result = await shopDataSource({ shopId: 'shop_x', actorId: 'user_x', readOnly: true })
+    const result = await shopDataSource({ shopId: 'shop_x', actorId: 'user_x', readOnly: true }, 'LISTINGS')
 
     expect(result.source).toEqual({ kind: 'DEMO' })
     expect(result.currency).toBeNull()
@@ -123,7 +123,7 @@ describe('the data source decision', () => {
     const { shopDataSource } = await import('@/domain/sync/source')
     const demoShop = { shopId: 'shop_x', actorId: 'user_x', readOnly: true }
 
-    await expect(shopDataSource(demoShop)).rejects.toThrow()
+    await expect(shopDataSource(demoShop, 'LISTINGS')).rejects.toThrow()
   })
 })
 

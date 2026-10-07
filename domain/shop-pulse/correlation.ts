@@ -19,7 +19,7 @@
  * "the algorithm" to fill the gap.
  */
 
-import type { EtsyOrder } from '@/lib/etsy/interface'
+import type { StoredOrder } from '@/domain/orders/types'
 import type { Diagnosis } from '@/lib/events/types'
 import type { Confidence } from '@/lib/provenance/types'
 
@@ -51,14 +51,14 @@ export interface RateComparison {
 
 /** Order rate on a set of listings, before and after an instant. */
 export function compareRates(
-  orders: EtsyOrder[],
+  orders: readonly StoredOrder[],
   listingIds: string[],
   at: string,
   windowStart: string,
   windowEnd: string,
 ): RateComparison {
   const ids = new Set(listingIds)
-  const touches = (o: EtsyOrder) =>
+  const touches = (o: StoredOrder) =>
     listingIds.length === 0 || o.items.some((i) => ids.has(i.etsyListingId))
 
   const before = orders.filter((o) => touches(o) && o.placedAt >= windowStart && o.placedAt < at)

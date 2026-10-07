@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { computeWaterfall } from '@/domain/profit/waterfall'
+import type { StoredOrder } from '@/domain/orders/types'
 import {
   buildDemoListings,
   buildDemoOrders,
@@ -61,10 +62,23 @@ describe('profit waterfall', () => {
   })
 
   it('reconciles: gross minus every cost equals net', () => {
+    /*
+     * The fixture's fees are known, which this now states rather than
+     * assuming. A null amount here would mean the fee lines went UNAVAILABLE
+     * and the reconciliation below would be summing an absence as zero —
+     * which is the whole defect the nullable fee columns exist to prevent, so
+     * it must not pass quietly in the test that checks the sum.
+     */
+    expect(result.feesKnown, 'this fixture is meant to have known fees').toBe(true)
+    expect(result.netProfit).not.toBeNull()
+
     const costs = result.lines
       .filter((l) => l.key !== 'gross' && l.key !== 'net')
-      .reduce((s, l) => s + Math.abs(l.amount), 0)
-    expect(round2(result.grossRevenue - costs)).toBeCloseTo(result.netProfit, 1)
+      .reduce((s, l) => {
+        expect(l.amount, `${l.key} has no amount`).not.toBeNull()
+        return s + Math.abs(l.amount ?? 0)
+      }, 0)
+    expect(round2(result.grossRevenue - costs)).toBeCloseTo(result.netProfit!, 1)
   })
 
   it('labels verified fee lines VERIFIED and seller costs SELLER_INPUT', () => {
@@ -122,3 +136,90 @@ describe('profit waterfall', () => {
 function round2(n: number): number {
   return Math.round(n * 100) / 100
 }
+
+describe('a period whose fees have not been read', () => {
+  /*
+   * ██████████████████████████████████████████████████████████████████████
+   *
+   *   THE OTHER WATERFALL. THIS IS THE ONE THE DASHBOARD'S NET PROFIT TILE
+   *   AND THE ACTION CENTER RUN ON.
+   *
+   * ██████████████████████████████████████████████████████████████████████
+   *
+   * Added because a NEGATIVE CONTROL found nothing to catch it. Replacing
+   * `fees === null ? null : ...` in computeWaterfall with
+   * `(fees?.etsyFees ?? 0)` — the exact defect the nullable columns exist to
+   * prevent — left all 39 orders integration tests green, because those go
+   * through getProfitView, which uses scenarios.ts and totalsFrom instead.
+   *
+   * domain/profit/types.ts already records what happens when the two
+   * implementations drift: "D74 added them to computeWaterfall and missed
+   * this type... so the flagship screen went on overstating net profit by
+   * exactly their sum while a passing test covered the other
+   * implementation." This is the same hazard from the opposite side, and the
+   * fix is for BOTH to be covered rather than for one to be trusted.
+   */
+  const withKnownFees = buildDemoOrders(buildDemoListings())
+  const withoutFees = withKnownFees.map((order) => ({
+    ...order,
+    etsyFees: null,
+    paymentProcessing: null,
+    offsiteAds: null,
+  }))
+
+  it('reports no net profit at all', () => {
+    const result = computeWaterfall(withoutFees, COSTS)
+
+    expect(result.feesKnown).toBe(false)
+    expect(result.netProfit, 'a net profit was computed without the fees').toBeNull()
+    expect(result.totalCosts).toBeNull()
+    expect(result.marginPercent).toBeNull()
+    // The revenue is still known, and still stated. Only what depends on the
+    // fees is withheld.
+    expect(result.grossRevenue).toBe(DEMO_TOTALS.grossRevenue)
+  })
+
+  it('marks the fee lines UNAVAILABLE rather than VERIFIED', () => {
+    const result = computeWaterfall(withoutFees, COSTS)
+    for (const key of ['etsyFees', 'processing', 'offsiteAds', 'net']) {
+      const line = result.lines.find((l) => l.key === key)
+      expect(line?.amount, `${key} drew an amount`).toBeNull()
+      expect(line?.provenance.type, key).toBe('UNAVAILABLE')
+    }
+    // And the lines that ARE known keep their badge.
+    expect(result.lines.find((l) => l.key === 'gross')?.provenance.type).toBe('VERIFIED')
+    expect(result.lines.find((l) => l.key === 'cogs')?.provenance.type).toBe('SELLER_INPUT')
+  })
+
+  it('says so in missingData, and only when it applies', () => {
+    const absent = computeWaterfall(withoutFees, COSTS).missingData.join(' ')
+    expect(absent).toMatch(/fees for this period have not been read/i)
+
+    // THE CONVERSE. Without this, a product that always warned about fees
+    // would satisfy the assertion above perfectly.
+    const present = computeWaterfall(withKnownFees, COSTS).missingData.join(' ')
+    expect(present).not.toMatch(/have not been read/i)
+  })
+
+  it('is decided per SET, so one unread order withholds the period', () => {
+    /*
+     * The waterfall is a period total. Summing the orders whose fees ARE known
+     * and calling it the total would report a number smaller than the truth —
+     * the flattering direction — with nothing on screen to say so.
+     */
+    const mostlyKnown: StoredOrder[] = [...withKnownFees]
+    mostlyKnown[0] = { ...mostlyKnown[0]!, etsyFees: null }
+
+    const result = computeWaterfall(mostlyKnown, COSTS)
+    expect(result.feesKnown, 'one unknown fee was averaged away').toBe(false)
+    expect(result.netProfit).toBeNull()
+  })
+
+  it('still computes a net profit when every fee is known', () => {
+    // The positive control for the whole block.
+    const result = computeWaterfall(withKnownFees, COSTS)
+    expect(result.feesKnown).toBe(true)
+    expect(result.netProfit).not.toBeNull()
+    expect(result.lines.find((l) => l.key === 'etsyFees')?.provenance.type).toBe('VERIFIED')
+  })
+})

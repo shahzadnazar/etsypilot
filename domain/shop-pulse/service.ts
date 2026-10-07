@@ -8,7 +8,8 @@
  * of the verdicts below are written down anywhere - they are reached.
  */
 
-import { getEtsyService } from '@/lib/etsy'
+import { loadOrders, ordersWereRead } from '@/domain/orders/load'
+import { shopHeader } from '@/domain/sync/source'
 import {
   BASELINE_END,
   BASELINE_START,
@@ -21,7 +22,7 @@ import {
   narrativeGroups,
 } from '@/lib/etsy/demo-dataset'
 import { DEMO_EVENTS } from '@/lib/etsy/demo-events'
-import type { EtsyOrder } from '@/lib/etsy/interface'
+import type { StoredOrder } from '@/domain/orders/types'
 import type { DomainEvent, Diagnosis } from '@/lib/events/types'
 import type { ShopContext } from '@/lib/permissions'
 import { formatDate } from '@/lib/utils/format'
@@ -34,27 +35,80 @@ import {
   diagnose,
   hasEnoughData,
 } from './correlation'
-import type { DetectedChange, Evidence, ShopPulseView, TestedAlternative } from './types'
+import type { Baseline, DetectedChange, Evidence, ShopPulseView, TestedAlternative } from './types'
+
+/**
+ * A baseline with no observations, for a shop whose orders have not been read.
+ *
+ * Every number is 0 and `series` is empty, which is the honest shape: the
+ * chart draws nothing rather than a flat line at zero, because a flat line is
+ * a measurement and this is the absence of one. `coveragePercent: 0` says the
+ * same thing about how much of the catalogue could be baselined.
+ */
+function emptyBaseline(metric: 'orders' | 'revenue'): Baseline {
+  return {
+    metric,
+    windowDays: PERIOD_DAYS,
+    series: [],
+    expectedTotal: 0,
+    actualTotal: 0,
+    deviationPercent: 0,
+    coveragePercent: 0,
+    listingsTooNew: 0,
+  }
+}
 
 export async function getShopPulse(ctx: ShopContext): Promise<ShopPulseView> {
-  const etsy = getEtsyService()
-  const shop = await etsy.getShop(ctx.shopId)
-  const periodOrders = await etsy.getOrders(ctx.shopId, {
-    since: PERIOD_START,
-    until: PERIOD_END,
-  })
   /*
-   * Through the adapter, like everything else.
+   * ── THE SHOP'S OWN FACTS COME FROM OUR ROW, NOT THE ADAPTER ─────────────
+   *
+   * This was `etsy.getShop(ctx.shopId)` for a timezone and a currency, and in
+   * a live deployment with no ETSY_API_KEY that throws — which took down every
+   * seller screen, because Shop Pulse is reached from the Action Center, which
+   * the app shell calls on every page. Both values are columns on `shops`.
+   */
+  const shop = await shopHeader(ctx)
+
+  /*
+   * Through the LOADER, like everything else that reads orders.
    *
    * This used to import the demo generator directly, with a comment saying the
    * adapter did not serve history. That made the seam a claim rather than a
    * fact — and it broke the first screen that asked the adapter for a previous
-   * period. The mock serves the full modelled history now.
+   * period. The mock serves the full modelled history now, and the loader
+   * serves whichever source this deployment has.
    */
-  const priorOrders = await etsy.getOrders(ctx.shopId, {
+  const period = await loadOrders(ctx, { since: PERIOD_START, until: PERIOD_END })
+  const periodOrders = period.orders
+  const { orders: priorOrders } = await loadOrders(ctx, {
     since: BASELINE_START,
     until: BASELINE_END,
   })
+
+  /*
+   * ── AN UNREAD SHOP HAS NO PULSE, AND MUST NOT REPORT A CALM ONE ─────────
+   *
+   * Every diagnosis below is a comparison of two periods. With no orders in
+   * either, `computeBaseline` finds no change, `unexplainedDeviations` finds
+   * no deviation, and the screen would read "nothing has changed" — a
+   * CORRELATED/RULED_OUT/UNKNOWN verdict delivered about data nobody has
+   * loaded. That is the one failure the three labels exist to prevent.
+   *
+   * So the view comes back empty with its source attached, and the Action
+   * Center (which turns these into work) produces nothing from it.
+   */
+  if (!ordersWereRead(period.source) || !shop) {
+    return {
+      periodStart: PERIOD_START,
+      periodEnd: PERIOD_END,
+      currency: shop?.currency ?? 'USD',
+      source: period.source,
+      orders: emptyBaseline('orders'),
+      revenue: emptyBaseline('revenue'),
+      changes: [],
+      counts: { CORRELATED: 0, RULED_OUT: 0, UNKNOWN: 0 },
+    }
+  }
 
   const baselineArgs = {
     priorOrders,
@@ -83,7 +137,7 @@ export async function getShopPulse(ctx: ShopContext): Promise<ShopPulseView> {
   const explained = new Set(
     recorded.filter((c) => c.diagnosis === 'CORRELATED').flatMap((c) => c.affectedListingIds),
   )
-  const residual = (o: EtsyOrder) => !o.items.some((i) => explained.has(i.etsyListingId))
+  const residual = (o: StoredOrder) => !o.items.some((i) => explained.has(i.etsyListingId))
 
   const residualBaseline = computeBaseline({
     ...baselineArgs,
@@ -101,6 +155,7 @@ export async function getShopPulse(ctx: ShopContext): Promise<ShopPulseView> {
     periodStart: PERIOD_START,
     periodEnd: PERIOD_END,
     currency: shop.currency,
+    source: period.source,
     orders,
     revenue,
     changes,
@@ -156,7 +211,7 @@ interface ChangeSpec {
   destinations: { label: string; href: string }[]
 }
 
-function recordedChanges(orders: EtsyOrder[]): DetectedChange[] {
+function recordedChanges(orders: readonly StoredOrder[]): DetectedChange[] {
   const priceEvents = DEMO_EVENTS.filter((e) => e.type === 'PRICE_CHANGED')
   const tagEvent = DEMO_EVENTS.find((e) => e.operationId === 'BE-2291')
   const stockout = DEMO_EVENTS.find((e) => e.type === 'STOCKOUT')
@@ -224,7 +279,7 @@ function recordedChanges(orders: EtsyOrder[]): DetectedChange[] {
   return specs.map((spec) => buildChange(spec, orders))
 }
 
-function buildChange(spec: ChangeSpec, orders: EtsyOrder[]): DetectedChange {
+function buildChange(spec: ChangeSpec, orders: readonly StoredOrder[]): DetectedChange {
   const first = spec.events[0]
   if (!first) throw new Error('change spec with no events')
 
@@ -302,7 +357,7 @@ function buildChange(spec: ChangeSpec, orders: EtsyOrder[]): DetectedChange {
  */
 function alternativesFor(
   spec: ChangeSpec,
-  orders: EtsyOrder[],
+  orders: readonly StoredOrder[],
   at: string,
 ): TestedAlternative[] {
   const out: TestedAlternative[] = []
@@ -370,7 +425,7 @@ const MUTATING_EVENTS = new Set([
 
 function unexplainedDeviations(
   series: ShopPulseView['orders']['series'],
-  orders: EtsyOrder[],
+  orders: readonly StoredOrder[],
   explainedIds: Set<string>,
 ): DetectedChange[] {
   /*

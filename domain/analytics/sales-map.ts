@@ -15,9 +15,10 @@
  *      component would mean the number had already been computed and shipped.
  */
 
-import { getEtsyService } from '@/lib/etsy'
+import { loadOrders } from '@/domain/orders/load'
+import { shopHeader, type ShopDataSource } from '@/domain/sync/source'
 import { PERIOD_END, PERIOD_START } from '@/lib/etsy/demo-dataset'
-import type { EtsyOrder } from '@/lib/etsy/interface'
+import type { StoredOrder } from '@/domain/orders/types'
 import type { ShopContext } from '@/lib/permissions'
 
 /** Below this, a country is folded into the aggregate row. */
@@ -49,13 +50,26 @@ export interface SalesMapView {
   /** 0–4, for the choropleth's five steps. */
   stepFor: (row: CountryRow) => number
   empty: boolean
+  /**
+   * Where the orders came from.
+   *
+   * `empty` is true both for a read period with no sales and for a shop
+   * nobody has read, and those are different sentences: "no orders in this
+   * period" is a measurement, and it was being shown for the second case.
+   */
+  source: ShopDataSource
 }
 
 export async function getSalesMap(ctx: ShopContext): Promise<SalesMapView> {
-  const etsy = getEtsyService()
-  const [shop, orders] = await Promise.all([
-    etsy.getShop(ctx.shopId),
-    etsy.getOrders(ctx.shopId, { since: PERIOD_START, until: PERIOD_END }),
+  /*
+   * The sales map aggregates by country code and nothing else — no buyer, no
+   * address, no name. `aggregateByCountry` is the only consumer of the orders
+   * here, and the only field it reads is `countryCode`, which the repository
+   * normalises to 'XX' when unknown exactly as live.ts does.
+   */
+  const [shop, { orders, source }] = await Promise.all([
+    shopHeader(ctx),
+    loadOrders(ctx, { since: PERIOD_START, until: PERIOD_END }),
   ])
 
   const rows = aggregateByCountry(orders)
@@ -64,16 +78,17 @@ export async function getSalesMap(ctx: ShopContext): Promise<SalesMapView> {
   return {
     periodStart: PERIOD_START,
     periodEnd: PERIOD_END,
-    currency: shop.currency,
+    currency: shop?.currency ?? 'USD',
     rows,
     totalOrders: orders.length,
     suppressedCountries: countSuppressed(orders),
     stepFor: (row) => (row.aggregate ? 0 : Math.min(4, Math.floor((row.orders / maxOrders) * 5))),
     empty: orders.length === 0,
+    source,
   }
 }
 
-export function aggregateByCountry(orders: EtsyOrder[]): CountryRow[] {
+export function aggregateByCountry(orders: readonly StoredOrder[]): CountryRow[] {
   const byCountry = new Map<string, { orders: number; sales: number }>()
   for (const order of orders) {
     const bucket = byCountry.get(order.countryCode) ?? { orders: 0, sales: 0 }
@@ -120,7 +135,7 @@ export function aggregateByCountry(orders: EtsyOrder[]): CountryRow[] {
   return named
 }
 
-function countSuppressed(orders: EtsyOrder[]): number {
+function countSuppressed(orders: readonly StoredOrder[]): number {
   const byCountry = new Map<string, number>()
   for (const order of orders) {
     byCountry.set(order.countryCode, (byCountry.get(order.countryCode) ?? 0) + 1)

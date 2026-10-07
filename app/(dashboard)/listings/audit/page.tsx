@@ -11,7 +11,7 @@ import { AssistedNote } from '@/components/ai/assisted-note'
 import { getAuditView } from '@/domain/audit/service'
 import { explainRule } from '@/domain/ai/explain'
 import { getSession } from '@/lib/auth'
-import { getEtsyService } from '@/lib/etsy'
+import { shopHeader } from '@/domain/sync/source'
 import { shopContext } from '@/lib/permissions'
 import { formatDateTime } from '@/lib/utils/format'
 
@@ -30,7 +30,11 @@ export default async function ListingAuditPage() {
   if (!session) redirect('/login')
 
   const ctx = shopContext(session, session.shopId)
-  const [view, shop] = await Promise.all([getAuditView(ctx), getEtsyService().getShop(ctx.shopId)])
+  /*
+  * The shop's own facts come from our row, not the adapter — which cannot
+  * answer in a live deployment without an Etsy API key.
+  */
+  const [view, shop] = await Promise.all([getAuditView(ctx), shopHeader(ctx)])
   const demo = session.isDemo
 
   /*
@@ -48,7 +52,22 @@ export default async function ListingAuditPage() {
     <>
       <PageHeader
         title="Listing audit"
-        subtitle={`${view.listingsChecked} listings checked against ${view.ruleCount} rules · ${view.errors} errors, ${view.warnings} warnings, ${view.passing} pass · last run ${formatDateTime(view.lastRunAt)}`}
+        /*
+         * "0 errors, 0 warnings, 0 pass" IS A CLEAN BILL OF HEALTH.
+         *
+         * Every number here is derived from the catalogue the audit ran over.
+         * On a shop whose listings have never been read that catalogue is
+         * empty, and the subtitle read "0 listings checked against 14 rules ·
+         * 0 errors, 0 warnings, 0 pass" — which a seller reads as "nothing is
+         * wrong with my listings". Seen in a browser against a live-mode
+         * server. The rule count is still true and still said; the findings
+         * are not.
+         */
+        subtitle={
+          view.source && view.source.kind !== 'DEMO' && view.source.kind !== 'SYNCED'
+            ? `Not synced yet · ${view.ruleCount} rules ready to run, nothing read to run them against`
+            : `${view.listingsChecked} listings checked against ${view.ruleCount} rules · ${view.errors} errors, ${view.warnings} warnings, ${view.passing} pass · last run ${formatDateTime(view.lastRunAt)}`
+        }
         actions={
           <>
             <NotYet
@@ -165,7 +184,7 @@ export default async function ListingAuditPage() {
             <span className="text-label text-muted-1">Revenue on listings with issues</span>
             <Money
               value={view.revenueOnListings}
-              currency={shop.currency}
+              currency={shop?.currency ?? 'USD'}
               className="text-[19px] font-semibold text-ink-1"
             />
             <span className="text-caption leading-snug text-muted-1">
@@ -198,7 +217,7 @@ export default async function ListingAuditPage() {
 
           {view.results.map((r) => (
             <div key={r.rule.code} id={r.rule.code}>
-              <RuleGroup result={r} currency={shop.currency} demo={demo} />
+              <RuleGroup result={r} currency={shop?.currency ?? 'USD'} demo={demo} />
             </div>
           ))}
         </div>

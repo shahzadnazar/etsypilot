@@ -72,9 +72,26 @@ export default async function SalesMapPage() {
       ) : null}
 
       {view.empty ? (
+        /*
+         * TWO REASONS FOR AN EMPTY MAP, AND ONLY ONE OF THEM IS A
+         * MEASUREMENT.
+         *
+         * "No orders in this period" is a finding about the shop. It was
+         * being shown to shops whose orders had never been read, where the
+         * truthful answer is that nothing has been placed on the map because
+         * nothing has been looked at.
+         */
         <EmptyState
-          title="No orders in this period"
-          description="The sales map is built from your order receipts. With no orders there is nothing to place on it — nothing is filled in from other shops or from a regional average."
+          title={
+            view.source.kind === 'NOT_SYNCED' || view.source.kind === 'NO_SHOP'
+              ? 'Not synced yet'
+              : 'No orders in this period'
+          }
+          description={
+            view.source.kind === 'NOT_SYNCED' || view.source.kind === 'NO_SHOP'
+              ? 'The sales map is built from your order receipts, and EtsyPilot has not read them yet — so this is not a finding that you had no orders. Nothing is filled in from other shops or from a regional average, then or now.'
+              : 'The sales map is built from your order receipts. With no orders there is nothing to place on it — nothing is filled in from other shops or from a regional average.'
+          }
         />
       ) : (
         <div className="grid gap-4 xl:grid-cols-[1fr_1.2fr]">

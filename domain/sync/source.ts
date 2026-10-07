@@ -54,6 +54,7 @@ import 'server-only'
 
 import { getEtsyService, isDemoMode } from '@/lib/etsy'
 import { countListings, readShopSyncState } from '@/lib/repositories/listings'
+import { readAggregateSyncedAt, type SyncAggregate } from '@/lib/repositories/sync-state'
 import type { ShopContext } from '@/lib/permissions'
 
 export type ShopDataSource =
@@ -79,14 +80,32 @@ export type ShopDataSource =
  */
 export async function shopDataSource(
   ctx: ShopContext,
+  aggregate: SyncAggregate,
 ): Promise<{ source: ShopDataSource; currency: string | null }> {
   if (isDemoMode()) return { source: { kind: 'DEMO' }, currency: null }
 
   const state = await readShopSyncState(ctx.shopId)
   if (!state) return { source: { kind: 'NO_SHOP' }, currency: null }
-  if (!state.lastSyncedAt) return { source: { kind: 'NOT_SYNCED' }, currency: state.currency }
+
+  /*
+   * ── PER AGGREGATE, AND THE SECOND AGGREGATE IS WHY ────────────────────
+   *
+   * This read `shops.last_synced_at`, which was right while listings were
+   * the only aggregate reading our own tables. Orders broke it: after a
+   * listings sync that column is set, so an ORDERS reader was told SYNCED
+   * and found an empty table — and the Action Center, whose whole job is to
+   * say what needs attention, would have said "nothing needs your
+   * attention" when the truthful answer was "nothing has been read yet".
+   *
+   * One timestamp cannot say which aggregate was read, so sync_state holds
+   * one row per (shop, aggregate). `shops.last_synced_at` keeps its own
+   * meaning — the most recent sync of anything — which is what the app
+   * shell shows.
+   */
+  const lastSyncedAt = await readAggregateSyncedAt(ctx.shopId, aggregate)
+  if (!lastSyncedAt) return { source: { kind: 'NOT_SYNCED' }, currency: state.currency }
   return {
-    source: { kind: 'SYNCED', lastSyncedAt: state.lastSyncedAt },
+    source: { kind: 'SYNCED', lastSyncedAt },
     currency: state.currency,
   }
 }
@@ -94,6 +113,8 @@ export async function shopDataSource(
 export interface ShopHeader {
   name: string
   currency: string
+  /** The shop's time basis, from our row. Etsy's payload has no timezone. */
+  timezone: string
   /** When a sync last completed. Null means never, and the shell says so. */
   lastSyncedAt: string | null
   /**
@@ -135,6 +156,7 @@ export async function shopHeader(ctx: ShopContext): Promise<ShopHeader | null> {
     return {
       name: shop.name,
       currency: shop.currency,
+      timezone: shop.timezone,
       lastSyncedAt: shop.lastSyncedAt,
       activeListingCount: shop.activeListingCount,
     }
@@ -145,6 +167,7 @@ export async function shopHeader(ctx: ShopContext): Promise<ShopHeader | null> {
   return {
     name: state.name,
     currency: state.currency,
+    timezone: state.timezone,
     lastSyncedAt: state.lastSyncedAt,
     /*
      * Counted only once a sync has run. Before that there is no number to

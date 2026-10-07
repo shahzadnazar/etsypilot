@@ -53,8 +53,17 @@ export function partialSum(values: readonly (number | null)[]): PartialSum {
 export interface LedgerTotals {
   /** Verified on every row, so this one is always a number. */
   gross: number
-  /** Verified on every row. */
-  fees: number
+  /**
+   * Null if any order's fees are unknown.
+   *
+   * This read "Verified on every row, so this one is always a number" — the
+   * one column in this file exempted from the rule the header states, on the
+   * strength of a comment in the schema calling the fee columns "verified fee
+   * lines, straight from the receipt". They are not from the receipt, and
+   * nothing had read them. The exemption is gone; `sumOrNull` applies here
+   * exactly as it does to cost and profit.
+   */
+  fees: number | null
   /** Null if any order has no confirmed cost. */
   cost: number | null
   /** Null if any order has no confirmed cost. */
@@ -66,12 +75,17 @@ export interface LedgerTotals {
 }
 
 export function ledgerTotals(
-  rows: readonly { gross: number; fees: number; cost: number | null; profit: number | null }[],
+  rows: readonly {
+    gross: number
+    fees: number | null
+    cost: number | null
+    profit: number | null
+  }[],
 ): LedgerTotals {
   const uncosted = rows.filter((r) => r.cost === null)
   return {
     gross: round2(rows.reduce((s, r) => s + r.gross, 0)),
-    fees: round2(rows.reduce((s, r) => s + r.fees, 0)),
+    fees: sumOrNull(rows.map((r) => r.fees)),
     cost: sumOrNull(rows.map((r) => r.cost)),
     profit: sumOrNull(rows.map((r) => r.profit)),
     uncostedOrders: uncosted.length,

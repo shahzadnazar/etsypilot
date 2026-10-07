@@ -205,29 +205,100 @@ export const orders = pgTable(
     gross: money('gross').notNull(),
     discounts: money('discounts').notNull().default('0'),
     refunds: money('refunds').notNull().default('0'),
-    /* Verified fee lines, straight from the receipt. */
-    etsyFees: money('etsy_fees').notNull().default('0'),
-    paymentProcessing: money('payment_processing').notNull().default('0'),
-    offsiteAds: money('offsite_ads').notNull().default('0'),
+    /**
+     * Etsy's fee lines. NULL means the payment-account ledger has not been
+     * read — it does NOT mean the fees were zero.
+     *
+     * These were `notNull().default('0')` under a comment reading "Verified
+     * fee lines, straight from the receipt". They are not from the receipt:
+     * lib/etsy/live.ts's toOrder() says Etsy exposes fees through the
+     * payment-account ledger and leaves all three at 0. So a sync writing
+     * what the adapter returns wrote 0 into a column claiming a verified
+     * figure, and that row was identical to one for a shop whose fees really
+     * were zero — in the direction that flatters.
+     *
+     * Nullable was necessary and not sufficient: measured before changing it,
+     * domain/profit/waterfall.ts summed these and labelled every line
+     * VERIFIED unconditionally, and missingDataFrom() had no fee code at all.
+     * Migration 0011 has the evidence. The profit domain now refuses to name
+     * a figure "net profit" when a fee line is unknown, which is the half
+     * that stops a `?? 0` putting the lie back.
+     */
+    etsyFees: money('etsy_fees'),
+    paymentProcessing: money('payment_processing'),
+    offsiteAds: money('offsite_ads'),
     /** Aggregated only. Never an individual buyer. */
     countryCode: text('country_code'),
   },
   (t) => ({
     byShopDate: index('orders_shop_placed_idx').on(t.shopId, t.placedAt),
+    /** The sync's upsert target. Orders are re-read, not re-inserted. */
+    uniqueReceipt: uniqueIndex('orders_shop_receipt_idx').on(t.shopId, t.etsyReceiptId),
   }),
 )
 
-export const orderItems = pgTable('order_items', {
-  id: text('id').primaryKey(),
+export const orderItems = pgTable(
+  'order_items',
+  {
+    id: text('id').primaryKey(),
+    shopId: text('shop_id').notNull().references(() => shops.id),
+    orderId: text('order_id').notNull().references(() => orders.id),
+    /**
+     * Which Etsy listing sold. Always known.
+     *
+     * `listingId` below is a foreign key to OUR listings row and is null
+     * whenever we do not hold that listing — the ordinary case when orders
+     * sync before listings do, and the permanent case for a listing sold
+     * before this shop connected. Without this column such a row recorded a
+     * sale of nothing identifiable, and the sync had no key to upsert on.
+     */
+    etsyListingId: text('etsy_listing_id').notNull(),
+    listingId: text('listing_id').references(() => listings.id),
+    quantity: integer('quantity').notNull(),
+    unitPrice: money('unit_price').notNull(),
+    /**
+     * Cost at time of sale. Null means this order has no confirmed cost and is
+     * EXCLUDED from profit rather than given an assumed one.
+     *
+     * THE ORDERS SYNC NEVER WRITES THIS. Cost rules are their own aggregate
+     * and nothing populates them yet; a sync that wrote anything here would be
+     * inventing a cost, and null already means the right thing. The upsert
+     * leaves the column out of its conflict set so a re-sync cannot erase a
+     * snapshot that something else put there — asserted in
+     * tests/integration/orders-sync.int.ts rather than left to inference.
+     */
+    costSnapshot: money('cost_snapshot'),
+  },
+  (t) => ({
+    /** The sync's upsert target, and what keeps costSnapshot safe. */
+    uniqueLine: uniqueIndex('order_items_order_listing_idx').on(t.orderId, t.etsyListingId),
+  }),
+)
+
+/**
+ * When each aggregate was last read from Etsy, per shop.
+ *
+ * ── ONE TIMESTAMP COULD NOT SAY WHICH AGGREGATE WAS READ ──────────────────
+ *
+ * The listings slice wrote shops.last_synced_at, correct while listings were
+ * the only aggregate reading our own tables. Orders broke it: after a listings
+ * sync that column is set, so an orders reader asking "has this shop synced"
+ * is told yes and finds an empty table. The Action Center would then say
+ * "nothing needs your attention" when the truthful answer is "nothing has been
+ * read yet" — the same absent-is-not-zero rule, one aggregate further on.
+ *
+ * shops.last_synced_at keeps its own meaning: the most recent sync of
+ * ANYTHING, which is what the shell's "Synced 7 min ago" wants. Each sync
+ * writes both, so they cannot disagree.
+ */
+export const syncState = pgTable('sync_state', {
   shopId: text('shop_id').notNull().references(() => shops.id),
-  orderId: text('order_id').notNull().references(() => orders.id),
-  listingId: text('listing_id').references(() => listings.id),
-  quantity: integer('quantity').notNull(),
-  unitPrice: money('unit_price').notNull(),
-  /** Cost at time of sale. Null means this order has no confirmed cost and is
-   *  EXCLUDED from profit rather than given an assumed one. */
-  costSnapshot: money('cost_snapshot'),
-})
+  /** 'LISTINGS' | 'ORDERS' and the three aggregates still to come. */
+  aggregate: text('aggregate').notNull(),
+  lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }).notNull(),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.shopId, t.aggregate] }),
+}))
 
 export const costRules = pgTable('cost_rules', {
   id: text('id').primaryKey(),

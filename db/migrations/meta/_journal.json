@@ -78,6 +78,13 @@
       "when": 1790110524154,
       "tag": "0010_listings_removed_at",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1790110525154,
+      "tag": "0011_orders_fees_unknown_and_sync_state",
+      "breakpoints": true
     }
   ]
 }

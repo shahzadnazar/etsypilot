@@ -8,6 +8,7 @@ import { BaselineChart } from '@/components/shop-pulse/baseline-chart'
 import { ChangesPanel } from '@/components/shop-pulse/changes-panel'
 import { NotYet } from '@/components/settings/not-yet'
 import { Card } from '@/components/ui/card'
+import { EmptyState } from '@/components/ui/states'
 import { getShopPulse } from '@/domain/shop-pulse/service'
 import { getSession } from '@/lib/auth'
 import { DEMO_EVENTS } from '@/lib/etsy/demo-events'
@@ -27,6 +28,41 @@ export default async function ShopPulsePage() {
 
   const period = `${formatDate(pulse.periodStart)} – ${formatDate(pulse.periodEnd)}`
   const affected = new Set(pulse.changes.flatMap((c) => c.affectedListingIds)).size
+
+  /*
+   * ══════════════════════════════════════════════════════════════════════
+   *   "0 CHANGES DETECTED" IS A DIAGNOSIS, AND THIS SCREEN ONLY DEALS IN
+   *   DIAGNOSES.
+   * ══════════════════════════════════════════════════════════════════════
+   *
+   * Shop Pulse labels every finding CORRELATED, RULED_OUT or UNKNOWN. All
+   * three are verdicts reached from two periods of orders, and with no orders
+   * in either the page rendered a subtitle reading "0 changes detected", KPI
+   * tiles of 0 orders and 0 revenue, and a baseline chart of nothing — which
+   * together say "we looked and your shop is steady". Seen in a browser
+   * against a live-mode server on a shop that had never synced.
+   *
+   * There is no fourth label for "not read", and there should not be: it is
+   * not a diagnosis. So the page says it instead of diagnosing.
+   */
+  if (pulse.source.kind === 'NOT_SYNCED' || pulse.source.kind === 'NO_SHOP') {
+    return (
+      <>
+        <PageHeader
+          title="Shop Pulse"
+          subtitle="Why your orders changed, measured against your own baseline."
+        />
+        <EmptyState
+          title={pulse.source.kind === 'NO_SHOP' ? 'This shop could not be found' : 'Not synced yet'}
+          description={
+            pulse.source.kind === 'NO_SHOP'
+              ? 'The shop this page was opened for is no longer in EtsyPilot. Nothing is wrong with your shop on Etsy.'
+              : 'Shop Pulse compares this period against your own 30-day baseline, and EtsyPilot has not read your orders yet — so it has nothing to compare and will not tell you your shop is steady. Once a sync runs, every change appears here with the evidence behind it.'
+          }
+        />
+      </>
+    )
+  }
 
   const ordersDelta = formatDelta(pulse.orders.deviationPercent)
   const revenueDelta = formatDelta(pulse.revenue.deviationPercent)

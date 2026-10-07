@@ -12,6 +12,7 @@
 
 import type { Confidence } from '@/lib/provenance/types'
 import type { Diagnosis, EventType } from '@/lib/events/types'
+import type { ShopDataSource } from '@/domain/sync/source'
 
 /** One day of the baseline-vs-actual series. */
 export interface BaselinePoint {
@@ -84,6 +85,15 @@ export interface ShopPulseView {
   periodStart: string
   periodEnd: string
   currency: string
+  /**
+   * Where the orders behind these diagnoses came from.
+   *
+   * On the view because Shop Pulse's three labels — CORRELATED, RULED_OUT,
+   * UNKNOWN — are all verdicts about data. "No changes detected" from an
+   * unread shop is a fourth thing none of them can express, and a screen
+   * cannot infer it from `changes.length === 0`.
+   */
+  source: ShopDataSource
   orders: Baseline
   revenue: Baseline
   changes: DetectedChange[]

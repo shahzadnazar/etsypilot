@@ -251,9 +251,27 @@ export interface AdminAccountDetail {
     count: number
     gross: string
     refunds: string
-    etsyFees: string
-    paymentProcessing: string
-    offsiteAds: string
+    /**
+     * NULL when any order in the period has unknown fees. Never a part-sum.
+     *
+     * ── WHY THESE THREE ARE NULLABLE AND gross IS NOT ──────────────────
+     *
+     * Migration 0011 made orders.etsy_fees nullable, because Etsy's fees come
+     * from the payment-account ledger and nothing has read it. Postgres's
+     * `sum()` IGNORES nulls, so `coalesce(sum(etsy_fees), 0)` — what these
+     * were — would return the sum of the orders whose fees happen to be known
+     * and present it as the period total. Smaller than the truth, with no
+     * indication, on an operator screen used to answer billing disputes.
+     *
+     * So the SQL compares count(*) against count(column) and returns null
+     * unless every row has a value. That is the same rule domain/profit/
+     * totals.ts states for the seller side: "a null propagates... a total
+     * that quietly adds up the rows it does understand reasserts a number the
+     * same page just said it did not have."
+     */
+    etsyFees: string | null
+    paymentProcessing: string | null
+    offsiteAds: string | null
   } | null>
 }
 
@@ -420,9 +438,16 @@ export async function adminReadAccountDetail(
           count: count(),
           gross: sql<string>`coalesce(sum(${schema.orders.gross}), 0)::text`,
           refunds: sql<string>`coalesce(sum(${schema.orders.refunds}), 0)::text`,
-          etsyFees: sql<string>`coalesce(sum(${schema.orders.etsyFees}), 0)::text`,
-          paymentProcessing: sql<string>`coalesce(sum(${schema.orders.paymentProcessing}), 0)::text`,
-          offsiteAds: sql<string>`coalesce(sum(${schema.orders.offsiteAds}), 0)::text`,
+          /*
+           * NULL UNLESS EVERY ROW HAS ONE. `sum()` skips nulls, so the
+           * previous `coalesce(sum(...), 0)` would have reported a partial
+           * total as the period's fees once the column became nullable.
+           * count(column) counts only non-null values, so the comparison with
+           * count(*) is the "all known" test.
+           */
+          etsyFees: sql<string | null>`case when count(*) = count(${schema.orders.etsyFees}) then coalesce(sum(${schema.orders.etsyFees}), 0)::text else null end`,
+          paymentProcessing: sql<string | null>`case when count(*) = count(${schema.orders.paymentProcessing}) then coalesce(sum(${schema.orders.paymentProcessing}), 0)::text else null end`,
+          offsiteAds: sql<string | null>`case when count(*) = count(${schema.orders.offsiteAds}) then coalesce(sum(${schema.orders.offsiteAds}), 0)::text else null end`,
         })
         .from(schema.orders)
         .where(

@@ -16,7 +16,7 @@ export default async function ActionCenterPage() {
   if (!session) redirect('/login')
 
   const ctx = shopContext(session, session.shopId)
-  const { actions, counts } = await getActions(ctx)
+  const { actions, counts, source } = await getActions(ctx)
 
   /*
    * One recommendation, for the top action only. Same reasoning as the audit
@@ -48,7 +48,7 @@ export default async function ActionCenterPage() {
         </Card>
       ) : null}
 
-      <ActionList actions={actions} counts={counts} demo={session.isDemo} />
+      <ActionList actions={actions} counts={counts} demo={session.isDemo} source={source} />
     </>
   )
 }

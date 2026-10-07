@@ -16,7 +16,9 @@
  */
 
 import { computeWaterfall } from '@/domain/profit/waterfall'
-import { getEtsyService } from '@/lib/etsy'
+import { loadListings } from '@/domain/listings/load'
+import { loadOrders } from '@/domain/orders/load'
+import { shopHeader, type ShopDataSource } from '@/domain/sync/source'
 import {
   DEMO_COST_INPUTS,
   PERIOD_DAYS,
@@ -24,7 +26,8 @@ import {
   PERIOD_START,
   demoConfirmedCosts,
 } from '@/lib/etsy/demo-dataset'
-import type { EtsyListing, EtsyOrder } from '@/lib/etsy/interface'
+import type { EtsyListing } from '@/lib/etsy/interface'
+import type { StoredOrder } from '@/domain/orders/types'
 import type { ShopContext } from '@/lib/permissions'
 import { marginOf } from '@/domain/listings/service'
 
@@ -62,6 +65,13 @@ export interface AnalyticsView {
   periodStart: string
   periodEnd: string
   currency: string
+  /**
+   * Where the orders behind every figure here came from.
+   *
+   * NOT_SYNCED is not a shop with no sales. Analytics is almost entirely
+   * sums and deltas, and every one of them reads as a measurement.
+   */
+  source: ShopDataSource
   /** Verified sums. */
   grossSales: number
   orderCount: number
@@ -83,14 +93,19 @@ export interface AnalyticsView {
 }
 
 export async function getAnalytics(ctx: ShopContext): Promise<AnalyticsView> {
-  const etsy = getEtsyService()
   const previous = previousPeriod()
 
-  const [shop, orders, priorOrders, catalogue] = await Promise.all([
-    etsy.getShop(ctx.shopId),
-    etsy.getOrders(ctx.shopId, { since: PERIOD_START, until: PERIOD_END }),
-    etsy.getOrders(ctx.shopId, { since: previous.start, until: previous.end }),
-    etsy.getListings(ctx.shopId, { limit: 500 }),
+  /*
+   * Through the loaders and the shop row. This asked the adapter for all four,
+   * which is a 500 in a live deployment with no ETSY_API_KEY — measured in a
+   * browser, where /analytics was one of the last two seller screens still
+   * failing after the orders slice.
+   */
+  const [shop, { orders, source }, { orders: priorOrders }, catalogue] = await Promise.all([
+    shopHeader(ctx),
+    loadOrders(ctx, { since: PERIOD_START, until: PERIOD_END }),
+    loadOrders(ctx, { since: previous.start, until: previous.end }),
+    loadListings(ctx),
   ])
 
   const listings = catalogue.listings
@@ -105,7 +120,8 @@ export async function getAnalytics(ctx: ShopContext): Promise<AnalyticsView> {
   return {
     periodStart: PERIOD_START,
     periodEnd: PERIOD_END,
-    currency: shop.currency,
+    currency: shop?.currency ?? 'USD',
+    source,
     grossSales,
     orderCount: orders.length,
     refundedOrders: refunded.length,
@@ -156,7 +172,7 @@ export function percentChange(before: number, after: number): number | null {
   return round1(((after - before) / before) * 100)
 }
 
-function dailySeries(orders: EtsyOrder[], priorOrders: EtsyOrder[]): DailyPoint[] {
+function dailySeries(orders: readonly StoredOrder[], priorOrders: readonly StoredOrder[]): DailyPoint[] {
   const byDay = bucketByDay(orders)
   const priorByDay = bucketByDay(priorOrders)
   const priorKeys = [...priorByDay.keys()].sort()
@@ -180,7 +196,7 @@ function dailySeries(orders: EtsyOrder[], priorOrders: EtsyOrder[]): DailyPoint[
     })
 }
 
-function bucketByDay(orders: EtsyOrder[]): Map<string, { revenue: number; orders: number }> {
+function bucketByDay(orders: readonly StoredOrder[]): Map<string, { revenue: number; orders: number }> {
   const byDay = new Map<string, { revenue: number; orders: number }>()
   for (const order of orders) {
     // UTC, like every other boundary in this product (D24).
@@ -194,7 +210,7 @@ function bucketByDay(orders: EtsyOrder[]): Map<string, { revenue: number; orders
 }
 
 function topListings(
-  orders: EtsyOrder[],
+  orders: readonly StoredOrder[],
   listings: EtsyListing[],
   costs: Map<string, number>,
 ): TopListing[] {
@@ -226,7 +242,7 @@ function topListings(
 }
 
 function sectionShares(
-  orders: EtsyOrder[],
+  orders: readonly StoredOrder[],
   listings: EtsyListing[],
   grossSales: number,
 ): SectionShare[] {
@@ -256,7 +272,7 @@ function sectionShares(
  * it — an empty insights panel is a valid state.
  */
 function insightsFrom(args: {
-  orders: EtsyOrder[]
+  orders: readonly StoredOrder[]
   listings: EtsyListing[]
   costs: Map<string, number>
   grossSales: number
@@ -304,7 +320,7 @@ function insightsFrom(args: {
  * a buyer identifier on every receipt. The same artboard's sales map states
  * that individual buyers are "never shown or stored" — and the cheapest way to
  * keep that promise is for the buyer identifier never to enter the product at
- * all. EtsyOrder does not carry one.
+ * all. StoredOrder does not carry one.
  *
  * So the metric is not shown, rather than shown from data this product declined
  * to hold. Stated on the page beside the panel it would have been in.

@@ -933,7 +933,16 @@ function costFractionFor(listing: EtsyListing, index: number): number {
 }
 
 /** Orders whose supplier invoice never arrived, so they cannot be costed at all. */
-export function demoUnmatchedOrderIds(orders: EtsyOrder[]): Set<string> {
+/**
+ * Structurally typed, not `EtsyOrder[]`.
+ *
+ * It reads one field. Typing the parameter as the field it uses lets both the
+ * adapter's `EtsyOrder` and the repository's wider `StoredOrder` pass without
+ * this file importing a domain type — lib/ must not depend on domain/.
+ */
+export function demoUnmatchedOrderIds(
+  orders: readonly { etsyReceiptId: string }[],
+): Set<string> {
   return new Set(orders.slice(0, 8).map((o) => o.etsyReceiptId))
 }
 

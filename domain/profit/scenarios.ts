@@ -14,7 +14,7 @@
  * "Verified" would be claiming Etsy confirmed a hypothetical.
  */
 
-import { calculated, sellerInput, verified } from '@/lib/provenance/builders'
+import { calculated, sellerInput, unavailable, verified } from '@/lib/provenance/builders'
 import type { Provenance, ProvenanceType } from '@/lib/provenance/types'
 import type {
   MissingDataItem,
@@ -56,9 +56,29 @@ export function computeScenario(
   // so they sit with the verified lines and never move with costMultiplier.
   const discounts = round2(verifiedTotals.discounts * shape.salesMultiplier)
   const refunds = round2(verifiedTotals.refunds * shape.salesMultiplier)
-  const etsyFees = round2(verifiedTotals.etsyFees * shape.salesMultiplier)
-  const paymentProcessing = round2(verifiedTotals.paymentProcessing * shape.salesMultiplier)
-  const offsiteAds = round2(verifiedTotals.offsiteAds * shape.salesMultiplier)
+  /*
+   * ── A SCENARIO CANNOT PROJECT A FEE NOBODY HAS MEASURED ─────────────────
+   *
+   * Every scenario here scales the VERIFIED fee total by a sales multiplier.
+   * With the fee total unknown there is nothing to scale: `null * 1.08` is
+   * NaN, and `(fees ?? 0) * 1.08` is zero dressed as a projection. Both are
+   * worse than the absence, because a scenario is explicitly a number the
+   * seller is invited to plan against.
+   *
+   * So the fee lines stay null, and net profit with them. Revenue, discounts
+   * and the seller's own costs still project — those are known — which is why
+   * the screen can still show the shape of the waterfall and withhold exactly
+   * the lines it cannot fill.
+   */
+  const feesKnown =
+    verifiedTotals.etsyFees !== null &&
+    verifiedTotals.paymentProcessing !== null &&
+    verifiedTotals.offsiteAds !== null
+  const etsyFees = feesKnown ? round2(verifiedTotals.etsyFees! * shape.salesMultiplier) : null
+  const paymentProcessing = feesKnown
+    ? round2(verifiedTotals.paymentProcessing! * shape.salesMultiplier)
+    : null
+  const offsiteAds = feesKnown ? round2(verifiedTotals.offsiteAds! * shape.salesMultiplier) : null
   const orderCount = verifiedTotals.orderCount * shape.salesMultiplier
 
   // The seller's own numbers move with the scenario.
@@ -67,18 +87,21 @@ export function computeScenario(
   const labour = round2(assumptions.labourTotal * shape.costMultiplier)
   const otherCosts = round2(assumptions.otherCosts * shape.costMultiplier)
 
-  const totalCosts = round2(
-    discounts +
-      refunds +
-      etsyFees +
-      paymentProcessing +
-      offsiteAds +
-      shipping +
-      cogs +
-      labour +
-      otherCosts,
-  )
-  const netProfit = round2(grossRevenue - totalCosts)
+  const totalCosts =
+    etsyFees === null || paymentProcessing === null || offsiteAds === null
+      ? null
+      : round2(
+          discounts +
+            refunds +
+            etsyFees +
+            paymentProcessing +
+            offsiteAds +
+            shipping +
+            cogs +
+            labour +
+            otherCosts,
+        )
+  const netProfit = totalCosts === null ? null : round2(grossRevenue - totalCosts)
 
   /*
    * A projected fee is not a verified one. Outside BASE these carry CALCULATED
@@ -90,13 +113,25 @@ export function computeScenario(
     : calculated(null, `Projected from your verified revenue at ${shape.basis.toLowerCase()}.`)
         .provenance
 
+  /*
+   * The fee lines' own badge. VERIFIED/CALCULATED while the figure is real;
+   * UNAVAILABLE when it is not, with the reason and the fact that there is no
+   * remedy the seller can apply.
+   */
+  const feeProvenance: Provenance = feesKnown
+    ? revenueProvenance
+    : unavailable(
+        'Etsy reports fees through the payment-account ledger, not the order receipt, and that ledger has not been read for this period.',
+        'Not something you can fix — EtsyPilot has to read it. Until then every figure that depends on fees is withheld rather than estimated.',
+      ).provenance
+
   const lines: WaterfallLine[] = [
     line('gross', 'Gross revenue', grossRevenue, revenueProvenance),
     line('discounts', 'Discounts', -discounts, revenueProvenance),
     line('refunds', 'Refunds', -refunds, revenueProvenance),
-    line('etsyFees', 'Etsy fees', -etsyFees, revenueProvenance),
-    line('processing', 'Payment processing', -paymentProcessing, revenueProvenance),
-    line('offsiteAds', 'Offsite Ads', -offsiteAds, revenueProvenance),
+    line('etsyFees', 'Etsy fees', etsyFees === null ? null : -etsyFees, feeProvenance),
+    line('processing', 'Payment processing', paymentProcessing === null ? null : -paymentProcessing, feeProvenance),
+    line('offsiteAds', 'Offsite Ads', offsiteAds === null ? null : -offsiteAds, feeProvenance),
     line('shipping', 'Shipping', -shipping, sellerInput(null).provenance),
     line('cogs', 'COGS', -cogs, sellerInput(null).provenance),
     line('labour', 'Labour', -labour, sellerInput(null).provenance),
@@ -105,9 +140,14 @@ export function computeScenario(
       'net',
       'Net profit',
       netProfit,
-      calculated(null, 'Gross revenue minus every cost line above.', {
-        coverage: Math.round(args.coverage * 100),
-      }).provenance,
+      netProfit === null
+        ? unavailable(
+            'Net profit cannot be calculated while Etsy\u2019s fees for this period are unknown.',
+            'Revenue and your own costs are known; the fee lines above are not, and net profit without them would read higher than the truth.',
+          ).provenance
+        : calculated(null, 'Gross revenue minus every cost line above.', {
+            coverage: Math.round(args.coverage * 100),
+          }).provenance,
     ),
   ]
 
@@ -117,7 +157,8 @@ export function computeScenario(
     grossRevenue,
     totalCosts,
     netProfit,
-    marginPercent: grossRevenue === 0 ? null : round1((netProfit / grossRevenue) * 100),
+    marginPercent:
+      netProfit === null || grossRevenue === 0 ? null : round1((netProfit / grossRevenue) * 100),
     coveragePercent: Math.round(args.coverage * 100),
     missingData: args.missingData,
   }
@@ -126,7 +167,8 @@ export function computeScenario(
 export interface ScenarioComparison {
   kind: ScenarioKind
   basis: string
-  netProfit: number
+  /** NULL when fees for the period are unknown. A scenario cannot project one. */
+  netProfit: number | null
   /*
    * Null when there is no revenue to be a margin OF.
    *
@@ -214,18 +256,27 @@ export function inputRows(
     {
       key: 'etsyFees',
       label: 'Etsy fees',
-      value: `${((verifiedTotals.etsyFees / verifiedTotals.grossRevenue) * 100).toFixed(1)}%`,
+      /*
+       * A RATE NEEDS A NUMERATOR. With the fee total unknown this read
+       * `(null / revenue) * 100` — which is 0.0%, printed as a locked,
+       * CALCULATED input the seller plans against. An em dash and an
+       * UNAVAILABLE badge instead.
+       */
+      value:
+        verifiedTotals.etsyFees === null
+          ? '—'
+          : `${((verifiedTotals.etsyFees / verifiedTotals.grossRevenue) * 100).toFixed(1)}%`,
       locked: true,
-      provenance: 'CALCULATED',
-      note: 'fees ÷ revenue',
+      provenance: verifiedTotals.etsyFees === null ? 'UNAVAILABLE' : 'CALCULATED',
+      note: verifiedTotals.etsyFees === null ? 'ledger not read' : 'fees ÷ revenue',
     },
     {
       key: 'ads',
       label: 'Offsite Ads',
-      value: money(verifiedTotals.offsiteAds),
+      value: verifiedTotals.offsiteAds === null ? '—' : money(verifiedTotals.offsiteAds),
       locked: true,
-      provenance: 'VERIFIED',
-      note: 'charged by Etsy',
+      provenance: verifiedTotals.offsiteAds === null ? 'UNAVAILABLE' : 'VERIFIED',
+      note: verifiedTotals.offsiteAds === null ? 'ledger not read' : 'charged by Etsy',
     },
     { key: 'cogs', label: 'COGS', value: `${(assumptions.cogsPercent * 100).toFixed(1)}%`, locked: false, provenance: 'SELLER_INPUT' },
     { key: 'shipping', label: 'Shipping', value: `${money(assumptions.shippingPerOrder)} / order`, locked: false, provenance: 'SELLER_INPUT' },
@@ -234,7 +285,12 @@ export function inputRows(
   ]
 }
 
-function line(key: string, label: string, amount: number, provenance: Provenance): WaterfallLine {
+function line(
+  key: string,
+  label: string,
+  amount: number | null,
+  provenance: Provenance,
+): WaterfallLine {
   return { key, label, amount, provenance }
 }
 

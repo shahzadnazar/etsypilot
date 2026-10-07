@@ -51,6 +51,7 @@ import 'server-only'
 import { randomUUID } from 'node:crypto'
 import { and, eq, inArray, isNotNull, isNull, notInArray, sql } from 'drizzle-orm'
 import { getDb, schema } from '@/lib/db'
+import { writeAggregateSyncedAt } from '@/lib/repositories/sync-state'
 import type { EtsyListing, ListingState } from '@/lib/etsy/interface'
 
 /** The four states Etsy reports. Anything else in the column is not a state. */
@@ -143,6 +144,16 @@ export interface ShopSyncState {
    */
   name: string
   currency: string
+  /**
+   * The shop's time basis. From our row, for the same reason the name is.
+   *
+   * Etsy's shop payload carries no timezone — live.ts's getShop() says so and
+   * hardcodes 'UTC' as this product's single basis (D24) — so this column is
+   * the only place it has ever lived. Shop Pulse needs it to bucket days, and
+   * was asking the adapter, which is a 500 in a live deployment with no API
+   * key.
+   */
+  timezone: string
   /** Null when no sync has ever completed. The distinction the UI turns on. */
   lastSyncedAt: string | null
 }
@@ -159,13 +170,19 @@ export async function readShopSyncState(shopId: string): Promise<ShopSyncState |
     .select({
       name: schema.shops.name,
       currency: schema.shops.currency,
+      timezone: schema.shops.timezone,
       lastSyncedAt: schema.shops.lastSyncedAt,
     })
     .from(schema.shops)
     .where(eq(schema.shops.id, shopId))
     .limit(1)
   if (!row) return null
-  return { name: row.name, currency: row.currency, lastSyncedAt: iso(row.lastSyncedAt) }
+  return {
+    name: row.name,
+    currency: row.currency,
+    timezone: row.timezone,
+    lastSyncedAt: iso(row.lastSyncedAt),
+  }
 }
 
 export interface ListingSyncOutcome {
@@ -372,10 +389,16 @@ export async function writeSyncedListings(
      * say "Static data · no sync". Written here, inside the same transaction,
      * so it is never ahead of the rows it describes.
      */
-    await tx
-      .update(schema.shops)
-      .set({ lastSyncedAt: syncedAt })
-      .where(eq(schema.shops.id, shopId))
+    /*
+     * ── PER AGGREGATE SINCE ORDERS ARRIVED ──────────────────────────────
+     *
+     * This wrote only `shops.last_synced_at`, which could not say WHICH
+     * aggregate had been read. A second aggregate made that ambiguous and a
+     * fifth would make it useless, so sync_state carries one row per (shop,
+     * aggregate) and writeAggregateSyncedAt writes both — the aggregate's own
+     * row and the shop's shell-facing timestamp — inside this transaction.
+     */
+    await writeAggregateSyncedAt(tx, shopId, 'LISTINGS', syncedAt)
 
     return { upserted: listings.length, removed: removedRows.length, restored }
   })

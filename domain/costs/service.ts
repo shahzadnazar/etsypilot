@@ -31,9 +31,10 @@ import {
   type FeeRate,
 } from '@/domain/fees/rules'
 import { reconcile } from '@/domain/profit/reconciliation'
-import { getEtsyService } from '@/lib/etsy'
+import { loadListings } from '@/domain/listings/load'
+import { loadOrders } from '@/domain/orders/load'
+import { shopHeader } from '@/domain/sync/source'
 import {
-  demoConfirmedCosts,
   demoUnmatchedOrderIds,
   PERIOD_END,
   PERIOD_START,
@@ -79,16 +80,20 @@ export interface CostsView {
 }
 
 export async function getCostsView(ctx: ShopContext): Promise<CostsView> {
-  const etsy = getEtsyService()
-  const [shop, orders, catalogue] = await Promise.all([
-    etsy.getShop(ctx.shopId),
-    etsy.getOrders(ctx.shopId, { since: PERIOD_START, until: PERIOD_END }),
-    etsy.getListings(ctx.shopId, { limit: 500 }),
+  const [shop, { orders }, catalogue] = await Promise.all([
+    shopHeader(ctx),
+    loadOrders(ctx, { since: PERIOD_START, until: PERIOD_END }),
+    loadListings(ctx),
   ])
   const listings = catalogue.listings
 
   const settings = readCostSettings(ctx.shopId)
-  const costs = demoConfirmedCosts(listings)
+  /*
+   * From the loader. Empty on a synced shop — cost rules are a later
+   * aggregate — rather than the demo fixture, which would show a real seller
+   * confirmed costs they never entered on the very screen for entering them.
+   */
+  const costs = catalogue.costs
   const reconciliation = reconcile({
     orders,
     listings,
@@ -121,7 +126,7 @@ export async function getCostsView(ctx: ShopContext): Promise<CostsView> {
     }))
 
   return {
-    currency: shop.currency,
+    currency: shop?.currency ?? 'USD',
     periodStart: PERIOD_START,
     periodEnd: PERIOD_END,
     settings,
