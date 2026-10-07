@@ -42,7 +42,7 @@ const CTX = shopContext(
 )
 
 describe('reachedLabel', () => {
-  it('says Yes only when every item succeeded', () => {
+  it('says Yes only when every item succeeded', async () => {
     expect(reachedLabel({ kind: 'SENT', succeeded: 12, attempted: 12 })).toBe('Yes · 12 of 12')
     expect(reachedLabel({ kind: 'SENT', succeeded: 8, attempted: 9 })).toBe('Partly · 8 of 9')
     // The word cannot be written independently of the counts, which is the
@@ -50,7 +50,7 @@ describe('reachedLabel', () => {
     expect(reachedLabel({ kind: 'SENT', succeeded: 0, attempted: 9 })).toBe('Partly · 0 of 9')
   })
 
-  it('distinguishes nothing-sent from never-going-to-send', () => {
+  it('distinguishes nothing-sent from never-going-to-send', async () => {
     expect(reachedLabel({ kind: 'NOTHING_SENT' })).toBe('No · nothing sent')
     expect(reachedLabel({ kind: 'NOT_APPLICABLE', reason: 'AUTHORISATION' })).toBe('— authorisation')
     expect(reachedLabel({ kind: 'NOT_APPLICABLE', reason: 'ETSYPILOT_ONLY' })).toBe('— EtsyPilot only')
@@ -64,7 +64,7 @@ describe('isRefusal', () => {
     reached,
   })
 
-  it('is exactly "meant to reach Etsy and sent nothing"', () => {
+  it('is exactly "meant to reach Etsy and sent nothing"', async () => {
     expect(isRefusal(record({ kind: 'NOTHING_SENT' }))).toBe(true)
     expect(isRefusal(record({ kind: 'SENT', succeeded: 8, attempted: 9 }))).toBe(false)
     /*
@@ -77,7 +77,7 @@ describe('isRefusal', () => {
 })
 
 describe('the demo log', () => {
-  it('records refusals, which is what it is for', () => {
+  it('records refusals, which is what it is for', async () => {
     const refusals = demoAuditRecords().filter(isRefusal)
     expect(refusals).toHaveLength(2)
     expect(refusals.map((r) => r.action).sort()).toEqual([
@@ -86,7 +86,7 @@ describe('the demo log', () => {
     ])
   })
 
-  it('explains every refusal in words', () => {
+  it('explains every refusal in words', async () => {
     for (const record of demoAuditRecords().filter(isRefusal)) {
       // A refusal with no reason is a dead end in the surface a dispute uses.
       expect(record.explanation, record.id).toBeTruthy()
@@ -94,7 +94,7 @@ describe('the demo log', () => {
     }
   })
 
-  it('gives every record a unique address', () => {
+  it('gives every record a unique address', async () => {
     /*
      * Read back through the store, not from the seed function.
      *
@@ -102,14 +102,14 @@ describe('the demo log', () => {
      * addressing the unseeded records would test a shape nothing renders.
      */
     resetAuditRecords()
-    const keys = readAuditRecords('shop-address').map(recordKey)
+    const keys = (await readAuditRecords('shop-address')).map(recordKey)
     expect(keys.length).toBeGreaterThan(4)
     // BE-2291 appears twice — confirm and apply — so the id alone is not one.
     expect(new Set(keys).size).toBe(keys.length)
     expect(demoAuditRecords().filter((r) => r.id === 'BE-2291')).toHaveLength(2)
   })
 
-  it('never shows a diff for something that was actually applied', () => {
+  it('never shows a diff for something that was actually applied', async () => {
     for (const record of demoAuditRecords()) {
       if (record.wouldHaveChanged.length > 0) expect(isRefusal(record), record.id).toBe(true)
     }
@@ -119,31 +119,31 @@ describe('the demo log', () => {
 describe('the store', () => {
   beforeEach(() => resetAuditRecords())
 
-  it('returns newest first', () => {
-    const times = readAuditRecords('shop-a').map((r) => r.at)
+  it('returns newest first', async () => {
+    const times = (await readAuditRecords('shop-a')).map((r) => r.at)
     expect([...times].sort().reverse()).toEqual(times)
   })
 
-  it('keeps shops apart', () => {
-    appendAuditRecord('shop-a', { ...demoAuditRecords()[0]!, id: 'ONLY-A' })
-    expect(readAuditRecords('shop-a').some((r) => r.id === 'ONLY-A')).toBe(true)
-    expect(readAuditRecords('shop-b').some((r) => r.id === 'ONLY-A')).toBe(false)
+  it('keeps shops apart', async () => {
+    await appendAuditRecord('shop-a', null, { ...demoAuditRecords()[0]!, id: 'ONLY-A' })
+    expect((await readAuditRecords('shop-a')).some((r) => r.id === 'ONLY-A')).toBe(true)
+    expect((await readAuditRecords('shop-b')).some((r) => r.id === 'ONLY-A')).toBe(false)
   })
 
-  it('hands out a copy, so a caller cannot rewrite history through it', () => {
-    const records = readAuditRecords('shop-a')
+  it('hands out a copy, so a caller cannot rewrite history through it', async () => {
+    const records = (await readAuditRecords('shop-a'))
     records.splice(0, records.length)
-    expect(readAuditRecords('shop-a').length).toBeGreaterThan(0)
+    expect((await readAuditRecords('shop-a')).length).toBeGreaterThan(0)
   })
 })
 
 describe('cost changes become records', () => {
-  it('records nothing when nothing changed', () => {
+  it('records nothing when nothing changed', async () => {
     const settings = defaultCostSettings()
     expect(costChangeRecord({ before: settings, after: settings, actor: 'Salman' })).toBeNull()
   })
 
-  it('records an EtsyPilot-only change, never a send', () => {
+  it('records an EtsyPilot-only change, never a send', async () => {
     const before = defaultCostSettings()
     const record = costChangeRecord({
       before,
@@ -164,7 +164,7 @@ describe('cost changes become records', () => {
     expect(record!.detail).toContain('→')
   })
 
-  it('names a blank ad spend as "not set" rather than printing nothing', () => {
+  it('names a blank ad spend as "not set" rather than printing nothing', async () => {
     const before = defaultCostSettings()
     const record = costChangeRecord({
       before,

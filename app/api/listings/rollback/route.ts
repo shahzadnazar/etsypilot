@@ -15,8 +15,8 @@ import { getChangeHistory } from '@/domain/change-history/service'
 import { applyRollback, RollbackRefused } from '@/domain/change-history/rollback'
 import { auditActor } from '@/domain/profile/service'
 import { getSession } from '@/lib/auth'
-import { getEtsyService } from '@/lib/etsy'
-import { DEMO_NOW } from '@/lib/etsy/demo-dataset'
+import { loadListings } from '@/domain/listings/load'
+import { nowIso } from '@/domain/clock'
 import { errorResponse } from '@/lib/errors/api'
 import { Errors } from '@/lib/errors/types'
 import { shopContext } from '@/lib/permissions'
@@ -35,16 +35,16 @@ export async function POST(request: Request) {
     const view = await getChangeHistory(ctx, { job: jobId })
     if (!view.selected) throw Errors.notFound('change job')
 
-    const { listings } = await getEtsyService().getListings(ctx.shopId, { limit: 500 })
+    const { listings } = await loadListings(ctx)
 
     try {
-      applyRollback(ctx, {
+      await applyRollback(ctx, {
         job: view.selected.row.job,
         listings,
         confirmedFingerprint: fingerprint,
         acknowledged,
         actor: await auditActor(session),
-        now: DEMO_NOW,
+        now: nowIso(),
       })
     } catch (error) {
       /*

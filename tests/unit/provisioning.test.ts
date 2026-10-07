@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { provisionAccount, DEMO_SHOP_NAME } from '@/domain/auth/provision'
+import { provisionAccount, NEW_SHOP_NAME } from '@/domain/auth/provision'
 import type { AccountStore, ShopRow, UserRow } from '@/lib/repositories/accounts'
 import { shopContext } from '@/lib/permissions'
 import { AppError } from '@/lib/errors/types'
@@ -86,7 +86,7 @@ describe('a new account gets a user, a demo shop and a membership', () => {
     const store = memoryStore()
     await provisionAccount(store, ACCOUNT)
     expect(store.shops[0]!.isDemo).toBe(true)
-    expect(store.shops[0]!.name).toBe(DEMO_SHOP_NAME)
+    expect(store.shops[0]!.name).toBe(NEW_SHOP_NAME)
   })
 
   it('gives each account its OWN shop, not a shared one', async () => {

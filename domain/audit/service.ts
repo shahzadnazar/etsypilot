@@ -36,6 +36,7 @@ import type { StoredOrder } from '@/domain/orders/types'
 import type { ShopContext } from '@/lib/permissions'
 import { calculated, unavailable, verified } from '@/lib/provenance/builders'
 import type { Provenanced } from '@/lib/provenance/types'
+import { nowIso } from '@/domain/clock'
 import { AUDIT_RULES, DEFAULT_THRESHOLDS, type AuditRule, type RuleContext, type Severity } from './rules'
 
 export interface AuditFinding {
@@ -174,7 +175,14 @@ export function auditListings(
       [...worstByListing.keys()].reduce((s, id) => s + (revenueByListing.get(id) ?? 0), 0),
     ),
     thresholds,
-    lastRunAt: '2026-08-20T00:00:00.000Z',
+    /*
+     * When the audit actually ran, which is now — every rule is re-evaluated
+     * on each render; nothing is stored. This was the literal
+     * '2026-08-20T00:00:00.000Z', so the header read "last run Aug 20, 00:00
+     * UTC" on every shop forever, including eight days into the FUTURE of the
+     * demo clock it was meant to match.
+     */
+    lastRunAt: nowIso(),
     listingsWithoutRevenue: listings.filter((l) => !revenueByListing.has(l.etsyListingId)).length,
   }
 }

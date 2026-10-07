@@ -50,7 +50,7 @@ export async function getAuditLogView(
   ctx: ShopContext,
   query: AuditLogQuery = {},
 ): Promise<AuditLogView> {
-  const all = readAuditRecords(ctx.shopId)
+  const all = await readAuditRecords(ctx.shopId)
   const subscription = await getBillingProvider().getSubscription(ctx.shopId)
   const plan = planOf(subscription.plan)
 

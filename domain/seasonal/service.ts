@@ -19,7 +19,8 @@
 import { loadListings } from '@/domain/listings/load'
 import type { ShopDataSource } from '@/domain/sync/source'
 import { loadOrders } from '@/domain/orders/load'
-import { BASELINE_START, DEMO_NOW, PERIOD_END } from '@/lib/etsy/demo-dataset'
+import { BASELINE_START, PERIOD_END } from '@/lib/etsy/demo-dataset'
+import { nowIso } from '@/domain/clock'
 import type { EtsyListing } from '@/lib/etsy/interface'
 import type { StoredOrder } from '@/domain/orders/types'
 import type { Confidence } from '@/lib/provenance/types'
@@ -90,13 +91,14 @@ export async function getSeasonalCalendar(
   const sections = [...new Set(listings.map((l) => l.section).filter((s): s is string => !!s))]
   const category = query.category && sections.includes(query.category) ? query.category : 'All'
 
-  const historyMonths = monthsBetween(BASELINE_START, DEMO_NOW)
+  const now = nowIso()
+  const historyMonths = monthsBetween(BASELINE_START, now)
   const windows = listings.length === 0 ? [] : buildWindows({ orders, listings, category, historyMonths })
 
   return {
     market: 'United States',
     category,
-    year: Number(DEMO_NOW.slice(0, 4)),
+    year: Number(now.slice(0, 4)),
     windows,
     historyMonths,
     empty: windows.length === 0,

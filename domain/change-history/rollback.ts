@@ -15,7 +15,8 @@ import { AppError } from '@/lib/errors/types'
 import { assertCanWrite, type ShopContext } from '@/lib/permissions'
 import type { EtsyListing } from '@/lib/etsy/interface'
 import { driftOf, type DriftReport } from './service'
-import { appendChangeJob } from './store'
+import { writeChangeJob } from '@/lib/repositories/change-jobs'
+import { appendDemoChangeJob } from './demo'
 import type { AuditRecord } from '@/domain/audit-log/types'
 import type { ChangeItem, ChangeJob } from './types'
 
@@ -123,10 +124,10 @@ export interface RollbackRequest {
  *   - there is nothing restorable
  *   - the catalogue moved since the confirmation
  */
-export function applyRollback(
+export async function applyRollback(
   ctx: ShopContext,
   request: RollbackRequest,
-): { job: ChangeJob; restored: number; skipped: number } {
+): Promise<{ job: ChangeJob; restored: number; skipped: number }> {
   if (!request.acknowledged) {
     throw new RollbackRefused(
       'NOT_ACKNOWLEDGED',
@@ -152,8 +153,9 @@ export function applyRollback(
      * Refusing costs them a click and protects the edits somebody made in
      * between — applying to "whatever is left" would not.
      */
-    appendAuditRecord(
+    await appendAuditRecord(
       ctx.shopId,
+      ctx.actorId,
       refusalRecord(request, recordedAt, 'Catalogue moved between confirm and apply.'),
     )
     throw new RollbackRefused(
@@ -165,8 +167,9 @@ export function applyRollback(
 
   // Demo mode refuses here, and the audit log records that it did.
   if (ctx.readOnly) {
-    appendAuditRecord(
+    await appendAuditRecord(
       ctx.shopId,
+      ctx.actorId,
       refusalRecord(request, recordedAt, 'This shop is read-only, so no write was attempted.'),
     )
     throw new RollbackRefused('READ_ONLY', REFUSAL_COPY.READ_ONLY.title, REFUSAL_COPY.READ_ONLY.detail)
@@ -197,9 +200,16 @@ export function applyRollback(
     summary: `Rolled back job #${request.job.id}`,
     items,
   }
-  appendChangeJob(ctx.shopId, request.listings, job)
+  /*
+   * The demo narrative keeps its Map; a real shop gets a row. Both are
+   * append-only — a rollback writes a NEW job rather than editing the one it
+   * reverses, which is why the record of what was done survives the undoing.
+   */
+  if (!appendDemoChangeJob(request.listings, job)) {
+    await writeChangeJob(ctx.shopId, ctx.actorId, job)
+  }
 
-  appendAuditRecord(ctx.shopId, {
+  await appendAuditRecord(ctx.shopId, ctx.actorId, {
     id: job.id,
     at: recordedAt,
     actor: { name: request.actor, role: 'Owner', session: '2a··f1', device: 'This browser' },

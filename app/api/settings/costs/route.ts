@@ -110,7 +110,7 @@ export async function POST(request: Request) {
         actor: await auditActor(session),
         currency: shop?.currency ?? 'USD',
       })
-      if (record) appendAuditRecord(ctx.shopId, record)
+      if (record) await appendAuditRecord(ctx.shopId, session.userId, record)
     } catch (error) {
       /*
        * A rejected form goes back to the form, not to a JSON error page. The

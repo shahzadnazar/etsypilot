@@ -7,11 +7,9 @@
 
 import { loadOrders, ordersWereRead } from '@/domain/orders/load'
 import { shopHeader } from '@/domain/sync/source'
-import {
-  DEMO_BASELINE,
-  PERIOD_END,
-  PERIOD_START,
-} from '@/lib/etsy/demo-dataset'
+import { PERIOD_END, PERIOD_START } from '@/lib/etsy/demo-dataset'
+import { previousPeriod } from '@/domain/analytics/service'
+import { demoBaseline } from './demo'
 import { calculated, unavailable, verified } from '@/lib/provenance/builders'
 import type { Provenanced } from '@/lib/provenance/types'
 import type { ShopContext } from '@/lib/permissions'
@@ -44,10 +42,44 @@ export interface ShopOverview {
 }
 
 export async function getShopOverview(ctx: ShopContext): Promise<ShopOverview> {
-  const [shop, { orders, source }] = await Promise.all([
+  /*
+   * ── THE BASELINE IS THIS SHOP'S OWN PREVIOUS PERIOD ─────────────────────
+   *
+   * It was DEMO_BASELINE: 512 orders and $20,287 of revenue, the Willow & Fern
+   * figures. Measured in a browser on a live account with two orders:
+   *
+   *     Gross sales  $74.00   ▼ 99.6%   vs baseline $20,287.00
+   *     Orders       2        ▼ 99.6%   vs baseline 512
+   *
+   * A real seller, on the first screen after signing in, told their shop had
+   * collapsed by 99.6% against a shop that is not theirs. The comment two
+   * paragraphs down already named this exact failure for the unread case —
+   * "the delta makes it worse than a bare zero: it is a claim that the shop
+   * collapsed" — and the read case was making the same claim from a constant.
+   *
+   * The same prior window the analytics screen compares against, so the two
+   * screens cannot disagree about what "vs baseline" means.
+   */
+  const previous = previousPeriod()
+  const [shop, { orders, source }, { orders: priorOrders }] = await Promise.all([
     shopHeader(ctx),
     loadOrders(ctx, { since: PERIOD_START, until: PERIOD_END }),
+    loadOrders(ctx, { since: previous.start, until: previous.end }),
   ])
+
+  /*
+   * Null where there is nothing to compare against.
+   *
+   * A shop whose first period this is has no earlier period, and a baseline of
+   * zero would make every shop's first month read "▲ ∞" or "▲ 100%". The tile
+   * drops its delta and says why instead — the same choice the unread case
+   * makes below, for the same reason.
+   */
+  const baseline = demoBaseline() ?? {
+    orders: priorOrders.length,
+    revenue: round2(priorOrders.reduce((sum, o) => sum + o.gross, 0)),
+  }
+  const comparable = baseline.orders > 0 || baseline.revenue > 0
 
   const profit = computeWaterfall(orders, costInputsFrom(await loadCosts(ctx)))
 
@@ -82,10 +114,12 @@ export async function getShopOverview(ctx: ShopContext): Promise<ShopOverview> {
       methodologyKey: 'grossSales',
       label: 'Gross sales',
       display: read ? currency(grossRevenue, currencyCode) : '—',
-      deltaPercent: read ? pctChange(grossRevenue, DEMO_BASELINE.revenue) : null,
-      note: read
-        ? `vs baseline ${currency(DEMO_BASELINE.revenue, currencyCode)}`
-        : 'Not synced yet',
+      deltaPercent: read && comparable ? pctChange(grossRevenue, baseline.revenue) : null,
+      note: !read
+        ? 'Not synced yet'
+        : comparable
+          ? `vs ${currency(baseline.revenue, currencyCode)} the period before`
+          : 'No earlier period to compare against yet',
       provenance: read
         ? verified(null, 'Your Etsy order receipts', shop?.lastSyncedAt ?? undefined).provenance
         : unread,
@@ -95,8 +129,12 @@ export async function getShopOverview(ctx: ShopContext): Promise<ShopOverview> {
       methodologyKey: 'orders',
       label: 'Orders',
       display: read ? String(orderCount) : '—',
-      deltaPercent: read ? pctChange(orderCount, DEMO_BASELINE.orders) : null,
-      note: read ? `vs baseline ${DEMO_BASELINE.orders}` : 'Not synced yet',
+      deltaPercent: read && comparable ? pctChange(orderCount, baseline.orders) : null,
+      note: !read
+        ? 'Not synced yet'
+        : comparable
+          ? `vs ${baseline.orders} the period before`
+          : 'No earlier period to compare against yet',
       provenance: read
         ? verified(null, 'Your Etsy order receipts', shop?.lastSyncedAt ?? undefined).provenance
         : unread,
@@ -187,4 +225,8 @@ function currency(amount: number, code: string): string {
     currency: code,
     maximumFractionDigits: 2,
   }).format(amount)
+}
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100
 }

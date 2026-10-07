@@ -13,7 +13,8 @@
 
 import { getBillingProvider } from '@/lib/billing'
 import type { Invoice, Subscription } from '@/lib/billing/interface'
-import { getEtsyService } from '@/lib/etsy'
+import { shopHeader } from '@/domain/sync/source'
+import { loadListings } from '@/domain/listings/load'
 import { Errors } from '@/lib/errors/types'
 import type { ShopContext } from '@/lib/permissions'
 import { BILLING_NOW } from '@/lib/billing/mock'
@@ -68,14 +69,13 @@ export interface BillingView {
 
 export async function getBillingView(ctx: ShopContext): Promise<BillingView> {
   const billing = getBillingProvider()
-  const etsy = getEtsyService()
 
   const [shop, subscription, invoices] = await Promise.all([
-    etsy.getShop(ctx.shopId),
+    shopHeader(ctx),
     billing.getSubscription(ctx.shopId),
     billing.listInvoices(ctx.shopId),
   ])
-  const { listings } = await etsy.getListings(ctx.shopId, { limit: 2000 })
+  const { listings } = await loadListings(ctx)
 
   const today = BILLING_NOW
   const plan = planOf(subscription.plan)
@@ -104,14 +104,14 @@ export async function getBillingView(ctx: ShopContext): Promise<BillingView> {
         to: p.key,
         subscription,
         today,
-        currency: shop.currency,
+        currency: shop?.currency ?? 'USD',
       }),
     ),
     agencyNote: AGENCY_NOTE,
     limitPolicy: LIMIT_POLICY,
     cancellationTerms: CANCELLATION_TERMS,
     trialTerms: TRIAL_TERMS,
-    currency: shop.currency,
+    currency: shop?.currency ?? 'USD',
     flows: { subscribe: SUBSCRIBE_FLOW, cancel: CANCEL_FLOW },
     today,
   }
@@ -155,14 +155,14 @@ export async function changePlan(ctx: ShopContext, to: PlanKey): Promise<Subscri
   const billing = getBillingProvider()
   assertBillingWritable(ctx, billing)
   const subscription = await billing.getSubscription(ctx.shopId)
-  const shop = await getEtsyService().getShop(ctx.shopId)
+  const shop = await shopHeader(ctx)
 
   const change = planChange({
     from: subscription.plan,
     to,
     subscription,
     today: BILLING_NOW,
-    currency: shop.currency,
+    currency: shop?.currency ?? 'USD',
   })
   if (change.kind === 'SAME') return subscription
 
@@ -193,7 +193,7 @@ export async function resumePlan(ctx: ShopContext): Promise<Subscription> {
 export async function checkLimit(ctx: ShopContext, metric: MetricKey): Promise<LimitDecision> {
   const billing = getBillingProvider()
   const subscription = await billing.getSubscription(ctx.shopId)
-  const { listings } = await getEtsyService().getListings(ctx.shopId, { limit: 2000 })
+  const { listings } = await loadListings(ctx)
 
   const used =
     metric === 'listings' ? listings.filter((l) => l.state === 'ACTIVE').length : 42

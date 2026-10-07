@@ -13,11 +13,12 @@
 
 import { planOf, type Plan } from '@/domain/billing/plans'
 import { getBillingProvider } from '@/lib/billing'
-import { getEtsyService } from '@/lib/etsy'
-import { DEMO_NOW } from '@/lib/etsy/demo-dataset'
+import { loadListings } from '@/domain/listings/load'
+import { nowIso } from '@/domain/clock'
 import type { EtsyListing } from '@/lib/etsy/interface'
 import type { ShopContext } from '@/lib/permissions'
-import { readChangeJobs } from './store'
+import { readChangeJobs } from '@/lib/repositories/change-jobs'
+import { demoChangeHistory } from './demo'
 import {
   outcomeOf,
   type ChangeJob,
@@ -55,16 +56,29 @@ export async function getChangeHistory(
   ctx: ShopContext,
   query: { source?: string; job?: string } = {},
 ): Promise<ChangeHistoryView> {
-  const etsy = getEtsyService()
+  /*
+   * ── THROUGH THE LOADER, LIKE EVERY OTHER SCREEN ─────────────────────────
+   *
+   * This called `etsy.getListings` on the adapter, which is
+   * ETSY_NOT_CONFIGURED in a live deployment with no API key. Measured in a
+   * browser: /listings/change-history returned HTTP 500 — the page a seller is
+   * sent to when they want to know what EtsyPilot changed, and the only place
+   * a write can be undone from.
+   */
   const [catalogue, subscription] = await Promise.all([
-    etsy.getListings(ctx.shopId, { limit: 500 }),
+    loadListings(ctx),
     getBillingProvider().getSubscription(ctx.shopId),
   ])
   const listings = catalogue.listings
   const plan = planOf(subscription.plan)
   const window = plan.limits.rollbackDays
 
-  const jobs = readChangeJobs(ctx.shopId, listings)
+  /*
+   * From `change_jobs`, or the demo narrative. Both are the shop's own: the
+   * table for a real one, the fixture for the fictional one.
+   */
+  const jobs = demoChangeHistory(listings) ?? (await readChangeJobs(ctx.shopId))
+  const now = nowIso()
   const source: ChangeSource | 'ALL' = CHANGE_SOURCES.includes(query.source as ChangeSource)
     ? (query.source as ChangeSource)
     : 'ALL'
@@ -72,7 +86,7 @@ export async function getChangeHistory(
   const rows: ChangeRow[] = jobs.map((job) => ({
     job,
     listingCount: job.items.length,
-    rollback: rollbackStateOf(job, listings, { window, planName: plan.name, now: DEMO_NOW }),
+    rollback: rollbackStateOf(job, listings, { window, planName: plan.name, now }),
   }))
 
   const shown = rows.filter((r) => (source === 'ALL' ? true : r.job.source === source))
@@ -89,7 +103,7 @@ export async function getChangeHistory(
     selected: selectedRow
       ? { row: selectedRow, drift: driftOf(selectedRow.job, listings) }
       : null,
-    now: DEMO_NOW,
+    now,
   }
 }
 

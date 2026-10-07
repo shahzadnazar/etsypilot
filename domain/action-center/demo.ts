@@ -31,7 +31,7 @@ import 'server-only'
  * same way the costs slice does.
  */
 
-import { DEMO_ACTOR_ID, DEMO_COUNTS, DEMO_NOW } from '@/lib/etsy/demo-dataset'
+import { DEMO_COUNTS } from '@/lib/etsy/demo-dataset'
 import { isDemoMode } from '@/lib/etsy'
 import { formatCurrency } from '@/lib/utils/format'
 import type { ShopContext } from '@/lib/permissions'
@@ -47,11 +47,6 @@ import type { Action } from './types'
 export function demoActions(ctx: ShopContext): Action[] {
   if (!isDemoMode()) return []
   return [belowCost(ctx), missingCosts(ctx), renewalsFixed(ctx), seasonalWindow(ctx)]
-}
-
-/** The demo actor and clock, re-exported for the screens that stage them. */
-export function demoActorNow(): { DEMO_ACTION_ACTOR: string; DEMO_ACTION_NOW: string } {
-  return { DEMO_ACTION_ACTOR: DEMO_ACTOR_ID, DEMO_ACTION_NOW: DEMO_NOW }
 }
 
 function belowCost(ctx: ShopContext): Action {

@@ -26,7 +26,7 @@ import type { ShopPulseView } from '@/domain/shop-pulse/types'
 import { belowCostAction, missingCostsAction, type ShopFacts } from './generators'
 import { isDemoMode } from '@/lib/etsy'
 import type { StoredOrder } from '@/domain/orders/types'
-import { demoActions, demoActorNow } from './demo'
+import { demoActions } from './demo'
 import type { Action, ActionFilter } from './types'
 import { compareActions, matchesFilter } from './types'
 
@@ -301,4 +301,3 @@ async function actorName(actorId: string | null): Promise<string | null> {
   return user?.displayName ?? user?.name ?? null
 }
 
-export const { DEMO_ACTION_ACTOR, DEMO_ACTION_NOW } = demoActorNow()

@@ -33,7 +33,8 @@ import 'server-only'
  */
 
 import { isDemoMode } from '@/lib/etsy'
-import { DEMO_COST_INPUTS, demoUnmatchedOrderIds } from '@/lib/etsy/demo-dataset'
+import { DEMO_COST_INPUTS, demoConfirmedCosts, demoUnmatchedOrderIds } from '@/lib/etsy/demo-dataset'
+import type { EtsyListing } from '@/lib/etsy/interface'
 import type { SellerCosts } from '@/lib/repositories/costs'
 
 /**
@@ -89,4 +90,18 @@ export function demoUnmatchedReceiptIds(
 ): Set<string> {
   if (!isDemoMode()) return new Set()
   return demoUnmatchedOrderIds(orders)
+}
+
+/**
+ * The demo shop's confirmed per-listing costs, or null.
+ *
+ * `demoConfirmedCosts(listings)` decides which of a catalogue's listings carry
+ * a confirmed cost and what it is. domain/listings/load.ts called it inside
+ * its DEMO branch, which was correct — but correct by where the call sits
+ * rather than by anything that can be checked. Routed through the same exit as
+ * the rest so the containment sweep covers it.
+ */
+export function demoListingCosts(listings: EtsyListing[]): Map<string, number> | null {
+  if (!isDemoMode()) return null
+  return demoConfirmedCosts(listings)
 }

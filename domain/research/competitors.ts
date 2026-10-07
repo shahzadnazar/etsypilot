@@ -15,7 +15,7 @@
 
 import { getSignalsService } from '@/lib/signals'
 import type { CompetitorShop } from '@/lib/signals/interface'
-import { getEtsyService } from '@/lib/etsy'
+import { loadListings } from '@/domain/listings/load'
 import type { ShopContext } from '@/lib/permissions'
 
 export interface TagGap {
@@ -69,7 +69,7 @@ export async function getCompetitors(
 }
 
 async function compare(ctx: ShopContext, them: CompetitorShop): Promise<CompetitorComparison> {
-  const { listings } = await getEtsyService().getListings(ctx.shopId, { limit: 500 })
+  const { listings } = await loadListings(ctx)
   const active = listings.filter((l) => l.state === 'ACTIVE')
 
   const yourTags = new Map<string, number>()

@@ -92,8 +92,17 @@ export default async function SecurityPage() {
         <Card className="flex flex-wrap items-center justify-between gap-3 p-[18px]">
           <div className="flex flex-col gap-0.5">
             <span className="text-section text-ink-1">Password</span>
+            {/*
+              * Null on every real account: EtsyPilot stores no password for a
+              * seller. `Last changed ${null}` rendered "Last changed Invalid
+              * Date" once the fixture stopped filling it in, which is the
+              * shape this whole sweep is about — an absent fact printed as if
+              * it were one.
+              */}
             <span className="text-caption text-muted-1">
-              Last changed {formatDate(`${view.passwordChangedOn}T12:00:00.000Z`)}
+              {view.passwordChangedOn === null
+                ? 'No password is stored for this account'
+                : `Last changed ${formatDate(`${view.passwordChangedOn}T12:00:00.000Z`)}`}
             </span>
           </div>
           <NotYet label="Change" reason="Arrives with accounts. No password is stored yet." />
@@ -192,6 +201,26 @@ export default async function SecurityPage() {
               reason="Arrives with accounts. Nothing here would be signed out today."
             />
           </div>
+          {/*
+            * An empty list, not an invented one. EtsyPilot does not record
+            * seller sessions — the three that used to be here were Willow &
+            * Fern's, in Dhaka, on a page a seller opens when they think
+            * somebody else is in their account.
+            */}
+          {view.sessions.length === 0 ? (
+            <p className="text-small leading-relaxed text-muted-1">
+              EtsyPilot does not track sign-in sessions for this account yet, so it cannot list
+              them. That is a gap, not an all-clear: it means this page cannot tell you whether
+              anyone else is signed in. Your Etsy shop is separate — revoke its connection from{' '}
+              <Link
+                href="/settings/shops"
+                className="font-semibold text-brand-strong underline underline-offset-2"
+              >
+                Shop connections
+              </Link>{' '}
+              or from Etsy, and that takes effect immediately.
+            </p>
+          ) : (
           <ul className="flex flex-col">
             {view.sessions.map((s) => (
               <li
@@ -234,6 +263,8 @@ export default async function SecurityPage() {
               </li>
             ))}
           </ul>
+          )}
+          {view.sessions.some((s) => s.kind === 'EXTENSION') ? (
           <p className="max-w-prose text-caption leading-relaxed text-muted-1">
             The extension is listed here because it has access, even though it holds no Etsy
             credential and cannot write anything.{' '}
@@ -245,10 +276,25 @@ export default async function SecurityPage() {
             </Link>
             .
           </p>
+          ) : null}
         </Card>
 
         <Card className="flex flex-col gap-3 p-[18px]">
           <h2 className="text-section text-ink-1">Recent security activity</h2>
+          {/*
+            * Nothing invented here either. The three events that used to be
+            * returned for every account — including "Failed sign-in · wrong
+            * password" — described the demo account, and a false failed
+            * sign-in is an alarm.
+            */}
+          {view.events.length === 0 ? (
+            <p className="text-small leading-relaxed text-muted-1">
+              No security activity has been recorded for this account. EtsyPilot does not yet log
+              sign-ins or failed attempts, so this is "nothing is recorded" rather than "nothing
+              happened". Actions taken on your shop through EtsyPilot, including the ones it
+              refused, are in the audit log below.
+            </p>
+          ) : (
           <ul className="flex flex-col">
             {view.events.map((event) => {
               const style = OUTCOME_STYLE[event.outcome]
@@ -271,6 +317,7 @@ export default async function SecurityPage() {
               )
             })}
           </ul>
+          )}
           <Link
             href="/settings/audit-log"
             className="text-caption font-semibold text-brand-strong underline underline-offset-2"

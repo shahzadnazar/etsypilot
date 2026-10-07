@@ -20,8 +20,9 @@
 
 import { getAiProvider } from '@/lib/ai'
 import type { AiProvider, DraftListingRequest } from '@/lib/ai/interface'
-import { getEtsyService } from '@/lib/etsy'
-import { DEMO_NOW } from '@/lib/etsy/demo-dataset'
+import { isDemoMode } from '@/lib/etsy'
+import { loadListings } from '@/domain/listings/load'
+import { nowIso } from '@/domain/clock'
 import type { EtsyListing } from '@/lib/etsy/interface'
 import { Errors } from '@/lib/errors/types'
 import type { ShopContext } from '@/lib/permissions'
@@ -71,11 +72,12 @@ export async function getCopilotView(
   ctx: ShopContext,
   listingId?: string,
 ): Promise<CopilotView | null> {
-  const etsy = getEtsyService()
-  const [{ listings }, plan] = await Promise.all([
-    etsy.getListings(ctx.shopId, { limit: 500 }),
-    currentPlan(ctx),
-  ])
+  /*
+   * Through the loader. This asked the adapter directly, which is
+   * ETSY_NOT_CONFIGURED in a live deployment with no API key — measured in a
+   * browser, where /listings/ai-copilot returned HTTP 500.
+   */
+  const [{ listings }, plan] = await Promise.all([loadListings(ctx), currentPlan(ctx)])
 
   if (listings.length === 0) return null
 
@@ -90,7 +92,13 @@ export async function getCopilotView(
     keywordListId: list?.id ?? null,
     keywordListName: list?.name ?? null,
     tone: 'WARM',
-    lockedTerms: ['Willow & Fern', '14k gold filled'],
+    /*
+     * Empty on a real shop. These two are Willow & Fern's brand name and a
+     * material from the demo catalogue, and they were being fed to the model
+     * as terms it must preserve in a real seller's title — the fixture
+     * reaching into generated copy rather than onto a screen.
+     */
+    lockedTerms: demoLockedTerms(),
     rewriteDescription: false,
     guardrails: [...DEFAULT_GUARDRAILS],
   }
@@ -101,7 +109,7 @@ export async function getCopilotView(
     listing: target,
     inputs,
     terms: list?.terms ?? [],
-    now: DEMO_NOW,
+    now: nowIso(),
     provider,
   })
 
@@ -245,4 +253,15 @@ function quotaFor(plan: Plan): GenerationQuota {
     planName: plan.name,
     nextTier: next ? { name: next.name, limit: next.limits.aiGenerations } : null,
   }
+}
+
+/**
+ * The demo shop's locked terms, or none.
+ *
+ * "Willow & Fern" is the fictional shop's name and "14k gold filled" is a
+ * material from its catalogue. Locking them on a real seller's listing would
+ * make the assistant preserve words that are not theirs.
+ */
+function demoLockedTerms(): string[] {
+  return isDemoMode() ? ['Willow & Fern', '14k gold filled'] : []
 }

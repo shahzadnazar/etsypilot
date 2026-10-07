@@ -8,7 +8,7 @@
  */
 
 import { getEtsyService, isDemoMode } from '@/lib/etsy'
-import { DEMO_LAST_SYNCED } from '@/lib/etsy/demo-dataset'
+import { demoConnectedAt, demoLastSynced } from './demo'
 import type { ShopContext } from '@/lib/permissions'
 import {
   ETSY_SCOPES,
@@ -27,8 +27,20 @@ export async function getConnectionState(ctx: ShopContext): Promise<ConnectionSt
     shopName: shop.name,
     listingCount: shop.activeListingCount,
     grantedScopes: shop.grantedScopes,
-    connectedAt: '2026-06-02T09:14:00.000Z',
-    lastSyncedAt: shop.lastSyncedAt ?? DEMO_LAST_SYNCED,
+    /*
+     * ── TWO AUTHORED TIMESTAMPS ON THE CONNECTION PAGE ──────────────────
+     *
+     * `connectedAt` was the literal 2 June 2026 for every shop, and
+     * `lastSyncedAt` fell back to DEMO_LAST_SYNCED whenever our own row held
+     * null — which is exactly the shop that has never synced. So the page a
+     * seller opens to check whether their shop is connected said it had been
+     * connected since June and synced recently, about a shop that had done
+     * neither.
+     *
+     * Null now. The UI already distinguishes "never" from a time.
+     */
+    connectedAt: demoConnectedAt(),
+    lastSyncedAt: shop.lastSyncedAt ?? demoLastSynced(),
     sync: null,
     notice: isDemoMode()
       ? 'This is the demo shop. No Etsy account is connected and nothing here can be published.'

@@ -30,7 +30,8 @@ import 'server-only'
  */
 
 import { getEtsyService } from '@/lib/etsy'
-import { demoConfirmedCosts, DEMO_NOW } from '@/lib/etsy/demo-dataset'
+import { demoListingCosts } from '@/domain/costs/demo'
+import { nowIso } from '@/domain/clock'
 import type { EtsyListing } from '@/lib/etsy/interface'
 import type { ShopContext } from '@/lib/permissions'
 import { readListings } from '@/lib/repositories/listings'
@@ -59,9 +60,9 @@ export async function loadListings(ctx: ShopContext): Promise<LoadedListings> {
     const listings = catalogue.listings
     return {
       listings,
-      costs: demoConfirmedCosts(listings),
+      costs: demoListingCosts(listings) ?? new Map(),
       currency: shop.currency,
-      now: DEMO_NOW,
+      now: nowIso(),
       source,
     }
   }

@@ -19,9 +19,22 @@
 import { randomUUID } from 'node:crypto'
 import type { AccountStore } from '@/lib/repositories/accounts'
 
-/** The starting shop. Named for the person, not for the fixture. */
-export const DEMO_SHOP_NAME = 'My demo shop'
-export const DEMO_SHOP_CURRENCY = 'USD'
+/*
+ * ── THE STARTING SHOP IS THEIRS, AND ITS NAME SHOULD SAY SO ───────────────
+ *
+ * The comment here used to read "Named for the person, not for the fixture"
+ * above the string 'My demo shop'. Measured in a browser on a live account:
+ * the shell's shop chip reads "My demo shop · not connected" on every screen,
+ * from sign-up until they connect — which is the whole trial. A seller
+ * evaluating the product is told, by the product, that what they are looking
+ * at is a demo.
+ *
+ * `shops.is_demo` stays true until a shop connects, and that is a different
+ * question — it means "has never connected", and the slice that settled it
+ * said so. The NAME is not the place to encode it.
+ */
+export const NEW_SHOP_NAME = 'My shop'
+export const NEW_SHOP_CURRENCY = 'USD'
 
 export interface ProvisionedAccount {
   userId: string
@@ -90,8 +103,8 @@ export async function provisionAccount(
     // and logs, and deriving it would make those a map back to the account.
     id: `shop_${randomUUID()}`,
     ownerId: user.id,
-    name: DEMO_SHOP_NAME,
-    currency: DEMO_SHOP_CURRENCY,
+    name: NEW_SHOP_NAME,
+    currency: NEW_SHOP_CURRENCY,
     isDemo: true,
     // Matches the schema default, written explicitly: this shop is a demo shop
     // because provisioning decided so, not because a column default happened

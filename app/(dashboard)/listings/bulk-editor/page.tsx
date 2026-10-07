@@ -6,7 +6,7 @@ import { PageHeader } from '@/components/layout/page-header'
 import { EmptyState } from '@/components/ui/states'
 import { getSession } from '@/lib/auth'
 import { isDemoMode } from '@/lib/etsy'
-import { DEMO_NOW } from '@/lib/etsy/demo-dataset'
+import { nowIso } from '@/domain/clock'
 import { loadListings } from '@/domain/listings/load'
 import { shopContext } from '@/lib/permissions'
 
@@ -99,7 +99,7 @@ export default async function BulkEditorPage() {
         listings={listings}
         costs={costs}
         demo={demoData}
-        now={DEMO_NOW}
+        now={nowIso()}
       />
     </>
   )

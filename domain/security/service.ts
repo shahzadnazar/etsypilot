@@ -15,7 +15,8 @@
  */
 
 import { getEtsyService } from '@/lib/etsy'
-import { DEMO_NOW } from '@/lib/etsy/demo-dataset'
+import { nowIso } from '@/domain/clock'
+import { demoSecurity } from './demo'
 import type { ShopContext } from '@/lib/permissions'
 
 export type SessionKind = 'BROWSER' | 'EXTENSION'
@@ -51,7 +52,8 @@ export interface SecurityView {
    * instants, and a component that has only one will always find them equal.
    */
   now: string
-  passwordChangedOn: string
+  /** Null where no password is on file, which is every real account today. */
+  passwordChangedOn: string | null
   twoStepEnabled: boolean
   googleConnectedAs: string | null
   sessions: ActiveSession[]
@@ -71,68 +73,40 @@ export interface SecurityView {
 export async function getSecurityView(ctx: ShopContext): Promise<SecurityView> {
   void ctx
   const etsy = getEtsyService()
+  const demo = demoSecurity()
 
+  /*
+   * ══════════════════════════════════════════════════════════════════════
+   *   A SECURITY PAGE THAT INVENTS A SESSION IS THE WORST PLACE TO INVENT
+   *   ANYTHING.
+   * ══════════════════════════════════════════════════════════════════════
+   *
+   * Everything below used to be the literals now in ./demo.ts, returned for
+   * every account. Measured in a browser on a live seller's own settings:
+   * "Google sign-in — Connected as salman@willowandfern.com", two browser
+   * sessions in Dhaka with Sign out buttons, and a failed sign-in — under a
+   * page header reading "Everything below is a true description of this
+   * account, and the controls that would change it are disabled rather than
+   * pretending."
+   *
+   * EtsyPilot records none of these for a seller account. Not a password, not
+   * a session, not a sign-in. So the live view returns nothing and the page
+   * renders the absence, which is the honest answer and also the one that
+   * makes the missing feature visible instead of looking finished.
+   */
   return {
-    now: DEMO_NOW,
-    passwordChangedOn: '2026-05-18',
+    now: nowIso(),
+    passwordChangedOn: demo?.passwordChangedOn ?? null,
     /*
      * Off, and the page says why it matters rather than nagging. "This account
      * can change live listings" is the actual stake, and it is a stronger
-     * argument than a red badge.
+     * argument than a red badge. (The badge itself reads the real Supabase
+     * posture; this field is the fallback.)
      */
     twoStepEnabled: false,
-    googleConnectedAs: 'salman@willowandfern.com',
-    sessions: [
-      {
-        id: 'sess-2a-f1',
-        kind: 'BROWSER',
-        label: 'Chrome · macOS',
-        detail: 'Session 2a··f1',
-        location: 'Dhaka, BD',
-        lastSeen: DEMO_NOW,
-        current: true,
-        readOnly: false,
-      },
-      {
-        id: 'sess-7c-b9',
-        kind: 'BROWSER',
-        label: 'Safari · iPhone',
-        detail: 'Session 7c··b9',
-        location: 'Dhaka, BD',
-        lastSeen: '2026-08-10T09:12:00.000Z',
-        current: false,
-        readOnly: false,
-      },
-      {
-        id: 'ext-chrome',
-        kind: 'EXTENSION',
-        label: 'EtsyPilot extension · Chrome',
-        detail: 'Read-only · etsy.com',
-        location: 'Dhaka, BD',
-        lastSeen: '2026-08-12T14:00:00.000Z',
-        current: false,
-        /*
-         * The extension holds no privileged Etsy credential and cannot write.
-         * That is a property of what it was built as, not a setting, so it is
-         * stated on the row rather than shown as a toggle somebody could
-         * mistake for something they can change.
-         */
-        readOnly: true,
-      },
-    ],
-    events: [
-      { at: '2026-08-12T08:41:00.000Z', label: 'Signed in · Chrome, macOS', outcome: 'SUCCEEDED' },
-      {
-        at: '2026-08-09T22:17:00.000Z',
-        label: 'Failed sign-in · wrong password',
-        outcome: 'FAILED',
-      },
-      {
-        at: '2026-08-01T10:03:00.000Z',
-        label: 'Etsy connection re-authorised',
-        outcome: 'INFORMATIONAL',
-      },
-    ],
+    googleConnectedAs: demo?.googleConnectedAs ?? null,
+    sessions: demo?.sessions ?? [],
+    events: demo?.events ?? [],
     etsyConnection: { mode: etsy.mode, canWrite: etsy.canWrite },
   }
 }

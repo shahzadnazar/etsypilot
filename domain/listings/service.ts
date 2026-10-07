@@ -9,7 +9,7 @@
 
 import { AUDIT_RULES, DEFAULT_THRESHOLDS, type RuleContext } from '@/domain/audit/rules'
 import { calculateFees } from '@/domain/fees/calculate'
-import { DEMO_NOW } from '@/lib/etsy/demo-dataset'
+import { nowIso } from '@/domain/clock'
 import type { EtsyListing } from '@/lib/etsy/interface'
 import type { ShopContext } from '@/lib/permissions'
 import { loadListings } from '@/domain/listings/load'
@@ -202,7 +202,16 @@ function healthOf(listing: EtsyListing, ctx: RuleContext): ListingHealth {
   }
 }
 
-function statusOf(listing: EtsyListing, now: string = DEMO_NOW): ListingStatus {
+/**
+ * ACTIVE / EXPIRING / EXPIRED / DRAFT / INACTIVE, against the real clock.
+ *
+ * `now` defaulted to DEMO_NOW — 12 August 2026 — on every shop. Measured on 7
+ * October on a live account: a listing that renewed on 15 August was labelled
+ * "Expiring" and counted in "1 expiring within 7 days" fifty-three days after
+ * it lapsed, while one renewing on 10 October read "Active". One false alarm
+ * and one missed one, from the same constant.
+ */
+function statusOf(listing: EtsyListing, now: string = nowIso()): ListingStatus {
   if (listing.state === 'DRAFT') return 'DRAFT'
   if (listing.state === 'EXPIRED') return 'EXPIRED'
   if (listing.state === 'INACTIVE') return 'INACTIVE'

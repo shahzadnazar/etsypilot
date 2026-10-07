@@ -11,7 +11,7 @@ import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/states'
 import { getShopPulse } from '@/domain/shop-pulse/service'
 import { getSession } from '@/lib/auth'
-import { DEMO_EVENTS } from '@/lib/etsy/demo-events'
+import { pulseChartEvents } from '@/domain/shop-pulse/chart-events'
 import { shopContext } from '@/lib/permissions'
 import { formatDate, formatDelta } from '@/lib/utils/format'
 import { Money, Numeric } from '@/components/ui/numeric'
@@ -155,7 +155,12 @@ export default async function ShopPulsePage() {
         <div className="mt-3">
           <BaselineChart
             baseline={pulse.orders}
-            events={DEMO_EVENTS}
+            /*
+              * This shop's events, not the fixture's. The chart draws a marker
+              * per recorded change, and DEMO_EVENTS put Willow & Fern's price
+              * changes, bulk job and stockout on every seller's baseline.
+              */
+            events={await pulseChartEvents(ctx)}
             periodStart={pulse.periodStart}
           />
         </div>

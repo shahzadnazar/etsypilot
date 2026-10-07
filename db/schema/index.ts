@@ -12,6 +12,7 @@
 
 import { relations, sql } from 'drizzle-orm'
 import {
+  bigint,
   boolean,
   index,
   integer,
@@ -806,3 +807,90 @@ export const adminPermissionAuditEvents = pgTable(
 export const bulkOperationsRelations = relations(bulkOperations, ({ many }) => ({
   items: many(bulkOperationItems),
 }))
+
+/* --------------------------------------------------- change history & audit */
+
+/**
+ * What EtsyPilot WROTE to this shop, and the only surface a write is undone
+ * from.
+ *
+ * ── A PROMISE OF IMMUTABILITY NEEDS SOMEWHERE TO KEEP IT ──────────────────
+ *
+ * This was domain/change-history/store.ts: a Map on a global Symbol, seeded
+ * from `demoChangeJobs(listings)` — the demo narrative, rebuilt out of
+ * whatever catalogue had just loaded. On a live shop that meant fabricated
+ * jobs over a real seller's own listings, each offering a rollback.
+ *
+ * Append-only, like `cost_rules` and `events`. A rollback does not edit the
+ * job it reverses; it writes a new one. There is no UPDATE in the repository
+ * and no column that would need one.
+ */
+export const changeJobs = pgTable(
+  'change_jobs',
+  {
+    id: text('id').primaryKey(),
+    shopId: text('shop_id').notNull().references(() => shops.id),
+    actorId: text('actor_id').references(() => users.id),
+    /**
+     * The name as it was when the job ran.
+     *
+     * Denormalised on purpose. Resolving it from `users` at read time would
+     * rewrite history when somebody changes their display name, and a change
+     * record whose actor can change is not a change record.
+     */
+    actorName: text('actor_name').notNull(),
+    at: timestamp('at', { withTimezone: true }).notNull(),
+    /** BULK_EDIT | SCHEDULED | AI_ASSISTED | MANUAL — constrained in 0013. */
+    source: text('source').notNull(),
+    summary: text('summary').notNull(),
+    /** ChangeItem[]. Written whole, read whole, never queried into. */
+    items: jsonb('items').$type<unknown[]>().notNull().default([]),
+    linkedExperiment: jsonb('linked_experiment').$type<unknown>(),
+    createdAt: createdAt(),
+  },
+  (t) => ({
+    byShopAt: index('change_jobs_shop_at_idx').on(t.shopId, t.at),
+  }),
+)
+
+/**
+ * Every action taken on this shop, INCLUDING the ones that were refused.
+ *
+ * Narrower than change_jobs in one direction and wider in the other (D66): a
+ * refusal has no before-value to restore, so it is not a change job, but it is
+ * the single most important thing this log records — "did EtsyPilot change my
+ * listing?" is usually answered no, and an absent record proves nothing.
+ *
+ * `seq` is part of the record's address, not decoration. See the table comment
+ * in migration 0013 and domain/audit-log/types.ts for the collision that
+ * created it.
+ */
+export const auditRecords = pgTable(
+  'audit_records',
+  {
+    shopId: text('shop_id').notNull().references(() => shops.id),
+    seq: bigint('seq', { mode: 'number' }).notNull(),
+    /** The operation id. NOT unique — one operation writes several records. */
+    operationId: text('operation_id').notNull(),
+    at: timestamp('at', { withTimezone: true }).notNull(),
+    actorId: text('actor_id').references(() => users.id),
+    /** MANUAL | BULK_JOB | SYNC | AI_ASSISTED — constrained in 0013. */
+    source: text('source').notNull(),
+    /**
+     * SENT | NOTHING_SENT | NOT_APPLICABLE.
+     *
+     * A column rather than a path into `record`, because "Refused only" is the
+     * filter this log exists for. Two places that can disagree about whether
+     * something was refused is exactly what makes a log useless in the dispute
+     * it was kept for.
+     */
+    reachedKind: text('reached_kind').notNull(),
+    /** The whole AuditRecord. Actor, steps, would-have-changed diff. */
+    record: jsonb('record').$type<unknown>().notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.shopId, t.seq] }),
+    byShopAt: index('audit_records_shop_at_idx').on(t.shopId, t.at, t.seq),
+  }),
+)

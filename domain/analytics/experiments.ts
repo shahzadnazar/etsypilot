@@ -21,8 +21,9 @@
 
 import { loadListings } from '@/domain/listings/load'
 import { loadOrders } from '@/domain/orders/load'
-import { DEMO_NOW, narrativeGroups, PERIOD_END } from '@/lib/etsy/demo-dataset'
-import { DEMO_EVENTS } from '@/lib/etsy/demo-events'
+import { PERIOD_END } from '@/lib/etsy/demo-dataset'
+import { demoExperimentResults } from './experiments-demo'
+
 import type { DomainEvent } from '@/lib/events/types'
 import type { StoredOrder } from '@/domain/orders/types'
 import type { ShopContext } from '@/lib/permissions'
@@ -107,15 +108,23 @@ export async function getExperiments(ctx: ShopContext): Promise<ExperimentsView>
     loadListings(ctx),
   ])
 
-  const groups = narrativeGroups(catalogue.listings)
-  const experiments = demoExperiments({
-    priceGroup: groups.priceGroup.map((l) => l.etsyListingId),
-    tagGroup: groups.tagGroup.map((l) => l.etsyListingId),
-    seasonal: groups.seasonal.map((l) => l.etsyListingId),
-  })
-  const results = experiments.map((experiment) =>
-    evaluate(experiment, orders, DEMO_NOW, DEMO_EVENTS),
-  )
+  /*
+   * ── AN EXPERIMENT IS SOMETHING THE SELLER STARTED ───────────────────────
+   *
+   * This ran `narrativeGroups(catalogue.listings)` over whatever catalogue had
+   * loaded and handed the result to `demoExperiments`, then evaluated it
+   * against DEMO_EVENTS. On a live shop that produced "Price +8% on the linen
+   * range · Hypothesis: a modest rise holds order volume · Started Jul 24,
+   * 2026 · 0 listings · Open change #482" — a hypothesis the seller never
+   * formed, about a change they never made, linked to a job that does not
+   * exist. Measured in a browser.
+   *
+   * Nothing records a real experiment yet; the page's own header says so
+   * ("New experiment — Arrives with scheduling. Start one from a bulk job for
+   * now."). So a live shop gets none, and the empty state the screen already
+   * has takes over.
+   */
+  const results = demoExperimentResults(catalogue.listings, orders)
 
   return { results, minPostDays: MIN_POST_DAYS, empty: results.length === 0 }
 }
@@ -283,41 +292,6 @@ function verdictFor(
  * arranged. A tracker that always has one success on it is a tracker nobody
  * should trust. The POSITIVE branch is exercised by unit test instead.
  */
-function demoExperiments(groups: {
-  priceGroup: string[]
-  tagGroup: string[]
-  seasonal: string[]
-}): Experiment[] {
-  return [
-    {
-      id: 'EXP-1',
-      name: 'Price +8% on the linen range',
-      hypothesis: 'A modest rise holds order volume and raises revenue per order.',
-      startedAt: '2026-07-24T00:00:00.000Z',
-      listingIds: groups.priceGroup,
-      primaryMetric: 'VERIFIED_ORDERS',
-      linkedJobId: '4821',
-    },
-    {
-      id: 'EXP-2',
-      name: 'Autumn tags on the home range',
-      hypothesis: 'Seasonal gifting tags increase orders before September.',
-      startedAt: '2026-07-28T00:00:00.000Z',
-      listingIds: groups.tagGroup,
-      primaryMetric: 'VERIFIED_ORDERS',
-      linkedJobId: '4809',
-    },
-    {
-      id: 'EXP-3',
-      name: 'Shorter titles on the seasonal range',
-      hypothesis: 'A shorter, clearer title reads better in search results.',
-      startedAt: '2026-07-20T00:00:00.000Z',
-      listingIds: groups.seasonal,
-      primaryMetric: 'VERIFIED_ORDERS',
-      linkedJobId: '4788',
-    },
-  ]
-}
 
 function round1(n: number): number {
   return Math.round(n * 10) / 10
