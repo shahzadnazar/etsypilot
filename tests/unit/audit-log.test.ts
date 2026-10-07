@@ -13,7 +13,26 @@ import { costChangeRecord } from '@/domain/audit-log/events'
 import { appendAuditRecord, readAuditRecords, resetAuditRecords } from '@/domain/audit-log/store'
 import { getAuditLogView, recordKey } from '@/domain/audit-log/service'
 import { isRefusal, reachedLabel, type AuditRecord } from '@/domain/audit-log/types'
-import { defaultCostSettings } from '@/domain/costs/store'
+import type { CostSettings } from '@/domain/costs/types'
+
+/*
+ * An explicit fixture, not `defaultCostSettings()`.
+ *
+ * That helper returned DEMO_COST_INPUTS from the module-level cost store,
+ * which is gone: cost_rules holds a seller's costs now and a seller who has
+ * set nothing has nulls, not the demo shop's figures. These tests are about
+ * how a cost CHANGE is described in the audit log, so the values only need to
+ * be stable and legible — stating them here makes that explicit instead of
+ * borrowing a fixture whose meaning changed underneath.
+ */
+const BEFORE: CostSettings = {
+  defaultRulePercent: 0.38,
+  shippingPerOrder: 2.62,
+  labourTotal: 1020,
+  otherCosts: 302.05,
+  adSpend: null,
+}
+const defaultCostSettings = (): CostSettings => ({ ...BEFORE })
 import { shopContext } from '@/lib/permissions'
 import { DEMO_ACTOR_ID, DEMO_SHOP_ID } from '@/lib/etsy/demo-dataset'
 
@@ -128,7 +147,13 @@ describe('cost changes become records', () => {
     const before = defaultCostSettings()
     const record = costChangeRecord({
       before,
-      after: { ...before, defaultRulePercent: 0.38 },
+      /*
+       * A value clearly different from BEFORE's. This read 0.38 against a
+       * fixture whose COGS ratio was DEMO_TOTALS.cogs / DEMO_TOTALS.grossRevenue
+       * — 0.3798…, so 0.38 happened to be a change by a rounding margin. With
+       * the fixture stated explicitly here, the test says what it means.
+       */
+      after: { ...before, defaultRulePercent: 0.41 },
       actor: 'Salman',
       at: '2026-08-13T09:00:00.000Z',
     })

@@ -11,13 +11,14 @@
  */
 
 import { computeWaterfall } from '@/domain/profit/waterfall'
+import { isDemoMode } from '@/lib/etsy'
+import { costInputsFrom, loadCosts } from '@/domain/costs/load'
 import { getShopPulse } from '@/domain/shop-pulse/service'
 import { loadOrders, ordersWereRead } from '@/domain/orders/load'
 import type { StoredOrder } from '@/domain/orders/types'
 import type { ShopDataSource } from '@/domain/sync/source'
 import {
   DEMO_ACTOR_ID,
-  DEMO_COST_INPUTS,
   DEMO_COUNTS,
   DEMO_NOW,
   PERIOD_END,
@@ -76,19 +77,62 @@ export async function getActions(ctx: ShopContext): Promise<ActionCenterView> {
     return { actions: [], counts: { OPEN: 0, DONE: 0, DISMISSED: 0 }, source }
   }
 
-  const profit = computeWaterfall(orders, DEMO_COST_INPUTS)
+  /*
+   * The seller's own costs, or nothing. This passed DEMO_COST_INPUTS, so the
+   * coverage figure and the "uncovered value" on the missing-costs action were
+   * both computed from the fictional shop's COGS ratio.
+   */
+  const profit = computeWaterfall(orders, costInputsFrom(await loadCosts(ctx)))
 
   // Shop Pulse is a generator like any other: its findings enter the same
   // queue rather than living in a parallel list the seller has to check.
   const pulse = await getShopPulse(ctx)
 
-  const actions = [
-    ...pulseActions(ctx, pulse),
-    belowCost(ctx),
-    missingCosts(ctx, profit.coveragePercent, uncoveredValue(orders, profit.coveragePercent)),
-    renewalsFixed(ctx),
-    seasonalWindow(ctx),
-  ].sort(compareActions)
+  /*
+   * ══════════════════════════════════════════════════════════════════════════
+   *   THE FOUR AUTHORED ACTIONS ARE DEMO FURNITURE, AND THEY WERE BEING
+   *   SHOWN TO REAL SHOPS.
+   * ══════════════════════════════════════════════════════════════════════════
+   *
+   * Found by the costs survey rather than by the task that prompted it. The
+   * comment in the NOT_SYNCED branch above already said these generators are
+   * "built from the demo dataset's own constants" and that running them on an
+   * unread catalogue "would be inventing findings" — but the guard was the
+   * sync state, not the mode. A live shop that HAD synced got all four:
+   *
+   *   ACT-0001  "4 listings are selling below cost ... Every sale of these
+   *             four loses money" — CRITICAL, provenance CALCULATED, source
+   *             "your receipts and cost setup", and a combined loss of
+   *             $184.20. No listing was examined to produce any of it.
+   *   ACT-0002  "{DEMO_COUNTS.listingsWithoutCost} listings have no product
+   *             cost", of DEMO_COUNTS.activeListings, with 12 done — the
+   *             fictional shop's catalogue counted, and a `lastWorkedBy` of
+   *             "Salman R.", who is a person in the demo dataset.
+   *   ACT-0003  a completed bulk job, BE-2288, offering a rollback point.
+   *   ACT-0004  a seasonal lift "based on one year of your own order history".
+   *
+   * These are the same defect as a net profit built from fees nobody had, one
+   * step worse: an action is an instruction, and ACT-0001 instructs a seller
+   * to reprice four listings it never looked at.
+   *
+   * Gated on the mode, so demo mode is byte-for-byte what it was. Building
+   * them as real generators is the Action Center's own slice — a below-cost
+   * action needs per-listing costs, fees and prices together, and this slice
+   * only just gave the first of those three somewhere to live. Until then a
+   * live shop sees the derived actions and nothing invented, and the cost
+   * prompt it loses is still on /profit and /settings/costs, where it is
+   * measured.
+   */
+  const authored = isDemoMode()
+    ? [
+        belowCost(ctx),
+        missingCosts(ctx, profit.coveragePercent, uncoveredValue(orders, profit.coveragePercent)),
+        renewalsFixed(ctx),
+        seasonalWindow(ctx),
+      ]
+    : []
+
+  const actions = [...pulseActions(ctx, pulse), ...authored].sort(compareActions)
 
   return {
     actions,

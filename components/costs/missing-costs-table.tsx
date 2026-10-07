@@ -22,6 +22,7 @@ const SHOWN = 12
 export function MissingCostsTable({
   rows,
   activeListings,
+  hasDefaultRule,
   currency,
   query,
   demo,
@@ -37,6 +38,18 @@ export function MissingCostsTable({
    * is out of.
    */
   activeListings: number
+  /*
+   * Whether a default cost rule exists at all.
+   *
+   * Passed rather than inferred from `rows.every(r => r.ruleCost === null)`,
+   * which cannot tell "no rule" from "no rows" — and the sentences below are
+   * about the rule, not about the listings. Three of them asserted one: the
+   * subhead said these listings are "costed by your default rule", the column
+   * header said "Cost from your rule", and that column then rendered an em dash
+   * in every row. A header naming a figure the column never contains is the
+   * same defect as a badge contradicting its value.
+   */
+  hasDefaultRule: boolean
   currency: string
   query: string
   demo: boolean
@@ -64,8 +77,9 @@ export function MissingCostsTable({
             Listings without a cost
           </h2>
           <p className="text-caption text-muted-1">
-            Costed by your default rule until you set one. That is an assumption, and it is counted
-            as one everywhere it is used.
+            {hasDefaultRule
+              ? 'Costed by your default rule until you set one. That is an assumption, and it is counted as one everywhere it is used.'
+              : 'Not costed at all until you set one. You have no default rule, and nothing is applied in its place — their orders are left out of profit rather than costed by a guess.'}
           </p>
         </div>
         <ProvenanceBadge type="SELLER_INPUT" demo={demo} />
@@ -158,7 +172,7 @@ export function MissingCostsTable({
                     <th scope="col" className="px-3 py-2.5 font-semibold">Section</th>
                     <th scope="col" className="px-3 py-2.5 text-right font-semibold">Price</th>
                     <th scope="col" className="px-3 py-2.5 text-right font-semibold">
-                      Cost from your rule
+                      {hasDefaultRule ? 'Cost from your rule' : 'No rule to cost by'}
                     </th>
                     <th scope="col" className="px-4 py-2.5 font-semibold">Confirmed cost</th>
                   </tr>
@@ -174,7 +188,11 @@ export function MissingCostsTable({
                         <Money value={row.price} currency={currency} />
                       </NumericCell>
                       <NumericCell className="text-ink-2">
-                        <Money value={row.ruleCost} currency={currency} />
+                        <Money
+                          value={row.ruleCost}
+                          currency={currency}
+                          unknownLabel="No default rule set"
+                        />
                       </NumericCell>
                       <td className="px-4 py-3 text-small text-muted-1">
                         {/*

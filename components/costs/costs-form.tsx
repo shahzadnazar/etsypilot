@@ -65,10 +65,13 @@ export function CostsForm({
                     max={field.max}
                     defaultValue={value}
                     /*
-                     * Not `required`. A blank ad-spend field is a meaningful
-                     * answer — "I do not know" — and the browser attribute that
-                     * would forbid it also forbids clearing a figure entered by
-                     * mistake. The server decides which fields may be blank.
+                     * Not `required`, and now that is true of every field.
+                     *
+                     * A blank is a meaningful answer — "I have not told you" —
+                     * and a cost nobody has entered is absent, not zero. The
+                     * browser attribute that would forbid a blank also forbids
+                     * clearing a figure entered by mistake, which is the one
+                     * correction a seller most needs to be able to make.
                      */
                     className="tnum h-11 w-full bg-transparent text-body text-ink-1 outline-none md:h-[38px]"
                   />

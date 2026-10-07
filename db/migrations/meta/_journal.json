@@ -85,6 +85,13 @@
       "when": 1790110525154,
       "tag": "0011_orders_fees_unknown_and_sync_state",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790110526154,
+      "tag": "0012_cost_rules_are_the_cost_model",
+      "breakpoints": true
     }
   ]
 }

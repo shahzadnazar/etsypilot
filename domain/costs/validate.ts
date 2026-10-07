@@ -17,7 +17,13 @@
 import { AppError } from '@/lib/errors/types'
 import { COST_FIELDS, type CostFieldSpec, type CostSettings } from './types'
 
-export const COST_PROBLEMS = ['REQUIRED', 'NOT_A_NUMBER', 'OUT_OF_RANGE'] as const
+/*
+ * REQUIRED is gone. Every cost field may be left blank — blank is how a seller
+ * says "I have not told you" and how they retract a cost — so nothing could
+ * raise it, and a validation problem no input can produce is a branch with no
+ * test behind it.
+ */
+export const COST_PROBLEMS = ['NOT_A_NUMBER', 'OUT_OF_RANGE'] as const
 export type CostProblem = (typeof COST_PROBLEMS)[number]
 
 export type RawCostInput = Record<string, string | undefined>
@@ -33,12 +39,6 @@ export function describeProblem(report: CostProblemReport): { message: string; r
   const bound = field.kind === 'PERCENT' ? `${field.min}–${field.max}%` : `${field.min}–${field.max}`
 
   switch (problem) {
-    case 'REQUIRED':
-      return {
-        message: `${field.label} is required.`,
-        recovery:
-          'If the answer is genuinely zero, enter 0 — that is a different statement from leaving it blank.',
-      }
     case 'NOT_A_NUMBER':
       return {
         message: `${field.label} could not be read as a number.`,
@@ -80,12 +80,15 @@ export function parseCostSettings(raw: RawCostInput): CostSettings {
     const text = (raw[field.key] ?? '').trim()
 
     if (text === '') {
-      if (!field.nullable) throw new CostValidationError({ field, problem: 'REQUIRED' })
       /*
-       * Blank stays blank. This is the whole reason `adSpend` is nullable: a
-       * seller who does not know what they spent on ads must not have a zero
-       * written on their behalf, because zero flatters every profit figure
-       * downstream of it.
+       * Blank stays blank, for every field.
+       *
+       * This was the reasoning behind `adSpend` alone — "a seller who does not
+       * know what they spent on ads must not have a zero written on their
+       * behalf, because zero flatters every profit figure downstream of it" —
+       * and it is just as true of their COGS percentage, their postage and
+       * their labour. Blank is also how a cost is RETRACTED: cost_rules stores
+       * a null value for it, which is a retraction rather than a cost of zero.
        */
       out[field.key] = null as never
       continue

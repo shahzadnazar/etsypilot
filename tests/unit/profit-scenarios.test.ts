@@ -13,8 +13,21 @@ const verified: VerifiedTotals = {
   grossRevenue: 18420.65, discounts: 412, refunds: 602, etsyFees: 2984.1,
   paymentProcessing: 622, offsiteAds: 412.35, orderCount: 438,
 }
+/*
+ * A seller who HAS set costs, which `hasAnyRule: true` states rather than
+ * leaves implied. With it false, computeScenario withholds every cost line
+ * and the assertions below would compare absences — the exact failure the
+ * nullable assumptions exist to prevent.
+ */
 const assumptions: SellerAssumptions = {
   shippingPerOrder: 2.6187, cogsPercent: 0.3798, labourTotal: 1020, otherCosts: 302.05,
+  hasAnyRule: true,
+}
+
+/** The same seller before they set anything. Every figure absent. */
+const noAssumptions: SellerAssumptions = {
+  shippingPerOrder: null, cogsPercent: null, labourTotal: null, otherCosts: null,
+  hasAnyRule: false,
 }
 
 describe('a seller can never adjust a verified figure', () => {
@@ -40,7 +53,7 @@ describe('a seller can never adjust a verified figure', () => {
 
   it('leaves fees untouched when only the assumptions change', () => {
     const a = computeScenario(verified, assumptions, { scenario: 'BASE', coverage: 0.62, missingData: [] })
-    const doubledCosts = { ...assumptions, cogsPercent: assumptions.cogsPercent * 2 }
+    const doubledCosts = { ...assumptions, cogsPercent: (assumptions.cogsPercent ?? 0) * 2 }
     const b = computeScenario(verified, doubledCosts, { scenario: 'BASE', coverage: 0.62, missingData: [] })
 
     /*
@@ -373,5 +386,78 @@ describe('a null in a column total propagates', () => {
     expect(totals.profit).toBeNull()
     expect(totals.uncostedOrders).toBe(1)
     expect(totals.uncostedGross).toBe(20)
+  })
+})
+
+describe('a seller who has entered no costs', () => {
+  /*
+   * ██████████████████████████████████████████████████████████████████████
+   *
+   *   THE STATE OF EVERY SELLER WHO HAS NOT BEEN TO SETTINGS → COSTS, AND
+   *   WHAT THE SCREEN SAID ABOUT IT BEFORE.
+   *
+   * ██████████████████████████████████████████████████████████████████████
+   *
+   * `SellerAssumptions` was four plain numbers, so every caller invented
+   * four — and all of them invented DEMO_COST_INPUTS. Measured in a browser
+   * in live mode, on a real account with no costs set: /profit reported "Net
+   * profit −$1,322.05", a loss built from the fictional shop's labour and
+   * other-costs totals, under a heading promising to separate the verified
+   * from the assumed.
+   */
+  it('gets no cost lines and no net profit', () => {
+    const result = computeScenario(verified, noAssumptions, {
+      scenario: 'BASE', coverage: 0, missingData: [],
+    })
+
+    for (const key of ['shipping', 'cogs', 'labour', 'other']) {
+      const line = result.lines.find((l) => l.key === key)
+      expect(line?.amount, `${key} was given a figure`).toBeNull()
+      expect(line?.provenance.type, key).toBe('UNAVAILABLE')
+    }
+    expect(result.netProfit, 'a net profit was computed from costs nobody set').toBeNull()
+    expect(result.totalCosts).toBeNull()
+    expect(result.marginPercent).toBeNull()
+
+    // Revenue is still known and still stated. Only what depends on the
+    // seller's own figures is withheld.
+    expect(result.lines.find((l) => l.key === 'gross')?.amount).toBeGreaterThan(0)
+  })
+
+  it('is not told it made an assumption it did not make', () => {
+    /*
+     * The badge, which is the sharper half. SELLER_INPUT on a blank cost line
+     * credits the seller with having entered something — and /profit's whole
+     * claim is that it distinguishes what they entered from what was measured.
+     */
+    const result = computeScenario(verified, noAssumptions, {
+      scenario: 'BASE', coverage: 0, missingData: [],
+    })
+    const cogs = result.lines.find((l) => l.key === 'cogs')
+    expect(cogs?.provenance.type).not.toBe('SELLER_INPUT')
+    expect(cogs?.provenance.methodology).toMatch(/have not entered any costs/i)
+  })
+
+  it('and the input rows offer an em dash rather than 0.0%', () => {
+    /*
+     * `(null * 100).toFixed(1)` is "0.0", which rendered as an editable
+     * SELLER_INPUT row claiming the seller had told us their products are
+     * free to make.
+     */
+    const rows = inputRows(verified, noAssumptions, 'USD')
+    for (const key of ['cogs', 'shipping', 'labour', 'other']) {
+      const row = rows.find((r) => r.key === key)
+      expect(row?.value, `${key} rendered a figure`).toBe('\u2014')
+      expect(row?.provenance, key).toBe('UNAVAILABLE')
+    }
+  })
+
+  it('but a seller who HAS set costs still gets all of it', () => {
+    // The positive control for the whole block.
+    const result = computeScenario(verified, assumptions, {
+      scenario: 'BASE', coverage: 0.62, missingData: [],
+    })
+    expect(result.netProfit).not.toBeNull()
+    expect(result.lines.find((l) => l.key === 'cogs')?.provenance.type).toBe('SELLER_INPUT')
   })
 })

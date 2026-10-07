@@ -30,12 +30,18 @@ export const metadata: Metadata = { title: 'Costs & fees' }
 export default async function CostsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ saved?: string; field?: string; problem?: string; q?: string }>
+  searchParams: Promise<{
+    saved?: string
+    field?: string
+    problem?: string
+    q?: string
+    blocked?: string
+  }>
 }) {
   const session = await getSession()
   if (!session) redirect('/login')
 
-  const { saved, field, problem, q } = await searchParams
+  const { saved, field, problem, q, blocked } = await searchParams
   const ctx = shopContext(session, session.shopId)
   /*
    * D11 ASKS THE MODE, NOT THE SHOP ROW.
@@ -83,6 +89,30 @@ export default async function CostsPage({
           <strong className="font-semibold">{describeProblem(report).message}</strong>{' '}
           {describeProblem(report).recovery}
         </div>
+      ) : blocked === 'demo' ? (
+        /*
+         * ── A SAVE THAT CANNOT TAKE EFFECT SAYS SO ─────────────────────────
+         *
+         * In demo mode every cost figure on every screen comes from
+         * DEMO_COST_INPUTS, so a cost rule written here could not be read back
+         * — the form would show the fixture again and the seller would conclude
+         * their save was lost. Which is exactly the defect this slice set out
+         * to fix, so the refusal is explicit rather than a quiet no-op.
+         */
+        <div
+          role="status"
+          className="mb-4 rounded-card border p-4 text-small leading-relaxed"
+          style={{
+            background: 'var(--warning-surface)',
+            borderColor: 'var(--warning-border)',
+            color: 'var(--warning-ink)',
+          }}
+        >
+          <strong className="font-semibold">Nothing was saved.</strong> This is the demo shop, and
+          its costs are part of the sample data — every figure on these screens is Willow &amp;
+          Fern&rsquo;s, so a cost entered here could not be shown back to you. Connect your own shop
+          and your costs are yours to set. Nothing was sent to Etsy either way.
+        </div>
       ) : saved === '1' ? (
         <div
           role="status"
@@ -94,7 +124,8 @@ export default async function CostsPage({
           }}
         >
           <strong className="font-semibold">Saved.</strong> Profit Reality recalculates from these
-          on its next load. Nothing was sent to Etsy.
+          on its next load — including periods that have already closed, because your cost
+          figures carry no start date. Nothing was sent to Etsy.
         </div>
       ) : null}
 
@@ -155,9 +186,23 @@ export default async function CostsPage({
           </span>
         </Card>
 
+        {/*
+          * ── THE TITLE IS A CLAIM, AND IT HAS TO BE TRUE ───────────────────
+          *
+          * "Costed by your rule" over an order-value figure, with the caption
+          * "your default rule is used. That is your assumption, not a confirmed
+          * figure." Both are statements about a rule the seller set. With none
+          * set, this card named an assumption they had not made and attributed
+          * a costing that is not happening — the remainder is not costed at all,
+          * which is why Profit Reality withholds net profit.
+          */}
         <Card className="flex flex-col gap-2 p-[14px]">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-label text-muted-1">Costed by your rule</span>
+            <span className="text-label text-muted-1">
+              {view.settings.defaultRulePercent === null
+                ? 'Not costed at all'
+                : 'Costed by your rule'}
+            </span>
             <ProvenanceBadge type="CALCULATED" demo={demoData} />
           </div>
           <Numeric className="text-metric text-ink-1">
@@ -175,22 +220,62 @@ export default async function CostsPage({
           </Numeric>
           <span className="text-caption leading-snug text-muted-1">
             {view.coverage.orderCount === 0
-              ? 'No orders in this period, so nothing has been costed by your rule yet.'
-              : 'of order value has no confirmed cost, so your default rule is used. That is your assumption, not a confirmed figure.'}
+              ? view.settings.defaultRulePercent === null
+                ? 'No orders in this period, and no default rule to cost them by.'
+                : 'No orders in this period, so nothing has been costed by your rule yet.'
+              : view.settings.defaultRulePercent === null
+                ? 'of order value has no confirmed cost, and no default rule to fall back on. It is left out of profit rather than costed by a guess.'
+                : 'of order value has no confirmed cost, so your default rule is used. That is your assumption, not a confirmed figure.'}
           </span>
         </Card>
       </section>
 
       <CostsForm settings={view.settings} currency={view.currency} demo={demoData} />
 
+      {/*
+        * ── THE PAGE SAYS WHICH ANSWER IT GIVES ────────────────────────
+        *
+        * A cost rule can be read two ways and both are defensible: freeze it
+        * onto each order as it syncs, or apply the current rules whenever a
+        * figure is read. EtsyPilot does the second — `order_items.cost_snapshot`
+        * stays null, and lib/repositories/costs.ts records why. The visible
+        * consequence is that editing a figure here moves a number the seller
+        * has already seen and may have acted on, so the form that does it says
+        * so, next to the fields, before they save rather than after.
+        */}
+      <p className="mt-3 text-caption leading-relaxed text-muted-1">
+        <strong className="font-semibold text-ink-2">Changing these restates the past.</strong>{' '}
+        These figures carry no start date, so they apply to every order EtsyPilot holds —
+        including orders that synced before you entered them. Correct a percentage today and last
+        month&rsquo;s net profit moves to match, which is what you want from a correction and worth
+        knowing before a figure you have already reported changes. Every edit is kept, with who
+        made it and when, in the{' '}
+        <Link
+          href="/settings/audit-log"
+          className="font-semibold text-brand-strong underline underline-offset-2"
+        >
+          audit log
+        </Link>
+        .
+      </p>
+
       <section aria-labelledby="imports-heading" className="mt-5">
         <h2 id="imports-heading" className="pb-2 text-section text-ink-1">
           Imported costs
         </h2>
         {view.imports.lastImportAt === null ? (
+          /*
+           * "Until then, every order is costed by the rule above" describes a
+           * rule that may not exist. With none set, nothing costs those orders
+           * — the same sentence the coverage card and Profit Reality now tell.
+           */
           <EmptyState
             title="Nothing imported yet"
-            description="Print-on-demand and supplier invoices can be imported as CSV so per-order costs come from the invoice rather than from your default rule. Until then, every order is costed by the rule above."
+            description={
+              view.settings.defaultRulePercent === null
+                ? 'Print-on-demand and supplier invoices can be imported as CSV so per-order costs come from the invoice rather than from a rule. Until then, orders with no confirmed cost have none at all, and are left out of profit.'
+                : 'Print-on-demand and supplier invoices can be imported as CSV so per-order costs come from the invoice rather than from your default rule. Until then, every order is costed by the rule above.'
+            }
           />
         ) : (
           <Card className="flex flex-col gap-1.5 p-[14px]">
@@ -219,6 +304,7 @@ export default async function CostsPage({
       <MissingCostsTable
         rows={view.missingCosts}
         activeListings={view.coverage.activeListings}
+        hasDefaultRule={view.settings.defaultRulePercent !== null}
         currency={view.currency}
         query={q ?? ''}
         demo={demoData}

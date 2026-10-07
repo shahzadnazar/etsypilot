@@ -5,8 +5,9 @@ import { BulkEditorWizard } from '@/components/bulk-editor/bulk-editor-wizard'
 import { PageHeader } from '@/components/layout/page-header'
 import { EmptyState } from '@/components/ui/states'
 import { getSession } from '@/lib/auth'
-import { getEtsyService, isDemoMode } from '@/lib/etsy'
-import { DEMO_COST_INPUTS, DEMO_NOW } from '@/lib/etsy/demo-dataset'
+import { isDemoMode } from '@/lib/etsy'
+import { DEMO_NOW } from '@/lib/etsy/demo-dataset'
+import { loadListings } from '@/domain/listings/load'
 import { shopContext } from '@/lib/permissions'
 
 export const metadata: Metadata = { title: 'Bulk Editor' }
@@ -30,13 +31,30 @@ export default async function BulkEditorPage() {
    * which is precisely when it would start to matter if it were true.
    */
   const demoData = isDemoMode()
-  const { listings } = await getEtsyService().getListings(ctx.shopId, { limit: 128 })
+  /*
+   * Through the loader, like every other screen. This called getListings on
+   * the adapter directly, which is ETSY_NOT_CONFIGURED in a live deployment.
+   */
+  const catalogue = await loadListings(ctx)
+  const listings = catalogue.listings.slice(0, 128)
 
-  // Per-listing costs drive the cost-floor guard. Listings without a confirmed
-  // cost simply have no entry, and the guard cannot exclude what it cannot price.
+  /*
+   * ── THE COST FLOOR NOW USES REAL COSTS, OR PROTECTS NOTHING ─────────────
+   *
+   * Per-listing costs drive the cost-floor guard: it refuses a price change
+   * that would take a listing below what it costs to make. This built them by
+   * multiplying each price by DEMO_COST_INPUTS.cogsPercent and skipping every
+   * third listing — a fixture's ratio, applied to a real seller's catalogue,
+   * deciding whether their price change was safe.
+   *
+   * The loader's map is the seller's own confirmed per-listing costs. A
+   * listing without one has no entry, and the guard cannot exclude what it
+   * cannot price — which is the honest behaviour and was already documented
+   * here. What changes is that the absence is now real.
+   */
   const costs: [string, number][] = listings
-    .filter((_, i) => i % 3 !== 0)
-    .map((l) => [l.etsyListingId, Number((l.price * DEMO_COST_INPUTS.cogsPercent).toFixed(2))])
+    .filter((l) => catalogue.costs.has(l.etsyListingId))
+    .map((l) => [l.etsyListingId, catalogue.costs.get(l.etsyListingId)!])
 
   /*
    * Nothing to edit.

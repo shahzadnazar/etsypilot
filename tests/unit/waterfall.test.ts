@@ -9,7 +9,13 @@ import {
   DEMO_TOTALS,
 } from '@/lib/etsy/demo-dataset'
 
-const COSTS = DEMO_COST_INPUTS
+/*
+ * The demo shop's costs, with `hasAnyRule` true because the demo shop HAS a
+ * cost setup — DEMO_COST_INPUTS is exactly that. The flag is not decoration:
+ * with it false, computeWaterfall says "you have not entered any costs yet",
+ * which is the right sentence for a real seller and the wrong one here.
+ */
+const COSTS = { ...DEMO_COST_INPUTS, hasAnyRule: true }
 
 describe('demo dataset', () => {
   it('is deterministic across builds', () => {

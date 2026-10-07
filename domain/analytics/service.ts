@@ -16,15 +16,14 @@
  */
 
 import { computeWaterfall } from '@/domain/profit/waterfall'
+import { costInputsFrom, loadCosts } from '@/domain/costs/load'
 import { loadListings } from '@/domain/listings/load'
 import { loadOrders } from '@/domain/orders/load'
 import { shopHeader, type ShopDataSource } from '@/domain/sync/source'
 import {
-  DEMO_COST_INPUTS,
   PERIOD_DAYS,
   PERIOD_END,
   PERIOD_START,
-  demoConfirmedCosts,
 } from '@/lib/etsy/demo-dataset'
 import type { EtsyListing } from '@/lib/etsy/interface'
 import type { StoredOrder } from '@/domain/orders/types'
@@ -109,10 +108,23 @@ export async function getAnalytics(ctx: ShopContext): Promise<AnalyticsView> {
   ])
 
   const listings = catalogue.listings
-  const costs = demoConfirmedCosts(listings)
+  /*
+   * ── "YOUR ENTERED COSTS" HAD TO BE COSTS THE SELLER ENTERED ─────────────
+   *
+   * This was `demoConfirmedCosts(listings)` — the demo dataset's rule for
+   * which listings carry a confirmed cost, applied to whatever catalogue had
+   * just loaded. In live mode that invented a per-listing cost for a real
+   * seller's listings, printed a margin from it in Top listings, and captioned
+   * it "Both figures use your entered costs and the recorded fee rates".
+   *
+   * The loader's map is the fixture in demo mode and the shop's own confirmed
+   * per-listing cost rules otherwise. A listing without one has no margin,
+   * which this page already renders as blank and names in an insight.
+   */
+  const costs = catalogue.costs
   const grossSales = round2(sum(orders.map((o) => o.gross)))
   const refunded = orders.filter((o) => o.refunds > 0)
-  const waterfall = computeWaterfall(orders, DEMO_COST_INPUTS)
+  const waterfall = computeWaterfall(orders, costInputsFrom(await loadCosts(ctx)))
 
   const priorGross = round2(sum(priorOrders.map((o) => o.gross)))
   const priorAov = priorOrders.length === 0 ? null : priorGross / priorOrders.length

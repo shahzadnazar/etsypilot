@@ -34,13 +34,10 @@ import { reconcile } from '@/domain/profit/reconciliation'
 import { loadListings } from '@/domain/listings/load'
 import { loadOrders } from '@/domain/orders/load'
 import { shopHeader } from '@/domain/sync/source'
-import {
-  demoUnmatchedOrderIds,
-  PERIOD_END,
-  PERIOD_START,
-} from '@/lib/etsy/demo-dataset'
+import { PERIOD_END, PERIOD_START } from '@/lib/etsy/demo-dataset'
 import type { ShopContext } from '@/lib/permissions'
-import { readCostSettings } from './store'
+import { demoUnmatchedReceiptIds } from './demo'
+import { loadCosts } from './load'
 import type { CostSettings, MissingCostRow } from './types'
 
 export interface CostCoverage {
@@ -87,7 +84,17 @@ export async function getCostsView(ctx: ShopContext): Promise<CostsView> {
   ])
   const listings = catalogue.listings
 
-  const settings = readCostSettings(ctx.shopId)
+  /*
+   * ── FROM cost_rules, WHICH SURVIVES A RESTART ───────────────────────────
+   *
+   * This was `readCostSettings`, a module-level Map on a global symbol.
+   * Measured in a browser before it was replaced: save 41.5 as the default
+   * cost rule, restart the server, and the form reads 38.0 — the demo
+   * fixture's COGS ratio — with no error anywhere. The same 38.0 came back
+   * from a second server instance on the same database while the first still
+   * held 41.5 in memory.
+   */
+  const { costs: settings } = await loadCosts(ctx)
   /*
    * From the loader. Empty on a synced shop — cost rules are a later
    * aggregate — rather than the demo fixture, which would show a real seller
@@ -98,7 +105,13 @@ export async function getCostsView(ctx: ShopContext): Promise<CostsView> {
     orders,
     listings,
     costs,
-    unmatchedOrderIds: demoUnmatchedOrderIds(orders),
+    /*
+     * Gated. `demoUnmatchedOrderIds` is `orders.slice(0, 8)` and this called
+     * it unconditionally, so a live shop's coverage figure — the number on
+     * this very page — excluded its first eight orders as having a missing
+     * supplier invoice. See domain/costs/demo.ts.
+     */
+    unmatchedOrderIds: demoUnmatchedReceiptIds(orders),
   })
 
   const active = listings.filter((l) => l.state === 'ACTIVE')
@@ -122,7 +135,18 @@ export async function getCostsView(ctx: ShopContext): Promise<CostsView> {
       title: l.title,
       price: l.price,
       section: l.section,
-      ruleCost: round2(l.price * settings.defaultRulePercent),
+      /*
+       * NULL when there is no default rule, which is not a cost of zero.
+       *
+       * This column is headed by the rule the seller set; with none set there
+       * is nothing to price these listings by, and `round2(price * null)` is 0
+       * — a confident "£0.00" against every uncosted listing on the page whose
+       * purpose is to show which listings have no cost.
+       */
+      ruleCost:
+        settings.defaultRulePercent === null
+          ? null
+          : round2(l.price * settings.defaultRulePercent),
     }))
 
   return {

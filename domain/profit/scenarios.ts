@@ -81,14 +81,35 @@ export function computeScenario(
   const offsiteAds = feesKnown ? round2(verifiedTotals.offsiteAds! * shape.salesMultiplier) : null
   const orderCount = verifiedTotals.orderCount * shape.salesMultiplier
 
-  // The seller's own numbers move with the scenario.
-  const shipping = round2(assumptions.shippingPerOrder * orderCount * shape.costMultiplier)
-  const cogs = round2(grossRevenue * assumptions.cogsPercent * shape.costMultiplier)
-  const labour = round2(assumptions.labourTotal * shape.costMultiplier)
-  const otherCosts = round2(assumptions.otherCosts * shape.costMultiplier)
+  /*
+   * ── A SCENARIO CANNOT PROJECT A COST NOBODY HAS ENTERED ─────────────────
+   *
+   * The seller's own numbers move with the scenario — when there are any. With
+   * them unset there is nothing to multiply: `null * 1.06` is NaN and
+   * `(x ?? 0) * 1.06` is zero dressed as a projection, which on this screen is
+   * worse than on most, because a scenario is explicitly a number the seller
+   * is invited to plan against.
+   *
+   * All four go together. A waterfall showing three cost lines and withholding
+   * the fourth reads as a complete answer, and its net profit would be above
+   * the truth by exactly the line that is missing.
+   */
+  const costsKnown =
+    assumptions.shippingPerOrder !== null &&
+    assumptions.cogsPercent !== null &&
+    assumptions.labourTotal !== null &&
+    assumptions.otherCosts !== null
+  const shipping = costsKnown
+    ? round2(assumptions.shippingPerOrder! * orderCount * shape.costMultiplier)
+    : null
+  const cogs = costsKnown
+    ? round2(grossRevenue * assumptions.cogsPercent! * shape.costMultiplier)
+    : null
+  const labour = costsKnown ? round2(assumptions.labourTotal! * shape.costMultiplier) : null
+  const otherCosts = costsKnown ? round2(assumptions.otherCosts! * shape.costMultiplier) : null
 
   const totalCosts =
-    etsyFees === null || paymentProcessing === null || offsiteAds === null
+    etsyFees === null || paymentProcessing === null || offsiteAds === null || !costsKnown
       ? null
       : round2(
           discounts +
@@ -96,10 +117,10 @@ export function computeScenario(
             etsyFees +
             paymentProcessing +
             offsiteAds +
-            shipping +
-            cogs +
-            labour +
-            otherCosts,
+            shipping! +
+            cogs! +
+            labour! +
+            otherCosts!,
         )
   const netProfit = totalCosts === null ? null : round2(grossRevenue - totalCosts)
 
@@ -125,6 +146,19 @@ export function computeScenario(
         'Not something you can fix — EtsyPilot has to read it. Until then every figure that depends on fees is withheld rather than estimated.',
       ).provenance
 
+  /*
+   * An absent cost did not come from the seller, so it is not SELLER_INPUT.
+   * That badge on a blank line would credit them with entering something.
+   */
+  const costProvenance: Provenance = costsKnown
+    ? sellerInput(null).provenance
+    : unavailable(
+        assumptions.hasAnyRule
+          ? 'Some of your cost figures are not set, so the cost lines cannot be projected.'
+          : 'You have not entered any costs yet, so there is nothing to subtract from your revenue.',
+        'Settings \u2192 Costs. Nothing is guessed for you.',
+      ).provenance
+
   const lines: WaterfallLine[] = [
     line('gross', 'Gross revenue', grossRevenue, revenueProvenance),
     line('discounts', 'Discounts', deduction(discounts), revenueProvenance),
@@ -132,10 +166,10 @@ export function computeScenario(
     line('etsyFees', 'Etsy fees', etsyFees === null ? null : deduction(etsyFees), feeProvenance),
     line('processing', 'Payment processing', paymentProcessing === null ? null : deduction(paymentProcessing), feeProvenance),
     line('offsiteAds', 'Offsite Ads', offsiteAds === null ? null : deduction(offsiteAds), feeProvenance),
-    line('shipping', 'Shipping', deduction(shipping), sellerInput(null).provenance),
-    line('cogs', 'COGS', deduction(cogs), sellerInput(null).provenance),
-    line('labour', 'Labour', deduction(labour), sellerInput(null).provenance),
-    line('other', 'Other costs', deduction(otherCosts), sellerInput(null).provenance),
+    line('shipping', 'Shipping', shipping === null ? null : deduction(shipping), costProvenance),
+    line('cogs', 'COGS', cogs === null ? null : deduction(cogs), costProvenance),
+    line('labour', 'Labour', labour === null ? null : deduction(labour), costProvenance),
+    line('other', 'Other costs', otherCosts === null ? null : deduction(otherCosts), costProvenance),
     line(
       'net',
       'Net profit',
@@ -278,10 +312,50 @@ export function inputRows(
       provenance: verifiedTotals.offsiteAds === null ? 'UNAVAILABLE' : 'VERIFIED',
       note: verifiedTotals.offsiteAds === null ? 'ledger not read' : 'charged by Etsy',
     },
-    { key: 'cogs', label: 'COGS', value: `${(assumptions.cogsPercent * 100).toFixed(1)}%`, locked: false, provenance: 'SELLER_INPUT' },
-    { key: 'shipping', label: 'Shipping', value: `${money(assumptions.shippingPerOrder)} / order`, locked: false, provenance: 'SELLER_INPUT' },
-    { key: 'labour', label: 'Labour', value: money(assumptions.labourTotal), locked: false, provenance: 'SELLER_INPUT' },
-    { key: 'other', label: 'Other costs', value: money(assumptions.otherCosts), locked: false, provenance: 'SELLER_INPUT' },
+    /*
+     * An em dash and UNAVAILABLE where the seller has set nothing. These read
+     * `${(assumptions.cogsPercent * 100).toFixed(1)}%` — which for a null is
+     * "0.0%", rendered as an editable SELLER_INPUT row claiming the seller
+     * told us their products are free to make.
+     */
+    {
+      key: 'cogs',
+      label: 'COGS',
+      value:
+        assumptions.cogsPercent === null
+          ? '—'
+          : `${(assumptions.cogsPercent * 100).toFixed(1)}%`,
+      locked: false,
+      provenance: assumptions.cogsPercent === null ? 'UNAVAILABLE' : 'SELLER_INPUT',
+      note: assumptions.cogsPercent === null ? 'not set' : undefined,
+    },
+    {
+      key: 'shipping',
+      label: 'Shipping',
+      value:
+        assumptions.shippingPerOrder === null
+          ? '—'
+          : `${money(assumptions.shippingPerOrder)} / order`,
+      locked: false,
+      provenance: assumptions.shippingPerOrder === null ? 'UNAVAILABLE' : 'SELLER_INPUT',
+      note: assumptions.shippingPerOrder === null ? 'not set' : undefined,
+    },
+    {
+      key: 'labour',
+      label: 'Labour',
+      value: assumptions.labourTotal === null ? '—' : money(assumptions.labourTotal),
+      locked: false,
+      provenance: assumptions.labourTotal === null ? 'UNAVAILABLE' : 'SELLER_INPUT',
+      note: assumptions.labourTotal === null ? 'not set' : undefined,
+    },
+    {
+      key: 'other',
+      label: 'Other costs',
+      value: assumptions.otherCosts === null ? '—' : money(assumptions.otherCosts),
+      locked: false,
+      provenance: assumptions.otherCosts === null ? 'UNAVAILABLE' : 'SELLER_INPUT',
+      note: assumptions.otherCosts === null ? 'not set' : undefined,
+    },
   ]
 }
 

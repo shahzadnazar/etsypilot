@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { ProvenanceBadge } from '@/components/provenance/provenance-badge'
 import { Card } from '@/components/ui/card'
@@ -88,12 +89,42 @@ export function ProfitTabs({ view, demo }: { view: ProfitView; demo: boolean }) 
           <strong className="font-semibold">
             Costs are confirmed for {result.coveragePercent}% of order value.
           </strong>{' '}
-          The other{' '}
-          <Money value={view.reconciliation.ruleCostedGross} currency={view.currency} /> is costed
-          by your default rule ({view.costSetup.defaultRule.label}), which is your assumption rather
-          than a confirmed cost. Net profit below includes it and is only as good as that rule. Per
-          order, nothing is assumed: the ledger leaves cost and profit blank wherever no confirmed
-          cost exists.
+          {/*
+            * ── AN ASSUMPTION CANNOT BE ATTRIBUTED TO A SELLER WHO MADE NONE ──
+            *
+            * The single sentence here said the uncosted remainder "is costed by
+            * your default rule ({label}), which is your assumption rather than a
+            * confirmed cost". Honest for a seller who set that rule. For one who
+            * has set nothing it was false twice over: `label` renders "Not set",
+            * so the page read "costed by your default rule (Not set)", and it
+            * called that non-existent rule their assumption. Then "Net profit
+            * below includes it" while the net profit tile beside it read "—".
+            *
+            * Two different facts, so two different sentences. The remainder is
+            * either costed by a rule the seller owns, or it is not costed at all.
+            */}
+          {view.assumptions.cogsPercent !== null ? (
+            <>
+              The other{' '}
+              <Money value={view.reconciliation.ruleCostedGross} currency={view.currency} /> is
+              costed by your default rule ({view.costSetup.defaultRule.label}), which is your
+              assumption rather than a confirmed cost.{' '}
+              {result.netProfit === null
+                ? 'Net profit is withheld anyway, because another figure the calculation needs is missing.'
+                : 'Net profit below includes it and is only as good as that rule.'}{' '}
+              Per order, nothing is assumed: the ledger leaves cost and profit blank wherever no
+              confirmed cost exists.
+            </>
+          ) : (
+            <>
+              The other{' '}
+              <Money value={view.reconciliation.ruleCostedGross} currency={view.currency} /> has no
+              cost at all. You have set no default rule, and nothing is applied in its place — a
+              cost nobody has entered is absent, not zero and not a guess. So net profit is
+              withheld here and left blank in the ledger, rather than calculated from a figure you
+              did not give us.
+            </>
+          )}
         </div>
       ) : null}
 
@@ -217,6 +248,34 @@ export function ProfitTabs({ view, demo }: { view: ProfitView; demo: boolean }) 
               <CostCard title="POD & shipping" value={view.costSetup.imports.label} detail={view.costSetup.imports.detail} />
               <CostCard title="Ad spend" value={view.costSetup.adSpend.label} detail={view.costSetup.adSpend.detail} />
             </div>
+            {/*
+              * ── THE PAGE SAYS WHICH ANSWER IT GIVES ───────────────────────
+              *
+              * Costs are applied when this screen is read, not frozen onto each
+              * order when it synced (`order_items.cost_snapshot` stays null —
+              * see lib/repositories/costs.ts for why). The consequence is that
+              * editing a cost rule changes a period that has already closed,
+              * and a seller who sees last month's net profit move is owed the
+              * reason in the place the figure is. Both answers are defensible;
+              * what is not defensible is the page not saying which one it gave.
+              */}
+            <p className="text-caption leading-relaxed text-muted-1">
+              <strong className="font-semibold text-ink-2">
+                Changing a cost restates this period.
+              </strong>{' '}
+              Your cost figures are applied when this page is read, and they carry no start date —
+              so they apply to every order here, including orders that synced before you entered
+              them. Correct a COGS percentage today and last month&rsquo;s net profit moves to
+              match. That is deliberate: a corrected cost is a better answer about the past, not a
+              new fact about the future. Every change is kept, with who made it and when, in the{' '}
+              <Link
+                href="/settings/audit-log"
+                className="font-semibold text-brand-strong underline underline-offset-2"
+              >
+                audit log
+              </Link>
+              .
+            </p>
             <MissingDataPanel items={result.missingData} currency={view.currency} />
           </>
         ) : null}

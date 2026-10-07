@@ -34,6 +34,7 @@ import { demoConfirmedCosts, DEMO_NOW } from '@/lib/etsy/demo-dataset'
 import type { EtsyListing } from '@/lib/etsy/interface'
 import type { ShopContext } from '@/lib/permissions'
 import { readListings } from '@/lib/repositories/listings'
+import { currentListingCosts } from '@/lib/repositories/costs'
 import { shopDataSource, type ShopDataSource } from '@/domain/sync/source'
 
 export interface LoadedListings {
@@ -81,9 +82,25 @@ export async function loadListings(ctx: ShopContext): Promise<LoadedListings> {
     }
   }
 
+  /*
+   * ── THE COSTS MAP IS REAL NOW ───────────────────────────────────────────
+   *
+   * This returned `new Map()` with a comment saying cost rules were "a later
+   * aggregate and nothing writes it". They are this aggregate, and
+   * `currentListingCosts` reads them: the seller's own confirmed per-listing
+   * costs, newest rule per listing, retracted rules absent rather than zero.
+   *
+   * Still empty for a seller who has confirmed none — which is most sellers,
+   * and which the coverage figure then reports as 0% rather than inventing a
+   * cost per listing.
+   */
+  const [listings, costs] = await Promise.all([
+    readListings(ctx.shopId),
+    currentListingCosts(ctx.shopId),
+  ])
   return {
-    listings: await readListings(ctx.shopId),
-    costs: new Map(),
+    listings,
+    costs,
     currency: currency ?? 'USD',
     now: new Date().toISOString(),
     source,

@@ -9,7 +9,6 @@ import { loadOrders, ordersWereRead } from '@/domain/orders/load'
 import { shopHeader } from '@/domain/sync/source'
 import {
   DEMO_BASELINE,
-  DEMO_COST_INPUTS,
   PERIOD_END,
   PERIOD_START,
 } from '@/lib/etsy/demo-dataset'
@@ -17,6 +16,7 @@ import { calculated, unavailable, verified } from '@/lib/provenance/builders'
 import type { Provenanced } from '@/lib/provenance/types'
 import type { ShopContext } from '@/lib/permissions'
 import { computeWaterfall } from '@/domain/profit/waterfall'
+import { costInputsFrom, loadCosts } from '@/domain/costs/load'
 
 export interface OverviewMetric {
   key: string
@@ -49,7 +49,7 @@ export async function getShopOverview(ctx: ShopContext): Promise<ShopOverview> {
     loadOrders(ctx, { since: PERIOD_START, until: PERIOD_END }),
   ])
 
-  const profit = computeWaterfall(orders, DEMO_COST_INPUTS)
+  const profit = computeWaterfall(orders, costInputsFrom(await loadCosts(ctx)))
 
   /*
    * ══════════════════════════════════════════════════════════════════════

@@ -7,6 +7,7 @@ import { getActions } from '@/domain/action-center/service'
 import { getProfitView } from '@/domain/profit/service'
 import { countOrders, readOrders, writeSyncedOrders } from '@/lib/repositories/orders'
 import { readAggregateSyncedAt } from '@/lib/repositories/sync-state'
+import { writeCostRules } from '@/lib/repositories/costs'
 import { shopDataSource } from '@/domain/sync/source'
 import { loadOrders } from '@/domain/orders/load'
 import { setEtsyService } from '@/lib/etsy'
@@ -125,6 +126,17 @@ function fakeAdapter(orders: EtsyOrder[], listings: EtsyListing[] = []) {
 
 async function clean() {
   const db = getDb()
+  /*
+   * cost_rules FIRST, and this is the second time this exact bug has been
+   * written here.
+   *
+   * `sync_state` was the first: it was missing from this list, so `delete from
+   * shops` hit a foreign key and took the whole FILE red — 26 tests skipped
+   * for one unrelated omission. Two tests now write cost rules, and the same
+   * constraint fired again (30 failed). Anything that references `shops` has to
+   * be deleted before it.
+   */
+  await db.delete(schema.costRules).where(inArray(schema.costRules.shopId, OURS))
   await db.delete(schema.orderItems).where(inArray(schema.orderItems.shopId, OURS))
   await db.delete(schema.orders).where(inArray(schema.orders.shopId, OURS))
   await db.delete(schema.listings).where(inArray(schema.listings.shopId, OURS))
@@ -425,6 +437,21 @@ describe('an adapter reporting 0 and an adapter reporting nothing', () => {
     setEtsyService(fakeAdapter([order('R1', ZERO_FEES)], [listing('9001')]).service as never)
     await syncShopListings(ctxFor(SHOP_A))
     await syncShopOrders(ctxFor(SHOP_A), WINDOW)
+    /*
+     * The seller's own cost rules, written first.
+     *
+     * Added when the costs slice made net profit depend on costs as well as
+     * fees: the four cost lines came from DEMO_COST_INPUTS when this was
+     * written, so "fees known" was enough to produce a net profit. It is not
+     * any more, and without these rules this test would assert the fee
+     * distinction while measuring the cost one.
+     */
+    await writeCostRules(SHOP_A, USER_A, [
+      { field: 'defaultRulePercent', value: 0.38 },
+      { field: 'shippingPerOrder', value: 2.5 },
+      { field: 'labourTotal', value: 100 },
+      { field: 'otherCosts', value: 50 },
+    ])
 
     const zeroFees = await getProfitView(ctxFor(SHOP_A))
     expect(zeroFees.verified.etsyFees, 'a read zero is a figure').toBe(0)
@@ -563,6 +590,22 @@ describe('a seller never sees a net profit computed from fees nobody has', () =>
       .update(schema.orders)
       .set({ etsyFees: '2.40', paymentProcessing: '1.39', offsiteAds: '0.48' })
       .where(eq(schema.orders.shopId, SHOP_A))
+    /*
+     * The seller's own cost rules, written first.
+     *
+     * Added when the costs slice made net profit depend on costs as well as
+     * fees: the four cost lines came from DEMO_COST_INPUTS when this was
+     * written, so "fees known" was enough to produce a net profit. It is not
+     * any more, and without these rules this test would assert the fee
+     * distinction while measuring the cost one.
+     */
+    await writeCostRules(SHOP_A, USER_A, [
+      { field: 'defaultRulePercent', value: 0.38 },
+      { field: 'shippingPerOrder', value: 2.5 },
+      { field: 'labourTotal', value: 100 },
+      { field: 'otherCosts', value: 50 },
+    ])
+
 
     const view = await getProfitView(ctxFor(SHOP_A))
     expect(view.verified.etsyFees).toBe(2.4)

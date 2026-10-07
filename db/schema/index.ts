@@ -300,21 +300,87 @@ export const syncState = pgTable('sync_state', {
   pk: primaryKey({ columns: [t.shopId, t.aggregate] }),
 }))
 
-export const costRules = pgTable('cost_rules', {
-  id: text('id').primaryKey(),
-  shopId: text('shop_id').notNull().references(() => shops.id),
-  actorId: text('actor_id').references(() => users.id),
-  /** DEFAULT | LISTING | VARIATION */
-  scope: text('scope').notNull(),
-  listingId: text('listing_id').references(() => listings.id),
-  variationId: text('variation_id').references(() => listingVariations.id),
-  /** PERCENT | FIXED */
-  valueType: text('value_type').notNull(),
-  value: numeric('value', { precision: 12, scale: 4 }).notNull(),
-  /** COGS | SHIPPING | LABOUR | OTHER */
-  costKind: text('cost_kind').notNull().default('COGS'),
-  createdAt: createdAt(),
-})
+/**
+ * The seller's own costs. THE cost model, and append-only.
+ *
+ * ── WHY THIS AND NOT A FLAT SETTINGS ROW ──────────────────────────────────
+ *
+ * domain/costs/store.ts held five scalars in a module-level Map and named its
+ * own replacement: "The Drizzle `shop_cost_settings` row replaces it." That
+ * table was never built and should not be. /profit already renders "52
+ * listings without a product cost" and "Costs are confirmed for 83% of order
+ * value" — claims about PER-LISTING costs that five shop-wide numbers cannot
+ * carry. CostSettings is now a VIEW over the DEFAULT-scope rows here; the
+ * field mapping is in lib/repositories/costs.ts.
+ *
+ * ── APPEND-ONLY, WHICH IS WHAT MAKES actorId WORTH HAVING ─────────────────
+ *
+ * Every save INSERTS. The rule in force is the newest row for its key and the
+ * rows behind it are the trail: who changed what, when. An UPDATE in place
+ * would leave actorId describing only the last writer and discard the rest —
+ * and an audit trail is the point of the first aggregate a seller AUTHORS
+ * rather than one synced from Etsy. `events` in this file takes the same
+ * shape for the same reason.
+ */
+export const costRules = pgTable(
+  'cost_rules',
+  {
+    id: text('id').primaryKey(),
+    shopId: text('shop_id').notNull().references(() => shops.id),
+    /** Who set it. The reason this table is append-only. */
+    actorId: text('actor_id').references(() => users.id),
+    /** DEFAULT | LISTING | VARIATION — constrained in migration 0012. */
+    scope: text('scope').notNull(),
+    listingId: text('listing_id').references(() => listings.id),
+    /**
+     * VARIATION scope is unreachable today, and deliberately left in place.
+     *
+     * Nothing writes `listing_variations`: EtsyService reports variations as a
+     * summary string, which the listings slice recorded. So a VARIATION rule
+     * has no row to point at. The scope stays because the schema was designed
+     * for it and the CHECK in 0012 keeps it honest if it ever arrives.
+     */
+    variationId: text('variation_id').references(() => listingVariations.id),
+    /** PERCENT (a fraction of price, 0–1) | FIXED (money). */
+    valueType: text('value_type').notNull(),
+    /**
+     * NULL means RETRACTED or never known. Never a cost of zero.
+     *
+     * Append-only needs a way to say "this no longer applies", and with the
+     * column NOT NULL the only way to retract a cost was to write 0 — a
+     * figure, and the opposite of what the seller meant. Same distinction
+     * orders.etsy_fees needed in 0011, and the one CostSettings.adSpend
+     * already drew: "the honest states are 'the seller typed a figure' and
+     * 'nobody knows' — not zero, which would silently improve the profit
+     * waterfall."
+     */
+    value: numeric('value', { precision: 12, scale: 4 }),
+    /**
+     * COGS | SHIPPING | LABOUR | OTHER | ADS.
+     *
+     * ADS is separate from OTHER on purpose: Etsy exposes no ads endpoint, so
+     * it is the one cost line routinely UNKNOWN rather than zero, and folding
+     * it into OTHER would lose that.
+     *
+     * Whether a FIXED value is per order or per period is implied by the kind
+     * — SHIPPING is per order, LABOUR / OTHER / ADS are per period. That is a
+     * wart; lib/repositories/costs.ts holds the one mapping table that decides
+     * it, and tests/unit/costs-repository.test.ts asserts nothing else does.
+     */
+    costKind: text('cost_kind').notNull().default('COGS'),
+    createdAt: createdAt(),
+  },
+  (t) => ({
+    /** Newest row per key, which is how "the rule in force" is read. */
+    current: index('cost_rules_current_idx').on(
+      t.shopId,
+      t.scope,
+      t.costKind,
+      t.listingId,
+      t.createdAt,
+    ),
+  }),
+)
 
 /* ------------------------------------------------------------- Event store */
 

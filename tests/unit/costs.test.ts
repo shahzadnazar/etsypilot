@@ -7,10 +7,10 @@
  * default. Blank has to survive the round trip as null.
  */
 
-import { describe, expect, it, beforeEach } from 'vitest'
+import { describe, expect, it, afterEach } from 'vitest'
 import { parseCostSettings, CostValidationError, problemFromQuery, describeProblem } from '@/domain/costs/validate'
 import { COST_FIELDS } from '@/domain/costs/types'
-import { defaultCostSettings, readCostSettings, resetCostSettings, writeCostSettings } from '@/domain/costs/store'
+import { demoSellerCosts } from '@/domain/costs/demo'
 
 const VALID = {
   defaultRulePercent: '38',
@@ -36,8 +36,29 @@ describe('parseCostSettings', () => {
     expect(parseCostSettings({ ...VALID, adSpend: '0' }).adSpend).toBe(0)
   })
 
-  it('rejects a blank in a field that is not nullable', () => {
-    expect(() => parseCostSettings({ ...VALID, shippingPerOrder: '' })).toThrow(CostValidationError)
+  it('accepts a blank in any field, because every cost may be unset', () => {
+    /*
+     * This asserted the opposite — that a blank shipping cost was REJECTED —
+     * and that was the defect, one level down. Four of the five fields were
+     * `nullable: false`, so a seller could not clear a cost and a new seller's
+     * empty form could not be parsed at all. Which is exactly why
+     * domain/costs/store.ts had to invent a starting point for them, and what
+     * it invented was the Willow & Fern figures.
+     *
+     * Blank is now how a seller says "I have not told you" and how they
+     * retract a cost. A typed 0 is still a zero — asserted below.
+     */
+    expect(parseCostSettings({ ...VALID, shippingPerOrder: '' }).shippingPerOrder).toBeNull()
+    expect(parseCostSettings({ ...VALID, defaultRulePercent: '' }).defaultRulePercent).toBeNull()
+
+    // And a bad value in a field left blank elsewhere still fails: accepting
+    // blank is not accepting anything.
+    expect(() => parseCostSettings({ ...VALID, shippingPerOrder: 'abc' })).toThrow(
+      CostValidationError,
+    )
+    expect(() => parseCostSettings({ ...VALID, defaultRulePercent: '500' })).toThrow(
+      CostValidationError,
+    )
   })
 
   it('rejects text, and says which field', () => {
@@ -87,26 +108,92 @@ describe('problem round trip', () => {
   })
 })
 
-describe('cost settings store', () => {
-  beforeEach(() => resetCostSettings())
-
-  it('reads back what was written, per shop', () => {
-    const settings = parseCostSettings(VALID)
-    writeCostSettings('shop-a', settings)
-    expect(readCostSettings('shop-a').defaultRulePercent).toBeCloseTo(0.38, 10)
-    // A second shop must not see it. Cross-shop reads are the one thing this
-    // store cannot be allowed to get wrong.
-    expect(readCostSettings('shop-b')).toEqual(defaultCostSettings())
+describe('the demo fixture cannot leave demo mode', () => {
+  /*
+   * ══════════════════════════════════════════════════════════════════════
+   *   WHAT REPLACED THE MAP STORE, AND WHY THESE ARE THE TESTS NOW.
+   * ══════════════════════════════════════════════════════════════════════
+   *
+   * `domain/costs/store.ts` held five scalars in a module-level Map and its
+   * read fell back to DEMO_COST_INPUTS for any shop it had never seen. Three
+   * tests here covered that store: read-back per shop, the demo ad spend
+   * staying null, and the read handing out a copy.
+   *
+   * The store is gone. Read-back and cross-shop isolation are now facts about
+   * a real table, so they moved to tests/integration/costs.int.ts where a
+   * database can answer them — a Map test could only ever prove the Map. The
+   * copy test went with the Map: a query returns a fresh object every time.
+   *
+   * What stays here is the containment that has no database in it: the demo
+   * figures must be unreachable outside demo mode. That was the actual defect
+   * — measured in a browser, a real account in live mode was offered
+   * `shippingPerOrder 2.6187214611872145` as its own average postage.
+   */
+  afterEach(() => {
+    delete process.env.ETSY_MODE
   })
 
-  it('starts the demo shop with an unknown ad spend, not a zero', () => {
-    expect(defaultCostSettings().adSpend).toBeNull()
+  it('serves the demo costs in demo mode', () => {
+    delete process.env.ETSY_MODE
+    const costs = demoSellerCosts()
+    expect(costs, 'demo mode must still get the fixture').not.toBeNull()
+    expect(costs?.defaultRulePercent).toBeGreaterThan(0)
+    expect(costs?.shippingPerOrder).toBeGreaterThan(0)
   })
 
-  it('hands out a copy, so a caller cannot mutate the store through it', () => {
-    writeCostSettings('shop-a', parseCostSettings(VALID))
-    const first = readCostSettings('shop-a')
-    first.defaultRulePercent = 0.99
-    expect(readCostSettings('shop-a').defaultRulePercent).toBeCloseTo(0.38, 10)
+  it('and refuses to serve them in live mode', () => {
+    process.env.ETSY_MODE = 'live'
+    expect(demoSellerCosts(), 'the fixture reached a live deployment').toBeNull()
+  })
+
+  it('leaves the demo ad spend unknown rather than zero, in demo mode', () => {
+    /*
+     * The one cost line the fixture itself declines to invent, and the reason
+     * CostSettings.adSpend was nullable before any of the others: "Etsy
+     * exposes no ads endpoint, so the honest states are 'the seller typed a
+     * figure' and 'nobody knows' — not zero, which would silently improve the
+     * profit waterfall."
+     */
+    delete process.env.ETSY_MODE
+    expect(demoSellerCosts()?.adSpend).toBeNull()
+  })
+})
+
+describe('a blank cost field means not set, for every field', () => {
+  it('accepts a blank anywhere and records null, never zero', () => {
+    /*
+     * Four of the five fields were `nullable: false`, so a seller could not
+     * clear one and a new seller's blank form could not be parsed at all —
+     * which is why the store had to invent a starting point. With all five
+     * nullable, blank round-trips as "not set" and 0 stays available as the
+     * different statement it is.
+     */
+    const blank = parseCostSettings({})
+    expect(blank).toEqual({
+      defaultRulePercent: null,
+      shippingPerOrder: null,
+      labourTotal: null,
+      otherCosts: null,
+      adSpend: null,
+    })
+  })
+
+  it('and keeps a typed zero as a zero', () => {
+    // The converse. Without it, a parser that returned null for everything
+    // would satisfy the assertion above.
+    const zeroes = parseCostSettings({
+      defaultRulePercent: '0',
+      shippingPerOrder: '0',
+      labourTotal: '0',
+      otherCosts: '0',
+      adSpend: '0',
+    })
+    expect(zeroes).toEqual({
+      defaultRulePercent: 0,
+      shippingPerOrder: 0,
+      labourTotal: 0,
+      otherCosts: 0,
+      adSpend: 0,
+    })
   })
 })

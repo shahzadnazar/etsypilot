@@ -54,11 +54,34 @@ export interface VerifiedTotals {
  * The seller's own numbers. These, and only these, vary between scenarios.
  */
 export interface SellerAssumptions {
-  shippingPerOrder: number
-  /** Product cost as a fraction of price, 0-1. */
-  cogsPercent: number
-  labourTotal: number
-  otherCosts: number
+  /**
+   * The seller's own numbers. NULL means THEY HAVE NOT TOLD US.
+   *
+   * ── AN ASSUMPTION NOBODY MADE ─────────────────────────────────────────
+   *
+   * This screen's whole job is to separate verified figures from assumed
+   * ones, and these four were DEMO_COST_INPUTS — a fictional shop's costs,
+   * presented to a real seller as their own assumptions. The type could not
+   * say otherwise: four plain numbers, so every caller had to invent four.
+   *
+   * Zero is not the fix. A COGS of 0% claims the seller's products cost
+   * nothing to make, which is the direction that flatters — the same
+   * direction the missing fee lines went.
+   */
+  shippingPerOrder: number | null
+  /** Product cost as a fraction of price, 0-1. Null when unset. */
+  cogsPercent: number | null
+  labourTotal: number | null
+  otherCosts: number | null
+  /**
+   * False when this seller has never set a cost rule at all.
+   *
+   * Distinct from "the numbers are null", which it implies but is not implied
+   * by: a seller may have set three of four. The copy differs — "add your
+   * costs" against "some of your cost figures are not set" — and only the
+   * flag can tell them apart.
+   */
+  hasAnyRule: boolean
 }
 
 export const SCENARIO_KINDS = ['CONSERVATIVE', 'BASE', 'OPTIMISTIC'] as const

@@ -22,17 +22,54 @@ import { calculated, sellerInput, unavailable, verified } from '@/lib/provenance
 import type { Provenanced } from '@/lib/provenance/types'
 
 export interface CostInputs {
-  /** Seller's shipping cost per order. */
-  shippingPerOrder: number
-  /** Seller's product cost as a fraction of price, 0-1. */
-  cogsPercent: number
-  labourTotal: number
-  otherCosts: number
+  /**
+   * The seller's own numbers. NULL means THEY HAVE NOT TOLD US.
+   *
+   * ── NOT ZERO, AND NOT THE DEMO SHOP'S ─────────────────────────────────
+   *
+   * These were plain numbers, so every caller had to supply four figures for
+   * a seller who had set none — and what they all supplied was
+   * DEMO_COST_INPUTS, the Willow & Fern designed values. Measured in a
+   * browser in live mode, on a real account: /profit reported "Net profit
+   * -$1,322.05", a loss assembled entirely from a fictional shop's labour and
+   * other-costs totals.
+   *
+   * Zero would be no better. A COGS of 0% is a claim that the seller's
+   * products cost nothing to make, and it is the claim that flatters — the
+   * same direction the missing fee lines went.
+   *
+   * So null propagates, exactly as an unread fee does: no total, no net
+   * profit, and a missingData entry naming what is absent.
+   */
+  shippingPerOrder: number | null
+  /** The seller's product cost as a fraction of price, 0-1. Null if unset. */
+  cogsPercent: number | null
+  labourTotal: number | null
+  otherCosts: number | null
   /**
    * Fraction of order value carrying a CONFIRMED listing-specific cost, 0-1.
    * Reported, not applied - see rule 2 above.
+   *
+   * A measurement rather than a seller input, so it is never null: a shop with
+   * no confirmed costs has a coverage of 0, which is a true statement about
+   * how much of its order value is confirmed.
    */
   coverage: number
+  /**
+   * False when this seller has never set a cost rule at all.
+   *
+   * ── WHY THIS IS NOT THE SAME AS "THE NUMBERS ARE NULL" ────────────────
+   *
+   * /profit currently tells a seller the uncosted remainder "is costed by your
+   * default rule (38% of price), which is your assumption rather than a
+   * confirmed cost". That sentence is honest only because the seller set the
+   * rule. A seller who has set NOTHING has made no assumption, so there is no
+   * rule to attribute one to and the sentence has to change — not soften.
+   *
+   * The two states produce identical nulls, so the flag carries the
+   * difference: "add your costs to see profit" against "your costs say this".
+   */
+  hasAnyRule: boolean
 }
 
 export interface WaterfallLine {
@@ -92,6 +129,8 @@ export interface ProfitResult {
    * would report a number smaller than the truth and call it the total.
    */
   feesKnown: boolean
+  /** False when the seller's own cost figures are not all set. */
+  costsKnown: boolean
   /** Stated plainly, never inferred from a chart gap. */
   missingData: string[]
 }
@@ -119,14 +158,30 @@ export function computeWaterfall(orders: readonly StoredOrder[], costs: CostInpu
   const fees = feeTotals(orders)
   const feesKnown = fees !== null
 
-  // Seller cost rates apply to the whole period. Where a listing has no
-  // specific cost the seller's default rule supplies one, so every order in the
-  // reconciled set carries a cost - `coverage` says how many of those were
-  // confirmed rather than defaulted.
-  const shipping = round2(costs.shippingPerOrder * orders.length)
-  const cogs = round2(grossRevenue * costs.cogsPercent)
-  const labour = round2(costs.labourTotal)
-  const otherCosts = round2(costs.otherCosts)
+  /*
+   * ── THE SELLER'S OWN NUMBERS, OR NOTHING ────────────────────────────────
+   *
+   * Seller cost rates apply to the whole period. Where a listing has no
+   * specific cost the seller's default rule supplies one, so every order in
+   * the reconciled set carries a cost — `coverage` says how many of those were
+   * confirmed rather than defaulted.
+   *
+   * Unless there is no default rule, which is the state of every seller who
+   * has not been to Settings → Costs. Then there is no cost for those orders
+   * at all, and `costsKnown` is false. The four lines go null together rather
+   * than individually, because a waterfall missing one cost line and showing
+   * the rest reads as a complete answer: net profit would be above the truth
+   * by whichever line was absent.
+   */
+  const costsKnown =
+    costs.shippingPerOrder !== null &&
+    costs.cogsPercent !== null &&
+    costs.labourTotal !== null &&
+    costs.otherCosts !== null
+  const shipping = costsKnown ? round2(costs.shippingPerOrder! * orders.length) : null
+  const cogs = costsKnown ? round2(grossRevenue * costs.cogsPercent!) : null
+  const labour = costsKnown ? round2(costs.labourTotal!) : null
+  const otherCosts = costsKnown ? round2(costs.otherCosts!) : null
 
   /*
    * NULL PROPAGATES RATHER THAN BEING COALESCED, and that is the whole fix.
@@ -137,7 +192,7 @@ export function computeWaterfall(orders: readonly StoredOrder[], costs: CostInpu
    * so there is no total.
    */
   const totalCosts =
-    fees === null
+    fees === null || !costsKnown
       ? null
       : round2(
           discounts +
@@ -145,10 +200,10 @@ export function computeWaterfall(orders: readonly StoredOrder[], costs: CostInpu
             fees.etsyFees +
             fees.paymentProcessing +
             fees.offsiteAds +
-            shipping +
-            cogs +
-            labour +
-            otherCosts,
+            shipping! +
+            cogs! +
+            labour! +
+            otherCosts!,
         )
   const netProfit = totalCosts === null ? null : round2(grossRevenue - totalCosts)
   const marginPercent =
@@ -173,6 +228,20 @@ export function computeWaterfall(orders: readonly StoredOrder[], costs: CostInpu
         'Nothing you can do about it today — EtsyPilot has to read it. Until then every figure that depends on fees is withheld rather than estimated.',
       ).provenance
 
+  /*
+   * A cost line's badge says where the number came from, and an absent cost
+   * did not come from the seller. SELLER_INPUT on a blank line would credit
+   * them with entering something.
+   */
+  const costProvenance = costsKnown
+    ? sellerInput(null).provenance
+    : unavailable(
+        costs.hasAnyRule
+          ? 'Some of your cost figures are not set, so the cost lines cannot be totalled.'
+          : 'You have not entered any costs yet, so there is nothing to subtract from your revenue.',
+        'Settings \u2192 Costs. Nothing here is guessed for you: a cost nobody has entered is left absent rather than defaulted.',
+      ).provenance
+
   const lines: WaterfallLine[] = [
     line('gross', 'Gross revenue', round2(grossRevenue), verified(null, verifiedSource).provenance),
     line('discounts', 'Discounts', deduction(round2(discounts)), verified(null, verifiedSource).provenance),
@@ -180,10 +249,10 @@ export function computeWaterfall(orders: readonly StoredOrder[], costs: CostInpu
     line('etsyFees', 'Etsy fees', fees === null ? null : deduction(round2(fees.etsyFees)), feeProvenance),
     line('processing', 'Payment processing', fees === null ? null : deduction(round2(fees.paymentProcessing)), feeProvenance),
     line('offsiteAds', 'Offsite Ads', fees === null ? null : deduction(round2(fees.offsiteAds)), feeProvenance),
-    line('shipping', 'Shipping', deduction(shipping), sellerInput(null).provenance),
-    line('cogs', 'COGS', deduction(cogs), sellerInput(null).provenance),
-    line('labour', 'Labour', deduction(labour), sellerInput(null).provenance),
-    line('other', 'Other costs', deduction(otherCosts), sellerInput(null).provenance),
+    line('shipping', 'Shipping', shipping === null ? null : deduction(shipping), costProvenance),
+    line('cogs', 'COGS', cogs === null ? null : deduction(cogs), costProvenance),
+    line('labour', 'Labour', labour === null ? null : deduction(labour), costProvenance),
+    line('other', 'Other costs', otherCosts === null ? null : deduction(otherCosts), costProvenance),
     line(
       'net',
       'Net profit',
@@ -207,7 +276,8 @@ export function computeWaterfall(orders: readonly StoredOrder[], costs: CostInpu
     marginPercent,
     coveragePercent,
     feesKnown,
-    missingData: describeMissing(coveragePercent, costs, feesKnown),
+    costsKnown,
+    missingData: describeMissing(coveragePercent, costs, feesKnown, costsKnown),
   }
 }
 
@@ -215,8 +285,28 @@ function describeMissing(
   coveragePercent: number,
   costs: CostInputs,
   feesKnown: boolean,
+  costsKnown: boolean,
 ): string[] {
   const missing: string[] = []
+  /*
+   * ── A SELLER WHO HAS SET NOTHING HAS MADE NO ASSUMPTION ───────────────
+   *
+   * The coverage sentence below says the uncosted remainder "is costed by your
+   * default rule, which is your own assumption rather than a confirmed cost".
+   * That is honest when the seller set the rule. With no rules at all there is
+   * nothing to attribute, so this is said instead — and the coverage sentence
+   * is skipped, because 0% coverage against no rule is one fact, not two.
+   */
+  if (!costsKnown) {
+    missing.push(
+      costs.hasAnyRule
+        ? 'Some of your cost figures are not set, so net profit is withheld rather than shown without them. Settings \u2192 Costs.'
+        : 'You have not entered any costs yet. Revenue is from your own receipts, but nothing is subtracted from it until you say what your products, postage and time cost you \u2014 and nothing is guessed on your behalf.',
+    )
+    if (costs.labourTotal === null) missing.push('No labour minutes recorded per product.')
+    missing.push('Etsy does not expose ad spend per listing.')
+    return missing
+  }
   /*
    * FIRST, because it is the largest thing wrong with the figure when it
    * applies, and because nothing said it before. docs/ETSY-SETUP.md and
