@@ -22,7 +22,8 @@ import type { ShopContext } from '@/lib/permissions'
  *
  * ── THE CLAIMS THAT MATTER, AND WHY THEY ARE THESE ───────────────────────
  *
- *   fees are written NULL, never 0, and a re-sync can only ever LEARN one
+ *   a fee of 0 and a fee nobody read are different values, end to end
+ *   a re-sync can only ever LEARN a fee, never forget one
  *   a shop with unknown fees gets no net profit, anywhere it is rendered
  *   NO BUYER IDENTITY reaches the database — asserted over the row, not
  *     inferred from the fact that the code does not look like it would
@@ -61,10 +62,20 @@ function order(id: string, overrides: Partial<EtsyOrder> = {}): EtsyOrder {
     gross: 48,
     discounts: 2,
     refunds: 0,
-    // What the LIVE adapter produces: toOrder() hardcodes all three to 0.
-    etsyFees: 0,
-    paymentProcessing: 0,
-    offsiteAds: 0,
+    /*
+     * What the LIVE adapter produces: toOrder() returns all three as NULL and
+     * says it has not read Etsy's payment-account ledger.
+     *
+     * This fixture used to return 0, mirroring the adapter at the time, and
+     * the repository wrote NULL regardless — because `EtsyOrder.etsyFees` was
+     * `number` and a 0 from that adapter provably meant "not loaded". The type
+     * can say it now, so the adapter does, and the repository believes
+     * whatever it is told. The tests that encoded the old contract are the
+     * ones directly below.
+     */
+    etsyFees: null,
+    paymentProcessing: null,
+    offsiteAds: null,
     countryCode: 'GB',
     items: [{ etsyListingId: '9001', quantity: 2, unitPrice: 24 }],
     ...overrides,
@@ -283,15 +294,22 @@ describe('a provider that repeats itself', () => {
 })
 
 describe('fees', () => {
-  it('are written NULL, never the adapter’s zero', async () => {
+  it('are written exactly as the adapter reported them', async () => {
     /*
      * ══════════════════════════════════════════════════════════════════════
-     *   THE WHOLE POINT OF THIS SLICE.
+     *   THE SYNC BELIEVES THE ADAPTER. IT USED TO OVERRULE IT.
      * ══════════════════════════════════════════════════════════════════════
      *
-     * `order()` above returns etsyFees: 0, exactly as live.ts's toOrder()
-     * does. A sync writing that through would produce a row claiming the
-     * seller paid Etsy nothing.
+     * This test read "are written NULL, never the adapter's zero", because
+     * the repository wrote NULL for every sync whatever it was handed. That
+     * was right while `EtsyOrder.etsyFees` was `number`: an adapter had no
+     * way to distinguish a fee of zero from a fee it had not read, so a 0
+     * could only mean the second.
+     *
+     * The type carries the difference now. `order()` reports null — which is
+     * what live.ts produces — and the row holds null. The companion block
+     * 'an adapter reporting 0 and an adapter reporting nothing' asserts the
+     * other half, which the old contract made unobservable.
      */
     setEtsyService(fakeAdapter([order('R1')]).service as never)
     await syncShopOrders(ctxFor(SHOP_A), WINDOW)
@@ -310,7 +328,7 @@ describe('fees', () => {
     expect(row?.offsiteAds).toBeNull()
   })
 
-  it('come back from the repository as null, not as 0', async () => {
+  it('come back from the repository as null when the adapter read none', async () => {
     setEtsyService(fakeAdapter([order('R1')]).service as never)
     await syncShopOrders(ctxFor(SHOP_A), WINDOW)
 
@@ -323,12 +341,17 @@ describe('fees', () => {
     expect(stored?.discounts).toBe(2)
   })
 
-  it('cannot be erased by a later sync that still has none', async () => {
+  it('cannot be erased by a later sync whose adapter read none', async () => {
     /*
      * The COALESCE in the upsert. A ledger import, or an operator correction,
-     * may put a real fee on a row. The orders sync writes NULL every time, so
-     * without the coalesce the next run would silently revert the period to
-     * "fees unknown" — and the seller's net profit would vanish again.
+     * may put a real fee on a row. An adapter that has not read the ledger
+     * reports null, so without the coalesce the next run would silently
+     * revert the period to "fees unknown" — and the seller's net profit would
+     * vanish again.
+     *
+     * `coalesce` skips null, NOT 0, which is why an adapter reporting a
+     * genuine zero still overwrites. That direction is asserted in the
+     * companion block above.
      */
     setEtsyService(fakeAdapter([order('R1')]).service as never)
     await syncShopOrders(ctxFor(SHOP_A), WINDOW)
@@ -344,6 +367,135 @@ describe('fees', () => {
     expect(stored?.etsyFees, 'the re-sync erased a known fee').toBe(2.4)
     expect(stored?.paymentProcessing).toBe(1.39)
     expect(stored?.offsiteAds).toBe(0.48)
+  })
+})
+
+describe('an adapter reporting 0 and an adapter reporting nothing', () => {
+  /*
+   * ══════════════════════════════════════════════════════════════════════
+   *   THE WHOLE POINT OF WIDENING EtsyOrder. THESE TWO WERE THE SAME VALUE.
+   * ══════════════════════════════════════════════════════════════════════
+   *
+   * `EtsyOrder.etsyFees` was `number`, so an adapter had one way to say "I
+   * have no fee for this order": return 0 — indistinguishable from a fully
+   * absorbed fee, a free order, or a refunded line. The repository papered
+   * over it by writing NULL for every sync, which was correct only because no
+   * adapter could report a real fee at all, and which discarded one the day
+   * any adapter could.
+   *
+   * Asserted now, while it is cheap: the two adapters below differ in exactly
+   * one respect, and everything downstream must differ with them.
+   */
+  const ZERO_FEES = { etsyFees: 0, paymentProcessing: 0, offsiteAds: 0 }
+  const NO_FEES = { etsyFees: null, paymentProcessing: null, offsiteAds: null }
+
+  it('store different values', async () => {
+    setEtsyService(fakeAdapter([order('R-ZERO', ZERO_FEES)]).service as never)
+    await syncShopOrders(ctxFor(SHOP_A), WINDOW)
+    setEtsyService(fakeAdapter([order('R-NONE', NO_FEES)]).service as never)
+    await syncShopOrders(ctxFor(SHOP_A), WINDOW)
+
+    const rows = await getDb()
+      .select({ receipt: schema.orders.etsyReceiptId, fees: schema.orders.etsyFees })
+      .from(schema.orders)
+      .where(eq(schema.orders.shopId, SHOP_A))
+    const byReceipt = new Map(rows.map((row) => [row.receipt, row.fees]))
+
+    expect(byReceipt.get('R-ZERO'), 'a fee the adapter READ as zero').toBe('0.00')
+    expect(byReceipt.get('R-NONE'), 'a fee the adapter did not read').toBeNull()
+  })
+
+  it('read back as 0 and null, not both as one of them', async () => {
+    setEtsyService(
+      fakeAdapter([order('R-ZERO', ZERO_FEES), order('R-NONE', NO_FEES)]).service as never,
+    )
+    await syncShopOrders(ctxFor(SHOP_A), WINDOW)
+
+    const stored = new Map((await readOrders(SHOP_A, WINDOW)).map((o) => [o.etsyReceiptId, o]))
+    expect(stored.get('R-ZERO')?.etsyFees).toBe(0)
+    expect(stored.get('R-NONE')?.etsyFees).toBeNull()
+  })
+
+  it('produce a net profit in one case and withhold it in the other', async () => {
+    /*
+     * The consequence, which is the reason the distinction matters at all. A
+     * shop whose fees are genuinely zero has a knowable net profit; a shop
+     * whose fees are unread does not.
+     */
+    setEtsyService(fakeAdapter([order('R1', ZERO_FEES)], [listing('9001')]).service as never)
+    await syncShopListings(ctxFor(SHOP_A))
+    await syncShopOrders(ctxFor(SHOP_A), WINDOW)
+
+    const zeroFees = await getProfitView(ctxFor(SHOP_A))
+    expect(zeroFees.verified.etsyFees, 'a read zero is a figure').toBe(0)
+    expect(zeroFees.results.BASE.netProfit, 'zero fees are still known fees').not.toBeNull()
+    expect(zeroFees.results.BASE.lines.find((l) => l.key === 'etsyFees')?.amount).toBe(0)
+    expect(
+      zeroFees.results.BASE.missingData.map((item) => item.code),
+      'a shop with real zero fees has no fee gap',
+    ).not.toContain('FEES_NOT_LOADED')
+
+    // The same shop, the same orders, one adapter difference.
+    setEtsyService(fakeAdapter([order('R1', NO_FEES)], [listing('9001')]).service as never)
+    await syncShopOrders(ctxFor(SHOP_A), WINDOW)
+    /*
+     * COALESCE preserves the zero this shop already had, which is correct —
+     * the sync may learn a fee, never forget one — so the fee has to be
+     * cleared to observe the unread case on the same row.
+     */
+    await getDb()
+      .update(schema.orders)
+      .set({ etsyFees: null, paymentProcessing: null, offsiteAds: null })
+      .where(eq(schema.orders.shopId, SHOP_A))
+
+    const noFees = await getProfitView(ctxFor(SHOP_A))
+    expect(noFees.verified.etsyFees).toBeNull()
+    expect(noFees.results.BASE.netProfit).toBeNull()
+    expect(noFees.results.BASE.missingData.map((item) => item.code)).toContain('FEES_NOT_LOADED')
+  })
+
+  it('and a zero the adapter read overwrites a fee, while nothing defers to it', async () => {
+    /*
+     * The COALESCE, read in both directions. `coalesce` skips null, not 0 —
+     * so an adapter reporting a genuine zero replaces a stored figure (an
+     * order was refunded, its fee reversed), and an adapter reporting nothing
+     * leaves it alone.
+     */
+    setEtsyService(fakeAdapter([order('R1', NO_FEES)]).service as never)
+    await syncShopOrders(ctxFor(SHOP_A), WINDOW)
+    await getDb()
+      .update(schema.orders)
+      .set({ etsyFees: '2.40' })
+      .where(eq(schema.orders.shopId, SHOP_A))
+
+    // Nothing reported: the stored figure survives.
+    await syncShopOrders(ctxFor(SHOP_A), WINDOW)
+    expect((await readOrders(SHOP_A, WINDOW))[0]?.etsyFees).toBe(2.4)
+
+    // A read zero: it replaces it.
+    setEtsyService(fakeAdapter([order('R1', ZERO_FEES)]).service as never)
+    await syncShopOrders(ctxFor(SHOP_A), WINDOW)
+    expect((await readOrders(SHOP_A, WINDOW))[0]?.etsyFees).toBe(0)
+  })
+
+  it('treats a fee that is not a number as unknown rather than storing NaN', async () => {
+    /*
+     * Postgres numeric accepts the literal 'NaN'. The listings write path
+     * refuses a non-finite price outright, but "unknown" is a legitimate
+     * value for a fee, so failing the whole sync would be worse than
+     * recording that we do not know it.
+     */
+    setEtsyService(
+      fakeAdapter([order('R1', { etsyFees: Number.NaN, paymentProcessing: 1, offsiteAds: 2 })])
+        .service as never,
+    )
+    await syncShopOrders(ctxFor(SHOP_A), WINDOW)
+
+    const [stored] = await readOrders(SHOP_A, WINDOW)
+    expect(stored?.etsyFees).toBeNull()
+    // The two that WERE numbers are still stored, so this is not a blanket wipe.
+    expect(stored?.paymentProcessing).toBe(1)
+    expect(stored?.offsiteAds).toBe(2)
   })
 })
 

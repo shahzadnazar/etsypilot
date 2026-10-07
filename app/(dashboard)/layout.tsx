@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { AppShell } from '@/components/layout/app-shell'
 import { getSession } from '@/lib/auth'
 import { initialsFor } from '@/lib/utils/name'
+import { isDemoMode } from '@/lib/etsy'
 import { shopContext } from '@/lib/permissions'
 import { shopHeader } from '@/domain/sync/source'
 import { currentPlan } from '@/domain/billing/service'
@@ -117,7 +118,24 @@ export default async function DashboardLayout({ children }: { children: React.Re
        */
       shopName={shop?.name ?? 'Shop not found'}
       lastSyncedAt={shop?.lastSyncedAt ?? null}
-      isDemo={session.isDemo}
+      /*
+       * TWO QUESTIONS, TWO ANSWERS, AND THEY COME FROM DIFFERENT PLACES.
+       *
+       * `demoData` is the MODE: is the fictional catalogue being served. That
+       * is what the banner's wording and the "· demo" chip are claims about,
+       * and both were driven by `session.isDemo` — the shop row — so a live
+       * deployment told every new signup it was "exploring Willow & Fern"
+       * while serving them nothing.
+       *
+       * `connected` is the SHOP ROW: has this shop an Etsy connection. That is
+       * what the green dot, the solid border and the sync line are about, and
+       * it stays exactly as it was.
+       *
+       * domain/sync/source.ts drew this line for the data path and recorded
+       * why; this is the same line through the chrome.
+       */
+      demoData={isDemoMode()}
+      connected={!session.isDemo}
       userInitials={initials}
       userName={session.name}
       /* The one identifier that is never derived — see UserMenu. */

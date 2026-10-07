@@ -15,6 +15,7 @@ import { DEMO_EVENTS } from '@/lib/etsy/demo-events'
 import { shopContext } from '@/lib/permissions'
 import { formatDate, formatDelta } from '@/lib/utils/format'
 import { Money, Numeric } from '@/components/ui/numeric'
+import { isDemoMode } from '@/lib/etsy'
 
 export const metadata: Metadata = { title: 'Shop Pulse' }
 
@@ -23,8 +24,21 @@ export default async function ShopPulsePage() {
   if (!session) redirect('/login')
 
   const ctx = shopContext(session, session.shopId)
+  /*
+   * D11 ASKS THE MODE, NOT THE SHOP ROW.
+ *
+   * The provenance badge's demo override exists so "a screenshot taken in demo
+   * mode can never be mistaken for a real shop's figures" — a statement about
+   * whether the FIGURES are the fictional catalogue. That is `ETSY_MODE`.
+ *
+   * It was `session.isDemo`, which is `shops.is_demo`: whether this shop has
+   * ever connected. On a live deployment every new signup carries it, so every
+   * figure on every screen was stamped Demo while the mock was serving none of
+   * them — and the stamp would then disappear the moment the shop connected,
+   * which is precisely when it would start to matter if it were true.
+   */
+  const demoData = isDemoMode()
   const pulse = await getShopPulse(ctx)
-  const demo = session.isDemo
 
   const period = `${formatDate(pulse.periodStart)} – ${formatDate(pulse.periodEnd)}`
   const affected = new Set(pulse.changes.flatMap((c) => c.affectedListingIds)).size
@@ -97,7 +111,7 @@ export default async function ShopPulsePage() {
           delta={ordersDelta}
           note={`vs calculated baseline ${Math.round(pulse.orders.expectedTotal)}`}
           type="VERIFIED"
-          demo={demo}
+          demo={demoData}
         />
         <Kpi
           label="Revenue"
@@ -109,21 +123,21 @@ export default async function ShopPulsePage() {
             </>
           }
           type="VERIFIED"
-          demo={demo}
+          demo={demoData}
         />
         <Kpi
           label="Changes detected"
           value={String(pulse.changes.length)}
           note={`${pulse.counts.CORRELATED} correlated · ${pulse.counts.RULED_OUT} ruled out · ${pulse.counts.UNKNOWN} unknown`}
           type="CALCULATED"
-          demo={demo}
+          demo={demoData}
         />
         <Kpi
           label="Baseline coverage"
           value={`${pulse.orders.coveragePercent}%`}
           note={`${pulse.orders.listingsTooNew} listings too new to baseline`}
           type="CALCULATED"
-          demo={demo}
+          demo={demoData}
           methodologyKey="shopPulseBaseline"
         />
       </section>

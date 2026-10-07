@@ -15,6 +15,7 @@ import {
 import { getSession } from '@/lib/auth'
 import { formatRelative } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
+import { isDemoMode } from '@/lib/etsy'
 
 export const metadata: Metadata = { title: 'Opportunities' }
 
@@ -36,6 +37,21 @@ export default async function OpportunitiesPage({
 }) {
   const session = await getSession()
   if (!session) redirect('/login')
+
+  /*
+   * D11 ASKS THE MODE, NOT THE SHOP ROW.
+ *
+   * The provenance badge's demo override exists so "a screenshot taken in demo
+   * mode can never be mistaken for a real shop's figures" — a statement about
+   * whether the FIGURES are the fictional catalogue. That is `ETSY_MODE`.
+ *
+   * It was `session.isDemo`, which is `shops.is_demo`: whether this shop has
+   * ever connected. On a live deployment every new signup carries it, so every
+   * figure on every screen was stamped Demo while the mock was serving none of
+   * them — and the stamp would then disappear the moment the shop connected,
+   * which is precisely when it would start to matter if it were true.
+   */
+  const demoData = isDemoMode()
 
   const query = await searchParams
   const view = await getOpportunities(query)
@@ -276,7 +292,7 @@ export default async function OpportunitiesPage({
 
       <div className="mt-4 flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <ProvenanceBadge type="ESTIMATED" demo={session.isDemo} />
+          <ProvenanceBadge type="ESTIMATED" demo={demoData} />
           <span className="max-w-prose text-caption leading-relaxed text-muted-1">
             Estimated columns are modelled ranges, from public listing signals observed over 90 days
             — review velocity, favourites and price. They exclude wholesale, off-platform and
@@ -285,7 +301,7 @@ export default async function OpportunitiesPage({
         </div>
         {view.unmodelled > 0 ? (
           <div className="flex flex-wrap items-center gap-2">
-            <ProvenanceBadge type="UNAVAILABLE" demo={session.isDemo} />
+            <ProvenanceBadge type="UNAVAILABLE" demo={demoData} />
             <span className="max-w-prose text-caption leading-relaxed text-muted-1">
               <span className="tnum">{view.unmodelled}</span> of these listings have been observed
               for too few weeks to model. They show &ldquo;Not enough data&rdquo; and no opportunity

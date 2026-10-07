@@ -635,7 +635,33 @@ function assertDisjoint(groups: {
   }
 }
 
-export function buildDemoOrders(listings: EtsyListing[]): EtsyOrder[] {
+/**
+ * An order this file AUTHORED, whose fee lines are therefore always known.
+ *
+ * ── A NARROWING, NOT A NULL CHECK ─────────────────────────────────────────
+ *
+ * `EtsyOrder.etsyFees` widened to `number | null` so that an adapter which
+ * has not read Etsy's payment-account ledger can say so. That is right for
+ * the interface and wrong for this file: every order here is constructed a
+ * few lines below with a fee on it, and the builder then scales and
+ * apportions those fees onto the dataset's designed totals.
+ *
+ * So the builder's internals are typed as orders that HAVE fees. The
+ * alternative was `o.etsyFees ?? 0` at each of the seven places that read one
+ * back — which would compile, and would be the builder pretending not to know
+ * something it authored. `?? 0` is the exact substitution the nullable type
+ * exists to prevent; writing it here, of all places, would teach the pattern
+ * back.
+ *
+ * DemoOrder is assignable to EtsyOrder, so nothing downstream changes.
+ */
+export type DemoOrder = EtsyOrder & {
+  etsyFees: number
+  paymentProcessing: number
+  offsiteAds: number
+}
+
+export function buildDemoOrders(listings: EtsyListing[]): DemoOrder[] {
   const rng = mulberry32(438438)
   const { priceGroup, stockout, seasonal, tagGroup, rest } = narrativeGroups(listings)
 
@@ -725,13 +751,13 @@ export function buildDemoOrders(listings: EtsyListing[]): EtsyOrder[] {
  * The rates below sum to the shop's prior run rate, so "before" genuinely means
  * this shop before these changes.
  */
-export function buildDemoPriorOrders(listings: EtsyListing[]): EtsyOrder[] {
+export function buildDemoPriorOrders(listings: EtsyListing[]): DemoOrder[] {
   const rng = mulberry32(90900)
   const { priceGroup, stockout, seasonal, tagGroup, rest } = narrativeGroups(listings)
   const start = new Date(BASELINE_START).getTime()
   const days = Math.round((new Date(BASELINE_END).getTime() - start) / 86_400_000)
 
-  const orders: EtsyOrder[] = []
+  const orders: DemoOrder[] = []
   const carry = new Map<string, number>()
   let n = 0
 
@@ -783,7 +809,7 @@ function makeOrder(
   index: number,
   seq: () => number,
   originMs: number = new Date(PERIOD_START).getTime(),
-): EtsyOrder {
+): DemoOrder {
   const quantity = seq() < 0.87 ? 1 : 2
   const unitPrice = listing.price
   const gross = round2(unitPrice * quantity)
@@ -820,7 +846,7 @@ function makeOrder(
 const REFUNDED_ORDERS = 8
 const DISCOUNTED_ORDERS = 40
 
-function applyDesignedAdjustments(orders: EtsyOrder[]): EtsyOrder[] {
+function applyDesignedAdjustments(orders: DemoOrder[]): DemoOrder[] {
   if (orders.length === 0) return orders
 
   const refundStep = Math.max(1, Math.floor(orders.length / REFUNDED_ORDERS))
@@ -856,7 +882,7 @@ function applyDesignedAdjustments(orders: EtsyOrder[]): EtsyOrder[] {
   })
 }
 
-function reconcileToTotals(orders: EtsyOrder[]): EtsyOrder[] {
+function reconcileToTotals(orders: DemoOrder[]): DemoOrder[] {
   const rawGross = orders.reduce((sum, o) => sum + o.gross, 0)
   const scale = DEMO_TOTALS.grossRevenue / rawGross
 
@@ -881,11 +907,11 @@ function reconcileToTotals(orders: EtsyOrder[]): EtsyOrder[] {
   return out
 }
 
-function apportion(orders: EtsyOrder[], field: 'etsyFees' | 'paymentProcessing' | 'offsiteAds', target: number): EtsyOrder[] {
+function apportion(orders: DemoOrder[], field: 'etsyFees' | 'paymentProcessing' | 'offsiteAds', target: number): DemoOrder[] {
   const current = orders.reduce((s, o) => s + o[field], 0)
   if (current === 0) return orders
   const scale = target / current
-  const out = orders.map((o) => ({ ...o, [field]: round2(o[field] * scale) }) as EtsyOrder)
+  const out = orders.map((o) => ({ ...o, [field]: round2(o[field] * scale) }) as DemoOrder)
   const drift = round2(target - out.reduce((s, o) => s + o[field], 0))
   const last = out[out.length - 1]
   if (last && drift !== 0) last[field] = round2(last[field] + drift)

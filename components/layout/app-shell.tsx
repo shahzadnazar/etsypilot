@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { DemoBanner } from './demo-banner'
+import { ShopStateBanner } from './demo-banner'
 import { MobileTopBar } from './mobile-top-bar'
 import { MobileTabs } from './mobile-tabs'
 import { Sidebar } from './sidebar'
@@ -15,7 +15,8 @@ export function AppShell({
   children,
   shopName,
   lastSyncedAt,
-  isDemo,
+  demoData,
+  connected,
   userInitials,
   userName,
   userEmail,
@@ -28,7 +29,21 @@ export function AppShell({
   children: ReactNode
   shopName: string
   lastSyncedAt: string | null
-  isDemo: boolean
+  /**
+   * The fictional catalogue is being served. This is `ETSY_MODE`, not the shop
+   * row — it decides the banner's wording and the "· demo" chip suffix.
+   */
+  demoData: boolean
+  /**
+   * This shop has an Etsy connection. This is `!shops.is_demo`, not the mode —
+   * it decides the green dot, the solid border and the sync line.
+   *
+   * Two booleans rather than one because the chrome asks two questions, and
+   * answering both with `session.isDemo` put a sentence about a fictional
+   * catalogue on screens that were serving none. components/layout/
+   * demo-banner.tsx has the full argument.
+   */
+  connected: boolean
   userInitials: string
   userName: string | null
   userEmail: string
@@ -64,7 +79,16 @@ export function AppShell({
         </a>
       </nav>
 
-      {isDemo ? <DemoBanner /> : null}
+      {/*
+        * The banner states what is true of the data, so it is keyed on the
+        * mode. In live mode with no connection it says so instead of claiming
+        * a fictional shop; connected and live, there is nothing to say.
+        */}
+      {demoData ? (
+        <ShopStateBanner kind="DEMO_DATA" shopName={shopName} />
+      ) : !connected ? (
+        <ShopStateBanner kind="NOT_CONNECTED" shopName={shopName} />
+      ) : null}
 
       <div className="flex flex-1 overflow-hidden">
         <Sidebar plan={plan} usage={usage} counts={counts} />
@@ -80,7 +104,8 @@ export function AppShell({
           <MobileTopBar
             shopName={shopName}
             lastSyncedAt={lastSyncedAt}
-            isDemo={isDemo}
+            demoData={demoData}
+            connected={connected}
             unreadCount={openActionCount}
             counts={counts}
           />
@@ -89,7 +114,8 @@ export function AppShell({
             isOperator={isOperator}
               shopName={shopName}
               lastSyncedAt={lastSyncedAt}
-              isDemo={isDemo}
+              demoData={demoData}
+              connected={connected}
               userInitials={userInitials}
               userName={userName}
               userEmail={userEmail}

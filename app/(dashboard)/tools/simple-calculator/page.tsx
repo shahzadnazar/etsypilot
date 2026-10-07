@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/layout/page-header'
 import { SimpleCalculator } from '@/components/calculator/simple-calculator'
 import { Card } from '@/components/ui/card'
 import { getSession } from '@/lib/auth'
+import { isDemoMode } from '@/lib/etsy'
 
 export const metadata: Metadata = { title: 'Simple Calculator' }
 
@@ -24,6 +25,21 @@ export default async function SimpleCalculatorPage() {
   const session = await getSession()
   if (!session) redirect('/login')
 
+  /*
+   * D11 ASKS THE MODE, NOT THE SHOP ROW.
+ *
+   * The provenance badge's demo override exists so "a screenshot taken in demo
+   * mode can never be mistaken for a real shop's figures" — a statement about
+   * whether the FIGURES are the fictional catalogue. That is `ETSY_MODE`.
+ *
+   * It was `session.isDemo`, which is `shops.is_demo`: whether this shop has
+   * ever connected. On a live deployment every new signup carries it, so every
+   * figure on every screen was stamped Demo while the mock was serving none of
+   * them — and the stamp would then disappear the moment the shop connected,
+   * which is precisely when it would start to matter if it were true.
+   */
+  const demoData = isDemoMode()
+
   return (
     <>
       <PageHeader
@@ -40,7 +56,7 @@ export default async function SimpleCalculatorPage() {
       />
 
       <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
-        <SimpleCalculator demo={session.isDemo} />
+        <SimpleCalculator demo={demoData} />
 
         <div className="flex flex-col gap-3">
           <Card className="flex flex-col gap-2 p-[18px]">

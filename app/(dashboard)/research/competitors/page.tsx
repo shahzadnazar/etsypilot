@@ -12,6 +12,7 @@ import { getSession } from '@/lib/auth'
 import { shopContext } from '@/lib/permissions'
 import { formatRelative } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
+import { isDemoMode } from '@/lib/etsy'
 
 export const metadata: Metadata = { title: 'Competitors' }
 
@@ -32,6 +33,20 @@ export default async function CompetitorsPage({
 
   const query = await searchParams
   const ctx = shopContext(session, session.shopId)
+  /*
+   * D11 ASKS THE MODE, NOT THE SHOP ROW.
+ *
+   * The provenance badge's demo override exists so "a screenshot taken in demo
+   * mode can never be mistaken for a real shop's figures" — a statement about
+   * whether the FIGURES are the fictional catalogue. That is `ETSY_MODE`.
+ *
+   * It was `session.isDemo`, which is `shops.is_demo`: whether this shop has
+   * ever connected. On a live deployment every new signup carries it, so every
+   * figure on every screen was stamped Demo while the mock was serving none of
+   * them — and the stamp would then disappear the moment the shop connected,
+   * which is precisely when it would start to matter if it were true.
+   */
+  const demoData = isDemoMode()
   const view = await getCompetitors(ctx, query)
   const shop = view.selected
 
@@ -116,31 +131,31 @@ export default async function CompetitorsPage({
                   label="Active listings"
                   value={shop.activeListings.toLocaleString('en-US')}
                   note="Publicly observable"
-                  demo={session.isDemo}
+                  demo={demoData}
                 />
                 <Observed
                   label="Reviews"
                   value={shop.reviews.toLocaleString('en-US')}
                   note={`▲ ${shop.reviewsAdded30d} in 30 days`}
-                  demo={session.isDemo}
+                  demo={demoData}
                 />
                 <Observed
                   label="Median price"
                   value={<Money value={shop.medianPrice} />}
                   note="Across active listings"
-                  demo={session.isDemo}
+                  demo={demoData}
                 />
                 <Observed
                   label="New listings"
                   value={shop.newListings30d.toLocaleString('en-US')}
                   note={`Added in 30 days · ${shop.removedListings30d} removed`}
-                  demo={session.isDemo}
+                  demo={demoData}
                 />
               </section>
 
               <div className="mt-5 flex flex-wrap items-center gap-2">
                 <h2 className="text-section text-ink-1">Estimated</h2>
-                <ProvenanceBadge type="ESTIMATED" demo={session.isDemo} />
+                <ProvenanceBadge type="ESTIMATED" demo={demoData} />
                 <span className="text-caption text-muted-1">
                   Modelled performance — not official Etsy figures
                 </span>
@@ -150,14 +165,14 @@ export default async function CompetitorsPage({
                 <EstimateTile
                   label="Est. monthly sales"
                   data={shop.monthlySales}
-                  demo={session.isDemo}
+                  demo={demoData}
                 >
                   <RangeValue data={shop.monthlySales} />
                 </EstimateTile>
                 <EstimateTile
                   label="Est. monthly revenue"
                   data={shop.monthlyRevenue}
-                  demo={session.isDemo}
+                  demo={demoData}
                   note="Excludes refunds and wholesale"
                 >
                   <RangeValue data={shop.monthlyRevenue} prefix="$" />

@@ -30,13 +30,15 @@ import { formatRelative } from '@/lib/utils/format'
 export function MobileTopBar({
   shopName,
   lastSyncedAt,
-  isDemo,
+  demoData,
+  connected,
   unreadCount,
   counts,
 }: {
   shopName: string
   lastSyncedAt: string | null
-  isDemo: boolean
+  demoData: boolean
+  connected: boolean
   /** Drives the dot on the bell. Zero means no dot, never a "0" badge. */
   unreadCount: number
   /** Measured counts by href, for the drawer's chips. */
@@ -88,7 +90,7 @@ export function MobileTopBar({
           href="/settings/shops"
           className={cn(
             'flex min-w-0 flex-1 items-center gap-2 rounded-[9px] border px-2.5 py-1.5',
-            isDemo ? 'border-dashed border-muted-2' : 'border-line',
+            connected ? 'border-line' : 'border-dashed border-muted-2',
           )}
         >
           <span
@@ -106,13 +108,22 @@ export function MobileTopBar({
             </span>
             <span
               className="truncate text-[10px] font-medium leading-none"
-              style={{ color: isDemo ? 'var(--muted-1)' : 'var(--success)' }}
+              style={{ color: connected ? 'var(--success)' : 'var(--muted-1)' }}
             >
-              {isDemo
+              {/*
+                * "Demo shop · not connected" was true of both halves only in
+                * demo mode. In live mode with no connection the second half is
+                * right and the first is not — the shop is real, it just has no
+                * Etsy link — so the two states say their own thing. The
+                * desktop chip in shop-context.tsx makes the same split.
+                */}
+              {demoData
                 ? 'Demo shop · not connected'
-                : lastSyncedAt
-                  ? `Synced ${formatRelative(lastSyncedAt)}`
-                  : 'Never synced'}
+                : !connected
+                  ? 'Not connected to Etsy'
+                  : lastSyncedAt
+                    ? `Synced ${formatRelative(lastSyncedAt)}`
+                    : 'Never synced'}
             </span>
           </span>
           <ChevronDown size={13} aria-hidden className="ml-auto shrink-0 text-muted-2" />

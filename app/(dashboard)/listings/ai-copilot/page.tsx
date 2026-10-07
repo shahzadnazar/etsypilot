@@ -12,6 +12,7 @@ import { getCopilotView } from '@/domain/ai/service'
 import { quotaExhausted } from '@/domain/ai/types'
 import { getSession } from '@/lib/auth'
 import { shopContext } from '@/lib/permissions'
+import { isDemoMode } from '@/lib/etsy'
 
 export const metadata: Metadata = { title: 'AI Copilot' }
 
@@ -32,6 +33,20 @@ export default async function AiCopilotPage({
 
   const { listing } = await searchParams
   const ctx = shopContext(session, session.shopId)
+  /*
+   * D11 ASKS THE MODE, NOT THE SHOP ROW.
+ *
+   * The provenance badge's demo override exists so "a screenshot taken in demo
+   * mode can never be mistaken for a real shop's figures" — a statement about
+   * whether the FIGURES are the fictional catalogue. That is `ETSY_MODE`.
+ *
+   * It was `session.isDemo`, which is `shops.is_demo`: whether this shop has
+   * ever connected. On a live deployment every new signup carries it, so every
+   * figure on every screen was stamped Demo while the mock was serving none of
+   * them — and the stamp would then disappear the moment the shop connected,
+   * which is precisely when it would start to matter if it were true.
+   */
+  const demoData = isDemoMode()
   const view = await getCopilotView(ctx, listing)
   if (!view) {
     return (
@@ -55,7 +70,6 @@ export default async function AiCopilotPage({
       </>
     )
   }
-  const demo = session.isDemo
   const exhausted = quotaExhausted(view.quota)
   const { draft, rejected, inputs } = view
 
@@ -210,7 +224,7 @@ export default async function AiCopilotPage({
         </div>
 
         <div className="flex flex-col gap-4">
-          {draft ? <DraftReview draft={draft} demo={demo} /> : null}
+          {draft ? <DraftReview draft={draft} demo={demoData} /> : null}
 
           {view.queue.length > 0 ? (
             <Card className="p-[18px]">

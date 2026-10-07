@@ -12,6 +12,7 @@ import { getSession } from '@/lib/auth'
 import { greetingName } from '@/lib/utils/name'
 import { shopContext } from '@/lib/permissions'
 import { formatDate, formatDelta } from '@/lib/utils/format'
+import { isDemoMode } from '@/lib/etsy'
 
 export const metadata: Metadata = { title: 'Overview' }
 
@@ -20,6 +21,20 @@ export default async function DashboardPage() {
   if (!session) redirect('/login')
 
   const ctx = shopContext(session, session.shopId)
+  /*
+   * D11 ASKS THE MODE, NOT THE SHOP ROW.
+ *
+   * The provenance badge's demo override exists so "a screenshot taken in demo
+   * mode can never be mistaken for a real shop's figures" — a statement about
+   * whether the FIGURES are the fictional catalogue. That is `ETSY_MODE`.
+ *
+   * It was `session.isDemo`, which is `shops.is_demo`: whether this shop has
+   * ever connected. On a live deployment every new signup carries it, so every
+   * figure on every screen was stamped Demo while the mock was serving none of
+   * them — and the stamp would then disappear the moment the shop connected,
+   * which is precisely when it would start to matter if it were true.
+   */
+  const demoData = isDemoMode()
   const [overview, { actions, counts, source }] = await Promise.all([
     getShopOverview(ctx),
     getActions(ctx),
@@ -55,7 +70,7 @@ export default async function DashboardPage() {
                 <ProvenanceButton
                   metricKey={metric.methodologyKey}
                   type={metric.provenance.type}
-                  demo={session.isDemo}
+                  demo={demoData}
                 />
               </div>
               <Numeric className="text-metric text-ink-1">{metric.display}</Numeric>
@@ -88,7 +103,7 @@ export default async function DashboardPage() {
       */}
       <section aria-label="Action Center" className="mt-5">
         <h2 className="mb-3 text-section text-ink-1">What needs your attention</h2>
-        <ActionList actions={actions} counts={counts} demo={session.isDemo} source={source} />
+        <ActionList actions={actions} counts={counts} demo={demoData} source={source} />
       </section>
 
       {/* Etsy does not expose views. We say so rather than estimating them. */}

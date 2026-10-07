@@ -11,6 +11,7 @@ import { NumericCell } from '@/components/ui/numeric'
 import { getNiche, TARGET_MARGIN } from '@/domain/research/niche'
 import { getSession } from '@/lib/auth'
 import { formatRelative } from '@/lib/utils/format'
+import { isDemoMode } from '@/lib/etsy'
 
 export const metadata: Metadata = { title: 'Niche research' }
 
@@ -31,6 +32,21 @@ export default async function NichePage({
 }) {
   const session = await getSession()
   if (!session) redirect('/login')
+
+  /*
+   * D11 ASKS THE MODE, NOT THE SHOP ROW.
+ *
+   * The provenance badge's demo override exists so "a screenshot taken in demo
+   * mode can never be mistaken for a real shop's figures" — a statement about
+   * whether the FIGURES are the fictional catalogue. That is `ETSY_MODE`.
+ *
+   * It was `session.isDemo`, which is `shops.is_demo`: whether this shop has
+   * ever connected. On a live deployment every new signup carries it, so every
+   * figure on every screen was stamped Demo while the mock was serving none of
+   * them — and the stamp would then disappear the moment the shop connected,
+   * which is precisely when it would start to matter if it were true.
+   */
+  const demoData = isDemoMode()
 
   const query = await searchParams
   const view = await getNiche(query)
@@ -111,7 +127,7 @@ export default async function NichePage({
             <EstimateTile
               label="Demand"
               data={signals.demand}
-              demo={session.isDemo}
+              demo={demoData}
               note="monthly searches, band"
             >
               <RangeValue data={signals.demand} />
@@ -120,7 +136,7 @@ export default async function NichePage({
             <EstimateTile
               label="Listings"
               data={signals.listings}
-              demo={session.isDemo}
+              demo={demoData}
               note="±8% sampling error"
             >
               <span className="tnum">
@@ -134,7 +150,7 @@ export default async function NichePage({
               <EstimateTile
                 label="Crowding"
                 data={signals.crowding}
-                demo={session.isDemo}
+                demo={demoData}
                 note={signals.crowding.provenance.methodology}
               >
                 {CROWDING_LABEL[signals.crowding.value ?? ''] ?? '—'}
@@ -145,7 +161,7 @@ export default async function NichePage({
               <EstimateTile
                 label="Price band"
                 data={signals.priceBand}
-                demo={session.isDemo}
+                demo={demoData}
                 note="middle 50% of listings"
               >
                 <RangeValue data={signals.priceBand} prefix="$" />
@@ -156,7 +172,7 @@ export default async function NichePage({
               <EstimateTile
                 label="Concentration"
                 data={signals.concentration}
-                demo={session.isDemo}
+                demo={demoData}
                 note="top 10 shops’ share"
               >
                 <span className="tnum">{signals.concentration.value}%</span>
@@ -292,7 +308,7 @@ export default async function NichePage({
       )}
 
       <div className="mt-4 flex flex-wrap items-start gap-2">
-        <ProvenanceBadge type="ESTIMATED" demo={session.isDemo} />
+        <ProvenanceBadge type="ESTIMATED" demo={demoData} />
         <p className="max-w-prose text-caption leading-relaxed text-muted-1">
           Every figure on this page is estimated. Etsy publishes no search volume and no competitor
           sales; these are modelled from public listing and autocomplete signals sampled weekly,

@@ -14,6 +14,7 @@ import { getSession } from '@/lib/auth'
 import { shopHeader } from '@/domain/sync/source'
 import { shopContext } from '@/lib/permissions'
 import { formatDateTime } from '@/lib/utils/format'
+import { isDemoMode } from '@/lib/etsy'
 
 export const metadata: Metadata = { title: 'Listing Audit' }
 
@@ -31,11 +32,24 @@ export default async function ListingAuditPage() {
 
   const ctx = shopContext(session, session.shopId)
   /*
+   * D11 ASKS THE MODE, NOT THE SHOP ROW.
+ *
+   * The provenance badge's demo override exists so "a screenshot taken in demo
+   * mode can never be mistaken for a real shop's figures" — a statement about
+   * whether the FIGURES are the fictional catalogue. That is `ETSY_MODE`.
+ *
+   * It was `session.isDemo`, which is `shops.is_demo`: whether this shop has
+   * ever connected. On a live deployment every new signup carries it, so every
+   * figure on every screen was stamped Demo while the mock was serving none of
+   * them — and the stamp would then disappear the moment the shop connected,
+   * which is precisely when it would start to matter if it were true.
+   */
+  const demoData = isDemoMode()
+  /*
   * The shop's own facts come from our row, not the adapter — which cannot
   * answer in a live deployment without an Etsy API key.
   */
   const [view, shop] = await Promise.all([getAuditView(ctx), shopHeader(ctx)])
-  const demo = session.isDemo
 
   /*
    * One explanation, for the worst rule — not one per rule.
@@ -113,7 +127,7 @@ export default async function ListingAuditPage() {
               <ProvenanceButton
                 metricKey="listingHealth"
                 type={view.healthScore.provenance.type}
-                demo={demo}
+                demo={demoData}
               />
             </div>
             {/*
@@ -209,7 +223,7 @@ export default async function ListingAuditPage() {
             <Card className="p-[18px]">
               <AssistedNote
                 explanation={explanation}
-                demo={demo}
+                demo={demoData}
                 label={`Where to start · ${worst.rule.label}`}
               />
             </Card>
@@ -217,7 +231,7 @@ export default async function ListingAuditPage() {
 
           {view.results.map((r) => (
             <div key={r.rule.code} id={r.rule.code}>
-              <RuleGroup result={r} currency={shop?.currency ?? 'USD'} demo={demo} />
+              <RuleGroup result={r} currency={shop?.currency ?? 'USD'} demo={demoData} />
             </div>
           ))}
         </div>

@@ -8,7 +8,8 @@ import { UserMenu } from './user-menu'
 export function TopBar({
   shopName,
   lastSyncedAt,
-  isDemo,
+  demoData,
+  connected,
   userInitials,
   userName,
   userEmail,
@@ -16,7 +17,8 @@ export function TopBar({
 }: {
   shopName: string
   lastSyncedAt: string | null
-  isDemo: boolean
+  demoData: boolean
+  connected: boolean
   userInitials: string
   /** For the accessible name. Initials alone are not one. */
   userName: string | null
@@ -35,7 +37,12 @@ export function TopBar({
 }) {
   return (
     <header className="flex h-topbar shrink-0 items-center gap-3.5 border-b border-line bg-surface px-4 md:px-[26px]">
-      <ShopContext shopName={shopName} lastSyncedAt={lastSyncedAt} isDemo={isDemo} />
+      <ShopContext
+        shopName={shopName}
+        lastSyncedAt={lastSyncedAt}
+        demoData={demoData}
+        connected={connected}
+      />
 
       {/*
         * The command palette, which is not built.

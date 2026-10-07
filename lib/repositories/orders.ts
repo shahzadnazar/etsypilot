@@ -172,25 +172,43 @@ export interface OrderSyncOutcome {
 }
 
 /**
- * The fee fields, as the sync writes them: always unknown.
+ * A fee, as the column holds it: the adapter's figure, or NULL for unknown.
  *
- * ── ONE PLACE, SO THERE IS ONE PLACE TO CHANGE ────────────────────────────
+ * ══════════════════════════════════════════════════════════════════════════
+ *   THE SYNC NO LONGER DECIDES. THE ADAPTER DOES.
+ * ══════════════════════════════════════════════════════════════════════════
  *
- * No adapter can currently report a fee. lib/etsy/live.ts's toOrder()
- * hardcodes all three to 0 and says why — Etsy exposes them through the
- * payment-account ledger, not the receipt — and `EtsyOrder` types them as
- * plain `number`, so a 0 arriving here is indistinguishable from a genuine
- * zero and provably means "not loaded".
+ * This function used to return NULL unconditionally, and its own comment said
+ * why and said what would end it: "a 0 arriving here is indistinguishable
+ * from a genuine zero and provably means 'not loaded'... the day the ledger
+ * lands, `EtsyOrder` gains `number | null` and this function is the only
+ * thing that has to change."
  *
- * Writing the adapter's 0 would therefore write a verified-looking zero.
- * Writing NULL states what is true. The cost is that this DISCARDS a figure
- * if some future adapter starts supplying one, which is why it is a named
- * function with this comment on it rather than three literals inline: the day
- * the ledger lands, `EtsyOrder` gains `number | null` and this function is the
- * only thing that has to change.
+ * `EtsyOrder` has gained it. So the unconditional NULL is now wrong, for a
+ * reason worth stating precisely: it was never a statement about Etsy's fees,
+ * it was a workaround for a type that could not carry one. Keeping it would
+ * make this repository overrule the only component that knows — an adapter
+ * that HAS read the ledger would hand over 42.17 and have it discarded, and a
+ * genuine zero would be unwritable by anyone.
+ *
+ * Whose fact is it? The adapter's. It is the thing that either read the
+ * ledger or did not. lib/etsy/live.ts now returns null and says it has not;
+ * MockEtsyService returns the figures its dataset apportions. Both are
+ * believed.
+ *
+ * ── NON-FINITE READS AS UNKNOWN, NOT AS ZERO ──────────────────────────────
+ *
+ * Postgres numeric ACCEPTS the literal 'NaN' — found while building the
+ * listings slice, where the write path refuses a non-finite price outright.
+ * A fee cannot be refused the same way, because "unknown" is a legitimate
+ * value here and failing the whole sync over one bad fee would be worse than
+ * recording that we do not know it. So a non-finite fee becomes null, which
+ * is the same answer `amount()` gives when reading one back: the figure is
+ * withheld and every screen that depends on it says so.
  */
-function feesAsWritten(): { etsyFees: null; paymentProcessing: null; offsiteAds: null } {
-  return { etsyFees: null, paymentProcessing: null, offsiteAds: null }
+function feeAsWritten(reported: number | null): string | null {
+  if (reported === null || !Number.isFinite(reported)) return null
+  return String(reported)
 }
 
 /**
@@ -246,11 +264,15 @@ function mergeLines(items: readonly StoredOrderItem[]): StoredOrderItem[] {
  *
  * ── EXCEPT A FEE, WHICH A RE-SYNC CAN ONLY EVER ADD ───────────────────────
  *
- * The fee columns use COALESCE(excluded, existing). Today the sync always
- * writes NULL (see feesAsWritten), so without this a later re-run would ERASE
- * a fee that something else — a ledger import, an operator correction — had
- * put there, and the period would silently go back to "fees unknown". One
- * direction only: this sync may learn a fee, never forget one.
+ * The fee columns use COALESCE(excluded, existing), so an adapter that does
+ * not know a fee cannot erase one that something else — a ledger import, an
+ * operator correction, an earlier adapter that did know — had put there. One
+ * direction only: a sync may LEARN a fee, never forget one.
+ *
+ * An adapter reporting a genuine ZERO still overwrites, and that is the point
+ * of the distinction: `coalesce` skips null, not 0. A fee of 0 is a figure
+ * the adapter read, so it replaces whatever was there; `null` means it read
+ * nothing, so it defers.
  *
  * ── AND `cost_snapshot` IS NOT IN THE CONFLICT SET AT ALL ─────────────────
  *
@@ -335,7 +357,9 @@ export async function writeSyncedOrders(
             gross: String(order.gross),
             discounts: String(order.discounts),
             refunds: String(order.refunds),
-            ...feesAsWritten(),
+            etsyFees: feeAsWritten(order.etsyFees),
+            paymentProcessing: feeAsWritten(order.paymentProcessing),
+            offsiteAds: feeAsWritten(order.offsiteAds),
             countryCode: order.countryCode,
           })),
         )

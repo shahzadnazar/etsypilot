@@ -127,15 +127,15 @@ export function computeScenario(
 
   const lines: WaterfallLine[] = [
     line('gross', 'Gross revenue', grossRevenue, revenueProvenance),
-    line('discounts', 'Discounts', -discounts, revenueProvenance),
-    line('refunds', 'Refunds', -refunds, revenueProvenance),
-    line('etsyFees', 'Etsy fees', etsyFees === null ? null : -etsyFees, feeProvenance),
-    line('processing', 'Payment processing', paymentProcessing === null ? null : -paymentProcessing, feeProvenance),
-    line('offsiteAds', 'Offsite Ads', offsiteAds === null ? null : -offsiteAds, feeProvenance),
-    line('shipping', 'Shipping', -shipping, sellerInput(null).provenance),
-    line('cogs', 'COGS', -cogs, sellerInput(null).provenance),
-    line('labour', 'Labour', -labour, sellerInput(null).provenance),
-    line('other', 'Other costs', -otherCosts, sellerInput(null).provenance),
+    line('discounts', 'Discounts', deduction(discounts), revenueProvenance),
+    line('refunds', 'Refunds', deduction(refunds), revenueProvenance),
+    line('etsyFees', 'Etsy fees', etsyFees === null ? null : deduction(etsyFees), feeProvenance),
+    line('processing', 'Payment processing', paymentProcessing === null ? null : deduction(paymentProcessing), feeProvenance),
+    line('offsiteAds', 'Offsite Ads', offsiteAds === null ? null : deduction(offsiteAds), feeProvenance),
+    line('shipping', 'Shipping', deduction(shipping), sellerInput(null).provenance),
+    line('cogs', 'COGS', deduction(cogs), sellerInput(null).provenance),
+    line('labour', 'Labour', deduction(labour), sellerInput(null).provenance),
+    line('other', 'Other costs', deduction(otherCosts), sellerInput(null).provenance),
     line(
       'net',
       'Net profit',
@@ -283,6 +283,22 @@ export function inputRows(
     { key: 'labour', label: 'Labour', value: money(assumptions.labourTotal), locked: false, provenance: 'SELLER_INPUT' },
     { key: 'other', label: 'Other costs', value: money(assumptions.otherCosts), locked: false, provenance: 'SELLER_INPUT' },
   ]
+}
+
+/**
+ * A deduction's amount: the negation of a cost, without producing `-0`.
+ *
+ * `-round2(0)` is negative zero, which `Object.is` and JSON round-trips treat
+ * as distinct from 0 — found by an assertion on a shop whose Etsy fees were
+ * genuinely zero. It is invisible to the seller only by luck:
+ * formatSignedCurrency takes Math.abs and prefixes the sign from `value < 0`,
+ * which is false for -0, so it renders "$0.00". A naive formatter would not
+ * be so kind — `Intl.NumberFormat(...).format(-0)` is "-$0.00", measured.
+ *
+ * Negating zero is meaningless either way, so the data does not carry it.
+ */
+function deduction(amount: number): number {
+  return amount === 0 ? 0 : -amount
 }
 
 function line(

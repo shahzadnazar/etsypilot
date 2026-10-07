@@ -13,6 +13,7 @@ import { DEFAULT_TERM, getKeywordView } from '@/domain/research/service'
 import { getSession } from '@/lib/auth'
 import { shopContext } from '@/lib/permissions'
 import { formatDateTime } from '@/lib/utils/format'
+import { isDemoMode } from '@/lib/etsy'
 
 export const metadata: Metadata = { title: 'Keywords' }
 
@@ -36,8 +37,21 @@ export default async function KeywordsPage({
   const { q } = await searchParams
   const term = q?.trim() || DEFAULT_TERM
   const ctx = shopContext(session, session.shopId)
+  /*
+   * D11 ASKS THE MODE, NOT THE SHOP ROW.
+ *
+   * The provenance badge's demo override exists so "a screenshot taken in demo
+   * mode can never be mistaken for a real shop's figures" — a statement about
+   * whether the FIGURES are the fictional catalogue. That is `ETSY_MODE`.
+ *
+   * It was `session.isDemo`, which is `shops.is_demo`: whether this shop has
+   * ever connected. On a live deployment every new signup carries it, so every
+   * figure on every screen was stamped Demo while the mock was serving none of
+   * them — and the stamp would then disappear the moment the shop connected,
+   * which is precisely when it would start to matter if it were true.
+   */
+  const demoData = isDemoMode()
   const view = await getKeywordView(ctx, term)
-  const demo = session.isDemo
   const { signals } = view
 
   const sparse = signals.demand.value === null
@@ -73,14 +87,14 @@ export default async function KeywordsPage({
       ) : null}
 
       <section aria-label="Keyword summary" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <EstimateTile label="Demand" data={signals.demand} demo={demo} note="Modelled monthly searches">
+        <EstimateTile label="Demand" data={signals.demand} demo={demoData} note="Modelled monthly searches">
           <RangeValue data={signals.demand} suffix="/ mo" />
         </EstimateTile>
 
         <EstimateTile
           label="Competition"
           data={signals.competition}
-          demo={demo}
+          demo={demoData}
           note={
             signals.competingListings.value
               ? `~${signals.competingListings.value.min.toLocaleString('en-US')}–${signals.competingListings.value.max.toLocaleString('en-US')} competing listings observed`
@@ -95,7 +109,7 @@ export default async function KeywordsPage({
         <div className="flex flex-col gap-2 rounded-card border border-line bg-surface p-[14px]">
           <div className="flex items-center justify-between gap-2">
             <span className="text-label text-muted-1">Opportunity</span>
-            <ProvenanceButton metricKey="keywordOpportunity" type="CALCULATED" demo={demo} />
+            <ProvenanceButton metricKey="keywordOpportunity" type="CALCULATED" demo={demoData} />
           </div>
           <Numeric className="text-[22px] font-semibold leading-none text-ink-1">
             {signals.opportunity?.value == null ? (
@@ -112,7 +126,7 @@ export default async function KeywordsPage({
           </span>
         </div>
 
-        <EstimateTile label="30-day trend" data={signals.trend30d} demo={demo} note="Against the previous 30 days">
+        <EstimateTile label="30-day trend" data={signals.trend30d} demo={demoData} note="Against the previous 30 days">
           {signals.trend30d.value === null ? (
             'Not enough data'
           ) : (
@@ -150,7 +164,7 @@ export default async function KeywordsPage({
             </Link>
           </div>
         </div>
-        <RelatedTermsTable terms={view.related} demo={demo} />
+        <RelatedTermsTable terms={view.related} demo={demoData} />
       </section>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-[1.4fr_1fr]">

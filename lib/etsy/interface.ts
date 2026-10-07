@@ -76,10 +76,38 @@ export interface EtsyOrder {
   gross: number
   discounts: number
   refunds: number
-  /** Verified fee lines, straight from the receipt. */
-  etsyFees: number
-  paymentProcessing: number
-  offsiteAds: number
+  /**
+   * Etsy's fee lines. NULL means the adapter has not read them.
+   *
+   * NOT from the receipt, which is what the previous comment on these three
+   * fields claimed. Etsy exposes fees through the payment-account ledger, a
+   * separate read from the receipt — live.ts's toOrder() says so and returns
+   * all three unread.
+   *
+   * ── WHY THE TYPE HAD TO WIDEN ─────────────────────────────────────────
+   *
+   * These were plain `number`, so an adapter had exactly one way to say
+   * "I have no fee for this order": return 0. That is indistinguishable from
+   * a genuine zero — a fully absorbed fee, a free order, a refunded line —
+   * and the orders slice found what the product did with it: every fee line
+   * rendered "-$0.00 VERIFIED" and net profit came out above the truth by the
+   * whole fee bill. orders.etsy_fees is nullable in the database for exactly
+   * that reason (migration 0011); this is the same distinction one layer up,
+   * so the adapter can state it rather than the repository having to assume.
+   *
+   * Three states, and all three are now expressible:
+   *
+   *   42.17   a fee the adapter has read
+   *   0       a fee the adapter has read, and it is zero
+   *   null    the adapter has not read the ledger
+   *
+   * `number` is assignable to `number | null`, so an adapter that always
+   * knows its fees — MockEtsyService, whose dataset apportions them — needs no
+   * change at all.
+   */
+  etsyFees: number | null
+  paymentProcessing: number | null
+  offsiteAds: number | null
   countryCode: string
   items: EtsyOrderItem[]
 }

@@ -14,6 +14,7 @@ import { problemFromQuery, describeProblem } from '@/domain/costs/validate'
 import { getSession } from '@/lib/auth'
 import { shopContext } from '@/lib/permissions'
 import { formatDate, formatPercent } from '@/lib/utils/format'
+import { isDemoMode } from '@/lib/etsy'
 
 export const metadata: Metadata = { title: 'Costs & fees' }
 
@@ -36,6 +37,20 @@ export default async function CostsPage({
 
   const { saved, field, problem, q } = await searchParams
   const ctx = shopContext(session, session.shopId)
+  /*
+   * D11 ASKS THE MODE, NOT THE SHOP ROW.
+ *
+   * The provenance badge's demo override exists so "a screenshot taken in demo
+   * mode can never be mistaken for a real shop's figures" — a statement about
+   * whether the FIGURES are the fictional catalogue. That is `ETSY_MODE`.
+ *
+   * It was `session.isDemo`, which is `shops.is_demo`: whether this shop has
+   * ever connected. On a live deployment every new signup carries it, so every
+   * figure on every screen was stamped Demo while the mock was serving none of
+   * them — and the stamp would then disappear the moment the shop connected,
+   * which is precisely when it would start to matter if it were true.
+   */
+  const demoData = isDemoMode()
   const view = await getCostsView(ctx)
   const report = problemFromQuery(field, problem)
   const period = `${formatDate(view.periodStart)} – ${formatDate(view.periodEnd)}`
@@ -92,7 +107,7 @@ export default async function CostsPage({
               * share of order value they cover is a ratio EtsyPilot works out
               * over verified order values. Dividing demotes (D32).
               */}
-            <ProvenanceBadge type="CALCULATED" demo={session.isDemo} />
+            <ProvenanceBadge type="CALCULATED" demo={demoData} />
           </div>
           <Numeric className="text-metric text-ink-1">
             {view.coverage.percent === null ? (
@@ -116,7 +131,7 @@ export default async function CostsPage({
         <Card className="flex flex-col gap-2 p-[14px]">
           <div className="flex items-center justify-between gap-2">
             <span className="text-label text-muted-1">Listings with a cost</span>
-            <ProvenanceBadge type="SELLER_INPUT" demo={session.isDemo} />
+            <ProvenanceBadge type="SELLER_INPUT" demo={demoData} />
           </div>
           {/*
             * "0 of 0 active listings · 0 missing a cost" is three true numbers
@@ -143,7 +158,7 @@ export default async function CostsPage({
         <Card className="flex flex-col gap-2 p-[14px]">
           <div className="flex items-center justify-between gap-2">
             <span className="text-label text-muted-1">Costed by your rule</span>
-            <ProvenanceBadge type="CALCULATED" demo={session.isDemo} />
+            <ProvenanceBadge type="CALCULATED" demo={demoData} />
           </div>
           <Numeric className="text-metric text-ink-1">
             {/*
@@ -166,7 +181,7 @@ export default async function CostsPage({
         </Card>
       </section>
 
-      <CostsForm settings={view.settings} currency={view.currency} demo={session.isDemo} />
+      <CostsForm settings={view.settings} currency={view.currency} demo={demoData} />
 
       <section aria-labelledby="imports-heading" className="mt-5">
         <h2 id="imports-heading" className="pb-2 text-section text-ink-1">
@@ -181,7 +196,7 @@ export default async function CostsPage({
           <Card className="flex flex-col gap-1.5 p-[14px]">
             <div className="flex items-center justify-between gap-2">
               <span className="text-label text-muted-1">POD & shipping</span>
-              <ProvenanceBadge type="SELLER_INPUT" demo={session.isDemo} />
+              <ProvenanceBadge type="SELLER_INPUT" demo={demoData} />
             </div>
             <span className="text-body text-ink-1">
               Last import {formatDate(view.imports.lastImportAt)} ·{' '}
@@ -206,7 +221,7 @@ export default async function CostsPage({
         activeListings={view.coverage.activeListings}
         currency={view.currency}
         query={q ?? ''}
-        demo={session.isDemo}
+        demo={demoData}
       />
 
       <FeeRatesTable
@@ -215,7 +230,7 @@ export default async function CostsPage({
         source={view.feeRulesSource}
         limitations={view.feeLimitations}
         currency={view.currency}
-        demo={session.isDemo}
+        demo={demoData}
       />
     </>
   )

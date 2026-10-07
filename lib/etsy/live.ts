@@ -409,14 +409,28 @@ export function toOrder(payload: EtsyReceiptPayload): EtsyOrder {
     discounts: money(payload.discount_amt),
     refunds: 0,
     /*
-     * Fees come from the payment-account ledger, not the receipt. Zero here
-     * means "not yet loaded from the ledger", and the profit domain treats a
-     * period with no fee data as incomplete rather than as fee-free — a shop
-     * whose fees read $0 would show a wildly optimistic net profit.
+     * ── NULL, BECAUSE THIS ADAPTER HAS NOT READ THE LEDGER ───────────────
+     *
+     * Fees come from Etsy's payment-account ledger, not the receipt. This
+     * returned 0 with a comment saying "zero here means not yet loaded", and
+     * asserting that the profit domain treated a period with no fee data as
+     * incomplete. It did not — the orders slice measured it: every fee line
+     * rendered VERIFIED and net profit came out above the truth by the whole
+     * fee bill.
+     *
+     * The honest value was unavailable until `EtsyOrder` could hold it. Now it
+     * can, so the fact lives where the fact is known: THIS ADAPTER, which is
+     * the thing that either has read the ledger or has not. Nothing
+     * downstream has to infer it from a zero any more, and the day a ledger
+     * read is added here these three become real figures — including a
+     * genuine 0, which is now a different value from this one.
+     *
+     * Of the three states the type can express, this adapter currently
+     * produces exactly one: not-read.
      */
-    etsyFees: 0,
-    paymentProcessing: 0,
-    offsiteAds: 0,
+    etsyFees: null,
+    paymentProcessing: null,
+    offsiteAds: null,
     // 'XX' is the unknown-country code the profit domain already understands;
     // there is no second, human-readable country field to disagree with it.
     countryCode: payload.country_iso ?? 'XX',

@@ -6,6 +6,7 @@ import { ProvenanceBadge } from '@/components/provenance/provenance-badge'
 import { Card } from '@/components/ui/card'
 import { dataSources, NOT_RELEASED } from '@/domain/data-sources/service'
 import { getSession } from '@/lib/auth'
+import { isDemoMode } from '@/lib/etsy'
 
 export const metadata: Metadata = { title: 'Integrations' }
 
@@ -24,6 +25,21 @@ export const metadata: Metadata = { title: 'Integrations' }
 export default async function IntegrationsPage() {
   const session = await getSession()
   if (!session) redirect('/login')
+
+  /*
+   * D11 ASKS THE MODE, NOT THE SHOP ROW.
+ *
+   * The provenance badge's demo override exists so "a screenshot taken in demo
+   * mode can never be mistaken for a real shop's figures" — a statement about
+   * whether the FIGURES are the fictional catalogue. That is `ETSY_MODE`.
+ *
+   * It was `session.isDemo`, which is `shops.is_demo`: whether this shop has
+   * ever connected. On a live deployment every new signup carries it, so every
+   * figure on every screen was stamped Demo while the mock was serving none of
+   * them — and the stamp would then disappear the moment the shop connected,
+   * which is precisely when it would start to matter if it were true.
+   */
+  const demoData = isDemoMode()
 
   // Not shop-scoped: the source list is about the product, not about a shop.
   const sources = dataSources()
@@ -46,7 +62,7 @@ export default async function IntegrationsPage() {
                   {source.status ? ` · ${source.status}` : ''}
                 </span>
               </div>
-              <ProvenanceBadge type={source.class} demo={session.isDemo} />
+              <ProvenanceBadge type={source.class} demo={demoData} />
             </div>
             <p className="max-w-prose text-small leading-relaxed text-ink-2">{source.provides}</p>
             <p className="max-w-prose text-caption leading-relaxed text-muted-1">

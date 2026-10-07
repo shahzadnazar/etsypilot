@@ -23,6 +23,7 @@ import {
   statesMatch,
   type TokenSet,
 } from '@/lib/etsy/oauth'
+import type { EtsyOrder } from '@/lib/etsy/interface'
 import { backoff, EtsyClient, redact } from '@/lib/etsy/http'
 import type { AppError } from '@/lib/errors/types'
 import { MemoryTokenStore, openTokens, sealTokens } from '@/lib/etsy/tokens'
@@ -385,7 +386,25 @@ describe('mapping Etsy’s shapes to ours', () => {
     expect(Object.keys(order)).not.toContain('buyerCountry')
   })
 
-  it('leaves fees at zero because they come from the ledger, not the receipt', () => {
+  it('reports fees as NOT READ, which is not the same as zero', () => {
+    /*
+     * ══════════════════════════════════════════════════════════════════════
+     *   THIS TEST USED TO ASSERT `etsyFees` WAS 0, AND THAT WAS THE DEFECT
+     *   IT WAS PROTECTING.
+     * ══════════════════════════════════════════════════════════════════════
+     *
+     * Its name was "leaves fees at zero because they come from the ledger,
+     * not the receipt" — which states the right reason and then asserts the
+     * wrong value. Etsy's fees are not on the receipt, so this adapter does
+     * not know them; 0 is what it had to say while `EtsyOrder.etsyFees` was
+     * typed `number`, and the orders slice measured what the product then did
+     * with that 0: rendered it "-$0.00 VERIFIED" and reported a net profit
+     * above the truth by the whole fee bill.
+     *
+     * `null` now, on all three. The receipt figures that ARE on the receipt
+     * are still asserted beside it, so this is not a test that stopped
+     * checking anything.
+     */
     const order = toOrder({
       receipt_id: 9,
       created_timestamp: 1_755_000_000,
@@ -394,7 +413,36 @@ describe('mapping Etsy’s shapes to ours', () => {
     })
     expect(order.gross).toBe(42)
     expect(order.items[0]!.unitPrice).toBe(18)
-    expect(order.etsyFees).toBe(0)
+
+    expect(order.etsyFees, 'a fee this adapter has not read').toBeNull()
+    expect(order.paymentProcessing).toBeNull()
+    expect(order.offsiteAds).toBeNull()
+  })
+
+  it('can express a genuine zero as well as not-read, now that the type allows both', () => {
+    /*
+     * The expressiveness check, and the reason the interface change was worth
+     * making rather than working around.
+     *
+     * This adapter currently produces exactly ONE of the three states —
+     * not-read — because nothing here reads the payment-account ledger. The
+     * day that is added, a fee of 0 reported by the ledger has to be
+     * distinguishable from this, and it is: the two values are not equal, and
+     * `Object.is` separates them even from negative zero.
+     *
+     * Asserted over the TYPE's three states rather than over a ledger reader
+     * that does not exist yet, so the guarantee is in place before the code
+     * that needs it.
+     */
+    const asRead = (fee: number | null): EtsyOrder['etsyFees'] => fee
+
+    expect(asRead(42.17)).toBe(42.17)
+    expect(asRead(0)).toBe(0)
+    expect(asRead(null)).toBeNull()
+
+    // The distinction the old `number` type could not carry.
+    expect(asRead(0)).not.toBe(asRead(null))
+    expect(Object.is(asRead(0), asRead(null))).toBe(false)
   })
 })
 

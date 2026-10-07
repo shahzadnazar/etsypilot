@@ -8,6 +8,7 @@ import { ProvenanceBadge } from '@/components/provenance/provenance-badge'
 import { getListingsView, EXPIRING_WITHIN_DAYS } from '@/domain/listings/service'
 import { getSession } from '@/lib/auth'
 import { shopContext } from '@/lib/permissions'
+import { isDemoMode } from '@/lib/etsy'
 
 export const metadata: Metadata = { title: 'Listings' }
 
@@ -34,6 +35,20 @@ export default async function ListingsPage({
 
   const query = await searchParams
   const ctx = shopContext(session, session.shopId)
+  /*
+   * D11 ASKS THE MODE, NOT THE SHOP ROW.
+ *
+   * The provenance badge's demo override exists so "a screenshot taken in demo
+   * mode can never be mistaken for a real shop's figures" — a statement about
+   * whether the FIGURES are the fictional catalogue. That is `ETSY_MODE`.
+ *
+   * It was `session.isDemo`, which is `shops.is_demo`: whether this shop has
+   * ever connected. On a live deployment every new signup carries it, so every
+   * figure on every screen was stamped Demo while the mock was serving none of
+   * them — and the stamp would then disappear the moment the shop connected,
+   * which is precisely when it would start to matter if it were true.
+   */
+  const demoData = isDemoMode()
   const view = await getListingsView(ctx, query)
 
   /*
@@ -100,14 +115,14 @@ export default async function ListingsPage({
       {view.total === 0 ? null : (
       <div className="mt-4 flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <ProvenanceBadge type="VERIFIED" demo={session.isDemo} />
+          <ProvenanceBadge type="VERIFIED" demo={demoData} />
           <span className="text-caption text-muted-1">
             Listing fields — title, price, quantity, section, renewal — are read from your connected
             shop.
           </span>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <ProvenanceBadge type="CALCULATED" demo={session.isDemo} />
+          <ProvenanceBadge type="CALCULATED" demo={demoData} />
           <span className="max-w-prose text-caption leading-relaxed text-muted-1">
             Margin is your price less the recorded fee rates and the cost you entered.{' '}
             <span className="tnum">{view.withoutCost.toLocaleString('en-US')}</span> listings have
@@ -123,7 +138,7 @@ export default async function ListingsPage({
           </span>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <ProvenanceBadge type="UNAVAILABLE" demo={session.isDemo} />
+          <ProvenanceBadge type="UNAVAILABLE" demo={demoData} />
           <span className="text-caption text-muted-1">
             Views are not available through Etsy’s public API, so there is no views column.
           </span>
