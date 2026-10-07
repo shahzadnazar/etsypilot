@@ -180,67 +180,14 @@ describe('no seller figure originates from the demo fixture', () => {
   })
 
   /*
-   * The Action Center's four authored actions.
+   * The Action Center's own containment guard lives with the Action Center.
    *
-   * ACT-0001 told a live seller "4 listings are selling below cost ... Every
-   * sale of these four loses money" — CRITICAL, provenance CALCULATED, source
-   * "your receipts and cost setup" — about listings nothing had examined.
-   * ACT-0002 counted the fictional catalogue; both ACT-0002 and ACT-0003 name
-   * "Salman R.", a person in the demo dataset.
-   *
-   * They are demo furniture and stay exactly as they are IN DEMO MODE. This
-   * asserts the gate exists, because the one that was there before was the
-   * sync state, and a live shop that had synced passed straight through it.
+   * It started here, as a one-line check that `domain/action-center/service.ts`
+   * mentioned `isDemoMode()`. That guard went green the moment the authored
+   * actions moved into their own module and said nothing about the four other
+   * fixtures reaching that screen through Shop Pulse. The real sweep is in
+   * tests/unit/action-center.test.ts, over both directories and every
+   * figure-bearing symbol.
    */
-  /*
-   * ── THE SAVE GATE ASKS THE MODE, NOT WHETHER THE SHOP HAS CONNECTED ───
-   *
-   * The route's first version called `assertCanWrite(ctx)`, which refuses when
-   * `ctx.readOnly` is set — and that is `shops.is_demo`, "has this shop ever
-   * connected to Etsy". On a live deployment every new signup carries it, so
-   * the sellers most in need of entering their costs were refused. Caught in a
-   * browser: every shop in the database read `is_demo = t` and the save came
-   * back a refusal.
-   *
-   * What must be refused is a save in DEMO MODE, because domain/costs/load.ts
-   * serves the fixture there and a written rule could not be read back — the
-   * silent loss this slice removed, re-created in a new place.
-   */
-  it('and the save gate is the mode, not the shop\u2019s connection status', () => {
-    const route = code('app/api/settings/costs/route.ts')
-    expect(route, 'the costs route does not check the mode').toMatch(/isDemoMode\(\)/)
-    expect(
-      route,
-      'the costs route refuses a shop that has merely not connected yet',
-    ).not.toMatch(/assertCanWrite/)
-  })
 
-  it('and the authored actions are gated on the mode, not on the sync state', () => {
-    const service = code('domain/action-center/service.ts')
-    expect(service, 'the authored actions are not gated on the mode').toMatch(
-      /isDemoMode\(\)\s*\n?\s*\?/,
-    )
-    /*
-     * And each one is called INSIDE that gate and nowhere else. Counting
-     * occurrences in the whole file would pass on a call that had been moved
-     * back out, so the gated block is sliced out and the two counts compared.
-     */
-    const start = service.indexOf('const authored = isDemoMode()')
-    const end = service.indexOf('const actions =', start)
-    expect(start, 'the gated block is not where this guard looks').toBeGreaterThan(-1)
-    expect(end).toBeGreaterThan(start)
-    const gated = service.slice(start, end)
-
-    for (const call of [
-      'belowCost(ctx)',
-      'missingCosts(ctx,',
-      'renewalsFixed(ctx)',
-      'seasonalWindow(ctx)',
-    ]) {
-      const inFile = service.split(call).length - 1
-      const inGate = gated.split(call).length - 1
-      expect(inGate, `${call} is not called inside the demo-only list`).toBe(1)
-      expect(inFile, `${call} is also called outside the demo-only list`).toBe(1)
-    }
-  })
 })

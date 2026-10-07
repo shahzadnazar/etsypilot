@@ -13,17 +13,22 @@ import { shopHeader } from '@/domain/sync/source'
 import {
   BASELINE_END,
   BASELINE_START,
-  DEMO_BASELINE,
-  NARRATIVE,
   PERIOD_DAYS,
   PERIOD_END,
   PERIOD_START,
-  buildDemoListings,
-  narrativeGroups,
 } from '@/lib/etsy/demo-dataset'
-import { DEMO_EVENTS } from '@/lib/etsy/demo-events'
+import { readEvents } from '@/lib/repositories/events'
+import { loadListings } from '@/domain/listings/load'
+import type { EtsyListing } from '@/lib/etsy/interface'
+import {
+  demoAlternatives,
+  demoBaselineCoverage,
+  demoChangeSpecs,
+  demoEvents,
+  type BaselineCoverage,
+} from './demo'
 import type { StoredOrder } from '@/domain/orders/types'
-import type { DomainEvent, Diagnosis } from '@/lib/events/types'
+import { EVENT_LABEL, type DomainEvent, type Diagnosis } from '@/lib/events/types'
 import type { ShopContext } from '@/lib/permissions'
 import { formatDate } from '@/lib/utils/format'
 import { computeBaseline } from './baseline'
@@ -35,7 +40,14 @@ import {
   diagnose,
   hasEnoughData,
 } from './correlation'
-import type { Baseline, DetectedChange, Evidence, ShopPulseView, TestedAlternative } from './types'
+import type {
+  Baseline,
+  ChangeSpec,
+  DetectedChange,
+  Evidence,
+  ShopPulseView,
+  TestedAlternative,
+} from './types'
 
 /**
  * A baseline with no observations, for a shop whose orders have not been read.
@@ -54,7 +66,8 @@ function emptyBaseline(metric: 'orders' | 'revenue'): Baseline {
     actualTotal: 0,
     deviationPercent: 0,
     coveragePercent: 0,
-    listingsTooNew: 0,
+    listingsTooNew: null,
+    coverageNote: 'No orders have been read for this shop, so nothing can be baselined yet.',
   }
 }
 
@@ -78,6 +91,7 @@ export async function getShopPulse(ctx: ShopContext): Promise<ShopPulseView> {
    * period. The mock serves the full modelled history now, and the loader
    * serves whichever source this deployment has.
    */
+  const catalogue = await loadListings(ctx)
   const period = await loadOrders(ctx, { since: PERIOD_START, until: PERIOD_END })
   const periodOrders = period.orders
   const { orders: priorOrders } = await loadOrders(ctx, {
@@ -116,14 +130,30 @@ export async function getShopPulse(ctx: ShopContext): Promise<ShopPulseView> {
     periodStart: PERIOD_START,
     periodDays: PERIOD_DAYS,
     timezone: shop.timezone,
-    coveragePercent: DEMO_BASELINE.coveragePercent,
-    listingsTooNew: DEMO_BASELINE.listingsTooNew,
+    ...baselineCoverage(priorOrders, catalogue.listings),
   }
 
   const orders = computeBaseline({ ...baselineArgs, metric: 'orders' })
   const revenue = computeBaseline({ ...baselineArgs, metric: 'revenue' })
 
-  const recorded = recordedChanges(periodOrders)
+  /*
+   * ── THIS SHOP'S OWN CHANGE LOG, OR THE FIXTURE'S, NEVER BOTH ───────────
+   *
+   * `recordedChanges` used to filter DEMO_EVENTS directly, on every shop in
+   * every mode, and build its specs from NARRATIVE and buildDemoListings().
+   * Those rows become actions. Measured on a live account with two listings:
+   * four CRITICAL cards about a bulk job, a section and twelve listings that
+   * shop has never had.
+   *
+   * Demo mode keeps the authored narrative, byte for byte. Every other
+   * deployment reads `events` for this shop — empty today, because nothing
+   * writes it yet, and empty is the true answer about a shop with no recorded
+   * history.
+   */
+  const events =
+    demoEvents() ?? (await readEvents(ctx.shopId, { since: BASELINE_START, until: PERIOD_END }))
+
+  const recorded = recordedChanges(periodOrders, events)
 
   /*
    * The UNKNOWN sweep runs on the RESIDUAL - orders on listings that no
@@ -148,7 +178,13 @@ export async function getShopPulse(ctx: ShopContext): Promise<ShopPulseView> {
 
   const changes = [
     ...recorded,
-    ...unexplainedDeviations(residualBaseline.series, periodOrders.filter(residual), explained),
+    ...unexplainedDeviations(
+      residualBaseline.series,
+      periodOrders.filter(residual),
+      explained,
+      events,
+      baselineCoverage(priorOrders, catalogue.listings),
+    ),
   ].sort((a, b) => rank(a) - rank(b) || a.occurredAt.localeCompare(b.occurredAt))
 
   return {
@@ -199,87 +235,139 @@ function rank(c: DetectedChange): number {
   return DIAGNOSIS_ORDER[c.diagnosis] * 1000 - Math.abs(c.ordersAfterPercent ?? 0)
 }
 
+/* ----------------------------------------------------- baseline coverage */
+
+/**
+ * How much of this shop can be baselined at all, measured.
+ *
+ * ── A BASELINE NEEDS PRIOR ORDERS, AND THAT IS ALL WE CAN CHECK ───────────
+ *
+ * A listing is baselineable when this shop has orders for it in the prior
+ * window — without them there is no rate to compare against, by construction.
+ * So coverage is the share of ACTIVE listings that appear in those orders, and
+ * it is a measurement rather than DEMO_BASELINE's 88.
+ *
+ * `listingsTooNew` stays NULL outside demo mode. The fixture knows which of
+ * its listings are new because it created them; `listings` has no creation
+ * date, so a real listing with no prior orders might be four days old or four
+ * years old and unsold. Those want opposite advice, and the honest answer is
+ * that we cannot tell which — said in `coverageNote` rather than guessed.
+ */
+function baselineCoverage(
+  priorOrders: readonly StoredOrder[],
+  listings: EtsyListing[],
+): BaselineCoverage {
+  const demo = demoBaselineCoverage()
+  if (demo) return demo
+
+  const active = listings.filter((l) => l.state === 'ACTIVE')
+  const sold = new Set(priorOrders.flatMap((o) => o.items.map((i) => i.etsyListingId)))
+  const baselineable = active.filter((l) => sold.has(l.etsyListingId)).length
+  const without = active.length - baselineable
+
+  if (active.length === 0) {
+    return {
+      coveragePercent: 0,
+      listingsTooNew: null,
+      coverageNote: 'No active listings, so there is nothing to baseline.',
+    }
+  }
+
+  return {
+    coveragePercent: Math.round((baselineable / active.length) * 100),
+    listingsTooNew: null,
+    coverageNote:
+      without === 0
+        ? `All ${active.length} active listings have orders in the baseline window.`
+        : `${without} of ${active.length} active listings have no orders in the baseline window, so they cannot be baselined. EtsyPilot cannot tell which of those are new and which have simply not sold.`,
+  }
+}
+
 /* ------------------------------------------------------ recorded changes */
 
-interface ChangeSpec {
-  id: string
-  events: DomainEvent[]
-  title: string
-  scope: string
-  listingIds: string[]
-  detailSuffix: string
-  destinations: { label: string; href: string }[]
+/**
+ * The changes this shop actually recorded.
+ *
+ * Two producers, one shape. In demo mode the specs are the authored narrative
+ * (titles like "Price raised on 3 listings · Linen table runner +2" are
+ * written copy about a designed shop, and they belong to the fixture). Every
+ * other deployment derives them from the shop's own `events` rows.
+ */
+function recordedChanges(
+  orders: readonly StoredOrder[],
+  events: readonly DomainEvent[],
+): DetectedChange[] {
+  const specs = demoChangeSpecs() ?? specsFromEvents(events)
+  return specs.map((spec) => buildChange(spec, specs, orders))
 }
 
-function recordedChanges(orders: readonly StoredOrder[]): DetectedChange[] {
-  const priceEvents = DEMO_EVENTS.filter((e) => e.type === 'PRICE_CHANGED')
-  const tagEvent = DEMO_EVENTS.find((e) => e.operationId === 'BE-2291')
-  const stockout = DEMO_EVENTS.find((e) => e.type === 'STOCKOUT')
-  const deactivation = DEMO_EVENTS.find((e) => e.type === 'LISTING_DEACTIVATED')
+/**
+ * One spec per recorded operation, or per type-and-day for loose events.
+ *
+ * ── DERIVED, WHICH MEANS IT CANNOT SAY MORE THAN THE ROWS DO ──────────────
+ *
+ * The authored specs name a section ("Wall art section"), a job ("bulk job
+ * BE-2291") and a human-readable summary ("+18.4% average"). A real event row
+ * carries a type, a timestamp, a listing id, an operation id and a
+ * before/after pair — so this says exactly that much and no more. Where the
+ * rows cannot support a phrase, the phrase is absent rather than filled in:
+ * a scope of "1 listing" is a count, not a section name we do not have.
+ *
+ * Grouping is by `operationId` where there is one — a bulk edit is one change
+ * the seller made, not forty — and otherwise by type and calendar day, which
+ * is how a seller remembers "the day I reworked my tags".
+ */
+export function specsFromEvents(events: readonly DomainEvent[]): ChangeSpec[] {
+  const groups = new Map<string, DomainEvent[]>()
+  for (const event of events) {
+    if (!MUTATING_EVENTS.has(event.type)) continue
+    const key = event.operationId ?? `${event.type}:${event.timestamp.slice(0, 10)}`
+    const bucket = groups.get(key)
+    if (bucket) bucket.push(event)
+    else groups.set(key, [event])
+  }
 
   const specs: ChangeSpec[] = []
+  for (const [key, group] of groups) {
+    const first = group[0]
+    if (!first) continue
+    /*
+     * De-duplicated, because a bulk edit records one row per listing and the
+     * same listing can appear twice in one operation. The count in the title
+     * is a count of LISTINGS, which is what a seller would check it against.
+     */
+    const listingIds = [...new Set(group.flatMap((e) => e.listingIds ?? (e.listingId ? [e.listingId] : [])))]
+    const n = listingIds.length
+    const subject = n === 0 ? 'your shop' : `${n} listing${n === 1 ? '' : 's'}`
 
-  if (priceEvents.length > 0) {
     specs.push({
-      id: 'CH-PRICE',
-      events: priceEvents,
-      title: `Price raised on ${priceEvents.length} listings`,
-      scope: 'Linen table runner +2',
-      listingIds: NARRATIVE.priceGroup.slice(),
-      detailSuffix: '+18.4% average',
-      destinations: [
-        { label: 'Review these 3 listings', href: '/listings?ids=price-group' },
-        { label: 'Open in Bulk Editor', href: '/listings/bulk-editor' },
-        { label: 'See profit impact', href: '/profit' },
-      ],
+      id: `CH-${key}`,
+      events: group,
+      title: `${EVENT_LABEL[first.type]} on ${subject}`,
+      /*
+       * A count, not a section. The rows know which listings were touched and
+       * nothing about what they have in common, and "Wall art section" on a
+       * shop whose rows say nothing of the kind is the defect this replaced.
+       */
+      scope: n === 0 ? 'Shop-wide' : subject,
+      listingIds,
+      detailSuffix: first.operationId ? `operation ${first.operationId}` : first.source.toLowerCase(),
+      destinations: [{ label: 'Review recent changes', href: '/listings/change-history' }],
     })
   }
 
-  if (tagEvent) {
-    specs.push({
-      id: 'CH-TAGS',
-      events: [tagEvent],
-      title: 'Tags replaced on 12 listings',
-      scope: 'Wall art section',
-      // A different set of listings from the price group - which is exactly why
-      // this comes back RULED_OUT rather than CORRELATED.
-      listingIds: wallArtListingIds(),
-      detailSuffix: 'bulk job BE-2291',
-      destinations: [{ label: 'View the bulk job', href: '/listings/change-history' }],
-    })
-  }
-
-  if (stockout) {
-    specs.push({
-      id: 'CH-STOCK',
-      events: [stockout],
-      title: 'Out of stock for 6 days',
-      scope: 'Ceramic mug set',
-      listingIds: [NARRATIVE.stockoutListing],
-      detailSuffix: 'restocked Aug 10',
-      destinations: [
-        { label: 'Review this listing', href: '/listings?ids=stockout' },
-        { label: 'See profit impact', href: '/profit' },
-      ],
-    })
-  }
-
-  if (deactivation) {
-    specs.push({
-      id: 'CH-DEACT',
-      events: [deactivation],
-      title: '4 listings deactivated',
-      scope: 'Seasonal section',
-      listingIds: seasonalListingIds(),
-      detailSuffix: 'manual',
-      destinations: [{ label: 'Review the section', href: '/listings?section=Seasonal' }],
-    })
-  }
-
-  return specs.map((spec) => buildChange(spec, orders))
+  return specs.sort((a, b) => {
+    const at = a.events[0]?.timestamp ?? ''
+    const bt = b.events[0]?.timestamp ?? ''
+    return at.localeCompare(bt)
+  })
 }
 
-function buildChange(spec: ChangeSpec, orders: readonly StoredOrder[]): DetectedChange {
+function buildChange(
+  spec: ChangeSpec,
+  siblings: readonly ChangeSpec[],
+  orders: readonly StoredOrder[],
+): DetectedChange {
   const first = spec.events[0]
   if (!first) throw new Error('change spec with no events')
 
@@ -318,7 +406,7 @@ function buildChange(spec: ChangeSpec, orders: readonly StoredOrder[]): Detected
 
   const evidence: Evidence = {
     observed,
-    alsoTested: alternativesFor(spec, orders, first.timestamp),
+    alsoTested: alternativesFor(spec, siblings, orders, first.timestamp),
     confidence,
     confidenceNote: `${comparison.daysAfter} days after, ${spec.listingIds.length} listing${
       spec.listingIds.length === 1 ? '' : 's'
@@ -357,32 +445,34 @@ function buildChange(spec: ChangeSpec, orders: readonly StoredOrder[]): Detected
  */
 function alternativesFor(
   spec: ChangeSpec,
+  siblings: readonly ChangeSpec[],
   orders: readonly StoredOrder[],
   at: string,
 ): TestedAlternative[] {
-  const out: TestedAlternative[] = []
-
-  if (spec.id !== 'CH-TAGS') {
-    const overlap = wallArtListingIds().some((id) => spec.listingIds.includes(id))
-    out.push({
-      label: 'Tag replacement on Jul 28',
-      verdict: overlap ? 'UNKNOWN' : 'RULED_OUT',
-      note: overlap
-        ? 'Some of these listings were in that job, so the two changes cannot be separated.'
-        : 'These listings were not in that job.',
-    })
-  }
-
-  if (spec.id !== 'CH-STOCK') {
-    const stockAffected = spec.listingIds.includes(NARRATIVE.stockoutListing)
-    out.push({
-      label: 'Stock',
-      verdict: stockAffected ? 'UNKNOWN' : 'RULED_OUT',
-      note: stockAffected
-        ? 'One of these listings was out of stock during the window.'
-        : 'All stayed in stock throughout the window.',
-    })
-  }
+  /*
+   * ── A RULED_OUT VERDICT IS A CLAIM THAT A CHECK WAS MADE ────────────────
+   *
+   * These two were hardwired to the fixture: "Tag replacement on Jul 28" and
+   * the ceramic-mug stockout. On a live shop every change was therefore
+   * reported as RULED_OUT against a bulk job that shop never ran — the engine
+   * saying "we checked and it was not this" about an event that does not
+   * exist. Derived from the shop's OTHER recorded changes now, which is the
+   * same question asked of real rows.
+   */
+  const out: TestedAlternative[] =
+    demoAlternatives(spec) ??
+    siblings
+      .filter((other) => other.id !== spec.id)
+      .map((other) => {
+        const overlap = other.listingIds.some((id) => spec.listingIds.includes(id))
+        return {
+          label: other.title,
+          verdict: overlap ? 'UNKNOWN' : 'RULED_OUT',
+          note: overlap
+            ? 'Some of these listings were in that change too, so the two cannot be separated.'
+            : 'None of these listings were in that change.',
+        } satisfies TestedAlternative
+      })
 
   out.push({
     label: 'Seasonality',
@@ -427,14 +517,21 @@ function unexplainedDeviations(
   series: ShopPulseView['orders']['series'],
   orders: readonly StoredOrder[],
   explainedIds: Set<string>,
+  events: readonly DomainEvent[],
+  coverage: BaselineCoverage,
 ): DetectedChange[] {
   /*
    * Only a change to the residual population can explain residual movement.
    * An event on a listing another change already accounts for is not an
    * explanation here - it has been counted once already.
    */
+  /*
+   * From this shop's events, not the fixture's. A day the DEMO shop changed
+   * something was being used to decide that a REAL shop's quiet day was
+   * explained — suppressing the one finding this sweep exists to produce.
+   */
   const eventDays = new Set(
-    DEMO_EVENTS.filter(
+    events.filter(
       (e) =>
         MUTATING_EVENTS.has(e.type) &&
         !(e.listingId !== null && explainedIds.has(e.listingId)),
@@ -487,8 +584,8 @@ function unexplainedDeviations(
         ],
         confidence: 'LOW',
         confidenceNote: `${run.length} days, no recorded change`,
-        coveragePercent: DEMO_BASELINE.coveragePercent,
-        coverageNote: `${DEMO_BASELINE.listingsTooNew} listings are too new to baseline`,
+        coveragePercent: coverage.coveragePercent,
+        coverageNote: coverage.coverageNote,
         limitations: [
           ORDERS_ONLY_LIMITATION,
           'EtsyPilot cannot see Etsy’s ranking algorithm and does not model it. We are not guessing at a cause.',
@@ -514,22 +611,6 @@ function unexplainedDeviations(
         ],
       }
     })
-}
-
-/* ------------------------------------------------------------- listing sets */
-
-/*
- * Listing sets come from the shared resolver, never from a local filter.
- * Overlapping or drifted sets would make the engine inherit one change's
- * movement while measuring another - the mistake that turns a correlation
- * engine into a rumour mill.
- */
-function wallArtListingIds(): string[] {
-  return narrativeGroups(buildDemoListings()).tagGroup.map((l) => l.etsyListingId)
-}
-
-function seasonalListingIds(): string[] {
-  return narrativeGroups(buildDemoListings()).seasonal.map((l) => l.etsyListingId)
 }
 
 function signed(percent: number): string {

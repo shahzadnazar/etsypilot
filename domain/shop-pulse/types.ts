@@ -11,7 +11,7 @@
  */
 
 import type { Confidence } from '@/lib/provenance/types'
-import type { Diagnosis, EventType } from '@/lib/events/types'
+import type { Diagnosis, DomainEvent, EventType } from '@/lib/events/types'
 import type { ShopDataSource } from '@/domain/sync/source'
 
 /** One day of the baseline-vs-actual series. */
@@ -37,7 +37,23 @@ export interface Baseline {
   deviationPercent: number
   /** Share of listings with enough history to baseline, 0-100. */
   coveragePercent: number
-  listingsTooNew: number
+  /**
+   * How many listings are too NEW to baseline, or null when we cannot tell.
+   *
+   * ── "TOO NEW" IS NOT THE SAME AS "HAS NOT SOLD" ───────────────────────
+   *
+   * This was DEMO_BASELINE.listingsTooNew — the fictional shop's count — on
+   * every shop, rendered as "38 listings too new to baseline" under a live
+   * seller's own coverage figure. The demo dataset knows which of its listings
+   * are new because it made them. `listings` has no creation date, so on a
+   * real shop a listing with no prior orders might be a week old or three
+   * years old and unsold, and those want opposite advice.
+   *
+   * Null says that, and `coverageNote` says what WAS measured instead.
+   */
+  listingsTooNew: number | null
+  /** What the coverage figure means, in words. Rendered beside it. */
+  coverageNote: string
 }
 
 /** One alternative the engine tested, and what it found. */
@@ -98,4 +114,23 @@ export interface ShopPulseView {
   revenue: Baseline
   changes: DetectedChange[]
   counts: Record<Diagnosis, number>
+}
+
+/**
+ * One group of recorded events, and how to describe it.
+ *
+ * Hoisted out of service.ts when the specs stopped being a single authored
+ * list. There are two producers now and they must agree on the shape:
+ * `demoChangeSpecs()` in ./demo.ts writes the demo narrative by hand, and
+ * `specsFromEvents()` in ./service.ts derives one per operation or per
+ * type-and-day from a shop's own `events` rows.
+ */
+export interface ChangeSpec {
+  id: string
+  events: DomainEvent[]
+  title: string
+  scope: string
+  listingIds: string[]
+  detailSuffix: string
+  destinations: { label: string; href: string }[]
 }

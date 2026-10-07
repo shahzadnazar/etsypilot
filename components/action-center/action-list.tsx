@@ -88,8 +88,18 @@ export function ActionList({
         <EmptyState {...EMPTY_COPY[filter]} />
       ) : (
         <div role="tabpanel" className="flex flex-col gap-2.5">
-          {visible.map((action) => (
-            <ActionCard key={action.id} action={action} demo={demo} />
+          {/*
+            * ── THE CHIP IS A RANK IN THIS LIST, NOT AN INTERNAL FIELD ─────
+            *
+            * It rendered `action.priority` straight through. That field orders
+            * the queue and its values are whatever the generators chose —
+            * 0,1,2,3 for Shop Pulse findings and 10..13 for the rest. With the
+            * four authored cards gone, a live shop with one real action showed
+            * a single card chipped "11", which reads as eleventh of a list of
+            * one. The rank a reader can check is the position on the screen.
+            */}
+          {visible.map((action, index) => (
+            <ActionCard key={action.id} action={action} rank={index + 1} demo={demo} />
           ))}
         </div>
       )}
@@ -104,10 +114,20 @@ export function ActionList({
 }
 
 const EMPTY_COPY: Record<ActionFilter, { title: string; description: string }> = {
+  /*
+   * ── AN EMPTY QUEUE IS A CLAIM, AND THIS SENTENCE IS THE CLAIM ───────────
+   *
+   * "Nothing has crossed your baseline" implies a baseline that exists and was
+   * checked. A shop without enough order history to baseline anything has not
+   * been checked — and Shop Pulse keeps findings it could not measure, which
+   * the Action Center deliberately does not turn into work. So the last clause
+   * names what was actually established and points at the screen holding the
+   * rest, rather than reporting an all-clear on a test that did not run.
+   */
   OPEN: {
     title: 'Nothing needs your attention',
     description:
-      'No listing is selling below cost, your cost coverage is complete, and nothing has crossed your baseline. New actions appear here as EtsyPilot observes them.',
+      'No listing with a confirmed cost is selling below it, and every active listing has a cost. Anything EtsyPilot observed but could not measure is on Shop Pulse rather than here — this queue is work, not everything that happened.',
   },
   DONE: {
     title: 'Nothing completed yet',

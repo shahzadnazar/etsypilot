@@ -48,6 +48,26 @@ export interface RuleContext {
   }
 }
 
+/**
+ * What one sale of this listing loses, or null if it does not lose anything.
+ *
+ * ── ONE FORMULA, BECAUSE TWO SCREENS COUNT THE SAME THING ─────────────────
+ *
+ * The BELOW_COST rule below had this arithmetic inline, and the Action Center
+ * needed it too — to say what the listings it flags actually cost the seller.
+ * A second copy is how "4 listings are selling below cost" on one screen and a
+ * different four on another start, which is the DEMO_COUNTS failure in a new
+ * place. The rule calls this; so does the Action Center.
+ *
+ * Null rather than a non-positive number: "this listing does not sell below
+ * cost" is not a loss of zero, and a caller summing losses must not add it.
+ */
+export function belowCostShortfall(price: number, cost: number): number | null {
+  const fees = price * 0.095 + 0.2
+  const margin = price - fees - cost
+  return margin < 0 ? Math.round(-margin * 100) / 100 : null
+}
+
 export const DEFAULT_THRESHOLDS: RuleContext['thresholds'] = {
   minTags: 13,
   maxTitleLength: 140,
@@ -82,8 +102,7 @@ export const AUDIT_RULES: AuditRule[] = [
     test: (l, ctx) => {
       const cost = ctx.costs.get(l.etsyListingId)
       if (cost === undefined) return false // Unknown cost is not a finding. It is a gap.
-      const fees = l.price * 0.095 + 0.2
-      return l.price - fees - cost < 0
+      return belowCostShortfall(l.price, cost) !== null
     },
   },
   {

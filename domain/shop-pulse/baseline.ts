@@ -29,7 +29,8 @@ interface BaselineArgs {
   /** Retained from the shop record, but display and bucketing are UTC (D24). */
   timezone: string
   coveragePercent: number
-  listingsTooNew: number
+  listingsTooNew: number | null
+  coverageNote: string
 }
 
 export function computeBaseline(args: BaselineArgs): Baseline {
@@ -85,6 +86,7 @@ export function computeBaseline(args: BaselineArgs): Baseline {
       expectedTotal === 0 ? 0 : round1(((actualTotal - expectedTotal) / expectedTotal) * 100),
     coveragePercent: args.coveragePercent,
     listingsTooNew: args.listingsTooNew,
+    coverageNote: args.coverageNote,
   }
 }
 

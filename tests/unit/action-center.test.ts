@@ -1,9 +1,21 @@
 import { describe, expect, it } from 'vitest'
+import { readdirSync, statSync } from 'node:fs'
+import { posixJoin } from '../support/paths'
+import { code } from '../support/shop-scoping'
 import { getActions } from '@/domain/action-center/service'
 import { compareActions, matchesFilter, type Action } from '@/domain/action-center/types'
 import { DEMO_SHOP_ID } from '@/lib/etsy/demo-dataset'
 
 const ctx = { shopId: DEMO_SHOP_ID, actorId: 'demo-user-salman', readOnly: true }
+
+function walk(dir: string, out: string[] = []): string[] {
+  for (const entry of readdirSync(dir)) {
+    const full = posixJoin(dir, entry)
+    if (statSync(full).isDirectory()) walk(full, out)
+    else if (full.endsWith('.ts') || full.endsWith('.tsx')) out.push(full)
+  }
+  return out
+}
 
 describe('action center', () => {
   it('every action has a destination — no dead ends', async () => {
@@ -125,5 +137,102 @@ describe('the unexplained finding is never truncated away', () => {
     const { actions } = await getActions(ctx)
     const pulseActions = actions.filter((a) => a.id.startsWith('ACT-PULSE-'))
     expect(pulseActions[0]?.title).toContain('no recorded change')
+  })
+})
+
+/* ══════════════════════════════════════════════════════════════════════════
+ *
+ *   NO ACTION MAY BE BUILT FROM THE DEMO FIXTURE.
+ *
+ * ══════════════════════════════════════════════════════════════════════════
+ *
+ * Measured in a browser before this existed, on a live account with two
+ * listings and two orders: FOUR CRITICAL cards, every one reading "Orders fell
+ * below your baseline with no recorded change", scoped to "3 listings", "12
+ * listings", "1 listing" and "4 listings", with destinations "View the bulk
+ * job" and "Review the section". The sidebar badge said 4. The banner directly
+ * above them said "This shop is not connected to Etsy yet, so there is nothing
+ * to show on these screens yet either."
+ *
+ * None of it came from the four authored actions — those were already gated.
+ * It came from domain/shop-pulse/service.ts filtering DEMO_EVENTS and building
+ * its change specs from NARRATIVE and buildDemoListings(). Shop Pulse findings
+ * ARE actions; they enter the same queue. So the guard covers both
+ * directories, because a guard on the Action Center alone would have been
+ * green through all of that.
+ */
+describe('no action is built from the demo fixture', () => {
+  /*
+   * The figure-bearing symbols. NOT the module.
+   *
+   * PERIOD_START, PERIOD_END, PERIOD_DAYS, BASELINE_START and BASELINE_END
+   * live in the demo dataset too, and they are the product's reporting window
+   * rather than facts about Willow & Fern — every domain service imports them.
+   * Banning the module would have forced them somewhere else to get the guard
+   * green, which is how a guard teaches people to route around it.
+   */
+  const FIXTURES = [
+    'DEMO_EVENTS',
+    'DEMO_COUNTS',
+    'DEMO_COST_INPUTS',
+    'DEMO_TOTALS',
+    'DEMO_BASELINE',
+    'DEMO_ACTOR_ID',
+    'DEMO_NOW',
+    'NARRATIVE',
+    'buildDemoListings',
+    'buildDemoOrders',
+    'narrativeGroups',
+    'demoConfirmedCosts',
+    'demoUnmatchedOrderIds',
+    'demoChangeJobs',
+  ]
+
+  /** The two single exits, each of which must check the mode itself. */
+  const ALLOWED = ['domain/action-center/demo.ts', 'domain/shop-pulse/demo.ts']
+
+  const files = walk('domain/action-center').concat(walk('domain/shop-pulse')).sort()
+
+  it('has files for the sweep to check', () => {
+    // A sweep over nothing passes every assertion below perfectly.
+    expect(files.length).toBeGreaterThan(4)
+    for (const allowed of ALLOWED) {
+      expect(files, `${allowed} is missing`).toContain(allowed)
+    }
+  })
+
+  it('mentions no fixture outside the two demo modules', () => {
+    const offenders: string[] = []
+    for (const file of files) {
+      if (ALLOWED.includes(file)) continue
+      const source = code(file)
+      for (const fixture of FIXTURES) {
+        if (new RegExp(`\\b${fixture}\\b`).test(source)) offenders.push(`${file} → ${fixture}`)
+      }
+    }
+    expect(offenders, 'a demo fixture is on a live action path').toEqual([])
+  })
+
+  it('and both demo modules refuse to serve outside demo mode', () => {
+    for (const allowed of ALLOWED) {
+      expect(code(allowed), `${allowed} does not check the mode`).toMatch(/isDemoMode\(\)/)
+    }
+    /*
+     * The positive control: the fixtures ARE still imported somewhere, so the
+     * sweep above is measuring containment rather than deletion.
+     */
+    const served = ALLOWED.filter((f) => FIXTURES.some((x) => new RegExp(`\\b${x}\\b`).test(code(f))))
+    expect(served.sort()).toEqual(ALLOWED.slice().sort())
+  })
+
+  it('and every generator takes its facts as an argument rather than importing them', () => {
+    /*
+     * The structural half. `generators.ts` is where a figure would be invented
+     * next, and the way to stop that is to leave it nothing to import: it
+     * takes a ShopFacts and reads no dataset, no loader and no table.
+     */
+    const generators = code('domain/action-center/generators.ts')
+    expect(generators).not.toMatch(/from '@\/lib\/etsy\/demo/)
+    expect(generators, 'a generator reads the database directly').not.toMatch(/getDb\(/)
   })
 })

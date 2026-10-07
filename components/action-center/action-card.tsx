@@ -34,7 +34,16 @@ const SEVERITY_RULE: Record<ActionSeverity, string> = {
   INFO: 'var(--muted-2)',
 }
 
-export function ActionCard({ action, demo }: { action: Action; demo: boolean }) {
+export function ActionCard({
+  action,
+  rank,
+  demo,
+}: {
+  action: Action
+  /** Position in the list on screen, 1-based. See the note at the call site. */
+  rank: number
+  demo: boolean
+}) {
   const isDismissed = action.status === 'DISMISSED'
   const isCompleted = action.status === 'COMPLETED'
   const severity = SEVERITY_FILL[action.severity]
@@ -74,7 +83,7 @@ export function ActionCard({ action, demo }: { action: Action; demo: boolean }) 
             }
       }
     >
-      <Marker action={action} severity={severity} />
+      <Marker action={action} rank={rank} severity={severity} />
 
       <div className="flex min-w-0 flex-1 flex-col gap-2.5">
         <div className="flex flex-wrap items-center gap-2">
@@ -143,9 +152,11 @@ export function ActionCard({ action, demo }: { action: Action; demo: boolean }) 
 /** Rank number, check, or cross - shape carries the state, not just colour. */
 function Marker({
   action,
+  rank,
   severity,
 }: {
   action: Action
+  rank: number
   severity: { bg: string; border: string; fg: string }
 }) {
   if (action.status === 'COMPLETED') {
@@ -174,9 +185,9 @@ function Marker({
     <span
       className="tnum flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-control border text-[12px] font-semibold"
       style={{ background: severity.bg, borderColor: severity.border, color: severity.fg }}
-      aria-label={`Priority ${action.priority}`}
+      aria-label={`Priority ${rank}`}
     >
-      {action.priority}
+      {rank}
     </span>
   )
 }

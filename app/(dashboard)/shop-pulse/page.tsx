@@ -135,7 +135,15 @@ export default async function ShopPulsePage() {
         <Kpi
           label="Baseline coverage"
           value={`${pulse.orders.coveragePercent}%`}
-          note={`${pulse.orders.listingsTooNew} listings too new to baseline`}
+          /*
+           * The baseline's own note, not a sentence assembled here.
+           *
+           * This read "{listingsTooNew} listings too new to baseline" from
+           * DEMO_BASELINE on every shop. Outside demo mode that count is null
+           * — `listings` has no creation date — and the note says what was
+           * measured instead.
+           */
+          note={pulse.orders.coverageNote}
           type="CALCULATED"
           demo={demoData}
           methodologyKey="shopPulseBaseline"

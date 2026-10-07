@@ -10,23 +10,23 @@
  * into the same queue.
  */
 
-import { computeWaterfall } from '@/domain/profit/waterfall'
-import { isDemoMode } from '@/lib/etsy'
-import { costInputsFrom, loadCosts } from '@/domain/costs/load'
+import { loadCosts } from '@/domain/costs/load'
+import { loadListings } from '@/domain/listings/load'
 import { getShopPulse } from '@/domain/shop-pulse/service'
 import { loadOrders, ordersWereRead } from '@/domain/orders/load'
-import type { StoredOrder } from '@/domain/orders/types'
-import type { ShopDataSource } from '@/domain/sync/source'
-import {
-  DEMO_ACTOR_ID,
-  DEMO_COUNTS,
-  DEMO_NOW,
-  PERIOD_END,
-  PERIOD_START,
-} from '@/lib/etsy/demo-dataset'
+import { reconcile } from '@/domain/profit/reconciliation'
+import { demoUnmatchedReceiptIds } from '@/domain/costs/demo'
+import { costRuleHistory } from '@/lib/repositories/costs'
+import { readAggregateSyncedAt } from '@/lib/repositories/sync-state'
+import { withAccountStore } from '@/lib/repositories/accounts'
+import { shopHeader, type ShopDataSource } from '@/domain/sync/source'
+import { PERIOD_END, PERIOD_START } from '@/lib/etsy/demo-dataset'
 import type { ShopContext } from '@/lib/permissions'
-import { formatCurrency } from '@/lib/utils/format'
 import type { ShopPulseView } from '@/domain/shop-pulse/types'
+import { belowCostAction, missingCostsAction, type ShopFacts } from './generators'
+import { isDemoMode } from '@/lib/etsy'
+import type { StoredOrder } from '@/domain/orders/types'
+import { demoActions, demoActorNow } from './demo'
 import type { Action, ActionFilter } from './types'
 import { compareActions, matchesFilter } from './types'
 
@@ -78,11 +78,20 @@ export async function getActions(ctx: ShopContext): Promise<ActionCenterView> {
   }
 
   /*
-   * The seller's own costs, or nothing. This passed DEMO_COST_INPUTS, so the
-   * coverage figure and the "uncovered value" on the missing-costs action were
-   * both computed from the fictional shop's COGS ratio.
+   * ── EVERY CARD IS BUILT FROM WHAT THIS SHOP ACTUALLY HAS ────────────────
+   *
+   * The catalogue, the confirmed per-listing costs, the default rule and the
+   * measured coverage, gathered once and handed to every generator. One set of
+   * facts, so two cards cannot describe two different shops — which is exactly
+   * what happened when the coverage figure was measured from real orders and
+   * the listing counts beside it were DEMO_COUNTS.
+   *
+   * Null in demo mode, where the authored queue below is served instead and
+   * NOT ONE DATABASE ROW IS READ — asserted with a getDb spy in
+   * tests/integration/action-center.int.ts, the same guard the costs slice
+   * uses.
    */
-  const profit = computeWaterfall(orders, costInputsFrom(await loadCosts(ctx)))
+  const facts = await shopFacts(ctx, orders)
 
   // Shop Pulse is a generator like any other: its findings enter the same
   // queue rather than living in a parallel list the seller has to check.
@@ -90,49 +99,35 @@ export async function getActions(ctx: ShopContext): Promise<ActionCenterView> {
 
   /*
    * ══════════════════════════════════════════════════════════════════════════
-   *   THE FOUR AUTHORED ACTIONS ARE DEMO FURNITURE, AND THEY WERE BEING
-   *   SHOWN TO REAL SHOPS.
+   *   THE FOUR AUTHORED ACTIONS WERE DEMO FURNITURE SHOWN TO REAL SHOPS, AND
+   *   TWO OF THEM ARE NOW REAL GENERATORS.
    * ══════════════════════════════════════════════════════════════════════════
    *
-   * Found by the costs survey rather than by the task that prompted it. The
-   * comment in the NOT_SYNCED branch above already said these generators are
-   * "built from the demo dataset's own constants" and that running them on an
-   * unread catalogue "would be inventing findings" — but the guard was the
-   * sync state, not the mode. A live shop that HAD synced got all four:
+   * `belowCostAction` and `missingCostsAction` run on every shop and compute
+   * every figure they print. The other two do not, and the reason is the
+   * data, not the effort:
    *
-   *   ACT-0001  "4 listings are selling below cost ... Every sale of these
-   *             four loses money" — CRITICAL, provenance CALCULATED, source
-   *             "your receipts and cost setup", and a combined loss of
-   *             $184.20. No listing was examined to produce any of it.
-   *   ACT-0002  "{DEMO_COUNTS.listingsWithoutCost} listings have no product
-   *             cost", of DEMO_COUNTS.activeListings, with 12 done — the
-   *             fictional shop's catalogue counted, and a `lastWorkedBy` of
-   *             "Salman R.", who is a person in the demo dataset.
-   *   ACT-0003  a completed bulk job, BE-2288, offering a rollback point.
-   *   ACT-0004  a seasonal lift "based on one year of your own order history".
+   *   ACT-0003, the completed bulk job, needs a completed operation. `events`
+   *   is append-only and empty — nothing writes it yet — and the change-history
+   *   store is a module-level Map seeded from demoChangeJobs(). There is no
+   *   record of a real seller's bulk edits to report, so no card claims one.
    *
-   * These are the same defect as a net profit built from fees nobody had, one
-   * step worse: an action is an instruction, and ACT-0001 instructs a seller
-   * to reprice four listings it never looked at.
+   *   ACT-0004, the seasonal window, claims "a 2.4× order lift in this window
+   *   last year". That needs a year of history; EtsyPilot holds one period and
+   *   one baseline window. An ESTIMATED card is still a claim, and this one
+   *   cannot be made from what the product has.
    *
-   * Gated on the mode, so demo mode is byte-for-byte what it was. Building
-   * them as real generators is the Action Center's own slice — a below-cost
-   * action needs per-listing costs, fees and prices together, and this slice
-   * only just gave the first of those three somewhere to live. Until then a
-   * live shop sees the derived actions and nothing invented, and the cost
-   * prompt it loses is still on /profit and /settings/costs, where it is
-   * measured.
+   * Both stay exactly as they are in demo mode, where they describe a shop
+   * that really does have those things.
    */
-  const authored = isDemoMode()
-    ? [
-        belowCost(ctx),
-        missingCosts(ctx, profit.coveragePercent, uncoveredValue(orders, profit.coveragePercent)),
-        renewalsFixed(ctx),
-        seasonalWindow(ctx),
-      ]
-    : []
+  const generated =
+    facts === null
+      ? []
+      : [belowCostAction(facts), missingCostsAction(facts)].filter((a): a is Action => a !== null)
 
-  const actions = [...pulseActions(ctx, pulse), ...authored].sort(compareActions)
+  const actions = [...pulseActions(ctx, pulse), ...generated, ...demoActions(ctx)].sort(
+    compareActions,
+  )
 
   return {
     actions,
@@ -166,8 +161,34 @@ function pulseActions(ctx: ShopContext, pulse: ShopPulseView): Action[] {
    * thing a seller most needs to see. Correlated findings are capped because
    * they already have an explanation attached; unexplained ones do not.
    */
-  const unknown = pulse.changes.filter((c) => c.diagnosis === 'UNKNOWN')
-  const correlated = pulse.changes.filter((c) => c.diagnosis === 'CORRELATED').slice(0, 2)
+  /*
+   * ══════════════════════════════════════════════════════════════════════════
+   *   A FINDING NOBODY COULD MEASURE IS NOT AN ACTION.
+   * ══════════════════════════════════════════════════════════════════════════
+   *
+   * `diagnose` returns UNKNOWN for two different things: "something moved and
+   * no recorded event accounts for it", and "there was too little data to
+   * compare at all". The Action Center rendered both as the same CRITICAL card
+   * — "Orders fell below your baseline with no recorded change" — and for the
+   * second kind BOTH halves of that sentence are false: nothing was shown to
+   * have fallen, and the finding is attached to a change that WAS recorded.
+   *
+   * Measured in a browser, on a live shop with two listings and two orders:
+   * four of these, every one carrying its own refutation in its evidence line
+   * — "too few orders on 3 listings to measure a rate (0 before, 0 after)".
+   *
+   * `ordersAfterPercent` already separates them. Shop Pulse sets it to null
+   * when the sample cannot support a percentage ("a percentage the sample
+   * cannot support is not published at all") and to the measured change
+   * otherwise. So a null here means no comparison was made, and a screen whose
+   * job is to rank by measured impact has nothing to rank.
+   *
+   * The finding still appears on Shop Pulse, where "we could not measure this"
+   * is a useful thing to read. It is not work.
+   */
+  const measured = pulse.changes.filter((c) => c.ordersAfterPercent !== null)
+  const unknown = measured.filter((c) => c.diagnosis === 'UNKNOWN')
+  const correlated = measured.filter((c) => c.diagnosis === 'CORRELATED').slice(0, 2)
 
   return [...unknown, ...correlated]
     .map((c, i) => {
@@ -204,117 +225,80 @@ function pulseActions(ctx: ShopContext, pulse: ShopPulseView): Action[] {
     })
 }
 
-/* ---------------------------------------------------------------- OPEN */
+/* ------------------------------------------------------------------ facts */
 
-function belowCost(ctx: ShopContext): Action {
-  return {
-    id: 'ACT-0001',
-    shopId: ctx.shopId,
-    priority: 10,
-    severity: 'CRITICAL',
-    title: '4 listings are selling below cost',
-    explanation:
-      'Their price minus Etsy fees, shipping and your product cost is negative. Every sale of these four loses money.',
-    evidence: {
-      summary: `38 orders in the last 30 days across 4 listings · combined loss ${formatCurrency(184.2)}`,
-      provenance: 'CALCULATED',
-      source: 'your receipts and cost setup',
-    },
-    destination: { label: 'Review pricing', href: '/listings?filter=below-cost' },
-    status: 'OPEN',
-    createdAt: '2026-08-12T06:04:00.000Z',
-  }
-}
-
-/* --------------------------------------------------------- IN_PROGRESS */
-
-/*
- * Order value with no confirmed cost behind it.
+/**
+ * Everything the generators need, measured once, or null in demo mode.
  *
- * Derived from the same orders and the same coverage figure the rest of the
- * action reads. It used to be `formatCurrency(6998)` — a literal sitting
- * between two measured numbers, which is the worst place for one: it inherits
- * their credibility and none of their accuracy.
+ * ── DEMO MODE READS NO DATABASE ROWS, AND THAT IS LOAD-BEARING ────────────
+ *
+ * `loadListings` and `loadCosts` already branch on the mode and serve the
+ * fixture without touching a table. The three reads below do not — they go
+ * straight to `sync_state`, `cost_rules` and `users` — so the whole gather is
+ * behind the branch rather than the individual calls. Without it the first
+ * demo render threw DATABASE_NOT_CONFIGURED, which is how this was caught.
  */
-function uncoveredValue(orders: readonly StoredOrder[], coveragePercent: number): number {
-  const gross = orders.reduce((sum, o) => sum + o.gross, 0)
-  return Math.round(gross * ((100 - coveragePercent) / 100))
-}
+async function shopFacts(
+  ctx: ShopContext,
+  orders: readonly StoredOrder[],
+): Promise<ShopFacts | null> {
+  if (isDemoMode()) return null
 
-function missingCosts(ctx: ShopContext, coveragePercent: number, uncovered: number): Action {
-  const covered = 12
-  const total = DEMO_COUNTS.listingsWithoutCost
+  const [shop, catalogue, sellerCosts, listingsSyncedAt, ordersSyncedAt, history] = await Promise.all([
+    shopHeader(ctx),
+    loadListings(ctx),
+    loadCosts(ctx),
+    readAggregateSyncedAt(ctx.shopId, 'LISTINGS'),
+    readAggregateSyncedAt(ctx.shopId, 'ORDERS'),
+    costRuleHistory(ctx.shopId, 1),
+  ])
+
+  const reconciliation = reconcile({
+    orders,
+    listings: catalogue.listings,
+    costs: catalogue.costs,
+    unmatchedOrderIds: demoUnmatchedReceiptIds(orders),
+  })
+
+  const lastEdit = history[0]
+
   return {
-    id: 'ACT-0002',
     shopId: ctx.shopId,
-    priority: 11,
-    severity: 'ATTENTION',
-    title: `${total} listings have no product cost`,
-    explanation: `${coveragePercent}% of order value has a confirmed cost. The other ${100 - coveragePercent}% falls back to your default rule, so profit for those ${total} listings rests on an assumption you set rather than a cost you confirmed.`,
-    evidence: {
-      summary: `${total} of ${DEMO_COUNTS.activeListings} active listings have no cost rule · ${formatCurrency(uncovered)} of order value uncovered`,
-      provenance: 'CALCULATED',
-      source: 'your cost setup',
-    },
-    destination: { label: 'Continue cost setup', href: '/settings/costs' },
-    status: 'IN_PROGRESS',
-    progress: { current: covered, total },
-    createdAt: '2026-08-06T09:20:00.000Z',
-    lastWorkedAt: '2026-08-11T14:02:00.000Z',
-    lastWorkedBy: 'Salman R.',
+    listings: catalogue.listings,
+    costs: catalogue.costs,
+    orders,
+    defaultRulePercent: sellerCosts.costs.defaultRulePercent,
+    coveragePercent: reconciliation.coveragePercent,
+    currency: shop?.currency ?? 'USD',
+    /*
+     * The listings sync, falling back to the orders one. Both are real
+     * observations. `new Date()` is not: it would restamp every card as new on
+     * every page load, on the one screen that ranks by what needs attention.
+     */
+    observedAt: listingsSyncedAt ?? ordersSyncedAt ?? PERIOD_END,
+    lastCostEdit: lastEdit ? { at: lastEdit.at, by: await actorName(lastEdit.actorId) } : null,
   }
 }
 
-/* ----------------------------------------------------------- COMPLETED */
+/* ------------------------------------------------------------------ actor */
 
-function renewalsFixed(ctx: ShopContext): Action {
-  return {
-    id: 'ACT-0003',
-    shopId: ctx.shopId,
-    priority: 12,
-    severity: 'INFO',
-    title: 'Renewal dates fixed on 9 listings',
-    explanation: 'Bulk job BE-2288 applied the change.',
-    evidence: {
-      summary: '9 listings updated · rollback point created',
-      provenance: 'VERIFIED',
-      source: 'your change history',
-    },
-    destination: { label: 'View the change', href: '/listings/change-history' },
-    status: 'COMPLETED',
-    createdAt: '2026-07-30T11:15:00.000Z',
-    completedAt: '2026-08-02T16:41:00.000Z',
-    completedBy: 'Salman R.',
-    operationId: 'BE-2288',
-    // Measured against the shop's own orders. Never a projection.
-    outcome: 'Orders on those listings are up 4% since — measured, not claimed.',
-    rollbackAvailable: true,
-  }
+/**
+ * The display name this shop recorded against a change, or null.
+ *
+ * ── NEVER A NAME THAT IS NOT IN THE DATA ──────────────────────────────────
+ *
+ * Two cards carried `lastWorkedBy: 'Salman R.'` and `completedBy: 'Salman R.'`
+ * on every shop. He is a person in the demo dataset. A live seller was shown
+ * a stranger's name against work on their own shop — and if they share the
+ * shop with anybody, a name on a card is the first thing they would check.
+ *
+ * Null when the row has no actor, or the actor has no name on file. The
+ * caller omits the field entirely rather than printing "Unknown".
+ */
+async function actorName(actorId: string | null): Promise<string | null> {
+  if (!actorId) return null
+  const user = await withAccountStore((store) => store.findUserById(actorId))
+  return user?.displayName ?? user?.name ?? null
 }
 
-/* ----------------------------------------------------------- DISMISSED */
-
-function seasonalWindow(ctx: ShopContext): Action {
-  return {
-    id: 'ACT-0004',
-    shopId: ctx.shopId,
-    priority: 13,
-    severity: 'INFO',
-    title: 'Seasonal window opens for holiday linens',
-    explanation: 'Your linen category showed a 2.4× order lift in this window last year.',
-    evidence: {
-      summary: 'Based on one year of your own order history · confidence moderate',
-      provenance: 'ESTIMATED',
-      source: 'your order history and public category seasonality',
-    },
-    destination: { label: 'Open seasonal calendar', href: '/tools/seasonal-calendar' },
-    status: 'DISMISSED',
-    createdAt: '2026-08-09T07:00:00.000Z',
-    dismissedAt: '2026-08-09T09:12:00.000Z',
-    dismissedBy: 'Salman R.',
-    dismissedReason: 'not this year',
-  }
-}
-
-export const DEMO_ACTION_ACTOR = DEMO_ACTOR_ID
-export const DEMO_ACTION_NOW = DEMO_NOW
+export const { DEMO_ACTION_ACTOR, DEMO_ACTION_NOW } = demoActorNow()
