@@ -99,6 +99,13 @@
       "when": 1791375324601,
       "tag": "0013_change_jobs_and_audit_records",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1791463722038,
+      "tag": "0014_waitlist",
+      "breakpoints": true
     }
   ]
 }

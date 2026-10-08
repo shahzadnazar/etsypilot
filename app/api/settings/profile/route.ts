@@ -12,13 +12,24 @@ import { getSession } from '@/lib/auth'
 import { errorResponse } from '@/lib/errors/api'
 import { AppError, Errors } from '@/lib/errors/types'
 import { shopContext } from '@/lib/permissions'
+import { assertNotPublicVisitor } from '@/domain/public-demo'
 
 export async function POST(request: Request) {
   try {
     const session = await getSession()
     if (!session) throw Errors.notAuthenticated()
-    // Called for its cross-shop assertion, not its result.
-    shopContext(session, session.shopId)
+    /*
+     * ── A VISITOR WITH NO ACCOUNT HAS NO PROFILE TO SAVE ──────────────────
+     *
+     * `saveProfile` takes a user id rather than a context, so the refusal goes
+     * where the context is. Without it, a public visitor's save ran against
+     * `public-demo-visitor`, matched no `users` row, updated nothing and
+     * redirected to "Saved" — a silent no-op, which this product refuses
+     * everywhere else and which is exactly what the cost settings form was
+     * doing before it got a table.
+     */
+    const ctx = shopContext(session, session.shopId)
+    assertNotPublicVisitor(ctx)
 
     const form = await request.formData()
     const read = (key: string) => {
@@ -46,6 +57,6 @@ export async function POST(request: Request) {
 
     return NextResponse.redirect(new URL('/settings/profile?saved=1', request.url), 303)
   } catch (error) {
-    return errorResponse(error, { path: new URL(request.url).pathname })
+    return errorResponse(error, { path: new URL(request.url).pathname, request })
   }
 }

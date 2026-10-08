@@ -677,7 +677,7 @@ describe('an operator cannot obtain a writable shop context', () => {
     email: 'boss@etsypilot.app',
     name: 'Boss',
     shopId: 'shop_operator_own',
-    isDemo: false,
+    isDemo: false, kind: 'SELLER' as const,
   }
 
   it('throws when an operator asks for a shop they do not own', () => {

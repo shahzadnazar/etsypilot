@@ -15,6 +15,7 @@ import { AppError } from '@/lib/errors/types'
 import { assertCanWrite, type ShopContext } from '@/lib/permissions'
 import type { EtsyListing } from '@/lib/etsy/interface'
 import { driftOf, type DriftReport } from './service'
+import { assertNotPublicVisitor } from '@/domain/public-demo'
 import { writeChangeJob } from '@/lib/repositories/change-jobs'
 import { appendDemoChangeJob } from './demo'
 import type { AuditRecord } from '@/domain/audit-log/types'
@@ -145,6 +146,12 @@ export async function applyRollback(
       REFUSAL_COPY.NOTHING_LEFT.detail,
     )
   }
+
+  /*
+   * Before the fingerprint check, because a visitor with no account should be
+   * told what this is rather than told their confirmation went stale.
+   */
+  assertNotPublicVisitor(ctx)
 
   const current = rollbackFingerprint(drift)
   if (current !== request.confirmedFingerprint) {

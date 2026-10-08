@@ -10,6 +10,7 @@
  * explicitly instead of silently pretending to succeed.
  */
 
+import { isPublicDemoRequest } from '@/lib/demo-request'
 import { Errors } from '@/lib/errors/types'
 import {
   UNAVAILABLE_ADS_PERFORMANCE,
@@ -214,7 +215,23 @@ export class MockEtsyService implements EtsyService {
  * than the only one.
  */
 function assertDemoShop(shopId: string): void {
-  if (process.env.ETSY_MODE === 'live') {
+  /*
+   * ── "LIVE" IS NOW A PROPERTY OF THE REQUEST, NOT ONLY THE PROCESS ──────
+   *
+   * This read ETSY_MODE alone, which was the whole question while a
+   * deployment served either the fixture or real shops and never both. The
+   * public demo makes it both at once: a visitor from the landing page is
+   * served Willow & Fern by the same process that is serving real catalogues
+   * to signed-in sellers in the next request.
+   *
+   * The invariant is unchanged and so is the wording of it — "this adapter
+   * must never serve data while the product believes it is live". It is the
+   * belief that is now per request, so the guard asks the same question the
+   * selector in ./index.ts asks. `isPublicDemoRequest()` rather than
+   * `isDemoMode()` because importing from ./index would be a cycle; it is the
+   * same flag either way, and it is set in exactly one place.
+   */
+  if (process.env.ETSY_MODE === 'live' && !isPublicDemoRequest()) {
     throw Errors.validation(
       'The demo catalogue was asked to serve a live shop.',
       `EtsyPilot is configured for live Etsy data, so shop ${shopId} must be read through the ` +

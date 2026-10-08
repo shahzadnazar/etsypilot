@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation'
 import { AppShell } from '@/components/layout/app-shell'
-import { getSession } from '@/lib/auth'
+import { Suspense } from 'react'
+import { PublicDemoNotice } from '@/components/layout/public-demo-notice'
+import { getSession, isPublicDemo } from '@/lib/auth'
 import { initialsFor } from '@/lib/utils/name'
 import { isDemoMode } from '@/lib/etsy'
 import { shopContext } from '@/lib/permissions'
@@ -135,6 +137,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
        * why; this is the same line through the chrome.
        */
       demoData={isDemoMode()}
+      /*
+       * Who is asking, not what is being served. A public visitor is served
+       * the fixture exactly as the demo seller is, so `demoData` cannot tell
+       * them apart — and the two want different chrome, because one of them
+       * has no account to connect a shop to.
+       */
+      publicDemo={isPublicDemo(session)}
       connected={!session.isDemo}
       userInitials={initials}
       userName={session.name}
@@ -159,6 +168,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
        */
       counts={{ '/action-center': actions.counts.OPEN ?? 0 }}
     >
+      {/*
+        * Mounted once, above every page. See the component for why the refusal
+        * is shown rather than the button disabled.
+        *
+        * Suspense because it reads searchParams, which makes its subtree
+        * dynamic; without the boundary that property climbs to the layout and
+        * opts every seller screen out of static rendering.
+        */}
+      <Suspense fallback={null}>
+        <PublicDemoNotice />
+      </Suspense>
       {children}
     </AppShell>
   )

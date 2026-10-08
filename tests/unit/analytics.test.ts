@@ -19,7 +19,7 @@ import { DEMO_ACTOR_ID, DEMO_SHOP_ID, PERIOD_START } from '@/lib/etsy/demo-datas
 import { shopContext } from '@/lib/permissions'
 
 const CTX = shopContext(
-  { userId: DEMO_ACTOR_ID, email: 'a@b.c', name: 'A', shopId: DEMO_SHOP_ID, isDemo: true },
+  { userId: DEMO_ACTOR_ID, email: 'a@b.c', name: 'A', shopId: DEMO_SHOP_ID, isDemo: true, kind: 'SELLER' as const },
   DEMO_SHOP_ID,
 )
 

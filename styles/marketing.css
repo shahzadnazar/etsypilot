@@ -1,0 +1,166 @@
+/*
+ * ══════════════════════════════════════════════════════════════════════════
+ *   LEDGER STATIONERY. / AND /pricing ONLY.
+ * ══════════════════════════════════════════════════════════════════════════
+ *
+ * Scoped under `.marketing`, which only app/(marketing)/layout.tsx applies, so
+ * nothing here can reach the dashboard. No token in styles/globals.css changes
+ * value — the palette is the app's, exactly as it is, and the work is in
+ * composition, typography and rule-work.
+ *
+ * The idiom is a ruled ledger: hairlines in --border doing the structural
+ * work, tonal shifts between --page-bg, --canvas-soft and --surface for depth,
+ * and no shadow on anything that is not genuinely floating. Radius stays
+ * between 2 and 6px because a ledger's boxes are not pills.
+ */
+
+.marketing {
+  --rule: 1px solid var(--border);
+  /* The one radius on this page. Paper, not a pill. */
+  --paper-radius: 4px;
+}
+
+.marketing .display {
+  font-family: var(--font-display), Georgia, 'Times New Roman', serif;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+/*
+ * Every figure, without exception. Proportional digits in a product about
+ * money is the fastest way to look unserious, and a column of figures that
+ * does not align is worse than no column.
+ */
+.marketing .figure,
+.marketing .mono {
+  font-family: var(--font-mono), ui-monospace, 'SF Mono', Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* ─────────────────────────────────────────────────────────── the one moment */
+
+/*
+ * THE HERO LEDGER FILLS IN, ROW BY ROW, AND THEN VISIBLY STOPS.
+ *
+ * The page's argument performed rather than stated: the rows arrive in order,
+ * the three fee lines resolve to "Not known" rather than to a number, and net
+ * profit never arrives at all.
+ *
+ * A stagger is `animation-delay` on each row and nothing more. There is no
+ * animation library on this page and no runtime dependency was added for it —
+ * every effect here is a CSS property or a browser API.
+ *
+ * Only `transform` and `opacity` are animated. Those are compositor
+ * properties; animating width, height, top, margin or box-shadow forces layout
+ * or paint on every frame, and that is what makes a page feel slow — far more
+ * than the size of a library.
+ */
+@keyframes ledger-row-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.marketing .ledger-row {
+  /*
+   * The final state IS the default. Everything below only animates TOWARDS
+   * what is already painted, so a browser with no support, a blocked
+   * stylesheet or reduced motion shows a complete, legible ledger.
+   */
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .marketing .ledger-row {
+    animation: ledger-row-in 420ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+    animation-delay: calc(var(--row) * 90ms);
+  }
+
+  /*
+   * The pause before the three lines that cannot be filled. Not a different
+   * effect — the same one, held back, so the ledger visibly stalls where the
+   * data does.
+   */
+  .marketing .ledger-row[data-gap='true'] {
+    animation-delay: calc(var(--row) * 90ms + 420ms);
+  }
+}
+
+/* ─────────────────────────────────────── what is NOT animated, and why */
+
+/*
+ * THERE IS NO SCROLL-DRIVEN FADE-UP ON THIS PAGE, AND THAT IS A DECISION.
+ *
+ * The first version put `animation-timeline: view()` on the two ruled lists.
+ * It was native, off the main thread and cost nothing — and it was wrong twice:
+ *
+ *   1. A fade-up on every section is the template marker the hero is trying
+ *      not to be. Scattered reveals read as a generator's default; one
+ *      orchestrated moment reads as intent, and this page already has one.
+ *
+ *   2. It shipped broken. `animation-fill-mode: both` holds an element at the
+ *      keyframe's `from` — opacity 0 — until it enters the range, so anything
+ *      that had not yet scrolled into view was INVISIBLE rather than
+ *      unanimated. Caught in a full-page screenshot: two sections rendered as
+ *      blank space with a heading floating above it.
+ *
+ * The rule that survives from it is the one worth keeping: the final state is
+ * the default, and an effect may only ever animate TOWARDS what is already
+ * painted. The hero ledger below obeys it — remove the stylesheet entirely and
+ * the page is still complete and legible.
+ */
+
+/* ────────────────────────────────────────────────────────── entry transition */
+
+/*
+ * @starting-style plus allow-discrete, for the calculator's result rows when a
+ * price changes. A plain transition cannot animate from "not in the DOM";
+ * this can, with no JavaScript beyond the state change itself.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .marketing .fade-in {
+    opacity: 1;
+    transition: opacity 220ms ease, transform 220ms ease;
+    transition-behavior: allow-discrete;
+  }
+
+  @starting-style {
+    .marketing .fade-in {
+      opacity: 0;
+      transform: translate3d(0, 3px, 0);
+    }
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────── interaction */
+
+.marketing a,
+.marketing button {
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease,
+    transform 140ms ease;
+}
+
+.marketing a:focus-visible,
+.marketing button:focus-visible,
+.marketing input:focus-visible,
+.marketing summary:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marketing *,
+  .marketing *::before,
+  .marketing *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

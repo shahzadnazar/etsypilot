@@ -222,7 +222,7 @@ describe('cross-shop isolation survives the mock change', () => {
     email: 'a@example.com',
     name: 'A',
     shopId: 'shop_mine',
-    isDemo: false,
+    isDemo: false, kind: 'SELLER' as const,
   }
 
   it('refuses a shop the session does not own', () => {

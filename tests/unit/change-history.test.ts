@@ -30,7 +30,7 @@ const SESSION = {
   email: 'a@b.c',
   name: 'A',
   shopId: DEMO_SHOP_ID,
-  isDemo: true,
+  isDemo: true, kind: 'SELLER' as const,
 }
 const DEMO_CTX = shopContext(SESSION, DEMO_SHOP_ID)
 const LIVE_CTX: ShopContext = { ...DEMO_CTX, readOnly: false }

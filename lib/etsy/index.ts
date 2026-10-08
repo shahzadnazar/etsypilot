@@ -6,15 +6,38 @@
  */
 
 import { MockEtsyService } from './mock'
+import { isPublicDemoRequest } from '@/lib/demo-request'
 import type { EtsyService } from './interface'
 
-let instance: EtsyService | null = null
+/*
+ * Three slots, not one, and the third is what the public demo needs.
+ *
+ * `instance` was a single cached adapter chosen once from ETSY_MODE. A live
+ * deployment built LiveEtsyService on its first request and kept it — so a
+ * public demo visitor arriving afterwards would have been handed the live
+ * adapter for the fictional shop, and `shopHeader`'s DEMO branch would have
+ * thrown ETSY_NOT_CONFIGURED before rendering anything.
+ *
+ * `override` keeps the test seam exactly as it was and still wins over both,
+ * so setEtsyService() behaves identically.
+ */
+let override: EtsyService | null = null
+let liveInstance: EtsyService | null = null
+let mockInstance: EtsyService | null = null
 
 export function getEtsyService(): EtsyService {
-  if (!instance) {
-    instance = process.env.ETSY_MODE === 'live' ? loadLive() : new MockEtsyService()
+  if (override) return override
+  /*
+   * The mock for a demo deployment OR a public demo request. Same condition as
+   * isDemoMode() below, deliberately: "which adapter" and "is the fixture
+   * being served" must never be able to disagree.
+   */
+  if (process.env.ETSY_MODE !== 'live' || isPublicDemoRequest()) {
+    mockInstance ??= new MockEtsyService()
+    return mockInstance
   }
-  return instance
+  liveInstance ??= loadLive()
+  return liveInstance
 }
 
 /**
@@ -38,12 +61,20 @@ function loadLive(): EtsyService {
 
 /** Test seam, mirroring the other adapters (D28). */
 export function setEtsyService(service: EtsyService | null): void {
-  instance = service
+  override = service
 }
 
-/** Demo mode is the default. It requires no credentials of any kind. */
+/**
+ * Is the fictional catalogue being served to THIS request?
+ *
+ * The meaning has not changed — every one of the ~40 call sites asks exactly
+ * this — but the answer is now per request rather than per process, because a
+ * public demo visitor and a signed-in seller are served by the same server at
+ * the same time. See lib/demo-request.ts for why it is a request-scoped flag
+ * and not a parameter, and for how it fails closed.
+ */
 export function isDemoMode(): boolean {
-  return process.env.ETSY_MODE !== 'live'
+  return process.env.ETSY_MODE !== 'live' || isPublicDemoRequest()
 }
 
 export type * from './interface'

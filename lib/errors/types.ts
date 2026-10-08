@@ -181,6 +181,42 @@ export const Errors = {
       recovery: 'Connect your own shop to make real changes. Nothing here touches a live listing.',
     }),
 
+  /**
+   * A visitor with no account tried to change something.
+   *
+   * Separate from demoModeWrite because the remedy is different and the
+   * remedy is the whole point of an error object here. "Connect your own
+   * shop" is the right next step for a demo SELLER; a public visitor has no
+   * account to connect one to, so theirs is to join the waitlist. A message
+   * whose recovery nobody can act on is a dead end wearing an explanation.
+   */
+  publicDemoWrite: () =>
+    new AppError({
+      kind: 'AUTHORIZATION',
+      code: 'PUBLIC_DEMO_READ_ONLY',
+      message: 'This is the live demo, so nothing here can be changed.',
+      recovery:
+        'You are looking at Willow & Fern, a fictional shop, with no account. With your own shop connected this would show you the exact change first and send nothing to Etsy until you confirmed it.',
+    }),
+
+  /**
+   * The card-required trial cannot start because it cannot keep its promise.
+   *
+   * Names the missing variables, because the only person who can reach this is
+   * a developer and the useful message is the one that says what to set. The
+   * seller-facing half says nothing about configuration — from their side the
+   * trial simply is not open yet, which is true.
+   */
+  trialNotConfigured: (missing: readonly string[]) =>
+    new AppError({
+      kind: 'EXTERNAL_SERVICE',
+      code: 'TRIAL_SENDER_NOT_CONFIGURED',
+      message: 'The free trial is not open yet.',
+      recovery:
+        'The trial takes a card and promises an email before it ends, and this deployment has no email sender configured — so it refuses to start rather than charge somebody without the warning they were promised. Join the waitlist and we will tell you when it opens.',
+      context: { missing: [...missing] },
+    }),
+
   unknown: (context: Record<string, unknown> = {}) =>
     new AppError({
       kind: 'UNKNOWN',

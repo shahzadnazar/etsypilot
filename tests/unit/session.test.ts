@@ -43,6 +43,14 @@ describe('the demo session survives the flag', () => {
       name: 'Salman R.',
       shopId: DEMO_SHOP_ID,
       isDemo: true,
+      /*
+       * SELLER, not PUBLIC_DEMO. AUTH_MODE unset returns the demo SELLER — a
+       * person with an account, who happens to be fictional. A public demo
+       * visitor is a different kind of session with a different actor id, and
+       * conflating the two would let an anonymous visitor inherit whatever a
+       * signed-in demo seller may do.
+       */
+      kind: 'SELLER',
     })
   })
 

@@ -104,13 +104,29 @@ export const PLANS: Plan[] = [
 export const AGENCY_NOTE =
   'Managing several shops or a team? Multi-shop, roles and client approvals are in development. Tell us what you need — we will not bill you for something that does not exist yet.'
 
-/** D17: 14 days of Growth, no card, nothing charges automatically. */
+/**
+ * The trial, as the owner has now set it. THIS REPLACES D17.
+ *
+ * D17 was 14 days with no card: "No card on file. Nothing is charged when the
+ * trial ends." That is a different product decision and it is recorded here
+ * rather than quietly overwritten, because the old terms were the safer ones
+ * and the new ones create an obligation the old ones did not.
+ *
+ * Taking a card on day zero means the deployment must be able to warn before
+ * it charges. domain/billing/trial.ts refuses to start the flow until an email
+ * sender is configured, and tests/unit/trial-gate.test.ts fails if that
+ * refusal is ever removed. The copy below may describe the trial as it will
+ * work; the flow may not run until it can keep it.
+ */
 export const TRIAL_TERMS = {
-  days: 14,
-  plan: 'Growth',
-  cardRequired: false,
+  days: 7,
+  plan: 'Full access',
+  cardRequired: true,
+  /** Approved verbatim. Do not edit this sentence. */
+  terms:
+    "7-day free trial. Full access. We'll email you before it ends. Cancel any time, in one click. No email, no retention call. No refunds on partial periods — you keep access until your period ends, and we don't bill again.",
   endNote:
-    'No card on file. Nothing is charged when the trial ends — your account moves to Free and your data stays. Add a card only when you decide to continue.',
+    "We'll email you before the trial ends. Cancel any time in one click — no email, no retention call, no survey.",
 } as const
 
 /**

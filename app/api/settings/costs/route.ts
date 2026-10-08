@@ -26,6 +26,7 @@ import { isDemoMode } from '@/lib/etsy'
 import { errorResponse } from '@/lib/errors/api'
 import { Errors } from '@/lib/errors/types'
 import { shopContext } from '@/lib/permissions'
+import { assertNotPublicVisitor } from '@/domain/public-demo'
 
 export async function POST(request: Request) {
   try {
@@ -73,6 +74,7 @@ export async function POST(request: Request) {
        * nothing outside EtsyPilot, so connection status is not what decides
        * whether a seller may record one.
        */
+      assertNotPublicVisitor(ctx)
       if (isDemoMode()) {
         const url = new URL('/settings/costs', request.url)
         url.searchParams.set('blocked', 'demo')
@@ -128,6 +130,6 @@ export async function POST(request: Request) {
 
     return NextResponse.redirect(new URL('/settings/costs?saved=1', request.url), 303)
   } catch (error) {
-    return errorResponse(error, { path: new URL(request.url).pathname })
+    return errorResponse(error, { path: new URL(request.url).pathname, request })
   }
 }

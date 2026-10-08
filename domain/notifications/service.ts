@@ -16,6 +16,7 @@
  * nothing in it trains a seller to ignore the next one.
  */
 
+import { assertNotPublicVisitor } from '@/domain/public-demo'
 import { getEtsyService } from '@/lib/etsy'
 import type { ShopContext } from '@/lib/permissions'
 
@@ -150,8 +151,17 @@ export function readPreferences(shopId: string): NotificationPreferences {
   return existing ? structuredClone(existing) : defaultPreferences()
 }
 
-export function writePreferences(shopId: string, prefs: NotificationPreferences): void {
-  store().set(shopId, structuredClone(prefs))
+/**
+ * Save this shop's preferences.
+ *
+ * Takes the CONTEXT and not a bare shop id, which is the difference between a
+ * gate that runs and a gate somebody remembers. The store is keyed by shop and
+ * shared process-wide, so an anonymous visitor writing to the demo shop's key
+ * would change what every other visitor — and the demo seller — then sees.
+ */
+export function writePreferences(ctx: ShopContext, prefs: NotificationPreferences): void {
+  assertNotPublicVisitor(ctx)
+  store().set(ctx.shopId, structuredClone(prefs))
 }
 
 /** Test helper. */

@@ -37,10 +37,74 @@ import Link from 'next/link'
  * The name now comes from the same place the chip gets it, so the two cannot
  * disagree and a second fixture would not need this file edited.
  */
-export type BannerKind = 'DEMO_DATA' | 'NOT_CONNECTED'
+export type BannerKind = 'DEMO_DATA' | 'NOT_CONNECTED' | 'PUBLIC_DEMO'
 
 export function ShopStateBanner({ kind, shopName }: { kind: BannerKind; shopName: string }) {
+  if (kind === 'PUBLIC_DEMO') return <PublicDemoBanner shopName={shopName} />
   return kind === 'DEMO_DATA' ? <DemoBanner shopName={shopName} /> : <NotConnectedBanner />
+}
+
+/**
+ * A visitor with no account, looking around the fixture.
+ *
+ * ══════════════════════════════════════════════════════════════════════════
+ *   A THIRD STATE, BECAUSE THE OTHER TWO BOTH ADDRESS SOMEBODY WHO HAS AN
+ *   ACCOUNT.
+ * ══════════════════════════════════════════════════════════════════════════
+ *
+ * DEMO_DATA says "Connect my shop" and NOT_CONNECTED says the same. Both are
+ * the right next step for a signed-in seller and neither is available to
+ * somebody who has not signed up — a public visitor clicking Connect would
+ * land in onboarding for an account that does not exist.
+ *
+ * It also has to be louder. A signed-in seller knows they are in their own
+ * product; a visitor arrived from a marketing page and may not have registered
+ * that the shop in front of them is invented. So this one names the fixture,
+ * says nothing can be changed, and offers the two things a visitor can
+ * actually do: join the waitlist, or leave.
+ */
+function PublicDemoBanner({ shopName }: { shopName: string }) {
+  return (
+    <div
+      role="status"
+      aria-label="Public demo"
+      className="flex flex-wrap items-center gap-2.5 px-4 py-2.5 md:px-[18px]"
+      // Literal for the same reason the other two are: --ink-1 inverts between
+      // themes and produced white-on-white in dark mode.
+      style={{ background: '#241B12' }}
+    >
+      <span
+        className="rounded-[5px] px-2 py-[3px] text-[9.5px] font-semibold uppercase tracking-[0.07em] text-white"
+        style={{ background: 'rgba(255,255,255,.14)' }}
+      >
+        Live demo
+      </span>
+      <span className="flex-1 text-[12px] leading-snug" style={{ color: '#F7F3ED' }}>
+        You are looking at {shopName}, a fictional shop, with no account. Everything is read-only
+        and nothing can be changed or sent to Etsy.
+      </span>
+      <Link
+        href="/#waitlist"
+        className="shrink-0 rounded-[7px] bg-white px-2.5 py-1.5 text-[11px] font-semibold"
+        style={{ color: '#241B12' }}
+      >
+        Join the waitlist
+      </Link>
+      {/*
+        * prefetch={false}, and this is not a formality. Next prefetches a
+        * <Link> the moment it enters the viewport, and this one is in a banner
+        * on every screen — so the visitor's demo cookie would be deleted by
+        * the page merely rendering, and they would be thrown out of the demo
+        * before clicking anything. tests/unit/links.test.ts caught it.
+        */}
+      <a href="/api/demo/exit"
+        className="shrink-0 rounded-[7px] border px-2.5 py-1.5 text-[11px] font-semibold"
+        style={{ borderColor: 'rgba(255,255,255,.3)', color: '#F7F3ED' }}
+      >
+        Leave the demo
+      </a>
+    </div>
+  )
 }
 
 function DemoBanner({ shopName }: { shopName: string }) {

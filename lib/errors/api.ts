@@ -74,9 +74,45 @@ export function logFailure(error: unknown, fields: { path?: string } = {}): AppE
   return app
 }
 
-export function errorResponse(error: unknown, fields: { path?: string } = {}): NextResponse {
+export function errorResponse(
+  error: unknown,
+  fields: { path?: string; request?: Request } = {},
+): NextResponse {
   const app = logFailure(error, fields)
   const reference = app.reference || makeReference()
+
+  /*
+   * ── A PUBLIC VISITOR GETS A PAGE, NOT A JSON ERROR DOCUMENT ────────────
+   *
+   * Every mutation on this product is a plain <form method="post">, so a
+   * refusal answered with JSON replaces the seller's screen with a blob of
+   * machine text. That is a dead end, and for the one visitor who arrived
+   * with no idea what this product is, it is the worst possible first
+   * impression of a refusal that is actually a FEATURE: nothing can be
+   * changed, because they are looking at somebody else's fictional shop.
+   *
+   * So this one code goes back to the page it came from with a flag, and
+   * components/layout/public-demo-notice.tsx renders the explanation. One
+   * place, every form, including the ones written later.
+   *
+   * The Referer is used only to pick a path on this origin and is parsed
+   * against the request's own URL — an absolute or cross-origin Referer
+   * cannot redirect anybody off-site, because only `pathname` survives.
+   */
+  if (app.code === 'PUBLIC_DEMO_READ_ONLY' && fields.request) {
+    const base = new URL(fields.request.url)
+    const referer = fields.request.headers.get('referer')
+    let target = new URL('/dashboard', base)
+    if (referer) {
+      try {
+        target = new URL(new URL(referer).pathname, base)
+      } catch {
+        // Unparseable Referer. The dashboard is a fine place to land.
+      }
+    }
+    target.searchParams.set('demo', 'blocked')
+    return NextResponse.redirect(target, 303)
+  }
 
   return NextResponse.json(
     { error: { ...app.toUserFacing(), reference } },

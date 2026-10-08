@@ -894,3 +894,43 @@ export const auditRecords = pgTable(
     byShopAt: index('audit_records_shop_at_idx').on(t.shopId, t.at, t.seq),
   }),
 )
+
+/* ------------------------------------------------------------------ waitlist */
+
+/**
+ * People who asked to be told when EtsyPilot opens.
+ *
+ * ── THE ONE TABLE WITH NO SHOP, AND THEREFORE NO SHOP SCOPING ─────────────
+ *
+ * Every other table here is protected by the rule that a row belongs to a shop
+ * and a repository must be handed a ShopContext to touch it. A waitlist row
+ * has no shop, no user and no session — the person has not signed up, which is
+ * the entire point of the row.
+ *
+ * What protects it instead, stated because it is not the usual thing: RLS is
+ * on (migration 0014, explicitly, since 0008's loop cannot cover a later
+ * table); nothing in the product reads this table back to a browser, so there
+ * is no count, no position-in-queue and no lookup by address that would turn
+ * the form into an oracle for "is this person signed up"; and the id is a
+ * random uuid rather than a sequence, so one row reveals nothing about the
+ * others.
+ *
+ * The unique index is on `lower(email)` — see the migration. One address is
+ * one person, and two rows would mean two emails the day a sender exists.
+ */
+export const waitlistSignups = pgTable(
+  'waitlist_signups',
+  {
+    id: text('id').primaryKey(),
+    email: text('email').notNull(),
+    /** Optional. Someone who gives it tells us what shop they run. */
+    shopUrl: text('shop_url'),
+    /** Which part of the page they signed up from. No cookies, no third party. */
+    source: text('source'),
+    createdAt: createdAt(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    byEmail: uniqueIndex('waitlist_signups_email_idx').on(sql`lower(${t.email})`),
+  }),
+)

@@ -30,10 +30,10 @@ export async function POST(request: Request) {
     const ctx = shopContext(session, session.shopId)
 
     const form = await request.formData()
-    writePreferences(ctx.shopId, parse(form))
+    writePreferences(ctx, parse(form))
     return NextResponse.redirect(new URL('/settings/notifications?saved=1', request.url), 303)
   } catch (error) {
-    return errorResponse(error, { path: new URL(request.url).pathname })
+    return errorResponse(error, { path: new URL(request.url).pathname, request })
   }
 }
 

@@ -64,6 +64,6 @@ export async function POST(request: Request) {
     url.searchParams.set('rolledBack', jobId)
     return NextResponse.redirect(url, 303)
   } catch (error) {
-    return errorResponse(error, { path: new URL(request.url).pathname })
+    return errorResponse(error, { path: new URL(request.url).pathname, request })
   }
 }

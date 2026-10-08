@@ -16,6 +16,7 @@ export function AppShell({
   shopName,
   lastSyncedAt,
   demoData,
+  publicDemo,
   connected,
   userInitials,
   userName,
@@ -34,6 +35,15 @@ export function AppShell({
    * row — it decides the banner's wording and the "· demo" chip suffix.
    */
   demoData: boolean
+  /**
+   * Nobody is signed in — this is a visitor from the landing page.
+   *
+   * Checked before `demoData`, because a public visitor is ALSO being served
+   * the fixture and would otherwise get the signed-in seller's banner, whose
+   * one call to action is "Connect my shop" — onboarding for an account that
+   * does not exist.
+   */
+  publicDemo: boolean
   /**
    * This shop has an Etsy connection. This is `!shops.is_demo`, not the mode —
    * it decides the green dot, the solid border and the sync line.
@@ -84,7 +94,9 @@ export function AppShell({
         * mode. In live mode with no connection it says so instead of claiming
         * a fictional shop; connected and live, there is nothing to say.
         */}
-      {demoData ? (
+      {publicDemo ? (
+        <ShopStateBanner kind="PUBLIC_DEMO" shopName={shopName} />
+      ) : demoData ? (
         <ShopStateBanner kind="DEMO_DATA" shopName={shopName} />
       ) : !connected ? (
         <ShopStateBanner kind="NOT_CONNECTED" shopName={shopName} />

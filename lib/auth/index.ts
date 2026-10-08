@@ -15,6 +15,8 @@ import { provisionAccount } from '@/domain/auth/provision'
 import { isDatabaseConfigured } from '@/lib/db'
 import { logFailure } from '@/lib/errors/api'
 import { readOnlyAccountStore, withAccountStore, type ShopRow } from '@/lib/repositories/accounts'
+import { markPublicDemoRequest } from '@/lib/demo-request'
+import { PUBLIC_DEMO_ACTOR_ID, PUBLIC_DEMO_COOKIE } from './public-demo-actor'
 import { createSupabaseServerClient } from './supabase'
 import { supabaseCredentials } from './supabase-config'
 
@@ -41,6 +43,25 @@ function isDemoAuth(): boolean {
   return process.env.AUTH_MODE !== 'live'
 }
 
+/**
+ * Who is asking.
+ *
+ * ── TWO KINDS, AND THE DIFFERENCE IS NOT COSMETIC ─────────────────────────
+ *
+ *   SELLER       somebody with an account. Either a real signed-in user, or —
+ *                on a deployment with AUTH_MODE unset — the fixed demo seller
+ *                this product has always returned.
+ *   PUBLIC_DEMO  nobody. A visitor who clicked "See the live demo" on the
+ *                landing page: no account, no email, no password, and no row
+ *                anywhere in the database.
+ *
+ * The kind is on the session rather than inferred, because every inference
+ * available is wrong somewhere. `isDemo` is `shops.is_demo` and is true for a
+ * real seller who has not connected Etsy yet. An empty `userId` would be a
+ * sentinel nobody checks. A missing cookie cannot be asked about downstream.
+ */
+export type SessionKind = 'SELLER' | 'PUBLIC_DEMO'
+
 export interface Session {
   userId: string
   email: string
@@ -49,6 +70,7 @@ export interface Session {
   /** The shop this request operates on. Single-shop in MVP (D20). */
   shopId: string
   isDemo: boolean
+  kind: SessionKind
 }
 
 const DEMO_SESSION: Session = {
@@ -57,6 +79,56 @@ const DEMO_SESSION: Session = {
   name: 'Salman R.',
   shopId: DEMO_SHOP_ID,
   isDemo: true,
+  kind: 'SELLER',
+}
+
+/**
+ * The cookie that says "this browser clicked into the public demo".
+ *
+ * It carries no identity and grants no authority. Everything it unlocks is
+ * decided here, from constants in this file: a fixed shop id that belongs to a
+ * fixture, a read-only flag, and an actor id that is not a user.
+ *
+ * `httpOnly` so page JavaScript cannot read or set it, `sameSite: 'lax'` so it
+ * is not sent on cross-site POSTs, and no `secure` in development only.
+ */
+export { PUBLIC_DEMO_COOKIE, PUBLIC_DEMO_ACTOR_ID } from './public-demo-actor'
+
+/**
+ * The actor id a public visitor acts as. DELIBERATELY NOT DEMO_ACTOR_ID.
+ *
+ * Salman R. is a person in the fixture — the demo shop's owner, the name on
+ * its audit records. A public visitor is not him and must not be recorded as
+ * him: if an anonymous visitor's refused write ever reaches a log, the log has
+ * to say an anonymous visitor did it. Separate ids make that true by
+ * construction rather than by anybody remembering.
+ *
+ * It is also not a `users` row. Nothing provisions it and nothing may: every
+ * foreign key to `users` would reject it, which is one more wall between a
+ * visitor and a write.
+ */
+
+
+/**
+ * A visitor with no account, pinned to the fixture and read-only.
+ *
+ * `shopId` is the fixture's id and `shopContext()` throws crossShop for any
+ * other, so a public session cannot produce a context for a real shop even if
+ * a URL asked it to. `isDemo: true` is what makes `assertCanWrite()` refuse —
+ * the same gate the demo seller has always had, reached by the same path.
+ */
+const PUBLIC_DEMO_SESSION: Session = {
+  userId: PUBLIC_DEMO_ACTOR_ID,
+  email: '',
+  name: null,
+  shopId: DEMO_SHOP_ID,
+  isDemo: true,
+  kind: 'PUBLIC_DEMO',
+}
+
+/** True for a session that belongs to nobody. Read by the chrome and the gates. */
+export function isPublicDemo(session: Session | null): boolean {
+  return session?.kind === 'PUBLIC_DEMO'
 }
 
 /**
@@ -178,7 +250,35 @@ export const getSession = cache(async function getSession(): Promise<Session | n
    * the difference is the whole security property.
    */
   const { data, error } = await supabase.auth.getUser()
-  if (error || !data.user) return null
+  if (error || !data.user) {
+    /*
+     * ══════════════════════════════════════════════════════════════════════
+     *   NOBODY IS SIGNED IN. THE ONLY OTHER THING THIS REQUEST MAY BE IS A
+     *   PUBLIC DEMO VISITOR.
+     * ══════════════════════════════════════════════════════════════════════
+     *
+     * Order matters and this is the only place it is decided: a real Supabase
+     * user is resolved FIRST and returns above. The demo cookie is consulted
+     * only once that has failed, so a signed-in seller who happens to carry
+     * the cookie — they clicked the demo before signing up — is a seller, and
+     * the cookie is inert for them. There is no combination of cookies that
+     * turns a seller into a demo visitor or the reverse.
+     *
+     * Everything the returned session grants comes from constants in this
+     * file. The cookie's VALUE is never read: it is a flag, so there is
+     * nothing in it to forge.
+     */
+    if (jar.get(PUBLIC_DEMO_COOKIE)) {
+      /*
+       * Tell the rest of the request that the fixture is what it serves. This
+       * is the single call site; see lib/demo-request.ts for why it is a
+       * request-scoped flag and how it fails closed if it is ever missed.
+       */
+      markPublicDemoRequest()
+      return PUBLIC_DEMO_SESSION
+    }
+    return null
+  }
 
   const email = data.user.email ?? ''
   const shop = await resolveShop(data.user.id, email)
@@ -214,6 +314,7 @@ export const getSession = cache(async function getSession(): Promise<Session | n
      * exists to flip the column.
      */
     isDemo: shop.isDemo,
+    kind: 'SELLER',
   }
 })
 

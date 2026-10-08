@@ -16,7 +16,7 @@ import { shopContext } from '@/lib/permissions'
 import type { EtsyOrder } from '@/lib/etsy/interface'
 
 const CTX = shopContext(
-  { userId: DEMO_ACTOR_ID, email: 'a@b.c', name: 'A', shopId: DEMO_SHOP_ID, isDemo: true },
+  { userId: DEMO_ACTOR_ID, email: 'a@b.c', name: 'A', shopId: DEMO_SHOP_ID, isDemo: true, kind: 'SELLER' as const },
   DEMO_SHOP_ID,
 )
 

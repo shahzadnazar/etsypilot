@@ -14,6 +14,7 @@
 import { getBillingProvider } from '@/lib/billing'
 import type { Invoice, Subscription } from '@/lib/billing/interface'
 import { shopHeader } from '@/domain/sync/source'
+import { assertNotPublicVisitor } from '@/domain/public-demo'
 import { loadListings } from '@/domain/listings/load'
 import { Errors } from '@/lib/errors/types'
 import type { ShopContext } from '@/lib/permissions'
@@ -138,6 +139,19 @@ export async function getBillingView(ctx: ShopContext): Promise<BillingView> {
  * deliberately, as with the demo-mode write refusal in the bulk editor.
  */
 function assertBillingWritable(ctx: ShopContext, provider: { mode: string }): void {
+  /*
+   * ── NOBODY IS HERE, SO NOBODY MAY CHANGE THE PLAN ─────────────────────
+   *
+   * The clause below deliberately lets a READ-ONLY context write while the
+   * provider is the MOCK, so the demo seller can walk through an upgrade and
+   * a cancellation — which is most of what the billing screen is for.
+   *
+   * The mock is the provider in every deployment today, so that clause also
+   * let a landing-page visitor with no account change the demo shop's plan,
+   * for every other visitor at the same time. First gate, before the one
+   * that permits.
+   */
+  assertNotPublicVisitor(ctx)
   if (ctx.readOnly && provider.mode !== 'MOCK') {
     throw Errors.demoModeWrite()
   }
