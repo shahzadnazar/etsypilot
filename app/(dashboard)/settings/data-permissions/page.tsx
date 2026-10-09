@@ -210,14 +210,16 @@ export default async function DataPermissionsPage() {
         <h2 className="text-label text-muted-1">How access works</h2>
         <p className="max-w-prose text-small leading-relaxed text-ink-2">
           Access is granted by Etsy, not by a password. EtsyPilot never asks for, receives or stores
-          your Etsy credentials — the connection is an OAuth token you granted and can revoke, from{' '}
+          your Etsy credentials — the connection is an OAuth token you granted and can revoke from
+          your Etsy account, under Account settings → Apps. Revoking stops all reads and writes
+          immediately. There is no Disconnect button in EtsyPilot yet;{' '}
           <Link
             href="/settings/shops"
             className="font-semibold text-brand-strong underline underline-offset-2"
           >
             Shop connections
           </Link>{' '}
-          or from Etsy itself. Revoking stops all reads and writes immediately.
+          says so and points at the same place.
         </p>
         <p className="max-w-prose text-caption leading-relaxed text-muted-1">
           Revoking a permission does not delete what has already been synced.{' '}
@@ -227,7 +229,8 @@ export default async function DataPermissionsPage() {
           >
             Data export &amp; deletion
           </Link>{' '}
-          is where you remove it, and{' '}
+          is where you ask for it to be removed — by email today, since there is no self-serve
+          delete button — and{' '}
           <Link
             href="/settings/audit-log"
             className="font-semibold text-brand-strong underline underline-offset-2"

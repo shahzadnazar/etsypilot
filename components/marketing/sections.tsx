@@ -10,6 +10,11 @@ import {
   type FoundingTier,
 } from '@/domain/billing/founding-pricing'
 import { TRIAL_TERMS } from '@/domain/billing/plans'
+import {
+  EXPORTABLE_DATASETS,
+  exportableNouns,
+  notExportableNouns,
+} from '@/domain/export/datasets'
 
 /*
  * The landing page's sections.
@@ -320,9 +325,14 @@ const TRUST = [
       'Not as it was when the job ran. A listing somebody edited on Etsy since is excluded and named, rather than silently overwritten — restoring it would discard work EtsyPilot did not do.',
   },
   {
-    claim: 'Export everything, any time.',
-    detail:
-      'Your synced shop, your cost setup, your audit history and your bulk-edit records, as CSV, from Settings. Deletion is a request to privacy@etsypilot.app today and is actioned within 30 days — there is no self-serve delete button yet, and a button that looked like one would be worse than saying so.',
+    claim: 'Export what the figures are built on, any time.',
+    /*
+     * The nouns come from domain/export/datasets.ts, not from this file. The
+     * first version of this line was written from memory and named four
+     * datasets, two of which have no exporter. A sentence about what the
+     * software does is now rendered from the software.
+     */
+    detail: `As CSV, from Settings: ${exportableNouns()}. Each file carries a provenance column beside every value and a header saying what it leaves out. ${notExportableNouns().charAt(0).toUpperCase()}${notExportableNouns().slice(1)} have no exporter yet, so "everything" would be the wrong word. Deletion is a request to privacy@etsypilot.app today and is actioned within 30 days — there is no self-serve delete button yet, and a button that looked like one would be worse than saying so.`,
   },
   {
     claim: 'Two-factor authentication is available on every account.',
@@ -521,7 +531,7 @@ const FAQ = [
   },
   {
     q: 'Can I get my data out?',
-    a: 'Yes, as CSV, from Settings, without asking anybody. That covers your synced shop, your cost setup, your audit history and your bulk-edit records. Deletion is a request to privacy@etsypilot.app today — actioned within 30 days, with written confirmation of what was removed.',
+    a: `${EXPORTABLE_DATASETS.length} CSV files, from Settings, without asking anybody: ${exportableNouns()}. ${notExportableNouns().charAt(0).toUpperCase()}${notExportableNouns().slice(1)} are not exportable yet, which is why this answer is not the word "everything". Deletion is a request to privacy@etsypilot.app today — actioned within 30 days, with written confirmation of what was removed.`,
   },
 ]
 

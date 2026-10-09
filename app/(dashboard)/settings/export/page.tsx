@@ -7,6 +7,7 @@ import { getSession } from '@/lib/auth'
 import { isDemoMode } from '@/lib/etsy'
 import { ANALYTICS_EVENTS } from '@/lib/telemetry/interface'
 import { getAnalytics, getErrorReporter, getMailer } from '@/lib/telemetry'
+import { EXPORTABLE_DATASETS, type ExportDatasetId } from '@/domain/export/datasets'
 
 export const metadata: Metadata = { title: 'Export & deletion' }
 
@@ -27,35 +28,57 @@ export const metadata: Metadata = { title: 'Export & deletion' }
  *   - It will not offer a button that does nothing. Deletion is described,
  *     with the exact route to request it, rather than mocked with a dialog
  *     that pretends.
- *   - It will not claim to export what it cannot. Two datasets are wired
- *     (transactions, audit); the page lists those two and says what each
- *     leaves out, because /api/export refuses anything else by design.
+ *   - It will not claim to export what it cannot. The datasets come from
+ *     domain/export/datasets.ts, which is the same list /api/export validates
+ *     against, and each says what it leaves out.
+ *
+ * ── AND IT WILL NOT LIST FEWER THAN IT CAN EITHER ─────────────────────────
+ *
+ * The first version of this page hand-listed two datasets while the route
+ * served three. The missing one was the audit log — downloadable from its own
+ * screen, absent from the page a seller is sent to for their data rights, and
+ * the page the Privacy Policy's §6 points at. Under-claiming here is the same
+ * defect as over-claiming: the seller cannot find the file they are entitled
+ * to and has no way to know it exists.
+ *
+ * So the copy is a Record keyed by the dataset id rather than an array of
+ * rows. A dataset added to the shared list with no copy written for it is a
+ * type error, not a quietly shorter page.
  */
 
-interface Dataset {
-  key: string
+interface DatasetCopy {
   label: string
   detail: string
   excludes: string
 }
 
-const DATASETS: Dataset[] = [
-  {
-    key: 'transactions',
+const DATASET_COPY: Record<ExportDatasetId, DatasetCopy> = {
+  transactions: {
     label: 'Orders & reconciliation',
     detail:
       'Every order in the current period with its gross, discounts, refunds and fee lines, plus how each one was costed.',
     excludes:
       'Buyer names, emails and addresses — EtsyPilot never receives them, so they cannot be in the file.',
   },
-  {
-    key: 'audit',
+  audit: {
     label: 'Listing audit findings',
     detail:
       'Every rule that fired, the listing it fired on, and the severity — the same rows the audit screen shows.',
     excludes: 'Listing photos and descriptions. Export those from Etsy directly.',
   },
-]
+  'audit-log': {
+    label: 'Audit log',
+    detail:
+      'Every action taken on this shop through EtsyPilot, including the ones that were refused, with the reason and what would have changed. Append-only — nothing in the product edits or removes a record.',
+    excludes:
+      'Records older than your plan\u2019s retention period, and anything done on Etsy itself rather than through EtsyPilot.',
+  },
+}
+
+const DATASETS = EXPORTABLE_DATASETS.map((dataset) => ({
+  key: dataset.id,
+  ...DATASET_COPY[dataset.id],
+}))
 
 export default async function ExportPage() {
   const session = await getSession()

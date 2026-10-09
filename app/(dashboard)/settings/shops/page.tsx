@@ -130,9 +130,17 @@ export default async function ShopConnectionsPage({
       <Card className="mt-4 p-[18px]">
         <h3 className="text-section text-ink-1">Revoking access</h3>
         <p className="mt-2 max-w-[75ch] text-small leading-relaxed text-ink-2">
-          Revoke from here or from your Etsy account — both take effect immediately. Revoking stops
-          EtsyPilot reading or writing anything. Your history in EtsyPilot stays readable, and you
-          can export or delete it from{' '}
+          {/*
+            * This paragraph said "revoke from here or from your Etsy account
+            * — both take effect immediately", three lines below a Disconnect
+            * button that is a disabled NotYet. The page contradicted itself
+            * about a data-rights control, which is the worst place to do it.
+            * It now says what is true: revoking happens on Etsy today.
+            */}
+          Revoke from your Etsy account, under Account settings → Apps. It takes effect immediately
+          and stops EtsyPilot reading or writing anything. There is no Disconnect button here yet —
+          the one above is disabled rather than mocked. Your history in EtsyPilot stays readable, and
+          you can export it, or request its deletion, from{' '}
           <Link
             href="/settings/export"
             className="font-semibold text-brand-strong underline underline-offset-2"

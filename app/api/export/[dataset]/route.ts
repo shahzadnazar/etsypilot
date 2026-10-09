@@ -17,24 +17,25 @@ import { errorResponse } from '@/lib/errors/api'
 import { Errors } from '@/lib/errors/types'
 import { shopContext } from '@/lib/permissions'
 import { auditExport, auditLogExport, toCsv, toJson, transactionsExport } from '@/domain/export/csv'
+import { isExportableDataset } from '@/domain/export/datasets'
 import { getAuditView } from '@/domain/audit/service'
 import { getAuditLogView } from '@/domain/audit-log/service'
 import { getProfitView } from '@/domain/profit/service'
 
-const DATASETS = ['transactions', 'audit', 'audit-log'] as const
-type Dataset = (typeof DATASETS)[number]
-
-function isDataset(value: string): value is Dataset {
-  return (DATASETS as readonly string[]).includes(value)
-}
-
+/*
+ * The set of datasets lives in domain/export/datasets.ts, not here, because
+ * the landing page and the Privacy Policy both describe it in prose and both
+ * got it wrong when they described it independently. A 404 from this route and
+ * a sentence on the marketing page now disagree only if somebody edits the one
+ * list they share.
+ */
 export async function GET(request: Request, { params }: { params: Promise<{ dataset: string }> }) {
   try {
     const session = await getSession()
     if (!session) throw Errors.notAuthenticated()
 
     const { dataset } = await params
-    if (!isDataset(dataset)) throw Errors.notFound('export')
+    if (!isExportableDataset(dataset)) throw Errors.notFound('export')
 
     const ctx = shopContext(session, session.shopId)
 
