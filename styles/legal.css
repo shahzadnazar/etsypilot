@@ -34,8 +34,21 @@
   border-top: 1px solid var(--border);
 }
 
-/* The first clause heading sits under the page header's own rule. */
-.legal .doc > h2:first-child {
+/*
+ * The first clause heading sits under the page header's own rule.
+ *
+ * `header + h2` and not `h2:first-child`: the first child of .doc is the
+ * <header>, so the :first-child rule never matched and every page drew two
+ * hairlines a centimetre apart — the header's bottom border and then the
+ * heading's top border. Seen in a screenshot, not in the markup.
+ *
+ * The :first-child case is kept for a .doc with no header, and the selector
+ * is deliberately NOT `h2:nth-of-type(1)`: on /legal/subprocessors a
+ * paragraph sits between the header and the first heading, and there the
+ * rule above the heading is doing real work.
+ */
+.legal .doc > h2:first-child,
+.legal .doc > header + h2 {
   margin-top: 0;
   padding-top: 0;
   border-top: 0;
@@ -177,6 +190,13 @@
   border-radius: 3px;
   padding: 0.05em 0.35em;
   white-space: normal;
+  /*
+   * A CONFIRM note runs to three lines inside a table cell, and without this
+   * the dashed border is drawn open at both ends of every line but the last,
+   * which reads as three broken boxes rather than one marked passage.
+   */
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 .legal .legal-placeholder[data-kind='confirm'] {

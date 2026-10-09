@@ -111,6 +111,37 @@ describe('the documents exist and are still drafts', () => {
     ).toBe(true)
   })
 
+  it('and read as English after the rename, article and all', () => {
+    /*
+     * ── THE DEFECT A FIND-AND-REPLACE LEAVES BEHIND ───────────────────────
+     *
+     * The drafts arrived naming the product "CobaltRank" and were corrected
+     * to "EtsyPilot" throughout. The article in front of the word changes
+     * with it, and one sentence was left reading:
+     *
+     *     "on the basis of a EtsyPilot figure"
+     *
+     * Found by a reader, not by the suite — a substitution that is correct at
+     * every one of its 22 sites can still break the words either side of it.
+     *
+     * The check is narrow on purpose. A general "a before a vowel" sweep is
+     * wrong English ("a one-time fee", "an hour") and would be turned off
+     * within a week; this asks only about the product names, which is exactly
+     * the class of error a rename introduces. Whitespace is flattened first,
+     * because the documents are hard-wrapped and the article is regularly the
+     * last word on a line.
+     */
+    for (const [label, text] of [['privacy', privacy], ['terms', terms]] as const) {
+      const flat = text.replace(/\s+/g, ' ')
+      for (const match of flat.matchAll(/\b(a|an) (EtsyPilot|Etsy)\b/g)) {
+        expect(
+          match[1],
+          `${label} reads "${flat.slice(Math.max(0, match.index - 45), match.index + 30)}" — "${match[2]}" takes "an"`,
+        ).toBe('an')
+      }
+    }
+  })
+
   it('name the product the code is, not the one the draft was written for', () => {
     /*
      * ── THE FIRST FACTUAL CLAIM IN EITHER DOCUMENT IS THE TITLE ───────────

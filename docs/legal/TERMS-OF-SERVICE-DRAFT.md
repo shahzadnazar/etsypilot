@@ -35,7 +35,7 @@ you what you earned.
 
 **It is not an accountant, a bookkeeper, a tax adviser or an auditor.** The figures it shows are
 calculated from the data available to it, and they are not an audited account. You should not file
-a tax return, make a pricing decision or settle a dispute on the basis of a EtsyPilot figure
+a tax return, make a pricing decision or settle a dispute on the basis of an EtsyPilot figure
 without checking it against your own records.
 
 **Where EtsyPilot cannot verify a figure, it says so rather than estimating one.** This is

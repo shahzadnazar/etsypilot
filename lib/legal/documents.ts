@@ -91,21 +91,87 @@ export interface LegalDocument {
  */
 const LAWYER_NOTES_HEADING = '## Notes for the lawyer reviewing this'
 
+/*
+ * ██████████████████████████████████████████████████████████████████████████
+ *
+ *   THE DOCUMENT'S OWN H1 IS STRIPPED HERE, BY THE LOADER, AND NOT HANDLED
+ *   BY THE RENDERER.
+ *
+ * ██████████████████████████████████████████████████████████████████████████
+ *
+ * Seen in a browser: /legal/terms printed its heading and then printed
+ * `# EtsyPilot — Terms of Service` underneath it as body text, hash included.
+ *
+ * The H1 was being removed as a SIDE EFFECT — the loader sliced everything
+ * above the first `---` rule, and the H1 happens to live up there. That works
+ * until a document has no rule, or gains a second one, or someone reorders the
+ * front matter, and then the title renders twice with one copy as raw
+ * markdown. A structural decision resting on an incidental property of the
+ * text is not a decision.
+ *
+ * ── WHY THE LOADER AND NOT THE RENDERER ───────────────────────────────────
+ *
+ * Because it is not a rendering problem. The page owns its <h1>: it renders
+ * the title from LEGAL_DOCUMENTS with the document's date and version hash
+ * beside it, which the markdown cannot do. The document's own H1 is therefore
+ * DUPLICATE STRUCTURE, and a renderer that "handled" it would have to choose
+ * between emitting a second <h1> on the page — wrong for a screen reader
+ * walking the heading tree, and wrong for a search engine — or demoting it to
+ * an <h2>, which silently flattens the document's real hierarchy so every
+ * clause heading sits at the same level as the title.
+ *
+ * Stripping it at the source removes the question. The renderer keeps a
+ * safety net — it renders a `#` line as a heading rather than as prose — so
+ * that raw markdown can never reach a reader even if something upstream
+ * changes. Belt and braces, with the decision in the one place that knows
+ * the page already has a title.
+ *
+ * Applies to all four pages: /legal/terms and /legal/privacy render a whole
+ * document through this, /legal/subprocessors renders section 4 (which starts
+ * at an `##`), and /legal/etsy composes its own markdown and never had one.
+ *
+ * ── EXPORTED, BECAUSE THE STRIP HAS TO BE PROVABLE ON ITS OWN ─────────────
+ *
+ * The first test written for this passed with the H1 strip DELETED: the rule
+ * slice above happens to remove the title as well, so a test that only read
+ * the real documents could not tell which line was doing the work. That is
+ * the same vacuity as a sweep over an empty set. Exported so a test can hand
+ * it a document with no `---` in it and watch the H1 go anyway.
+ */
+export function documentBody(text: string): string {
+  /*
+   * Everything above the first horizontal rule is addressed to the REVIEWER,
+   * not the reader: the draft banner, the note about placeholders, the
+   * product-name CONFIRM note, the undated "Last updated" line. The page
+   * renders the draft state itself, loudly, from `placeholders` below.
+   */
+  const ruleAt = text.search(/^---+[ \t]*$/m)
+  let body = text
+  if (ruleAt !== -1) {
+    const lineEnd = body.indexOf('\n', ruleAt)
+    body = lineEnd === -1 ? '' : body.slice(lineEnd + 1)
+  }
+
+  /*
+   * And the H1 goes on its own terms, whether or not that rule was found and
+   * whether or not it sat above it. Only a LEADING one: an `# ` line later in
+   * the text would be a real heading somebody wrote, and removing that would
+   * be losing a clause rather than de-duplicating a title.
+   */
+  const lines = body.split('\n')
+  let first = 0
+  while (first < lines.length && (lines[first] ?? '').trim() === '') first += 1
+  if (/^#\s+/.test(lines[first] ?? '')) lines.splice(first, 1)
+
+  return lines.join('\n').trim()
+}
+
 function parse(slug: LegalSlug): LegalDocument {
   const source = LEGAL_DOCUMENTS[slug]
   const raw = readFileSync(join(process.cwd(), source.file), 'utf8')
 
   const notesAt = raw.indexOf(LAWYER_NOTES_HEADING)
-  let body = notesAt === -1 ? raw : raw.slice(0, notesAt)
-
-  /*
-   * Drop the H1 — the page renders its own, with the document's date beside
-   * it — and the preamble above the first `---`, which is addressed to the
-   * reviewer rather than the reader. The draft banner is NOT simply dropped:
-   * the page renders it as a state, loudly, from `placeholders` below.
-   */
-  const firstRule = body.indexOf('\n---\n')
-  if (firstRule !== -1) body = body.slice(firstRule + '\n---\n'.length)
+  const body = documentBody(notesAt === -1 ? raw : raw.slice(0, notesAt))
 
   const lastUpdated = /Last updated:\s*`?\[?\[?([^`\n\]]+)\]?\]?`?/.exec(raw)?.[1]?.trim() ?? ''
 

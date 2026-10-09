@@ -42,6 +42,25 @@ import type { ReactNode } from 'react'
 const INLINE =
   /(`\[\[[^\]]+\]\]`)|(\[\[[^\]]+\]\])|(\*\*[^*]+\*\*)|(`[^`]+`)|(\[[^\]]+\]\([^)]+\))/g
 
+/*
+ * ── A TOKEN IS A PLACEHOLDER ONLY IF IT IS ENTIRELY A PLACEHOLDER ─────────
+ *
+ * The defect this exists to stop, seen in a browser on /legal/terms:
+ *
+ *     source   `[[DOMAIN]]/legal/privacy`
+ *     rendered DOMAIN]]/legal/privacy
+ *
+ * The code-span alternative matched the whole span, and the handler then
+ * asked `token.startsWith('`[[')` — true — claimed it as a placeholder,
+ * stripped the opening delimiter and left the closing `]]` sitting in the
+ * prose. "Starts with" is not "is": a code span that BEGINS with a
+ * placeholder and continues with a path is a code span, not a placeholder,
+ * and the documents use that shape five times for URLs.
+ *
+ * Anchored at both ends, so the question asked is the right one.
+ */
+const WHOLE_PLACEHOLDER = /^`?\[\[[^\]]+\]\]`?$/
+
 function placeholderChip(text: string, key: string): ReactNode {
   const name = text.replace(/^`|`$/g, '').replace(/^\[\[|\]\]$/g, '')
   const isConfirm = name.startsWith('CONFIRM:')
@@ -73,7 +92,7 @@ export function inline(text: string, keyPrefix = 'i'): ReactNode[] {
     const token = match[0]
     const key = `${keyPrefix}-${n++}`
 
-    if (token.startsWith('`[[') || token.startsWith('[[')) {
+    if (WHOLE_PLACEHOLDER.test(token)) {
       out.push(placeholderChip(token, key))
     } else if (token.startsWith('**')) {
       /*
@@ -85,7 +104,14 @@ export function inline(text: string, keyPrefix = 'i'): ReactNode[] {
        */
       out.push(<strong key={key}>{inline(token.slice(2, -2), key)}</strong>)
     } else if (token.startsWith('`')) {
-      out.push(<code key={key}>{token.slice(1, -1)}</code>)
+      /*
+       * Recursive, for the same reason the bold branch is: a code span may
+       * CONTAIN a placeholder — `[[DOMAIN]]/legal/privacy` is a URL with a
+       * blank in it — and the blank has to be marked rather than printed with
+       * its delimiters showing. The inner text cannot contain a backtick
+       * (the alternative above is `[^`]+`), so this terminates.
+       */
+      out.push(<code key={key}>{inline(token.slice(1, -1), key)}</code>)
     } else {
       const label = token.slice(1, token.indexOf(']'))
       const href = token.slice(token.indexOf('](') + 2, -1)
@@ -110,7 +136,7 @@ export function inline(text: string, keyPrefix = 'i'): ReactNode[] {
 /* ──────────────────────────────────────────────────────────────── blocks */
 
 type Block =
-  | { kind: 'heading'; level: 2 | 3 | 4; text: string }
+  | { kind: 'heading'; level: 1 | 2 | 3 | 4; text: string }
   | { kind: 'paragraph'; text: string }
   | { kind: 'bullets'; items: string[] }
   | { kind: 'table'; header: string[]; rows: string[][] }
@@ -149,11 +175,23 @@ export function blocks(markdown: string): Block[] {
       continue
     }
 
-    const heading = /^(#{2,4})\s+(.*)$/.exec(line)
+    /*
+     * `#{1,4}` and not `#{2,4}`: an H1 used to fall through to the paragraph
+     * branch and print as `# EtsyPilot — Terms of Service`, hash and all, in
+     * the middle of the prose — which is what a reader saw on /legal/terms.
+     *
+     * The LOADER is what removes a document's own title (see
+     * lib/legal/documents.ts: documentBody, which explains why the decision
+     * belongs there). This is the safety net under it: any markdown that
+     * reaches this renderer with a `#` line renders as a heading, never as
+     * body text, because raw markup in front of a reader is the one outcome
+     * neither layer should allow.
+     */
+    const heading = /^(#{1,4})\s+(.*)$/.exec(line)
     if (heading) {
       out.push({
         kind: 'heading',
-        level: heading[1]!.length as 2 | 3 | 4,
+        level: heading[1]!.length as 1 | 2 | 3 | 4,
         text: heading[2]!.trim(),
       })
       i += 1
@@ -239,7 +277,16 @@ export function Markdown({ source }: { source: string }): ReactNode {
             return <hr key={key} />
           case 'heading': {
             const id = slugify(block.text)
-            const Tag = (`h${block.level}` as const) satisfies 'h2' | 'h3' | 'h4'
+            /*
+             * A level-1 heading renders as <h2>, because the PAGE owns the
+             * single <h1> — it renders the document's title with its date and
+             * version beside it. Two <h1>s on a page is a worse answer for
+             * anybody walking the heading tree than a demoted one, and
+             * printing the markdown is worse than both. The loader means this
+             * branch should never be reached by our own documents.
+             */
+            const level = block.level === 1 ? 2 : block.level
+            const Tag = (`h${level}` as const) satisfies 'h2' | 'h3' | 'h4'
             return (
               <Tag key={key} id={id}>
                 {inline(block.text, key)}
