@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { legalDocument, legalDocumentsInForce } from '@/lib/legal/documents'
 import { subProcessors } from '@/lib/legal/subprocessors'
+import { DocumentDate } from '@/components/legal/document-date'
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -27,6 +28,7 @@ export default function SubProcessorsPage() {
         <p className="mt-2 text-[13px]" style={{ color: 'var(--muted-1)' }}>
           This page is section 4 of the{' '}
           <Link href={privacy.href}>Privacy Policy</Link>, rendered from the same text.{' '}
+          <DocumentDate documents={[privacy]} />{' · '}
           <span className="mono">version {privacy.contentHash.slice(0, 12)}</span>
         </p>
       </header>

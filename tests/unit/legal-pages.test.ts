@@ -125,6 +125,25 @@ describe('the pages render from the markdown, not from a copy of it', () => {
   it('shows each document its own last-updated date, not a constant', () => {
     const view = code('components/legal/document-view.tsx')
     expect(view).toMatch(/document\.lastUpdated/)
+
+    /*
+     * All FOUR pages, including the two that are not a whole document:
+     * /legal/subprocessors renders §4 of the Privacy Policy and /legal/etsy
+     * draws on §12 of the Terms, and a reader of either is owed the age of
+     * the text. Both shipped without it at first.
+     */
+    for (const page of LEGAL_PAGES) {
+      const source = code(pageFile(page.href))
+      /*
+       * `<DocumentView` counts because the assertion above has already proved
+       * that component renders `document.lastUpdated`; the two documents
+       * delegate to it, and the two part-pages use <DocumentDate> directly.
+       */
+      expect(
+        /lastUpdated|<DocumentDate|<DocumentView/.test(source),
+        `${page.href} shows no last-updated date`,
+      ).toBe(true)
+    }
     // No hardcoded date anywhere in the legal surfaces.
     for (const file of [...LEGAL_PAGES.map((p) => pageFile(p.href)), 'components/legal/document-view.tsx']) {
       expect(code(file), `${file} hardcodes a date`).not.toMatch(/20\d\d-\d\d-\d\d/)

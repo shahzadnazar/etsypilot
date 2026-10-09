@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Markdown } from '@/lib/markdown/render'
 import { legalDocument, legalDocumentsInForce } from '@/lib/legal/documents'
 import { extensionFacts, warrantyDisclaimer } from '@/lib/legal/etsy'
+import { DocumentDate } from '@/components/legal/document-date'
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -16,6 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function EtsyRelationshipPage() {
   const facts = extensionFacts()
   const terms = legalDocument('terms')
+  const privacy = legalDocument('privacy')
 
   return (
     <article className="doc">
@@ -25,6 +27,14 @@ export default function EtsyRelationshipPage() {
         </h1>
         <p className="mt-2 text-[13px]" style={{ color: 'var(--muted-1)' }}>
           Who provides EtsyPilot, how it reaches your shop, and what the browser extension reads.
+        </p>
+        <p className="mt-1.5 text-[13px]" style={{ color: 'var(--muted-1)' }}>
+          {/*
+            * Both documents, because this page draws on both: section 12 of
+            * the Terms for the disclaimer and section 2 of the Privacy Policy
+            * for what the extension collects.
+            */}
+          <DocumentDate documents={[terms, privacy]} />
         </p>
       </header>
 
