@@ -73,7 +73,7 @@ Three suites carry claims this guard delegates to rather than re-implementing:
 | 2 | OAuth token stored encrypted | **TESTED** | `lib/etsy/tokens.ts` uses `aes-256-gcm`; the schema has `token_ref` and no `access_token`/`refresh_token` column |
 | 2 | Server logs hold IP, browser and timestamps | NOT CODE | Operator. This is the hosting provider's log, not ours — confirm what it retains and for how long |
 | 3 | Lawful bases per category | NOT CODE | Lawyer |
-| 3 | Payment data is processed to bill you | **NARROWED** | No payment provider is connected. The row now says it describes how payment data *will* be handled; `domain/billing` has no provider and `domain/billing/trial.ts` documents the absence |
+| 3 | Payment data is processed to bill you | **NARROWED** | No payment provider is connected on this deployment. **Correcting this row's earlier wording:** a Stripe adapter does exist, at `lib/billing/stripe.ts`, and every method of it except webhook signature verification refuses with a stated reason until a key and a shop→customer mapping arrive. `paymentProviderConfigured()` in `lib/billing/index.ts` is the one condition that decides, and `/legal/subprocessors` reads it so the public page cannot say "not in use" once it is switched on |
 | 3 | No advertising, no sale of data, no AI training on your content | VERIFIED + **TESTED** | No ad or tracking dependency in `package.json`; all three telemetry adapters are `Noop` (`lib/telemetry/index.ts`). The guard additionally requires that the no-training promise is accompanied by the disclosure that a provider *does* see listing text |
 | 4 | Sub-processor table | **CORRECTED**, still incomplete | Anthropic, PBC added — it receives listing content and was missing while the section above promised notice before adding one. Email and payment providers remain placeholders. Lawyer's note 2; must be complete before launch |
 | 5 | Account and shop data kept while the account is open; 30-day export after closure | **OPEN GAP**, flagged | There is no account-closure flow in the product. `[[CONFIRM]]` in the document says so. Owner: operator + code |
@@ -232,6 +232,34 @@ where the product itself said something untrue:
 
 ---
 
+## The pages, and the gate (added after the first verification pass)
+
+The first pass corrected the documents and left them unreadable: `/legal/terms` was a 404 and the
+report did not say so. That is now built, and the parts worth recording here are the ones a future
+reader will want to check:
+
+| Thing | Where | Verdict |
+|---|---|---|
+| Four public pages | `app/(public)/legal/*` | Render from `docs/legal/*.md`; `tests/unit/legal-pages.test.ts` fails if a page carries the document's own prose |
+| Sub-processor page | `/legal/subprocessors` | **Section 4 of the Privacy Policy, rendered** — not lifted into a new file, so the §4 guard in `legal-claims` still covers the published page. Three states, and which one a role is in is measured from the running configuration |
+| Etsy page | `/legal/etsy` | Prints the extension's real permission list from `extension/manifest.chrome.json`, and quotes §12's disclaimer out of the Terms |
+| Placeholder gate | `lib/legal/documents.ts` | One function, `legalDocumentsInForce()`, read by the footer, the signup form, the page metadata and the acceptance flow |
+| Per-seller acceptance | `terms_acceptances`, migration 0015 | Append-only, RLS on, version is a sha256 of the published documents |
+| The gate | `domain/legal/acceptance.ts` | `/api/etsy/connect` before PKCE, `/api/etsy/callback` before the exchange, and both sync entry points |
+
+**What a visitor sees at `/legal/terms` today:** the document in full, with a banner stating it is a
+draft, not in force, and not being presented for acceptance, and with every blank marked in the
+text. Not a 404 — the file exists, and answering "not found" to somebody looking for the terms is a
+false statement made by a server.
+
+**The one claim `/legal/etsy` does not make** is that Etsy has authorised the browser extension.
+Etsy's own API Terms could not be read while this was written — `etsy.com` and `developers.etsy.com`
+are both blocked by this environment's egress proxy — so the page summarises the Prohibited
+Behavior provision, attributes the summary as a summary, states exactly what the extension reads,
+and says plainly that no authorisation has been given or asked for.
+
+---
+
 ## Before publishing either document
 
 Neither is publishable today, and the draft banner is held in place by a test that fails in both
@@ -250,7 +278,15 @@ Outstanding, in the order they block:
       This one is an Etsy API Terms obligation, not only a privacy one.
 - [ ] **Audit-record expiry**, or a §5 that says records are kept longer than the plan's period.
 - [ ] **The refusal-logging gap** above: close it in code, or narrow Privacy §8's last line.
-- [ ] **Acceptance at connection, not a footer link.** Etsy's API Terms §4 requires executed
-      Application Terms with each seller. `/legal/privacy` and `/legal/terms` do not exist yet, and
-      are deliberately not linked from the landing page while these say NOT READY TO PUBLISH.
+- [x] **The pages exist.** `/legal/terms`, `/legal/privacy`, `/legal/subprocessors` and
+      `/legal/etsy` render from the markdown in this folder, so correcting a document corrects the
+      page. They are reachable with no account, carry the draft state above the text, and are not
+      linked from any public surface while a placeholder remains.
+- [x] **Acceptance at connection, not a footer link.** Etsy's API Terms §4 requires executed
+      Application Terms with each seller. Built: `terms_acceptances`, recorded per shop with a
+      content-hash version, append-only, RLS on, and gated server-side at `/api/etsy/connect`,
+      `/api/etsy/callback` and both sync entry points. The flow refuses while any placeholder
+      remains — nobody can accept `[[LEGAL_ENTITY]]` — which means **no shop can connect and
+      nothing can sync on this deployment today.** That is the intended consequence and it is why
+      the list below still blocks launch.
 - [ ] **A lawyer.** Every `NOT CODE` row above, and all six notes at the foot of each document.

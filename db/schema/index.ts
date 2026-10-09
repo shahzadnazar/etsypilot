@@ -918,6 +918,45 @@ export const auditRecords = pgTable(
  * The unique index is on `lower(email)` — see the migration. One address is
  * one person, and two rows would mean two emails the day a sender exists.
  */
+/**
+ * Per-seller acceptance of the Application Terms. Etsy's API Terms §4.
+ *
+ * APPEND-ONLY. lib/repositories/terms-acceptances.ts exports one append and
+ * two reads — no update, no delete — because this table is evidence of what a
+ * seller agreed to, and editing it would be editing that.
+ *
+ * `version` is a sha256 over the published Terms and Privacy Policy rather
+ * than a number somebody has to remember to bump: a lawyer fixing a clause has
+ * no reason to think about a constant in a TypeScript file, and the one thing
+ * nobody does is the thing that breaks. A changed document is a changed hash,
+ * so the seller is asked again before their next connect or sync.
+ */
+export const termsAcceptances = pgTable(
+  'terms_acceptances',
+  {
+    id: text('id').primaryKey(),
+    shopId: text('shop_id')
+      .notNull()
+      .references(() => shops.id),
+    /** Which human clicked. The question an acceptance record exists to answer. */
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id),
+    /** sha256 over the published documents, hex. 64 characters, checked in SQL. */
+    version: text('version').notNull(),
+    /** The documents that hash covered, each with its own hash. */
+    documents: jsonb('documents')
+      .$type<{ slug: string; title: string; hash: string }[]>()
+      .notNull()
+      .default([]),
+    acceptedAt: timestamp('accepted_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    once: uniqueIndex('terms_acceptances_shop_user_version_idx').on(t.shopId, t.userId, t.version),
+    byShopVersion: index('terms_acceptances_shop_version_idx').on(t.shopId, t.version),
+  }),
+)
+
 export const waitlistSignups = pgTable(
   'waitlist_signups',
   {

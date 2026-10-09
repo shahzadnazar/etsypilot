@@ -25,6 +25,7 @@ import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
 import { ETSY_SCOPES as SCOPE_CHOICES, selectedScopeStrings } from '@/domain/connect/types'
 import { authorizeUrl, createPkcePair, createState } from '@/lib/etsy/oauth'
+import { hasAcceptedCurrentTerms, termsAreOfferable } from '@/domain/legal/acceptance'
 import { outcomeUrl, writeFlowCookie } from '../_flow'
 
 /** A session is per-request, so this can never be prerendered (D47). */
@@ -42,6 +43,30 @@ export async function GET(request: Request) {
     // Not an error page and not a stack trace. The shop settings screen reads
     // this outcome and explains that the server has no Etsy app configured yet.
     return NextResponse.redirect(outcomeUrl(request, 'not_configured'), 303)
+  }
+
+  /*
+   * ── ETSY API TERMS §4, ENFORCED BEFORE THE SELLER LEAVES ──────────────
+   *
+   * "You represent and warrant that you have executed Application Terms with
+   * each Etsy seller". This is the first instruction after the deployment is
+   * known to have an Etsy app at all, and before a PKCE pair is minted, so a
+   * seller with no accepted agreement is never sent to Etsy to authorise one.
+   *
+   * Two refusals, not one, because they are different facts: the documents
+   * are unfinished and nobody can accept them, or they are finished and this
+   * shop has not. The seller can act on the second and not on the first, and
+   * telling them to accept something that cannot be accepted would be a dead
+   * end.
+   *
+   * The same check runs again in the callback, before the code is exchanged.
+   * See domain/legal/acceptance.ts for why both.
+   */
+  if (!termsAreOfferable()) {
+    return NextResponse.redirect(outcomeUrl(request, 'terms_not_published'), 303)
+  }
+  if (!(await hasAcceptedCurrentTerms(session.shopId))) {
+    return NextResponse.redirect(outcomeUrl(request, 'terms_not_accepted'), 303)
   }
 
   /*

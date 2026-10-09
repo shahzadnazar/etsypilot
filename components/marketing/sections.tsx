@@ -10,6 +10,7 @@ import {
   type FoundingTier,
 } from '@/domain/billing/founding-pricing'
 import { TRIAL_TERMS } from '@/domain/billing/plans'
+import { LegalLinks } from '@/components/legal/legal-links'
 import {
   EXPORTABLE_DATASETS,
   exportableNouns,
@@ -574,17 +575,21 @@ export function MarketingFooter() {
         </span>
         <nav className="flex flex-wrap gap-x-5 gap-y-2 text-[13px]" aria-label="Footer">
           {/*
-            * Privacy and Terms are NOT linked, because neither page exists —
-            * tests/unit/links.test.ts caught the two 404s the moment they were
-            * written. A footer link to a privacy policy that is not there is
-            * worse on this page than anywhere else in the product: it is one
-            * of the things a sceptical seller clicks first, and finding
-            * nothing is the answer they take away.
+            * The legal pages now exist — /legal/terms, /legal/privacy,
+            * /legal/subprocessors, /legal/etsy — and this used to say they did
+            * not, because for a while a footer link to a privacy policy was a
+            * 404 that tests/unit/links.test.ts caught.
             *
-            * They go back the day the pages are written. Until then the two
-            * documents that DO exist and that no competitor publishes are the
-            * ones in front of people.
+            * They are still not linked unconditionally. LegalLinks renders
+            * them only while the documents are in force: both still carry
+            * `[[LEGAL_ENTITY]]` and friends, and a footer link presents a
+            * document as settled. A reader who goes to the URL directly gets
+            * the document in full with its draft state stated; a reader who
+            * follows a link from here would reasonably assume it was final.
+            * One function decides, in lib/legal/documents.ts, so this footer
+            * and the signup form and the acceptance gate cannot disagree.
             */}
+          <LegalLinks variant="footer" />
           <Link href="/data/methodology" style={{ color: 'var(--ink-2)' }}>Methodology</Link>
           <Link href="/data/sources" style={{ color: 'var(--ink-2)' }}>Data sources</Link>
           <a href="mailto:hello@etsypilot.app" style={{ color: 'var(--ink-2)' }}>Contact</a>

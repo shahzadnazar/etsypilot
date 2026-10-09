@@ -173,6 +173,29 @@ export const CONNECT_OUTCOMES = {
     title: 'No Etsy app is configured on this server',
     detail: 'EtsyPilot has no Etsy API credentials yet, so there is no shop to connect to. Demo mode needs none and stays fully usable.',
   },
+  terms_not_accepted: {
+    tone: 'info',
+    /*
+     * Not a failure. Etsy's API Terms §4 requires an application to have
+     * executed Application Terms with each seller, so this is the agreement
+     * being asked for at the only moment it can be: before any Etsy data
+     * moves. Nothing was connected and nothing was read.
+     */
+    title: 'Accept the Terms and Privacy Policy first',
+    detail:
+      'Etsy requires EtsyPilot to have an accepted agreement with each seller before it may read their shop. Nothing was connected and nothing on Etsy was read or changed. Read both documents below, accept them, then connect.',
+  },
+  terms_not_published: {
+    tone: 'info',
+    /*
+     * The seller has done nothing wrong and there is nothing they can do. The
+     * documents themselves name no legal entity yet, so there is no agreement
+     * to accept — and an acceptance of a blank would be worse than none.
+     */
+    title: 'Connecting a shop is not open yet',
+    detail:
+      'Nothing was connected and nothing on Etsy was read or changed. EtsyPilot\u2019s Terms of Service and Privacy Policy are still drafts: the legal entity behind them has not been established, so they name no party and nobody can accept them. Connecting an Etsy shop is blocked rather than allowed on an unfinished agreement. Both documents are published in full in the meantime.',
+  },
   shop_already_linked: {
     tone: 'warn',
     /*

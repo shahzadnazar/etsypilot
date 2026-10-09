@@ -40,6 +40,7 @@ import { isDemoMode } from '@/lib/etsy'
 import { log } from '@/lib/observability/logger'
 import { exchangeCode, statesMatch } from '@/lib/etsy/oauth'
 import { connectEtsyShop, EtsyConnectionError } from '@/lib/repositories/etsy-connection'
+import { hasAcceptedCurrentTerms, termsAreOfferable } from '@/domain/legal/acceptance'
 import { clearFlowCookie, FLOW_COOKIE, outcomeUrl, readFlowCookie, type ConnectOutcome } from '../_flow'
 
 export const dynamic = 'force-dynamic'
@@ -141,6 +142,33 @@ export async function GET(request: Request) {
    * rather than documented.
    */
   if (isDemoMode()) return done('demo_mode')
+
+  /*
+   * ══════════════════════════════════════════════════════════════════════
+   *   THE GATE THAT ANSWERS "WHAT STOPS SOMEBODY GOING STRAIGHT TO THE
+   *   CALLBACK".
+   * ══════════════════════════════════════════════════════════════════════
+   *
+   * Two things stop it, and the first is structural rather than a check:
+   *
+   *   THE FLOW COOKIE. Everything above this line has already refused a
+   *   callback with no flow cookie, and the cookie holds the PKCE verifier.
+   *   Only /api/etsy/connect writes it, and that route now refuses before it
+   *   mints a verifier. So a seller with no accepted agreement has no
+   *   verifier, and a code cannot be exchanged without one — that is PKCE,
+   *   not a policy, and it cannot be argued with.
+   *
+   *   THIS CHECK. Belt to those braces, placed BEFORE exchangeCode so no
+   *   token is ever minted for a connection that will not be saved. It earns
+   *   its place for two reasons: "unreachable because of a check in another
+   *   file" is how a gate quietly stops being one, and the documents can
+   *   change WHILE a flow is in the air — ten minutes is long enough for a
+   *   deploy — in which case the version the seller accepted at the start is
+   *   no longer the version in force, and the honest answer is to ask again
+   *   rather than to connect on a superseded agreement.
+   */
+  if (!termsAreOfferable()) return done('terms_not_published')
+  if (!(await hasAcceptedCurrentTerms(session.shopId))) return done('terms_not_accepted')
 
   try {
     const tokens = await exchangeCode({

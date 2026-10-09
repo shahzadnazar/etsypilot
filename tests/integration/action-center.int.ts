@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { eq, inArray } from 'drizzle-orm'
+import { acceptTermsFor } from '../support/legal'
 
 import { syncShopOrders } from '@/domain/sync/orders'
 import { syncShopListings } from '@/domain/sync/listings'
@@ -129,6 +130,10 @@ async function clean() {
   await db.delete(schema.listings).where(inArray(schema.listings.shopId, OURS))
   await db.delete(schema.syncState).where(inArray(schema.syncState.shopId, OURS))
   await db.delete(schema.memberships).where(inArray(schema.memberships.shopId, OURS))
+  // Before the shops: an acceptance row references the shop it covers.
+  await db
+    .delete(schema.termsAcceptances)
+    .where(inArray(schema.termsAcceptances.shopId, OURS))
   await db.delete(schema.shops).where(inArray(schema.shops.id, OURS))
   await db.delete(schema.users).where(inArray(schema.users.id, [USER_A, USER_B]))
 }
@@ -161,6 +166,13 @@ beforeEach(async () => {
       { id: SHOP_A, ownerId: USER_A, name: 'A Shop', currency: 'GBP', isDemo: false, connectionStatus: 'CONNECTED' },
       { id: SHOP_B, ownerId: USER_B, name: 'B Shop', currency: 'USD', isDemo: false, connectionStatus: 'CONNECTED' },
     ])
+  /*
+   * An executed agreement for both shops. Etsy's API Terms §4 makes this a
+   * precondition of reading any Etsy data, so a sync refuses without it —
+   * see tests/support/legal.ts for why the gate is not softened instead.
+   */
+  await acceptTermsFor([SHOP_A, SHOP_B], USER_A)
+
 })
 
 afterEach(() => {
@@ -375,6 +387,9 @@ describe('no card names anything this shop has no record of', () => {
       await getDb().insert(schema.shops).values([
         { id: SHOP_A, ownerId: USER_A, name: 'A Shop', currency: 'GBP', isDemo: false, connectionStatus: 'CONNECTED' },
       ])
+      // This test re-seeds inside the loop, so the agreement clean() removed
+      // has to be put back before anything syncs.
+      await acceptTermsFor([SHOP_A], USER_A)
       await shape()
 
       const { actions } = await getActions(ctxFor(SHOP_A))

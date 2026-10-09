@@ -1,0 +1,188 @@
+/*
+ * ══════════════════════════════════════════════════════════════════════════
+ *   /legal/* ONLY. THE DOCUMENT, SET AS A DOCUMENT.
+ * ══════════════════════════════════════════════════════════════════════════
+ *
+ * Scoped under `.legal`, applied by app/(public)/legal/layout.tsx and nowhere
+ * else. It sits inside `.marketing`, so it inherits the landing page's two
+ * faces — Petrona for headings, IBM Plex Mono for anything monospaced — and
+ * adds nothing but the prose rhythm a long document needs. No token changes
+ * value; the palette is the app's.
+ *
+ * The register is a printed statement, not a blog post: a 68-character
+ * measure, hairline rules in --border, generous space above a clause heading
+ * and little below it so a heading belongs to the text under it.
+ */
+
+.legal {
+  --legal-measure: 68ch;
+}
+
+.legal .doc {
+  max-width: var(--legal-measure);
+}
+
+.legal .doc h2 {
+  font-family: var(--font-display), Georgia, 'Times New Roman', serif;
+  font-weight: 600;
+  font-size: 21px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--ink-1);
+  margin: 2.5rem 0 0.6rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+/* The first clause heading sits under the page header's own rule. */
+.legal .doc > h2:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.legal .doc h3 {
+  font-family: var(--font-display), Georgia, 'Times New Roman', serif;
+  font-weight: 600;
+  font-size: 17px;
+  color: var(--ink-1);
+  margin: 1.75rem 0 0.4rem;
+}
+
+.legal .doc h4 {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink-1);
+  margin: 1.25rem 0 0.3rem;
+}
+
+.legal .doc p,
+.legal .doc li {
+  font-size: 14.5px;
+  line-height: 1.68;
+  color: var(--ink-2);
+}
+
+.legal .doc p {
+  margin: 0.7rem 0;
+}
+
+.legal .doc ul {
+  margin: 0.7rem 0;
+  padding-left: 1.1rem;
+  list-style: disc;
+}
+
+.legal .doc li {
+  margin: 0.35rem 0;
+}
+
+.legal .doc strong {
+  color: var(--ink-1);
+  font-weight: 600;
+}
+
+.legal .doc a {
+  color: var(--brand-strong);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.legal .doc code {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.9em;
+  color: var(--ink-1);
+  background: var(--canvas-soft);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0.05em 0.3em;
+}
+
+.legal .doc hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 2rem 0;
+}
+
+/*
+ * The Etsy warranty disclaimer is a blockquote in the source and must read as
+ * a quoted requirement rather than as our own prose — Etsy's API Terms require
+ * the disclaimer to be conspicuous.
+ */
+.legal .doc blockquote {
+  margin: 1.25rem 0;
+  padding: 0.9rem 1rem;
+  border-left: 3px solid var(--ink-1);
+  background: var(--canvas-soft);
+}
+
+.legal .doc blockquote p {
+  margin: 0;
+  color: var(--ink-1);
+}
+
+/* ─────────────────────────────────────────────────────────────── tables */
+
+.legal .legal-table-scroll {
+  /* A sub-processor table on a phone scrolls sideways rather than reflowing
+     into something that cannot be read as a table. */
+  overflow-x: auto;
+  margin: 1rem 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.legal .doc table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.legal .doc th,
+.legal .doc td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.55rem 0.7rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+.legal .doc th {
+  font-weight: 600;
+  color: var(--ink-1);
+  background: var(--canvas-soft);
+  white-space: nowrap;
+}
+
+.legal .doc tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* ──────────────────────────────────────────────────── placeholder chips */
+
+/*
+ * A blank in an agreement, shown as one.
+ *
+ * --danger is the ledger red already used for a figure that is money going
+ * out. A hole in a contract is the same kind of fact: something the reader
+ * must not skip.
+ */
+.legal .legal-placeholder {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.82em;
+  letter-spacing: 0.02em;
+  color: var(--danger);
+  border: 1px dashed var(--danger);
+  border-radius: 3px;
+  padding: 0.05em 0.35em;
+  white-space: normal;
+}
+
+.legal .legal-placeholder[data-kind='confirm'] {
+  /* A question about a sentence that is already true, not a blank in it. */
+  color: var(--muted-1);
+  border-color: var(--border);
+  border-style: solid;
+  background: var(--canvas-soft);
+}

@@ -40,6 +40,7 @@ import 'server-only'
  */
 
 import { getEtsyService } from '@/lib/etsy'
+import { assertTermsAccepted } from '@/domain/legal/acceptance'
 import { assertCanWrite, type ShopContext } from '@/lib/permissions'
 import { writeSyncedListings, type ListingSyncOutcome } from '@/lib/repositories/listings'
 import type { EtsyListing } from '@/lib/etsy/interface'
@@ -80,6 +81,20 @@ export interface ListingSyncResult extends ListingSyncOutcome {
  */
 export async function syncShopListings(ctx: ShopContext): Promise<ListingSyncResult> {
   assertCanWrite(ctx)
+  /*
+   * ── AND THE TERMS, BECAUSE §4 SAYS "BEFORE THEIR NEXT CONNECT OR SYNC" ──
+   *
+   * assertCanWrite answers "may this shop be written to". This answers a
+   * different question: is there an accepted agreement with this seller for
+   * the documents AS THEY ARE NOW. A seller who connected under one version
+   * and whose documents have since changed materially is asked again here,
+   * before any further Etsy data is read — which is the half of Etsy's API
+   * Terms §4 that a one-time checkbox at connect would miss.
+   *
+   * After assertCanWrite, not before: a read-only shop should be told it is
+   * read-only rather than asked to accept an agreement it cannot act on.
+   */
+  await assertTermsAccepted(ctx.shopId)
 
   const etsy = getEtsyService()
   const collected: EtsyListing[] = []

@@ -12,10 +12,22 @@ import type { BillingProvider } from './interface'
 
 let instance: BillingProvider | null = null
 
+/**
+ * Is a real payment provider connected in THIS deployment?
+ *
+ * Exported because the public sub-processor page answers the same question and
+ * must not answer it differently: that page tells a reader whether a payment
+ * provider receives their data, and "the condition is written out twice" is
+ * how one copy ends up stale. One condition, two readers.
+ */
+export function paymentProviderConfigured(): boolean {
+  return !isDemoMode() && Boolean(process.env.STRIPE_SECRET_KEY)
+}
+
 export function getBillingProvider(): BillingProvider {
   if (instance) return instance
 
-  if (!isDemoMode() && process.env.STRIPE_SECRET_KEY) {
+  if (paymentProviderConfigured()) {
     /*
      * Loaded lazily so `server-only` never runs during a client build, and so
      * demo mode never even resolves the module.

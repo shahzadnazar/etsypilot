@@ -40,6 +40,31 @@ const nextConfig: NextConfig = {
    */
   devIndicators: false,
   /*
+   * The legal pages read docs/legal/*.md at request time, so the deployed
+   * server bundle has to contain those files.
+   *
+   * Next traces what a route imports; it cannot trace what a route READS.
+   * lib/legal/documents.ts calls readFileSync on a path built from
+   * process.cwd(), which is deliberate — it keeps the markdown the single
+   * source of the published text (see that file's header) — and it is exactly
+   * the pattern the tracer cannot follow. Without this, /legal/terms builds
+   * fine, passes every test, and throws ENOENT the first time somebody loads
+   * it in production.
+   *
+   * extension/manifest.chrome.json for the same reason: /legal/etsy prints the
+   * extension's real permission list rather than a remembered one.
+   */
+  outputFileTracingIncludes: {
+    '/legal/*': ['docs/legal/*.md', 'extension/manifest.chrome.json'],
+    // The footer decides whether to link these pages by reading the documents,
+    // and the footer is on the landing page and the pricing page.
+    '/': ['docs/legal/*.md'],
+    '/pricing': ['docs/legal/*.md'],
+    '/signup': ['docs/legal/*.md'],
+    '/api/legal/accept': ['docs/legal/*.md'],
+    '/api/etsy/*': ['docs/legal/*.md'],
+  },
+  /*
    * Headers that do not vary per request. The CSP is NOT here — it carries a
    * nonce, so it is built in middleware.ts.
    */

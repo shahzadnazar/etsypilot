@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { eq, inArray, sql } from 'drizzle-orm'
+import { acceptTermsFor } from '../support/legal'
 
 /**
  * The Etsy OAuth callback, driven against the real table.
@@ -63,6 +64,8 @@ vi.mock('next/headers', () => ({
  * had a chance to complain usefully.
  */
 let GET: (request: Request) => Promise<Response>
+/** The START of the flow, so the gate before the redirect can be driven too. */
+let CONNECT: (request: Request) => Promise<Response>
 let getDb: typeof import('@/lib/db').getDb
 let schema: typeof import('@/lib/db').schema
 
@@ -144,6 +147,10 @@ async function clean() {
   const db = getDb()
   await db.delete(schema.etsyConnections).where(inArray(schema.etsyConnections.shopId, OURS))
   await db.delete(schema.memberships).where(inArray(schema.memberships.shopId, OURS))
+  // Before the shops: an acceptance row references the shop it covers.
+  await db
+    .delete(schema.termsAcceptances)
+    .where(inArray(schema.termsAcceptances.shopId, OURS))
   await db.delete(schema.shops).where(inArray(schema.shops.id, OURS))
   await db.delete(schema.users).where(inArray(schema.users.id, [USER_A, USER_B]))
 }
@@ -170,6 +177,7 @@ beforeAll(async () => {
   getDb = db.getDb
   schema = db.schema
   GET = (await import('@/app/api/etsy/callback/route')).GET
+  CONNECT = (await import('@/app/api/etsy/connect/route')).GET
 
   await clean()
 })
@@ -198,6 +206,17 @@ beforeEach(async () => {
       { id: SHOP_A, ownerId: USER_A, name: DEMO_NAME, currency: 'USD', isDemo: true, connectionStatus: 'DEMO' },
       { id: SHOP_B, ownerId: USER_B, name: DEMO_NAME, currency: 'USD', isDemo: true, connectionStatus: 'DEMO' },
     ])
+
+  /*
+   * An executed agreement for both shops, because the callback now refuses
+   * without one — Etsy's API Terms §4. Recorded in beforeEach rather than
+   * beforeAll because clean() removes it with the shops it references.
+   *
+   * The refusal itself is asserted in its own test below, by clearing the
+   * acceptance: a suite that only ever ran with the agreement in place would
+   * not notice the gate disappearing.
+   */
+  await acceptTermsFor([SHOP_A, SHOP_B], USER_A)
 
   session = { userId: USER_A, email: 'a@conn.test', name: 'A Seller', shopId: SHOP_A, isDemo: true }
   flowCookie = JSON.stringify({
@@ -491,6 +510,48 @@ describe('demo mode', () => {
   })
 })
 
+describe('the Application Terms gate, at the start of the flow', () => {
+  /*
+   * ══════════════════════════════════════════════════════════════════════════
+   *   DRIVEN, NOT INFERRED. THE CALLBACK GATE IS TESTED BELOW; THIS IS THE
+   *   ONE THAT STOPS A SELLER EVER REACHING ETSY.
+   * ══════════════════════════════════════════════════════════════════════════
+   *
+   * Etsy's API Terms §4 requires executed Application Terms with each seller.
+   * The refusal has to happen before a PKCE verifier is minted, because the
+   * verifier in the flow cookie is the thing that makes a callback
+   * exchangeable — so this test also establishes the answer to "what stops
+   * somebody going straight to the callback": with no verifier, nothing can.
+   */
+  const connectRequest = () =>
+    new Request('https://etsypilot.test/api/etsy/connect?scopes=listings_r')
+
+  it('refuses before the seller leaves for Etsy, and sets no flow cookie', async () => {
+    await getDb()
+      .delete(schema.termsAcceptances)
+      .where(inArray(schema.termsAcceptances.shopId, OURS))
+
+    const response = await CONNECT(connectRequest())
+    const location = response.headers.get('location') ?? ''
+    expect(new URL(location).searchParams.get('connect')).toBe('terms_not_accepted')
+    expect(new URL(location).pathname).toBe('/settings/shops')
+
+    /*
+     * No verifier was minted. This is the property the callback's own gate is
+     * belt to: a seller with no agreement has no flow cookie, and PKCE makes
+     * a code exchange without one impossible.
+     */
+    expect(response.headers.get('set-cookie') ?? '').not.toContain('etsy_oauth_flow')
+  })
+
+  it('sends the seller to Etsy once the agreement is on file', async () => {
+    const response = await CONNECT(connectRequest())
+    const location = response.headers.get('location') ?? ''
+    expect(location, 'an accepted seller was not sent to Etsy').toContain('etsy.com')
+    expect(response.headers.get('set-cookie') ?? '').toContain('etsy_oauth_flow')
+  })
+})
+
 describe('no refusal leaves half a connection', () => {
   it('writes neither row when Etsy reports no shop', async () => {
     vi.stubGlobal('fetch', fakeEtsy({ me: { user_id: 991 } }))
@@ -522,9 +583,23 @@ describe('no refusal leaves half a connection', () => {
       scopes: ['listings_r'],
     })
 
-    expect(outcomeOf(await GET(callbackRequest()))).toBe('exchange_failed')
+    /*
+     * The outcome moved from 'exchange_failed' to 'terms_not_accepted' when
+     * the Application Terms gate landed, and the new one is reached FIRST
+     * because it runs before the code is exchanged. A shop that does not
+     * exist holds no acceptance, so that is the honest answer the route can
+     * give without a second query — and the property this test is actually
+     * about is unchanged and still asserted below: neither row is written.
+     *
+     * It is also a strictly better failure here. The old path minted a token
+     * from Etsy and then discovered the shop was missing; this one never
+     * asks Etsy for a token it cannot store.
+     */
+    expect(outcomeOf(await GET(callbackRequest()))).toBe('terms_not_accepted')
     expect(await connectionRow('shop-that-is-not-there')).toBeNull()
     expect(await connectionRow(SHOP_A)).toBeNull()
+    // And no token was minted: the gate refused before the exchange.
+    expect(calls).toEqual([])
   })
 
   it('writes neither row when the flow cookie is missing', async () => {

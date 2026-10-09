@@ -456,6 +456,292 @@ describe('what the documents say about third parties', () => {
   })
 })
 
+describe('the placeholder gate: an unfinished agreement is not presented as one', () => {
+  /*
+   * ██████████████████████████████████████████████████████████████████████
+   *
+   *   A PAGE CONTAINING AN UNFILLED PLACEHOLDER MUST NOT BE PUBLICLY
+   *   LINKED, AND MUST NOT BE PRESENTED AS AN AGREEMENT A SELLER CAN
+   *   ACCEPT.
+   *
+   * ██████████████████████████████████████████████████████████████████████
+   *
+   * `[[LEGAL_ENTITY]]` names no party. A footer link says "here are our
+   * terms" and a visitor who follows it is entitled to assume what they find
+   * is in force; a checkbox beside a document with a blank where the
+   * counterparty should be is not consent to anything.
+   *
+   * This file is the home for the check because it already reads these
+   * documents. What it checks is that ONE function decides — so the footer,
+   * the signup form, the pages and the acceptance flow cannot disagree — and
+   * that no surface links these pages unconditionally.
+   */
+
+  const unfilled = (text: string) => [...text.matchAll(/\[\[([A-Z][A-Z0-9_]*)\]\]/g)].length
+
+  it('has placeholders to gate on, or this whole block is checking nothing', () => {
+    /*
+     * The anti-vacuity check, and it is load-bearing here in a way it rarely
+     * is: on the day the placeholders are filled in, every assertion below
+     * becomes trivially satisfiable, and this is what says so out loud rather
+     * than going quietly green.
+     */
+    const remaining = unfilled(privacy) + unfilled(terms)
+    expect(
+      remaining,
+      'both documents are filled in — re-read this block, because the gate it checks is now inactive and the footer SHOULD be linking these pages',
+    ).toBeGreaterThan(0)
+  })
+
+  it('decides in one place, which every public surface reads', () => {
+    const loader = code('lib/legal/documents.ts')
+    expect(loader).toMatch(/export function legalDocumentsInForce/)
+    expect(loader).toMatch(/export function draftState/)
+
+    // The footer and the signup form go through the same component, which
+    // goes through the same function.
+    const links = code('components/legal/legal-links.tsx')
+    expect(links).toMatch(/legalDocumentsInForce\(\)/)
+
+    const footer = code('components/marketing/sections.tsx')
+    expect(footer, 'the marketing footer does not use the gated component').toMatch(
+      /<LegalLinks variant="footer" \/>/,
+    )
+    const signup = code('app/(public)/signup/page.tsx')
+    expect(signup).toMatch(/<LegalLinks/)
+  })
+
+  it('links no legal page unconditionally from a public surface', () => {
+    /*
+     * The sweep that would have caught the opposite mistake: a bare
+     * <Link href="/legal/terms"> on the landing page would present the
+     * document as settled no matter what the gate says.
+     *
+     * The legal pages themselves are exempt — they cross-reference each other,
+     * and a reader already there has the draft banner above them — as is the
+     * gated component, which is the one place allowed to render these hrefs.
+     */
+    const exempt = (file: string) =>
+      file.startsWith('app/(public)/legal/') ||
+      file === 'components/legal/legal-links.tsx' ||
+      file === 'components/legal/draft-notice.tsx' ||
+      // The acceptance panel is shown to a signed-in seller at the moment the
+      // gate asks them to accept, which only happens once the documents are in
+      // force; it is reached through the gate rather than past it.
+      file === 'components/legal/accept-terms.tsx'
+
+    const publicSurfaces = [
+      ...walk('app/(marketing)'),
+      ...walk('app/(public)'),
+      ...walk('components/marketing'),
+      ...walk('components/legal'),
+    ].filter((file) => !exempt(file))
+
+    expect(publicSurfaces.length, 'the sweep found no public surfaces').toBeGreaterThan(3)
+
+    const offenders = publicSurfaces.filter((file) => /href="\/legal\//.test(code(file)))
+    expect(
+      offenders,
+      'a public surface links a legal page directly; route it through LegalLinks so the placeholder gate decides',
+    ).toEqual([])
+  })
+
+  it('renders the draft state on the pages themselves, rather than 404ing', () => {
+    /*
+     * The decision, asserted so it cannot be quietly reversed into a 404: the
+     * documents exist, so "not found" would be a false statement made by a
+     * server to somebody who went looking for the terms.
+     */
+    const layout = code('app/(public)/legal/layout.tsx')
+    expect(layout).toMatch(/<DraftNotice \/>/)
+
+    const notice = code('components/legal/draft-notice.tsx')
+    expect(notice).toMatch(/draftState\(\)/)
+    expect(notice, 'the draft notice 404s instead of rendering').not.toMatch(/notFound\(\)/)
+
+    // And the pages ask not to be indexed while in draft, so an unfinished
+    // agreement is not the search result somebody finds.
+    for (const slug of ['terms', 'privacy', 'subprocessors', 'etsy']) {
+      const page = code(`app/(public)/legal/${slug}/page.tsx`)
+      expect(page, `/legal/${slug} does not gate its robots metadata`).toMatch(
+        /legalDocumentsInForce\(\) \? \{\} : \{ robots/,
+      )
+    }
+  })
+
+  it('refuses to let a seller accept, and refuses to connect a shop at all', () => {
+    const acceptance = code('domain/legal/acceptance.ts')
+    expect(acceptance).toMatch(/export function assertTermsOfferable/)
+    expect(acceptance).toMatch(/draftState\(\)/)
+
+    // The connect route refuses with its own outcome, distinct from "you have
+    // not accepted" — the seller can act on one and not the other.
+    const connect = code('app/api/etsy/connect/route.ts')
+    expect(connect).toMatch(/terms_not_published/)
+    expect(connect).toMatch(/terms_not_accepted/)
+  })
+
+  it('and the sub-processor page marks what is not wired up rather than stating it', () => {
+    /*
+     * Four of the six rows in §4 are placeholders. On a page headed "who else
+     * processes your data" an unfilled row would read as a fact — "a payment
+     * provider takes payment" — about something that does not happen.
+     *
+     * The first version of this page had two states and marked every
+     * placeholder "not in use", which put the database and the authentication
+     * provider under a heading saying nothing was sent to them. That was
+     * worse than the over-claim it was avoiding, so there are three states and
+     * the live ones are measured from the running configuration.
+     */
+    const parser = code('lib/legal/subprocessors.ts')
+    expect(parser).toMatch(/IN_USE_UNNAMED/)
+    expect(parser).toMatch(/NOT_IN_USE/)
+    // Measured, through the same functions the product uses to decide whether
+    // it may send email or take a payment.
+    expect(parser).toMatch(/emailSenderConfigured\(\)/)
+    expect(parser).toMatch(/paymentProviderConfigured\(\)/)
+
+    // And it renders §4 of the Privacy Policy rather than a second copy of it,
+    // so the guard above — an AI dependency requires an AI provider in the
+    // table — still covers what the public page shows.
+    expect(parser).toMatch(/legalDocument\('privacy'\)/)
+    expect(parser).toMatch(/## 4\./)
+  })
+})
+
+describe('what /legal/etsy says about the browser extension', () => {
+  /*
+   * ██████████████████████████████████████████████████████████████████████
+   *
+   *   THE TERMS ONCE DENIED THAT A BROWSER EXTENSION EXISTED. ONE SHIPS IN
+   *   THIS REPOSITORY. ETSY'S PROHIBITED BEHAVIOR LIST NAMES EXTENSIONS
+   *   EXPLICITLY, SO THIS IS THE CLAIM WITH THE MOST AT STAKE: GETTING IT
+   *   WRONG RISKS THE API ACCESS THE WHOLE PRODUCT DEPENDS ON.
+   *
+   * ██████████████████████████████████████████████████████████████████████
+   *
+   * The page makes five negative claims — it reads no page content, no
+   * cookies, no storage, changes nothing, and never calls etsy.com. Each one
+   * is checked against the extension's own source here, because each one
+   * stops being true the moment somebody adds a line to a content script, and
+   * nothing else in this repository would notice.
+   */
+
+  const manifest = JSON.parse(
+    readFileSync('extension/manifest.chrome.json', 'utf8'),
+  ) as { permissions?: string[]; host_permissions?: string[]; content_scripts?: unknown[] }
+  const content = code('extension/src/content.ts')
+  const client = code('extension/src/client.ts')
+  /*
+   * Whitespace-normalised: the page is JSX wrapped at 100 columns, so a
+   * sentence a reader sees on one line is three lines in the source and a
+   * literal match against it silently fails.
+   */
+  const page = code('app/(public)/legal/etsy/page.tsx').replace(/\s+/g, ' ')
+
+  it('reads the manifest at request time rather than describing it', () => {
+    /*
+     * The permission list on the page is printed from the manifest. Add
+     * `cookies` or `<all_urls>` and the public legal page says so in the same
+     * deploy, with no author involved — which is the opposite of how the false
+     * sentence got into the Terms.
+     */
+    const facts = code('lib/legal/etsy.ts')
+    expect(facts).toMatch(/extension\/manifest\.chrome\.json/)
+    expect(facts).toMatch(/readFileSync/)
+    expect(page).toMatch(/extensionFacts\(\)/)
+    expect(page).toMatch(/facts\.permissions/)
+    expect(page).toMatch(/facts\.hostPermissions/)
+  })
+
+  it('still asks for only activeTab, and only on Etsy', () => {
+    expect(manifest.permissions ?? []).toEqual(['activeTab'])
+    for (const host of manifest.host_permissions ?? []) {
+      expect(host, `the extension asks for host access to ${host}`).toMatch(/^https:\/\/(www\.)?etsy\.com\/\*$/)
+    }
+    expect(manifest.host_permissions?.length ?? 0).toBeGreaterThan(0)
+  })
+
+  it('reads the URL and nothing else from the page', () => {
+    // The whole content script: one listener, one response, built from the URL.
+    expect(content).toMatch(/listingIdFromUrl\(location\.href\)/)
+
+    const scrapers = [
+      'querySelector',
+      'querySelectorAll',
+      'getElementsBy',
+      'innerText',
+      'textContent',
+      'document.body',
+    ]
+    for (const api of scrapers) {
+      expect(
+        content.includes(api),
+        `the content script uses ${api} — it is reading page content, and /legal/etsy promises it does not`,
+      ).toBe(false)
+    }
+  })
+
+  it('reads no cookies, storage or headers', () => {
+    for (const api of ['document.cookie', 'localStorage', 'sessionStorage', 'indexedDB', 'chrome.cookies']) {
+      expect(
+        content.includes(api),
+        `the content script touches ${api} — /legal/etsy and the Privacy Policy both promise it does not`,
+      ).toBe(false)
+    }
+    // And the manifest holds no permission that would allow it.
+    for (const permission of manifest.permissions ?? []) {
+      expect(['cookies', 'storage', 'webRequest', 'scripting']).not.toContain(permission)
+    }
+  })
+
+  it('changes nothing on the page', () => {
+    for (const api of ['appendChild', 'insertBefore', 'innerHTML', 'createElement', 'setAttribute', 'classList']) {
+      expect(
+        content.includes(api),
+        `the content script calls ${api} — /legal/etsy promises nothing is injected, rewritten or overlaid`,
+      ).toBe(false)
+    }
+  })
+
+  it('never calls etsy.com, so every figure still comes from the API server-side', () => {
+    /*
+     * The claim that matters most for Etsy's Prohibited Behavior list: the
+     * extension is not a second route to Etsy data. Its only network
+     * destination is the EtsyPilot app.
+     */
+    expect(client).toMatch(/new URL\('\/api\/extension\/listing', APP_ORIGIN\)/)
+    expect(client.includes('etsy.com'), 'the extension client calls etsy.com').toBe(false)
+    expect(content.includes('fetch('), 'the content script makes network requests').toBe(false)
+  })
+
+  it('claims no authorisation from Etsy, because none has been given', () => {
+    /*
+     * The page describes behaviour and does not assert a conclusion about
+     * whether that behaviour satisfies item 24 of Etsy's Prohibited Behavior
+     * list. That is Etsy's call. A page that claimed compliance would be
+     * making a representation nobody here is in a position to make — and the
+     * last time this product described the extension from memory, the
+     * description was false.
+     */
+    expect(page).toMatch(/no written authorisation has been given or asked for/)
+    expect(
+      /compliant with|complies with Etsy|approved by Etsy|authorised by Etsy/i.test(page),
+      '/legal/etsy claims Etsy approval for the extension',
+    ).toBe(false)
+  })
+
+  it('carries the warranty disclaimer from the Terms rather than a second copy', () => {
+    const facts = code('lib/legal/etsy.ts')
+    expect(facts).toMatch(/legalDocument\('terms'\)/)
+    expect(facts).toMatch(/## 12\./)
+    expect(page).toMatch(/warrantyDisclaimer\(\)/)
+
+    // And the Terms still carry it, naming the developer as sole provider.
+    expect(terms).toMatch(/THIS APPLICATION IS SOLELY PROVIDED BY/)
+  })
+})
+
 describe('what the documents say about cookies', () => {
   it('§11: every cookie the product sets is disclosed, and no disclosed one is fictional', () => {
     const section = privacy.slice(privacy.indexOf('## 11.'), privacy.indexOf('## 12.'))

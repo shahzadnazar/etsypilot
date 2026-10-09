@@ -217,6 +217,41 @@ export const Errors = {
       context: { missing: [...missing] },
     }),
 
+  /**
+   * The seller has not accepted the Application Terms, so no Etsy data moves.
+   *
+   * Etsy's API Terms §4 requires executed Application Terms with each seller;
+   * this is what "not executed yet" looks like at the connect and sync
+   * boundaries. Not an error in the sense of something broken — a refusal with
+   * an action attached, which is why the recovery names the screen.
+   */
+  termsNotAccepted: () =>
+    new AppError({
+      kind: 'AUTHORIZATION',
+      code: 'TERMS_NOT_ACCEPTED',
+      message: 'The Application Terms have not been accepted for this shop yet.',
+      recovery:
+        'Open Settings → Shop connections, read the Terms of Service and the Privacy Policy, and accept them there. Etsy requires an accepted agreement with each seller before an application may read their shop, so nothing is read or written until that is on file.',
+    }),
+
+  /**
+   * The documents themselves are not finished, so there is nothing to accept.
+   *
+   * A different refusal from the one above and deliberately so: the seller has
+   * done nothing wrong and there is no action they can take. `missing` names
+   * the unfilled placeholders because the person who hits this in development
+   * is the person who has to fill them in.
+   */
+  termsNotPublished: (missing: readonly string[]) =>
+    new AppError({
+      kind: 'EXTERNAL_SERVICE',
+      code: 'TERMS_NOT_PUBLISHED',
+      message: 'Connecting an Etsy shop is not open yet.',
+      recovery:
+        'EtsyPilot\u2019s Terms of Service and Privacy Policy are still drafts \u2014 the legal entity behind them has not been established, so they name no party and nobody can accept them. Connecting a shop is blocked rather than allowed on an unfinished agreement. You can read both documents in full in the meantime.',
+      context: { missing: [...missing] },
+    }),
+
   unknown: (context: Record<string, unknown> = {}) =>
     new AppError({
       kind: 'UNKNOWN',

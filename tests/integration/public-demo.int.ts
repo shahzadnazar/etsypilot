@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { inArray } from 'drizzle-orm'
+import { acceptTermsFor } from '../support/legal'
 
 import { syncShopListings } from '@/domain/sync/listings'
 import { syncShopOrders } from '@/domain/sync/orders'
@@ -147,6 +148,10 @@ async function clean() {
   await db.delete(schema.listings).where(inArray(schema.listings.shopId, OURS))
   await db.delete(schema.syncState).where(inArray(schema.syncState.shopId, OURS))
   await db.delete(schema.memberships).where(inArray(schema.memberships.shopId, OURS))
+  // Before the shops: an acceptance row references the shop it covers.
+  await db
+    .delete(schema.termsAcceptances)
+    .where(inArray(schema.termsAcceptances.shopId, OURS))
   await db.delete(schema.shops).where(inArray(schema.shops.id, OURS))
   await db.delete(schema.users).where(inArray(schema.users.id, [REAL_USER]))
 }
@@ -177,6 +182,14 @@ beforeEach(async () => {
     .values([
       { id: REAL_SHOP, ownerId: REAL_USER, name: 'A Real Shop', currency: 'GBP', isDemo: false, connectionStatus: 'CONNECTED' },
     ])
+
+  /*
+   * The real seller holds an executed agreement, because a sync refuses
+   * without one — Etsy's API Terms §4. This suite is about what a PUBLIC
+   * VISITOR can reach, and the seller's rows have to exist for there to be
+   * anything for the visitor to fail to reach.
+   */
+  await acceptTermsFor([REAL_SHOP], REAL_USER)
 
   setEtsyService(fakeAdapter([order('SECRET-1', 480)], [listing('990001', 480)]) as never)
   await syncShopListings(sellerCtx)

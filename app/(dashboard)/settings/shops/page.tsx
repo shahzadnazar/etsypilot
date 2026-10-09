@@ -5,12 +5,15 @@ import { PageHeader } from '@/components/layout/page-header'
 import { ScopeList } from '@/components/connect/scope-list'
 import { SyncProgress } from '@/components/connect/sync-progress'
 import { NotYet } from '@/components/settings/not-yet'
+import { AcceptTerms } from '@/components/legal/accept-terms'
+import { TermsOutcome } from '@/components/legal/terms-outcome'
 import { Card } from '@/components/ui/card'
 import { demoSyncState, getConnectionState } from '@/domain/connect/service'
 import { CONNECT_OUTCOMES, connectOutcome, ETSY_SCOPES } from '@/domain/connect/types'
 import { isDemoMode } from '@/lib/etsy'
 import { getSession } from '@/lib/auth'
 import { shopContext } from '@/lib/permissions'
+import { acceptanceStatus, termsAreOfferable } from '@/domain/legal/acceptance'
 import { formatDateTime } from '@/lib/utils/format'
 
 export const metadata: Metadata = { title: 'Shop connections' }
@@ -33,12 +36,12 @@ export const metadata: Metadata = { title: 'Shop connections' }
 export default async function ShopConnectionsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sync?: string; connect?: string }>
+  searchParams: Promise<{ sync?: string; connect?: string; terms?: string }>
 }) {
   const session = await getSession()
   if (!session) redirect('/login')
 
-  const { sync, connect } = await searchParams
+  const { sync, connect, terms } = await searchParams
   const ctx = shopContext(session, session.shopId)
   const state = await getConnectionState(ctx)
   const showSync = sync === '1'
@@ -50,6 +53,22 @@ export default async function ShopConnectionsPage({
    * screen becomes a checkbox people stop reading.
    */
   const defaultScopeKeys = ETSY_SCOPES.filter((s) => s.requirement !== 'OPTIONAL').map((s) => s.key)
+
+  /*
+   * ── THE AGREEMENT, AND WHY IT IS NOT READ IN DEMO MODE ─────────────────
+   *
+   * Etsy's API Terms §4 requires Application Terms executed with each Etsy
+   * SELLER. A demo shop has no Etsy connection, no OAuth token and no seller:
+   * there is nobody for an agreement to be with, the callback refuses in demo
+   * mode before it reaches the gate, and `acceptanceStatus` would hit a
+   * database that a demo deployment does not have.
+   *
+   * So this screen looks exactly as it did in demo mode, which is the
+   * constraint — and the acceptance panel appears for a live seller, who is
+   * the only person who can connect anything.
+   */
+  const acceptance = isDemoMode() ? null : await acceptanceStatus(session.shopId)
+  const canConnect = acceptance ? acceptance.current : true
 
   return (
     <>
@@ -83,13 +102,31 @@ export default async function ShopConnectionsPage({
               * flow is a top-level navigation by nature, and one that works
               * with no JavaScript running is one that cannot fail to appear.
               */}
-            <Link
-              prefetch={false}
-              href={`/api/etsy/connect?scopes=${defaultScopeKeys.join(',')}`}
-              className="inline-flex h-11 items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-brand-on hover:bg-brand-strong md:h-[38px]"
-            >
-              Connect a shop
-            </Link>
+            {/*
+              * Disabled when the gate will refuse, so the page does not offer
+              * an action that bounces. The gate itself is server-side — see
+              * domain/legal/acceptance.ts — and this is only the honest
+              * rendering of it, the same way the Disconnect button above is
+              * disabled rather than mocked.
+              */}
+            {canConnect ? (
+              <Link
+                prefetch={false}
+                href={`/api/etsy/connect?scopes=${defaultScopeKeys.join(',')}`}
+                className="inline-flex h-11 items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-brand-on hover:bg-brand-strong md:h-[38px]"
+              >
+                Connect a shop
+              </Link>
+            ) : (
+              <NotYet
+                label="Connect a shop"
+                reason={
+                  termsAreOfferable()
+                    ? 'Accept the Terms and Privacy Policy below first — Etsy requires an accepted agreement with each seller.'
+                    : 'The Terms and Privacy Policy are still drafts, so there is nothing to accept and no shop can be connected yet.'
+                }
+              />
+            )}
           </>
         }
       />
@@ -106,6 +143,15 @@ export default async function ShopConnectionsPage({
       {state.notice ? (
         <Card className="mb-4 p-4 text-small leading-relaxed text-ink-2">{state.notice}</Card>
       ) : null}
+
+      {terms ? <TermsOutcome outcome={terms} /> : null}
+
+      {/*
+        * The agreement goes ABOVE the scope list, because it is the thing that
+        * has to happen first: a seller reading what each Etsy permission does
+        * is reading about a connection they cannot start yet.
+        */}
+      {acceptance ? <AcceptTerms status={acceptance} /> : null}
 
       {showSync ? (
         <div className="mb-4">
