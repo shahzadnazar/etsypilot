@@ -42,7 +42,7 @@ export function countedRows(count: number, table: string): Provenanced<number> {
     value: count,
     provenance: {
       type: 'VERIFIED',
-      source: `EtsyPilot database · ${table}`,
+      source: `CobaltRank database · ${table}`,
       methodology: `A count of rows in ${table}. Nothing is modelled or inferred; the row is there or it is not.`,
     },
   }
@@ -117,11 +117,11 @@ export function fromUnmaintainedColumn(reason: string, remedy: string): Provenan
 /**
  * A plan or a price read from our own billing tables. VERIFIED.
  *
- * Not from Stripe, and the source says so. EtsyPilot's `subscriptions` table
+ * Not from Stripe, and the source says so. CobaltRank's `subscriptions` table
  * is what the product enforces limits against, so it is the right thing to
  * report — but an operator debugging a billing dispute needs to know they are
  * looking at our copy rather than the processor's.
  */
 export function fromBilling(value: number | string | null): Provenanced<number | string> {
-  return verified(value, 'EtsyPilot database · subscriptions')
+  return verified(value, 'CobaltRank database · subscriptions')
 }

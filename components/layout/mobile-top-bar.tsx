@@ -1,4 +1,5 @@
 'use client'
+import { PRODUCT_MONOGRAM, PRODUCT_NAME } from '@/lib/brand'
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
@@ -176,9 +177,9 @@ export function MobileTopBar({
           >
             <div className="flex items-center gap-2.5 border-b border-line px-4 py-3">
               <span className="flex h-[30px] w-[30px] items-center justify-center rounded-control bg-brand text-[12px] font-bold text-brand-on">
-                EP
+                {PRODUCT_MONOGRAM}
               </span>
-              <span className="text-[15px] font-bold tracking-[-0.01em] text-ink-1">EtsyPilot</span>
+              <span className="text-[15px] font-bold tracking-[-0.01em] text-ink-1">{PRODUCT_NAME}</span>
               <button
                 type="button"
                 onClick={() => setOpen(false)}

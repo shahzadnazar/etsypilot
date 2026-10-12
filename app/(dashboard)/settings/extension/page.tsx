@@ -34,7 +34,7 @@ const STORES = [
       'Download the package below and unzip it.',
       'Open chrome://extensions and turn on Developer mode.',
       'Choose “Load unpacked” and pick the unzipped folder.',
-      'Open any etsy.com listing and click the EtsyPilot icon.',
+      'Open any etsy.com listing and click the CobaltRank icon.',
     ],
   },
   {
@@ -45,7 +45,7 @@ const STORES = [
       'Download the package below and unzip it.',
       'Open about:debugging → This Firefox.',
       'Choose “Load Temporary Add-on” and pick manifest.json inside the folder.',
-      'Open any etsy.com listing and click the EtsyPilot icon.',
+      'Open any etsy.com listing and click the CobaltRank icon.',
     ],
   },
 ] as const
@@ -61,7 +61,7 @@ const CAN = [
   'Show listing health and the open findings for a listing you own',
   'Show keyword opportunity and competition, modelled from public signals',
   'Show your own verified figures for your own listings',
-  'Open the matching screen in EtsyPilot',
+  'Open the matching screen in CobaltRank',
 ] as const
 
 /*
@@ -104,7 +104,7 @@ export default async function ExtensionSettingsPage({
     <>
       <PageHeader
         title="Browser Extension"
-        subtitle="EtsyPilot intelligence while you browse Etsy. Read-only, on etsy.com only."
+        subtitle="CobaltRank intelligence while you browse Etsy. Read-only, on etsy.com only."
       />
 
       {failure ? (
@@ -194,7 +194,7 @@ export default async function ExtensionSettingsPage({
             ))}
           </ul>
           <p className="mt-1 text-caption leading-relaxed text-muted-1">
-            It authenticates with your EtsyPilot account only — it never sees your Etsy password,
+            It authenticates with your CobaltRank account only — it never sees your Etsy password,
             and Etsy API secrets stay server-side. Each of these is checked when the extension is
             packaged: a build that requests a permission beyond etsy.com, uses a cookie or
             web-request API, or contains anything shaped like a key, fails and is never produced.
@@ -217,7 +217,7 @@ export default async function ExtensionSettingsPage({
         <p className="text-caption leading-relaxed text-muted-1">
           It does not read the Etsy page itself. Prices, titles and stock taken off Etsy&rsquo;s
           markup would be data we present as ours, from a page that changes without notice — every
-          figure in the panel comes from EtsyPilot, with the same badge it carries here.
+          figure in the panel comes from CobaltRank, with the same badge it carries here.
         </p>
       </Card>
 

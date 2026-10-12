@@ -183,7 +183,7 @@ function build() {
     results.push({ browser: browser.name, out, files: files.length, sha256: digest.digest('hex').slice(0, 12) })
 
     if (process.argv.includes('--zip')) {
-      const zip = path.join(here, 'build', `etsypilot-${browser.name}-${manifest.version}.zip`)
+      const zip = path.join(here, 'build', `cobaltrank-${browser.name}-${manifest.version}.zip`)
       fs.rmSync(zip, { force: true })
       execFileSync('zip', ['-qr', zip, '.'], { cwd: out })
       console.log(`  packaged ${path.relative(root, zip)}`)

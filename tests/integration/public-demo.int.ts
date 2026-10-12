@@ -203,7 +203,7 @@ beforeEach(async () => {
     detail: 'SECRET-OP · COGS 40% → 42%',
     target: 'Shop-wide',
     source: 'MANUAL',
-    reached: { kind: 'NOT_APPLICABLE', reason: 'ETSYPILOT_ONLY' },
+    reached: { kind: 'NOT_APPLICABLE', reason: 'COBALTRANK_ONLY' },
     sequence: [],
     wouldHaveChanged: [],
     wouldHaveChangedMore: 0,

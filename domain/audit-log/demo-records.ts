@@ -21,7 +21,7 @@ const OWNER: AuditActor = {
 
 const SYSTEM: AuditActor = {
   name: 'System',
-  role: 'EtsyPilot',
+  role: 'CobaltRank',
   session: '—',
   device: 'Scheduled sync',
 }
@@ -106,7 +106,7 @@ export function demoAuditRecords(): AuditRecord[] {
       detail: 'OP-9102 · COGS 36% → 38%',
       target: 'Shop-wide',
       source: 'MANUAL',
-      reached: { kind: 'NOT_APPLICABLE', reason: 'ETSYPILOT_ONLY' },
+      reached: { kind: 'NOT_APPLICABLE', reason: 'COBALTRANK_ONLY' },
       sequence: [
         { at: '2026-08-10T16:41:00.000Z', label: 'Cost rule changed', detail: 'Default cost rule 36% → 38% of price' },
       ],
@@ -193,7 +193,7 @@ export function demoAuditRecords(): AuditRecord[] {
        */
       reached: { kind: 'SENT', succeeded: 8, attempted: 9 },
       explanation:
-        'One listing had been edited on Etsy after the original change, so reverting it would have overwritten work EtsyPilot did not make. That listing was left alone and the other eight were reverted.',
+        'One listing had been edited on Etsy after the original change, so reverting it would have overwritten work CobaltRank did not make. That listing was left alone and the other eight were reverted.',
       sequence: [
         { at: '2026-08-02T16:38:00.000Z', label: 'Rollback requested', detail: 'Reverting BE-2288' },
         { at: '2026-08-02T16:41:00.000Z', label: 'Applied', detail: '8 of 9 reverted, 1 skipped' },

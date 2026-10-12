@@ -34,7 +34,7 @@ import { applicationTermsVersion } from '@/domain/legal/acceptance'
 /** A finished document: no placeholders, so it may be accepted. */
 function finished(title: string): string {
   return [
-    `# EtsyPilot — ${title}`,
+    `# CobaltRank — ${title}`,
     '',
     'Last updated: 2026-10-09',
     '',

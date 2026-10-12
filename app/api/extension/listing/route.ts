@@ -5,7 +5,7 @@
  * one: the extension reads, and everything that writes goes through the app,
  * where the bulk editor's confirmation gate applies.
  *
- * Authentication is the seller's existing EtsyPilot session cookie, sent by the
+ * Authentication is the seller's existing CobaltRank session cookie, sent by the
  * browser because the popup fetches with `credentials: 'include'`. The
  * extension never receives a token, so it cannot leak one — and this route
  * never issues one.
@@ -89,7 +89,7 @@ export async function GET(request: Request) {
         {
           state: 'SIGNED_OUT',
           message:
-            'Sign in once — the extension shares your existing EtsyPilot session, never a separate Etsy login.',
+            'Sign in once — the extension shares your existing CobaltRank session, never a separate Etsy login.',
           signInUrl: appUrl('/login'),
         },
         200,
@@ -104,7 +104,7 @@ export async function GET(request: Request) {
         {
           state: 'NO_SHOP',
           message:
-            'Connect a shop in EtsyPilot to unlock listing health and your own verified figures here.',
+            'Connect a shop in CobaltRank to unlock listing health and your own verified figures here.',
           connectUrl: appUrl('/settings/shops'),
         },
         200,
@@ -132,7 +132,7 @@ export async function GET(request: Request) {
     return json(
       {
         state: 'ERROR',
-        message: app?.message ?? 'We couldn’t load EtsyPilot intelligence for this listing.',
+        message: app?.message ?? 'We couldn’t load CobaltRank intelligence for this listing.',
         recovery: app?.recovery ?? 'Nothing on your shop was changed. Try again in a moment.',
       },
       app ? 400 : 500,

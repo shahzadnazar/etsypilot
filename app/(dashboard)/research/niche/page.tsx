@@ -20,7 +20,7 @@ const CROWDING_LABEL: Record<string, string> = { LOW: 'Low', MEDIUM: 'Moderate',
 /*
  * Niche research (artboard 102).
  *
- * "What would have to be true" rather than a recommendation. EtsyPilot will not
+ * "What would have to be true" rather than a recommendation. CobaltRank will not
  * tell a seller to enter a niche — a recommendation is a claim about a future
  * this product cannot see. Each condition instead carries a number that came
  * off this page, so the seller can disagree with it by checking the figure.
@@ -105,7 +105,7 @@ export default async function NichePage({
           title={`“${view.term}” has not been sampled enough to model`}
           description={
             signals.demand.provenance.methodology ??
-            'EtsyPilot samples public listing and autocomplete signals weekly, and a term has to appear across several weeks before it can be reported.'
+            'CobaltRank samples public listing and autocomplete signals weekly, and a term has to appear across several weeks before it can be reported.'
           }
           action={
             <div className="flex flex-wrap gap-2">
@@ -268,7 +268,7 @@ export default async function NichePage({
           <Card className="mt-5 p-[18px]">
             <h2 className="text-section text-ink-1">What would have to be true</h2>
             <p className="pb-3 max-w-prose text-caption leading-relaxed text-muted-1">
-              EtsyPilot will not tell you to enter a niche. These are the conditions the numbers
+              CobaltRank will not tell you to enter a niche. These are the conditions the numbers
               imply, each with the figure it came from, so you can disagree with one by checking it.
             </p>
             <ol className="flex flex-col gap-3">

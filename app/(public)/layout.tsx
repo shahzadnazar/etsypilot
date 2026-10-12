@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { PRODUCT_MONOGRAM, PRODUCT_NAME } from '@/lib/brand'
 
 /*
  * The public shell.
@@ -35,9 +36,9 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
             // Literal, not a token: this chip stays dark in both themes (D23).
             style={{ background: '#241B12', color: '#F7F3ED' }}
           >
-            EP
+            {PRODUCT_MONOGRAM}
           </span>
-          <span className="text-body font-semibold text-ink-1">EtsyPilot</span>
+          <span className="text-body font-semibold text-ink-1">{PRODUCT_NAME}</span>
         </div>
       </header>
 

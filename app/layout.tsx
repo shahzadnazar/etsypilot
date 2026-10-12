@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { PRODUCT_NAME } from '@/lib/brand'
 import { headers } from 'next/headers'
 import { Inter } from 'next/font/google'
 import { ThemeScript } from '@/components/layout/theme-script'
@@ -35,11 +36,15 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: 'EtsyPilot',
-    template: '%s · EtsyPilot',
+    /*
+     * Both from lib/brand.ts. `default` is also what a page with no title of
+     * its own falls back to, which components/admin/operator-title.tsx
+     * measures and documents — see the note there before changing either.
+     */
+    default: PRODUCT_NAME,
+    template: `%s · ${PRODUCT_NAME}`,
   },
-  description:
-    'Make smarter Etsy decisions with data you can trust. EtsyPilot is an Etsy seller decision and operations intelligence platform.',
+  description: `Make smarter Etsy decisions with data you can trust. ${PRODUCT_NAME} is an Etsy seller decision and operations intelligence platform.`,
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

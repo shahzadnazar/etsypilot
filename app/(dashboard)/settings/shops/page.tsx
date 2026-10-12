@@ -23,7 +23,7 @@ export const metadata: Metadata = { title: 'Shop connections' }
  *
  * Phase 11 made "Connect a shop" a real OAuth redirect to /api/etsy/connect.
  * Everything else the seller reads on this page — the scopes, what breaks
- * without each one, what EtsyPilot cannot do, the revoke path — was already
+ * without each one, what CobaltRank cannot do, the revoke path — was already
  * true before the redirect became real and did not change with it.
  *
  * `?connect=<outcome>` reports how an attempt ended. The copy lives in
@@ -165,7 +165,7 @@ export default async function ShopConnectionsPage({
         <h3 className="text-section text-ink-1">What Etsy is asked for</h3>
         <p className="mt-2 max-w-[75ch] text-small leading-relaxed text-ink-2">
           Connecting sends you to Etsy to approve access. You type your Etsy password on etsy.com and
-          never here — EtsyPilot has nowhere to put one. EtsyPilot receives a permission token, held
+          never here — CobaltRank has nowhere to put one. CobaltRank receives a permission token, held
           on the server, encrypted, never in your browser, and revocable from either side.
           {isDemoMode()
             ? ' This server is running in demo mode with no Etsy credentials configured, so connecting will say so rather than sending you to Etsy.'
@@ -184,8 +184,8 @@ export default async function ShopConnectionsPage({
             * It now says what is true: revoking happens on Etsy today.
             */}
           Revoke from your Etsy account, under Account settings → Apps. It takes effect immediately
-          and stops EtsyPilot reading or writing anything. There is no Disconnect button here yet —
-          the one above is disabled rather than mocked. Your history in EtsyPilot stays readable, and
+          and stops CobaltRank reading or writing anything. There is no Disconnect button here yet —
+          the one above is disabled rather than mocked. Your history in CobaltRank stays readable, and
           you can export it, or request its deletion, from{' '}
           <Link
             href="/settings/export"

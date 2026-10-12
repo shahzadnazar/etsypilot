@@ -45,7 +45,7 @@ interface Window {
  * store was two different Maps for exactly this reason (D45b), and a limiter
  * with two counters is a limiter with twice the limit.
  */
-const KEY = Symbol.for('etsypilot.ratelimit')
+const KEY = Symbol.for('cobaltrank.ratelimit')
 type Store = Map<string, Window>
 const store: Store =
   ((globalThis as Record<symbol, unknown>)[KEY] as Store) ??

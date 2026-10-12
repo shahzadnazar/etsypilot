@@ -2,12 +2,12 @@
  * The shared API client.
  *
  * The extension's ONLY way to reach a network, and it reaches exactly one host:
- * the EtsyPilot app. It never calls etsy.com — the content script reads the
+ * the CobaltRank app. It never calls etsy.com — the content script reads the
  * page it is already on, and every figure comes from the server, which holds
  * the Etsy credentials.
  *
  * `credentials: 'include'` is the whole authentication bridge. The browser
- * sends the seller's existing EtsyPilot session cookie; the extension neither
+ * sends the seller's existing CobaltRank session cookie; the extension neither
  * sees it nor stores anything. There is no token in this file because there is
  * no token anywhere in this extension.
  */
@@ -33,7 +33,7 @@ export async function fetchListing(listingId: string | null): Promise<ExtensionR
       return {
         state: 'SIGNED_OUT',
         message:
-          'Sign in once — the extension shares your existing EtsyPilot session, never a separate Etsy login.',
+          'Sign in once — the extension shares your existing CobaltRank session, never a separate Etsy login.',
         signInUrl: new URL('/login', APP_ORIGIN).toString(),
       }
     }
@@ -47,7 +47,7 @@ export async function fetchListing(listingId: string | null): Promise<ExtensionR
      */
     return {
       state: 'ERROR',
-      message: 'We couldn’t reach EtsyPilot.',
+      message: 'We couldn’t reach CobaltRank.',
       recovery: 'Nothing on your shop was read or changed. Check your connection and try again.',
     }
   }

@@ -63,7 +63,7 @@ export default async function SecurityPage() {
     <>
       <PageHeader
         title="Security"
-        subtitle="Access to your EtsyPilot account. Your Etsy shop is connected by token — EtsyPilot never holds your Etsy password."
+        subtitle="Access to your CobaltRank account. Your Etsy shop is connected by token — CobaltRank never holds your Etsy password."
       />
 
       <div
@@ -93,7 +93,7 @@ export default async function SecurityPage() {
           <div className="flex flex-col gap-0.5">
             <span className="text-section text-ink-1">Password</span>
             {/*
-              * Null on every real account: EtsyPilot stores no password for a
+              * Null on every real account: CobaltRank stores no password for a
               * seller. `Last changed ${null}` rendered "Last changed Invalid
               * Date" once the fixture stopped filling it in, which is the
               * shape this whole sweep is about — an absent fact printed as if
@@ -139,7 +139,7 @@ export default async function SecurityPage() {
             </span>
             {twoFactorLocked ? (
               <span className="text-caption leading-relaxed text-muted-1">
-                Your account operates EtsyPilot, so this is required and cannot be turned off. A
+                Your account operates CobaltRank, so this is required and cannot be turned off. A
                 switch that removed your second factor would be a switch anyone who took your
                 session could use.
               </span>
@@ -202,14 +202,14 @@ export default async function SecurityPage() {
             />
           </div>
           {/*
-            * An empty list, not an invented one. EtsyPilot does not record
+            * An empty list, not an invented one. CobaltRank does not record
             * seller sessions — the three that used to be here were Willow &
             * Fern's, in Dhaka, on a page a seller opens when they think
             * somebody else is in their account.
             */}
           {view.sessions.length === 0 ? (
             <p className="text-small leading-relaxed text-muted-1">
-              EtsyPilot does not track sign-in sessions for this account yet, so it cannot list
+              CobaltRank does not track sign-in sessions for this account yet, so it cannot list
               them. That is a gap, not an all-clear: it means this page cannot tell you whether
               anyone else is signed in. Your Etsy shop is separate — revoke its connection from{' '}
               <Link
@@ -289,9 +289,9 @@ export default async function SecurityPage() {
             */}
           {view.events.length === 0 ? (
             <p className="text-small leading-relaxed text-muted-1">
-              No security activity has been recorded for this account. EtsyPilot does not yet log
+              No security activity has been recorded for this account. CobaltRank does not yet log
               sign-ins or failed attempts, so this is "nothing is recorded" rather than "nothing
-              happened". Actions taken on your shop through EtsyPilot, including the ones it
+              happened". Actions taken on your shop through CobaltRank, including the ones it
               refused, are in the audit log below.
             </p>
           ) : (
@@ -328,7 +328,7 @@ export default async function SecurityPage() {
 
         {/*
           * The closing note, and the most important paragraph on the page. A
-          * seller who thinks EtsyPilot holds their Etsy password cannot reason
+          * seller who thinks CobaltRank holds their Etsy password cannot reason
           * about their own exposure — and the answer is better than they fear.
           */}
         <Card className="flex flex-col gap-2 p-[18px]">

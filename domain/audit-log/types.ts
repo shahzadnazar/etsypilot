@@ -2,7 +2,7 @@
  * The audit log (artboard 109).
  *
  * Built around REFUSALS, not successes. A log that only records what succeeded
- * cannot answer the question a dispute actually asks — "did EtsyPilot change my
+ * cannot answer the question a dispute actually asks — "did CobaltRank change my
  * listing?" — because the useful answer is usually no, and a record that is
  * absent proves nothing.
  *
@@ -14,7 +14,7 @@
  *   NOTHING_SENT     the action intended to reach Etsy and did not. This IS the
  *                    definition of a refusal — see `isRefusal` below.
  *   NOT_APPLICABLE   the action never intended to reach Etsy, with the reason:
- *                    it was an authorisation step, an EtsyPilot-only setting, or
+ *                    it was an authorisation step, a CobaltRank-only setting, or
  *                    a read.
  *
  * The "Refused only" filter is derived from this union, not stored beside it.
@@ -33,12 +33,12 @@ export const SOURCE_LABEL: Record<AuditSource, string> = {
 }
 
 /** Why an action never intended to reach Etsy. */
-export const NOT_APPLICABLE_REASONS = ['AUTHORISATION', 'ETSYPILOT_ONLY', 'READ_ONLY'] as const
+export const NOT_APPLICABLE_REASONS = ['AUTHORISATION', 'COBALTRANK_ONLY', 'READ_ONLY'] as const
 export type NotApplicableReason = (typeof NOT_APPLICABLE_REASONS)[number]
 
 export const NOT_APPLICABLE_LABEL: Record<NotApplicableReason, string> = {
   AUTHORISATION: 'authorisation',
-  ETSYPILOT_ONLY: 'EtsyPilot only',
+  COBALTRANK_ONLY: 'CobaltRank only',
   READ_ONLY: 'read only',
 }
 

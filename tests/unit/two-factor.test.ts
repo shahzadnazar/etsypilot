@@ -108,7 +108,7 @@ describe('the copy is a closed map', () => {
      * looking for one. An admin who could clear a manager's factor could
      * enroll their own phone and sign in as them.
      */
-    expect(NO_OPERATOR_RESET_NOTICE).toMatch(/no one at etsypilot can reset/i)
+    expect(NO_OPERATOR_RESET_NOTICE).toMatch(/no one at cobaltrank can reset/i)
     expect(NO_OPERATOR_RESET_NOTICE).toMatch(/recovery code/i)
   })
 })

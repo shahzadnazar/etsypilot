@@ -32,7 +32,7 @@ import { formatCalendarDate } from '@/lib/utils/format'
  * payload anyway. Measured against a real server: a signed-in NON-ADMIN asking
  * for this page got a 404 carrying
  *
- *     {"children":"Accounts · Operations · EtsyPilot"}
+ *     {"children":"Accounts · Operations · CobaltRank"}
  *
  * which told them the operator panel exists and what the screen is called — the
  * exact disclosure the 404-instead-of-403 rule exists to prevent. A <title>
@@ -109,7 +109,7 @@ export default async function AdminUsersPage({
         <OperatorTable
           label="Accounts"
           minWidth={820}
-          caption="Every EtsyPilot account with its platform role, its shop and when it was created."
+          caption="Every CobaltRank account with its platform role, its shop and when it was created."
         >
             <thead>
               <tr className="bg-canvas-soft text-left text-label text-muted-1">

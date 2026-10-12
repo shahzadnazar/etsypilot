@@ -96,7 +96,7 @@ function record(id: string, overrides: Partial<AuditRecord> = {}): AuditRecord {
     detail: `${id} · COGS 36% → 38%`,
     target: 'Shop-wide',
     source: 'MANUAL',
-    reached: { kind: 'NOT_APPLICABLE', reason: 'ETSYPILOT_ONLY' },
+    reached: { kind: 'NOT_APPLICABLE', reason: 'COBALTRANK_ONLY' },
     sequence: [],
     wouldHaveChanged: [],
     wouldHaveChangedMore: 0,
@@ -290,7 +290,7 @@ describe('the change history page', () => {
     /*
      * The page returned HTTP 500 to a live seller because the service asked
      * the Etsy adapter for a catalogue it has no API key for. It is the page a
-     * seller opens to find out what EtsyPilot changed, and the only place a
+     * seller opens to find out what CobaltRank changed, and the only place a
      * write can be undone.
      */
     setEtsyService(fakeAdapter([], [listing('770001', 48)]) as never)

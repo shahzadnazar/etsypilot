@@ -227,7 +227,7 @@ export async function applyRollback(
     reached: { kind: 'SENT', succeeded: items.length, attempted: items.length },
     ...(drift.blocked.length > 0
       ? {
-          explanation: `${drift.blocked.length} listings had been edited on Etsy after the original job, so reverting them would have overwritten work EtsyPilot did not make. They were left alone.`,
+          explanation: `${drift.blocked.length} listings had been edited on Etsy after the original job, so reverting them would have overwritten work CobaltRank did not make. They were left alone.`,
         }
       : {}),
     sequence: [

@@ -180,7 +180,7 @@ export async function GET(request: Request) {
 
     /*
      * ══════════════════════════════════════════════════════════════════════
-     *   WHICH ETSYPILOT SHOP THESE TOKENS BELONG TO IS RESOLVED FROM THE
+     *   WHICH COBALTRANK SHOP THESE TOKENS BELONG TO IS RESOLVED FROM THE
      *   SESSION. WHICH ETSY SHOP THEY GRANT ACCESS TO COMES FROM ETSY.
      *   NEITHER IS SUPPLIED BY THE REQUEST.
      * ══════════════════════════════════════════════════════════════════════
@@ -194,7 +194,7 @@ export async function GET(request: Request) {
      *
      *   our shop ids    ['shop_72d56f17-b51f-4978-beed-7c609eed1ac4', ...]
      *   callback wrote  '48123456'
-     *   result          there is no shop in EtsyPilot with that id
+     *   result          there is no shop in CobaltRank with that id
      *
      * The fix is NOT to accept a shop id from the request. `session.shopId`
      * comes from getSession(), which resolves the caller's own shop from their

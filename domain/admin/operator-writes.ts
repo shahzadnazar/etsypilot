@@ -103,7 +103,7 @@ export const OPERATOR_WRITABLE: readonly OperatorWritable[] = [
      * on this type at all. The row belongs to the seller — their email, their
      * name, their onboarding answers — and none of that is the operator's to
      * change. `platform_role` is the exception because it is not about their
-     * shop at all: it is EtsyPilot's own record of who may operate EtsyPilot.
+     * shop at all: it is CobaltRank's own record of who may operate CobaltRank.
      */
     column: 'platform_role',
     label: 'A person’s platform role',

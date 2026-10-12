@@ -94,7 +94,7 @@ export function RollbackPanel({ view }: { view: ChangeHistoryView }) {
 
           <h3 className="text-section text-ink-1">Roll back this change</h3>
           <p className="text-caption leading-relaxed text-ink-2">
-            EtsyPilot re-checks current state first.
+            CobaltRank re-checks current state first.
             {drift.blocked.length > 0 ? (
               <>
                 {' '}

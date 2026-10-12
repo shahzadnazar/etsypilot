@@ -225,7 +225,7 @@ export function computeWaterfall(orders: readonly StoredOrder[], costs: CostInpu
     ? verified(null, verifiedSource).provenance
     : unavailable(
         'Etsy reports fees through the payment-account ledger, not the order receipt, and that ledger has not been read for this period.',
-        'Nothing you can do about it today — EtsyPilot has to read it. Until then every figure that depends on fees is withheld rather than estimated.',
+        'Nothing you can do about it today — CobaltRank has to read it. Until then every figure that depends on fees is withheld rather than estimated.',
       ).provenance
 
   /*

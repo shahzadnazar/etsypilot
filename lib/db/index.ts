@@ -25,7 +25,7 @@ export function getDb(): Database {
       code: 'DATABASE_NOT_CONFIGURED',
       message: 'The database is not configured.',
       recovery:
-        'EtsyPilot is running in demo mode, which does not need one. Set DATABASE_URL to enable persistence.',
+        'CobaltRank is running in demo mode, which does not need one. Set DATABASE_URL to enable persistence.',
     })
   }
 

@@ -6,10 +6,10 @@ export async function generateMetadata(): Promise<Metadata> {
   const document = legalDocument('privacy')
   return {
     title: document.title,
-    description: 'What EtsyPilot collects, why, how long it keeps it, and how to get it back.',
+    description: 'What CobaltRank collects, why, how long it keeps it, and how to get it back.',
     /*
      * An unfinished policy should not be the search result somebody finds
-     * when they look for how EtsyPilot handles their data. It stays reachable
+     * when they look for how CobaltRank handles their data. It stays reachable
      * by URL — see components/legal/draft-notice.tsx for why a 404 would be
      * dishonest — but it is not advertised while it names no controller.
      */

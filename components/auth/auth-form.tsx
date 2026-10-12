@@ -65,12 +65,12 @@ export function AuthForm({
   return (
     <div className="mx-auto w-full max-w-[420px] py-6">
       <h1 className="text-[22px] font-bold leading-tight tracking-[-0.01em] text-ink-1">
-        {isSignUp ? 'Create your EtsyPilot account' : 'Sign in to EtsyPilot'}
+        {isSignUp ? 'Create your CobaltRank account' : 'Sign in to CobaltRank'}
       </h1>
       <p className="mt-1.5 max-w-prose text-small leading-relaxed text-muted-1">
         {isSignUp
           ? 'An email address and a password. We never ask for your Etsy password — connecting a shop happens later, on Etsy, and you can revoke it any time.'
-          : 'EtsyPilot never asks for your Etsy password. Your shop is connected through Etsy itself.'}
+          : 'CobaltRank never asks for your Etsy password. Your shop is connected through Etsy itself.'}
       </p>
 
       {banner ? (

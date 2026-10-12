@@ -1,6 +1,6 @@
 # Connecting a database and authentication
 
-**None of this is needed to run EtsyPilot.** With `.env.local` copied from `.env.example` and
+**None of this is needed to run CobaltRank.** With `.env.local` copied from `.env.example` and
 nothing filled in, every screen works against the demo shop. This is for making it a real
 product with real sellers in it.
 
@@ -257,7 +257,7 @@ call, which is a worse failure mode than being absent.
 Replace that with the token:
 
 ```
-<p>Your EtsyPilot password reset code is:</p>
+<p>Your CobaltRank password reset code is:</p>
 <p style="font-size:24px;letter-spacing:4px"><strong>{{ .Token }}</strong></p>
 <p>It expires shortly. If you did not ask for this, ignore this email.</p>
 ```

@@ -41,7 +41,7 @@ export default function ErrorBoundary({
      * server's. Keeping it short and marked as such stops it being mistaken for
      * the real record.
      */
-    if (reference) console.warn('[etsypilot] client error boundary', reference)
+    if (reference) console.warn('[cobaltrank] client error boundary', reference)
   }, [reference])
 
   return (
@@ -49,7 +49,7 @@ export default function ErrorBoundary({
       <p className="tnum text-metric text-muted-2">500</p>
       <h1 className="text-page text-ink-1">Something went wrong on our side</h1>
       <p className="text-body text-ink-2">
-        This is an EtsyPilot error, not a problem with your shop or your Etsy data. Nothing was
+        This is a CobaltRank error, not a problem with your shop or your Etsy data. Nothing was
         published.
       </p>
       {reference ? (

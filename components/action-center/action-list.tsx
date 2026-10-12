@@ -53,8 +53,8 @@ export function ActionList({
         title={source.kind === 'NO_SHOP' ? 'This shop could not be found' : 'Not synced yet'}
         description={
           source.kind === 'NO_SHOP'
-            ? 'The shop this page was opened for is no longer in EtsyPilot. Nothing is wrong with your shop on Etsy.'
-            : 'EtsyPilot has not read your orders yet, so it cannot say what needs your attention — and it will not tell you that nothing does. Once a sync runs, every finding appears here with its evidence.'
+            ? 'The shop this page was opened for is no longer in CobaltRank. Nothing is wrong with your shop on Etsy.'
+            : 'CobaltRank has not read your orders yet, so it cannot say what needs your attention — and it will not tell you that nothing does. Once a sync runs, every finding appears here with its evidence.'
         }
       />
     )
@@ -127,7 +127,7 @@ const EMPTY_COPY: Record<ActionFilter, { title: string; description: string }> =
   OPEN: {
     title: 'Nothing needs your attention',
     description:
-      'No listing with a confirmed cost is selling below it, and every active listing has a cost. Anything EtsyPilot observed but could not measure is on Shop Pulse rather than here — this queue is work, not everything that happened.',
+      'No listing with a confirmed cost is selling below it, and every active listing has a cost. Anything CobaltRank observed but could not measure is on Shop Pulse rather than here — this queue is work, not everything that happened.',
   },
   DONE: {
     title: 'Nothing completed yet',

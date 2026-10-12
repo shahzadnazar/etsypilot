@@ -112,13 +112,13 @@ describe('the extension archive is a real zip', () => {
   it('round-trips through an independent zip reader', async () => {
     const files = [
       { name: 'manifest.json', data: text('{"manifest_version":3}\n') },
-      { name: 'popup.html', data: text('<!doctype html><title>EtsyPilot</title>') },
+      { name: 'popup.html', data: text('<!doctype html><title>CobaltRank</title>') },
       { name: 'dist/extension/src/popup.js', data: text('export const x = 1\n') },
     ]
     const back = await roundTrip(files)
 
     expect(back['manifest.json']).toBe('{"manifest_version":3}\n')
-    expect(back['popup.html']).toBe('<!doctype html><title>EtsyPilot</title>')
+    expect(back['popup.html']).toBe('<!doctype html><title>CobaltRank</title>')
     expect(back['dist/extension/src/popup.js']).toBe('export const x = 1\n')
   })
 

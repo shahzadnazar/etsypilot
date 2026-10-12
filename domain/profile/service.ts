@@ -6,7 +6,7 @@
  * builder — otherwise the sentence would be decorative.
  *
  * Language and display time zone are NOT editable here, and that is a statement
- * rather than an oversight. EtsyPilot prints every time in UTC today; a select
+ * rather than an oversight. CobaltRank prints every time in UTC today; a select
  * offering four zones that changed nothing would be exactly the kind of control
  * this product spends its effort not shipping. The design's load-bearing
  * sentence — that changing a display setting never changes a calculation —
@@ -47,7 +47,7 @@ export interface Profile {
   timeZone: string
 }
 
-const STORE_KEY = Symbol.for('etsypilot.profile.store')
+const STORE_KEY = Symbol.for('cobaltrank.profile.store')
 
 interface Stored {
   fullName: string

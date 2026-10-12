@@ -23,7 +23,7 @@ const nextConfig: NextConfig = {
    * Next's own dev overlay, off.
    *
    * It is the floating panel that reads "Route: Dynamic · Bundler: Turbopack ·
-   * Route Info · Preferences". It is not EtsyPilot UI, it only ever renders
+   * Route Info · Preferences". It is not CobaltRank UI, it only ever renders
    * under `next dev`, and it defaults to the top-left — directly over the demo
    * banner, the logo and the first sidebar group, which is the part of the
    * screen a reviewer needs most.

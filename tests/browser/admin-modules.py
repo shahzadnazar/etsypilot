@@ -3,7 +3,7 @@
     python3 tests/browser/fake-gotrue.py 5998 &
     AUTH_MODE=live NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:5998 \
       NEXT_PUBLIC_SUPABASE_ANON_KEY=anon DATABASE_URL=postgres://... \
-      SUPER_ADMIN_EMAILS=boss@etsypilot.app ADMIN_EMAILS=ops@etsypilot.app \
+      SUPER_ADMIN_EMAILS=boss@cobaltrank.app ADMIN_EMAILS=ops@cobaltrank.app \
       npx next start -p 3100 &
     python3 tests/browser/admin-modules.py
 
@@ -40,10 +40,10 @@ from mfa_support import sign_in_with_two_factor
 
 BASE = os.environ.get("ADMIN_BASE_URL", "http://localhost:3100")
 CHROME = os.environ.get("CHROME_PATH", "/opt/pw-browsers/chromium-1194/chrome-linux/chrome")
-PSQL = os.environ.get("PSQL_DSN", "postgres://postgres@127.0.0.1:5999/etsypilot")
+PSQL = os.environ.get("PSQL_DSN", "postgres://postgres@127.0.0.1:5999/cobaltrank")
 
-SUPER = ("boss@etsypilot.app", "correct-horse-battery")
-ADMIN = ("ops@etsypilot.app", "admin-password-here")
+SUPER = ("boss@cobaltrank.app", "correct-horse-battery")
+ADMIN = ("ops@cobaltrank.app", "admin-password-here")
 MANAGER = ("promoted@example.com", "manager-password-y")
 
 # path, permission key, nav label, a string only this screen renders.
@@ -336,14 +336,14 @@ def metrics_specifics(page, body, text):
     # distinguishable, and asking the whole document fired on that. The viewer
     # knowing who they are is not the same as the screen naming a seller.
     content = page.eval_on_selector("main", "el => el.outerHTML")
-    for address in ("seller@example.com", "growth@example.com", "boss@etsypilot.app"):
+    for address in ("seller@example.com", "growth@example.com", "boss@cobaltrank.app"):
         check(address not in content, f"NO ACCOUNT IS NAMED ON THE SCREEN ({address})")
     check(
         "Willow" not in content and "Healthy Haberdashery" not in content,
         "and no shop is named either",
     )
     # The converse: the banner still names the viewer, which is the point of it.
-    check("boss@etsypilot.app" in body, "while the operator banner still names the viewer")
+    check("boss@cobaltrank.app" in body, "while the operator banner still names the viewer")
     check("Nothing here is a forecast" in text, "the page says it forecasts nothing")
     check_read_only(page)
 

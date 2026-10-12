@@ -1,18 +1,10 @@
-# EtsyPilot — Terms of Service
+# CobaltRank — Terms of Service
 
 **DRAFT FOR LEGAL REVIEW. NOT READY TO PUBLISH.**
 
 Placeholders in `[[DOUBLE BRACKETS]]` must be filled before this goes live. This document was
 drafted to be reviewed by a qualified lawyer in `[[ENTITY_COUNTRY]]`, not to be published as
 written.
-
-`[[CONFIRM: THE PRODUCT NAME. This draft arrived naming the product "CobaltRank". That name appears
-nowhere in the codebase — the product calls itself EtsyPilot in 100+ source files, in the extension
-manifest, in every CSV filename and in the support addresses already published on the landing page.
-Since every other claim here was checked against the code and corrected to match it, the name was
-too: "CobaltRank" has been replaced with "EtsyPilot" throughout. If the product is in fact being
-renamed, the rename belongs in the code first and this substitution should be reversed in the same
-change — not left for these documents to lead.]]`
 
 Last updated: `[[DATE]]`
 
@@ -21,24 +13,24 @@ Last updated: `[[DATE]]`
 ## 1. Who these terms are between
 
 These terms are an agreement between you and **`[[LEGAL_ENTITY]]`**, a `[[ENTITY_TYPE]]`
-registered in `[[ENTITY_COUNTRY]]` at `[[ENTITY_ADDRESS]]` ("EtsyPilot", "we", "us").
+registered in `[[ENTITY_COUNTRY]]` at `[[ENTITY_ADDRESS]]` ("CobaltRank", "we", "us").
 
 By creating an account, connecting an Etsy shop, or using any part of the service, you accept these
-terms. If you do not accept them, do not use EtsyPilot.
+terms. If you do not accept them, do not use CobaltRank.
 
 You must be at least 18 years old and legally able to enter a contract.
 
-## 2. What EtsyPilot is, and what it is not
+## 2. What CobaltRank is, and what it is not
 
-EtsyPilot reads data from your Etsy shop, combines it with cost information you provide, and shows
+CobaltRank reads data from your Etsy shop, combines it with cost information you provide, and shows
 you what you earned.
 
 **It is not an accountant, a bookkeeper, a tax adviser or an auditor.** The figures it shows are
 calculated from the data available to it, and they are not an audited account. You should not file
-a tax return, make a pricing decision or settle a dispute on the basis of an EtsyPilot figure
+a tax return, make a pricing decision or settle a dispute on the basis of a CobaltRank figure
 without checking it against your own records.
 
-**Where EtsyPilot cannot verify a figure, it says so rather than estimating one.** This is
+**Where CobaltRank cannot verify a figure, it says so rather than estimating one.** This is
 deliberate. A blank or an "unavailable" label means we do not have the data, not that the value is
 zero.
 
@@ -55,14 +47,14 @@ One account is for one person. You may not share login credentials.
 
 ## 4. Connecting your Etsy shop
 
-Connecting your shop authorises EtsyPilot, through Etsy's official API, to read the shop data you
+Connecting your shop authorises CobaltRank, through Etsy's official API, to read the shop data you
 grant access to.
 
 - **We never ask for, receive or store your Etsy password.** The connection is an OAuth token Etsy
   issues when you approve it.
 - **You can revoke it at any time from your Etsy account.** Revoking stops all access immediately.
 - **We only read what we need** to provide the features you use.
-- **We do not write anything to your Etsy shop without your confirmation.** Where EtsyPilot can
+- **We do not write anything to your Etsy shop without your confirmation.** Where CobaltRank can
   change a listing, it shows you exactly what will change and sends nothing until you approve it.
 - **Our staff cannot write to your shop at all.** This is enforced in our code, not by policy.
 
@@ -76,9 +68,9 @@ work out which listing you are viewing, and asks our servers for your own figure
 not read the page's content, your Etsy cookies or your Etsy session, and it does not change
 anything on the page. Everything it shows you came from the API.
 
-## 5. How you may and may not use EtsyPilot
+## 5. How you may and may not use CobaltRank
 
-You may use EtsyPilot to manage shops you own or are authorised to manage. You may not:
+You may use CobaltRank to manage shops you own or are authorised to manage. You may not:
 
 - Use it to access, analyse or manage a shop you do not own or have permission to manage
 - Resell, sublicense or white-label it without our written agreement
@@ -86,7 +78,7 @@ You may use EtsyPilot to manage shops you own or are authorised to manage. You m
 - Use it to do anything unlawful, or anything that breaches Etsy's own rules for sellers
 
 **On that last point specifically:** Etsy's seller rules apply to your shop whether or not you use
-EtsyPilot, and using EtsyPilot does not excuse a breach of them. You must not use EtsyPilot to
+CobaltRank, and using CobaltRank does not excuse a breach of them. You must not use CobaltRank to
 create, edit, publish or promote listings that breach Etsy's:
 
 - Seller Policy and Creativity Standards
@@ -102,7 +94,7 @@ You are responsible for your listings. We do not review them for compliance with
 
 ## 6. AI-generated content
 
-Where EtsyPilot drafts listing text for you, that draft is a suggestion. **You decide what to
+Where CobaltRank drafts listing text for you, that draft is a suggestion. **You decide what to
 publish, and you are responsible for what you publish.**
 
 We do not warrant that generated text is original, accurate, or free of third-party trademarks or
@@ -175,7 +167,7 @@ Policy §5. Closure is an operational process until one exists.]]`
 
 ## 11. Availability
 
-We aim to keep EtsyPilot available, but we do not guarantee uninterrupted service. The service
+We aim to keep CobaltRank available, but we do not guarantee uninterrupted service. The service
 depends on Etsy's API and on third-party infrastructure, and those can fail or change without
 notice.
 
@@ -192,7 +184,7 @@ The term "Etsy" is a trademark of Etsy, Inc. This application uses the Etsy API 
 or certified by Etsy, Inc.
 
 Except as these terms expressly state, and except where the law does not allow us to exclude it,
-EtsyPilot is provided "as is" and we make no warranties about it.
+CobaltRank is provided "as is" and we make no warranties about it.
 
 ## 13. Our liability
 
@@ -205,13 +197,13 @@ paid us in that period.
 We are not liable for lost profits, lost sales, lost data, or indirect or consequential loss.
 
 **Specifically:** we are not liable for a decision you made on the basis of a figure shown in
-EtsyPilot, for a listing change you approved, for the content of a listing you published, or for
+CobaltRank, for a listing change you approved, for the content of a listing you published, or for
 any action Etsy takes against your shop.
 
 ## 14. Changes to these terms
 
 We may update these terms. If a change materially affects your rights, we will tell you at least 30
-days before it takes effect, and you may cancel before then. Continuing to use EtsyPilot after
+days before it takes effect, and you may cancel before then. Continuing to use CobaltRank after
 that means you accept the updated terms.
 
 ## 15. Governing law and disputes

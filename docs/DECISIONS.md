@@ -1,4 +1,4 @@
-# EtsyPilot — Locked Decisions
+# CobaltRank — Locked Decisions
 
 Decisions confirmed by the product owner. These are binding; do not re-derive or
 re-litigate them. Open items are tracked at the bottom.
@@ -99,6 +99,56 @@ The **EP monogram lockup stays exactly as designed.**
 
 No two-word "Etsy Pilot" variant anywhere. The legacy name "RankKW" appears
 nowhere in the product.
+
+---
+
+## D3a — Product name: "CobaltRank" — CONFIRMED, supersedes D3
+
+**2026-10-12.** The product is renamed to **CobaltRank**, one word, same casing
+convention as before. D3 above is left standing: it records what was decided on
+19 August and why, and a decision log edited to say the opposite of what it said
+is worth less than no log.
+
+**Reason — and it is not cosmetic.** Etsy's API Terms §1 forbid "a mark, name, or
+design that is confusingly similar to Etsy's trademarks" and require that Etsy's
+marks appear *less prominently* than the developer's own branding. The previous
+name led with Etsy's trademark as its dominant element. The application for an
+API key goes in after this change and the home page is reviewed as part of it, so
+this is a precondition of having an API key at all, not a branding preference.
+
+**What changed with it:**
+
+- The **monogram becomes "CR"**. D3 locked "the EP monogram lockup exactly as
+  designed" — that lockup was the initials of a name that no longer exists, and
+  two letters are invisible to a grep for the old name. It is drawn in five
+  places: the sidebar, the mobile bar, the public header, `app/icon.svg` and the
+  extension popup. **The owner should confirm this**; a designed mark is theirs
+  to change, and leaving "EP" beside the word CobaltRank was not an option
+  either.
+- `lib/brand.ts` now holds the name, the slug, the monogram, the article the
+  name takes, and the contact addresses. The identity surfaces read it. Prose
+  does not, and that file says at length why.
+- The contact addresses are **null**, not renamed. No domain has been bought,
+  and the landing page, the FAQ and Settings → Export & deletion were printing
+  `privacy@<old domain>` — the address Privacy §6 names as the only route to a
+  deletion right. They omit the line now rather than print a new address at a
+  domain nobody owns.
+- The indefinite article flips: this name takes "a", the old one took "an". Eight
+  sentences were wrong after the substitution, including one in the Terms and
+  one inside the guard that was supposed to catch exactly this.
+
+**Numbered with a letter suffix, not as the next number**, for two reasons. It
+belongs beside the naming decision it supersedes rather than at the end of an
+unrelated sequence; and `tests/unit/operator-write-boundary.test.ts` asserts
+that this file carries no third-level heading for the decision numbered one
+after D94, which D94a already explains at length. The letter suffix is this
+file's established pattern (D34a, D45a, D48a–d, D59a, D94a).
+
+And the paragraph above could not be written plainly either — the first draft
+quoted the forbidden heading in order to say which heading was forbidden, and
+the guard went red on the explanation. That is the eighth instance of the
+lesson at the foot of D94a, and the first one committed by somebody who had
+just read it.
 
 ---
 

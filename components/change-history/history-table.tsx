@@ -19,7 +19,7 @@ export function HistoryTable({ view }: { view: ChangeHistoryView }) {
     return (
       <EmptyState
         title="Nothing has been changed yet"
-        description="Every listing EtsyPilot writes to appears here, with what it changed and a way to undo it. Bulk edits, scheduled jobs and accepted AI drafts all land in the same trail."
+        description="Every listing CobaltRank writes to appears here, with what it changed and a way to undo it. Bulk edits, scheduled jobs and accepted AI drafts all land in the same trail."
         action={
           <Link
             href="/listings/bulk-editor"
@@ -58,7 +58,7 @@ export function HistoryTable({ view }: { view: ChangeHistoryView }) {
     >
       <table className="w-full min-w-[880px] border-collapse text-body">
         <caption className="sr-only">
-          Every job EtsyPilot applied to this shop, newest first, in UTC. Status is counted from
+          Every job CobaltRank applied to this shop, newest first, in UTC. Status is counted from
           the job&rsquo;s own results; rollback availability is re-checked against your live
           listings.
         </caption>

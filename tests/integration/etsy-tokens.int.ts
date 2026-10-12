@@ -341,7 +341,7 @@ describe('the foreign key', () => {
      * its context rather than in its text.
      *
      * This is not hypothetical plumbing: app/api/etsy/callback/route.ts calls
-     * write() with ETSY's shop id, while this column references EtsyPilot's
+     * write() with ETSY's shop id, while this column references CobaltRank's
      * own — so on a real connection this is the path that runs. The store
      * cannot fix that; it can refuse to report it as a database fault.
      */
@@ -352,7 +352,7 @@ describe('the foreign key', () => {
     expect(outcome).not.toHaveProperty('resolved')
 
     const error = (outcome as { rejected: Error }).rejected
-    expect(error.message).toMatch(/no shop in etsypilot with that id/i)
+    expect(error.message).toMatch(/no shop in cobaltrank with that id/i)
     // The thing that must NOT surface.
     expect(error.message).not.toMatch(/violates foreign key constraint/i)
     expect(error.message).not.toMatch(/etsy_connections_shop_id_shops_id_fk/)

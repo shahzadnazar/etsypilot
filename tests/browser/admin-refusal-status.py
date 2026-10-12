@@ -3,7 +3,7 @@
     python3 tests/browser/fake-gotrue.py 5998 &
     AUTH_MODE=live NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:5998 \
       NEXT_PUBLIC_SUPABASE_ANON_KEY=anon DATABASE_URL=postgres://... \
-      SUPER_ADMIN_EMAILS=boss@etsypilot.app ADMIN_EMAILS=ops@etsypilot.app \
+      SUPER_ADMIN_EMAILS=boss@cobaltrank.app ADMIN_EMAILS=ops@cobaltrank.app \
       npx next start -p 3100 &
     python3 tests/browser/admin-refusal-status.py
 
@@ -84,10 +84,10 @@ from mfa_support import sign_in_with_two_factor
 
 BASE = os.environ.get("ADMIN_BASE_URL", "http://localhost:3100")
 CHROME = os.environ.get("CHROME_PATH", "/opt/pw-browsers/chromium-1194/chrome-linux/chrome")
-PSQL = os.environ.get("PSQL_DSN", "postgres://postgres@127.0.0.1:5999/etsypilot")
+PSQL = os.environ.get("PSQL_DSN", "postgres://postgres@127.0.0.1:5999/cobaltrank")
 ADMIN_ROOT = os.path.join("app", "(admin)")
 
-SUPER = ("boss@etsypilot.app", "correct-horse-battery")
+SUPER = ("boss@cobaltrank.app", "correct-horse-battery")
 MANAGER = ("promoted@example.com", "manager-password-y")
 SELLER = ("seller@example.com", "seller-password-x")
 

@@ -57,7 +57,7 @@ export function ListingsTable({ view }: { view: ListingsView }) {
     return (
       <EmptyState
         title="Not synced yet"
-        description="Your shop is connected, but EtsyPilot has not read your catalogue yet — so this is not a claim that you have no listings. Once a sync runs, every listing appears here with its status, renewal date and cost coverage."
+        description="Your shop is connected, but CobaltRank has not read your catalogue yet — so this is not a claim that you have no listings. Once a sync runs, every listing appears here with its status, renewal date and cost coverage."
         action={
           <Link
             href="/settings/shops"
@@ -78,7 +78,7 @@ export function ListingsTable({ view }: { view: ListingsView }) {
     return (
       <EmptyState
         title="This shop could not be found"
-        description="The shop this page was opened for is no longer in EtsyPilot. Nothing is wrong with your listings on Etsy. Open Shop connections to pick a shop."
+        description="The shop this page was opened for is no longer in CobaltRank. Nothing is wrong with your listings on Etsy. Open Shop connections to pick a shop."
         action={
           <Link
             href="/settings/shops"

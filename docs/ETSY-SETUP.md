@@ -1,6 +1,6 @@
-# Connecting EtsyPilot to a real Etsy shop
+# Connecting CobaltRank to a real Etsy shop
 
-**You do not need any of this to run, build, test or demo EtsyPilot.** With
+**You do not need any of this to run, build, test or demo CobaltRank.** With
 `.env.example` copied to `.env.local` and nothing filled in, the whole product
 works against the Willow & Fern demo shop, cannot write to Etsy, and says so on
 every screen that could be mistaken for live data.
@@ -27,14 +27,14 @@ each step says what breaks if it is skipped.
    character — scheme, host, port, path — and its rejection message does not
    say which part differed. A trailing slash is a different URI.
 
-4. Request the scopes EtsyPilot asks for. They are listed, with what each one
+4. Request the scopes CobaltRank asks for. They are listed, with what each one
    enables and what stops working without it, in `domain/connect/types.ts` and
    on Settings → Shop connections:
 
    | Scope | Why |
    | --- | --- |
    | `shops_r`, `listings_r` | Read the shop and its listings. Required — without these there is nothing to show. |
-   | `listings_w` | Publish confirmed edits from the bulk editor. Without it EtsyPilot can only suggest. |
+   | `listings_w` | Publish confirmed edits from the bulk editor. Without it CobaltRank can only suggest. |
    | `transactions_r`, `billing_r` | Orders and fee lines. Without them Profit Reality has nothing to measure. |
 
    Etsy reviews apps that request write access. Expect that to take time, and
@@ -54,7 +54,7 @@ ETSY_REDIRECT_URI=https://<your-domain>/api/etsy/callback
 TOKEN_ENCRYPTION_KEY=<openssl rand -base64 32>
 ```
 
-`ETSY_API_SECRET` stays empty. EtsyPilot uses OAuth 2.0 Authorization Code with
+`ETSY_API_SECRET` stays empty. CobaltRank uses OAuth 2.0 Authorization Code with
 PKCE, which binds the authorization code to the browser that started the flow;
 a leaked code — from a referrer header, a shared screen, a proxy log — is
 useless without the verifier, and the verifier never leaves the server.
@@ -107,7 +107,7 @@ moved:
       paces itself from these. If the names have changed it will still work —
       it just discovers the limit by being refused instead of avoiding it.
 - [ ] `PUT /shops/{shop_id}/listings/{listing_id}` accepts a partial body.
-      EtsyPilot sends only the fields the confirmed operation changed, so that
+      CobaltRank sends only the fields the confirmed operation changed, so that
       an edit the seller made on Etsy between the diff and the apply is not
       silently overwritten.
 - [ ] Timestamps are Unix seconds. `iso()` multiplies by 1000.
@@ -159,7 +159,7 @@ The callback used to store tokens under **Etsy's** shop id:
 ```
 our shop ids    ['shop_72d56f17-b51f-4978-beed-7c609eed1ac4', ...]
 callback wrote  '48123456'
-result          there is no shop in EtsyPilot with that id
+result          there is no shop in CobaltRank with that id
 ```
 
 `etsy_connections.shop_id` is a foreign key to `shops.id`, so every real
@@ -172,7 +172,7 @@ which no query parameter, header or cookie field can influence.
 ### Two refusals that are not failures
 
 **`connect=shop_already_linked`** — that Etsy shop is attached to a different
-EtsyPilot account. A real case: a shop sold, an agency and its client, one
+CobaltRank account. A real case: a shop sold, an agency and its client, one
 person with two accounts. Attaching it to whoever connected last would move a
 shop's data between accounts. Enforced by a unique index on
 `shops.etsy_shop_id` (migration `0009`), with a `SELECT` for the wording —

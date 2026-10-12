@@ -1,6 +1,6 @@
-# EtsyPilot browser extension
+# CobaltRank browser extension
 
-A read-only companion popup for Chrome and Firefox. It shows EtsyPilot listing
+A read-only companion popup for Chrome and Firefox. It shows CobaltRank listing
 health, keyword opportunity and your own verified figures while you are looking
 at an Etsy listing.
 
@@ -22,7 +22,7 @@ A failing audit exits non-zero and writes nothing. The same checks run in
 
 There is also no *shape* for a credential: `lib/extension/contract.ts` has no
 token field on any request or response, and no message that writes. The
-extension authenticates with your existing EtsyPilot session cookie, which the
+extension authenticates with your existing CobaltRank session cookie, which the
 browser sends and the extension never reads.
 
 ## Build

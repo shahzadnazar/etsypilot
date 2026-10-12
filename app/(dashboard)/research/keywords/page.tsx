@@ -188,7 +188,7 @@ export default async function KeywordsPage({
         <Card className="p-[18px]">
           <h2 className="text-section text-ink-1">How this data works</h2>
           <p className="mt-2 text-small leading-relaxed text-ink-2">
-            Etsy does not publish keyword search volume — to anyone. EtsyPilot models demand from
+            Etsy does not publish keyword search volume — to anyone. CobaltRank models demand from
             public marketplace signals: listing counts, review velocity, favourites and observed
             ranking movement.
           </p>

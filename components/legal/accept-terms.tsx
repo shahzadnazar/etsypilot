@@ -37,7 +37,7 @@ export function AcceptTerms({ status }: { status: AcceptanceStatus }) {
       <Card className="mb-4 p-[18px]">
         <h3 className="text-section text-ink-1">Agreement on file</h3>
         <p className="mt-2 max-w-[75ch] text-small leading-relaxed text-ink-2">
-          You accepted EtsyPilot&rsquo;s{' '}
+          You accepted CobaltRank&rsquo;s{' '}
           <Link
             href="/legal/terms"
             className="font-semibold text-brand-strong underline underline-offset-2"
@@ -52,7 +52,7 @@ export function AcceptTerms({ status }: { status: AcceptanceStatus }) {
             Privacy Policy
           </Link>
           {status.acceptedAt ? ` on ${status.acceptedAt.slice(0, 10)}` : ''}. Etsy requires this
-          agreement to exist before EtsyPilot may read your shop.
+          agreement to exist before CobaltRank may read your shop.
         </p>
         <p className="mt-2 text-caption text-muted-1">
           Version <span className="tabular-nums">{status.version.slice(0, 12)}</span>. If either
@@ -75,12 +75,12 @@ export function AcceptTerms({ status }: { status: AcceptanceStatus }) {
           <>
             You accepted an earlier version of these documents
             {status.acceptedAt ? ` on ${status.acceptedAt.slice(0, 10)}` : ''}, and they have changed
-            since. Etsy requires EtsyPilot to hold a current agreement with each seller, so please
+            since. Etsy requires CobaltRank to hold a current agreement with each seller, so please
             read them again.
           </>
         ) : (
           <>
-            Etsy requires EtsyPilot to have an agreement with each seller before it may read their
+            Etsy requires CobaltRank to have an agreement with each seller before it may read their
             shop. This is that agreement. Nothing on Etsy is read or changed until it is accepted,
             and connecting is refused on the server rather than hidden in this page.
           </>
@@ -122,7 +122,7 @@ export function AcceptTerms({ status }: { status: AcceptanceStatus }) {
             className="mt-0.5 h-6 w-6 shrink-0 accent-[var(--brand)]"
           />
           <span>
-            I have read and accept EtsyPilot&rsquo;s Terms of Service and Privacy Policy, and I am
+            I have read and accept CobaltRank&rsquo;s Terms of Service and Privacy Policy, and I am
             authorised to accept them for this shop.
           </span>
         </label>
@@ -135,7 +135,7 @@ export function AcceptTerms({ status }: { status: AcceptanceStatus }) {
         <p className="mt-2 text-caption text-muted-1">
           Recorded against this shop with the date and the exact version you accepted:{' '}
           <span className="tabular-nums">{status.version.slice(0, 12)}</span>. The record is
-          append-only — nothing in EtsyPilot can edit or delete it.
+          append-only — nothing in CobaltRank can edit or delete it.
         </p>
       </form>
     </Card>

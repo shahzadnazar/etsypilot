@@ -180,7 +180,7 @@ export default async function ExperimentsPage() {
 
       <p className="mt-4 max-w-prose text-caption leading-relaxed text-muted-1">
         A verdict here is a correlation between a change and what followed it, never a cause.
-        EtsyPilot does not call a result before {MIN_POST_DAYS} days of post-change data, and
+        CobaltRank does not call a result before {MIN_POST_DAYS} days of post-change data, and
         downgrades any reading to inconclusive when another recorded change lands inside the same
         window.{' '}
         <Link

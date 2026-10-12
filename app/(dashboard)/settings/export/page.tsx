@@ -8,6 +8,7 @@ import { isDemoMode } from '@/lib/etsy'
 import { ANALYTICS_EVENTS } from '@/lib/telemetry/interface'
 import { getAnalytics, getErrorReporter, getMailer } from '@/lib/telemetry'
 import { EXPORTABLE_DATASETS, type ExportDatasetId } from '@/domain/export/datasets'
+import { contactAddress } from '@/lib/brand'
 
 export const metadata: Metadata = { title: 'Export & deletion' }
 
@@ -58,7 +59,7 @@ const DATASET_COPY: Record<ExportDatasetId, DatasetCopy> = {
     detail:
       'Every order in the current period with its gross, discounts, refunds and fee lines, plus how each one was costed.',
     excludes:
-      'Buyer names, emails and addresses — EtsyPilot never receives them, so they cannot be in the file.',
+      'Buyer names, emails and addresses — CobaltRank never receives them, so they cannot be in the file.',
   },
   audit: {
     label: 'Listing audit findings',
@@ -69,9 +70,9 @@ const DATASET_COPY: Record<ExportDatasetId, DatasetCopy> = {
   'audit-log': {
     label: 'Audit log',
     detail:
-      'Every action taken on this shop through EtsyPilot, including the ones that were refused, with the reason and what would have changed. Append-only — nothing in the product edits or removes a record.',
+      'Every action taken on this shop through CobaltRank, including the ones that were refused, with the reason and what would have changed. Append-only — nothing in the product edits or removes a record.',
     excludes:
-      'Records older than your plan\u2019s retention period, and anything done on Etsy itself rather than through EtsyPilot.',
+      'Records older than your plan\u2019s retention period, and anything done on Etsy itself rather than through CobaltRank.',
   },
 }
 
@@ -81,6 +82,7 @@ const DATASETS = EXPORTABLE_DATASETS.map((dataset) => ({
 }))
 
 export default async function ExportPage() {
+  const privacyAddress = contactAddress('privacy')
   const session = await getSession()
   if (!session) redirect('/login')
 
@@ -144,7 +146,7 @@ export default async function ExportPage() {
         * rather than computed (D34).
         */}
       <Card className="mt-4 p-[18px]">
-        <h2 className="text-section text-ink-1">What leaves EtsyPilot</h2>
+        <h2 className="text-section text-ink-1">What leaves CobaltRank</h2>
         <dl className="mt-3 flex flex-col gap-2">
           <div className="flex flex-col gap-0.5 sm:flex-row sm:gap-3">
             <dt className="shrink-0 text-caption font-semibold text-muted-1 sm:w-[168px]">
@@ -179,16 +181,16 @@ export default async function ExportPage() {
         </dl>
         <p className="mt-3 max-w-[80ch] text-caption leading-relaxed text-muted-1">
           Your Etsy access token is never sent to any of these, and never reaches your browser.
-          Buyer names, emails and addresses never reach EtsyPilot at all.
+          Buyer names, emails and addresses never reach CobaltRank at all.
         </p>
       </Card>
 
       <Card className="mt-4 p-[18px]">
         <h2 className="text-section text-ink-1">Deletion</h2>
         <p className="mt-2 max-w-[80ch] text-small leading-relaxed text-ink-2">
-          Deleting your EtsyPilot data removes the synced copy of your shop, your cost setup, your
+          Deleting your CobaltRank data removes the synced copy of your shop, your cost setup, your
           audit history and your bulk-edit records. It does not touch your Etsy shop, your listings
-          or your orders — EtsyPilot deletes its own copy, never yours.
+          or your orders — CobaltRank deletes its own copy, never yours.
         </p>
         <p className="mt-2 max-w-[80ch] text-small leading-relaxed text-ink-2">
           Export first if you want to keep anything. Deletion cannot be undone, and support cannot
@@ -200,14 +202,43 @@ export default async function ExportPage() {
             * yet (DATABASE_URL is unset), and a button that appears to delete
             * your data while doing nothing is the single worst thing this page
             * could contain. It says what to do instead, which is true today.
+            *
+            * ── AND NO ADDRESS EITHER, WHICH IS WORSE AND IS SAID SO ────────
+            *
+            * This paragraph used to name `privacy@<domain>`. No domain has
+            * been bought, so it routed nowhere — and the Privacy Policy's §6
+            * tells a seller that emailing it is the ONLY way to exercise a
+            * deletion right. A dead address here is not a typo; it is the
+            * remedy for a right, that does not work, printed on the page
+            * whose whole job is to be honest about what this product can and
+            * cannot do.
+            *
+            * So the address comes from lib/brand.ts, where it is null, and
+            * while it is null this page says there is no route yet rather
+            * than inventing one. That is the same rule the page already
+            * applies to the delete button it refuses to render.
             */}
-          To request deletion, email{' '}
-          <span className="font-semibold text-ink-1">privacy@etsypilot.app</span> from the address on
-          your account. It is actioned within 30 days, and you get written confirmation of what was
-          removed.
+          {privacyAddress ? (
+            <>
+              To request deletion, email{' '}
+              <span className="font-semibold text-ink-1">{privacyAddress}</span> from the address on
+              your account. It is actioned within 30 days, and you get written confirmation of what
+              was removed.
+            </>
+          ) : (
+            <>
+              <span className="font-semibold text-ink-1">
+                There is no way to request deletion yet.
+              </span>{' '}
+              No contact address is published — no domain has been bought — so there is no mailbox
+              to send a request to and no button to press. Rather than print an address that would
+              bounce, this page says so. A working address will be here, and in the Privacy Policy,
+              before any seller can connect a shop; until then no real shop data exists to delete.
+            </>
+          )}
         </p>
         <p className="mt-2 max-w-[80ch] text-caption leading-relaxed text-muted-1">
-          Revoking EtsyPilot&rsquo;s access on Etsy stops all reading and writing immediately, and is
+          Revoking CobaltRank&rsquo;s access on Etsy stops all reading and writing immediately, and is
           separate from deletion — do it from{' '}
           <Link
             href="/settings/shops"

@@ -70,8 +70,8 @@ export default async function AnalyticsPage() {
           title={view.source.kind === 'NO_SHOP' ? 'This shop could not be found' : 'Not synced yet'}
           description={
             view.source.kind === 'NO_SHOP'
-              ? 'The shop this page was opened for is no longer in EtsyPilot. Nothing is wrong with your shop on Etsy.'
-              : 'Every figure on this page is summed from your own order receipts, and EtsyPilot has not read them yet. Zeroes here would read as a shop that sold nothing, which is not what is being reported.'
+              ? 'The shop this page was opened for is no longer in CobaltRank. Nothing is wrong with your shop on Etsy.'
+              : 'Every figure on this page is summed from your own order receipts, and CobaltRank has not read them yet. Zeroes here would read as a shop that sold nothing, which is not what is being reported.'
           }
         />
       </>
@@ -262,7 +262,7 @@ export default async function AnalyticsPage() {
               <UnavailableCard
                 label="Views, search terms and ads performance"
                 reason="Etsy does not provide listing views, search queries or Etsy Ads performance through its public API."
-                remedy="Import your Etsy Stats export to add these metrics. EtsyPilot will not estimate them."
+                remedy="Import your Etsy Stats export to add these metrics. CobaltRank will not estimate them."
                 action={
                   <Link
                     href="/settings/costs"

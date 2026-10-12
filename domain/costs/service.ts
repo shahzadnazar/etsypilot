@@ -6,7 +6,7 @@
  *   COSTS are yours. What materials cost, what postage costs, what your time is
  *   worth. Nobody can verify them, so they are SELLER_INPUT and editable here.
  *
- *   FEES are Etsy's. EtsyPilot cannot verify the schedule either — Etsy
+ *   FEES are Etsy's. CobaltRank cannot verify the schedule either — Etsy
  *   publishes no fee-rates endpoint — so the rates carry the date they were
  *   recorded and stay editable, and what they produce is never called an Etsy
  *   charge (D49).
@@ -17,8 +17,8 @@
  *
  * There is no demo-mode read-only gate here, and that is deliberate rather than
  * an omission. Demo mode blocks WRITES TO ETSY. A cost rule is not one: it
- * changes what EtsyPilot calculates and nothing else, which is exactly what the
- * audit log records it as — "Cost rule changed · Shop-wide · — EtsyPilot only"
+ * changes what CobaltRank calculates and nothing else, which is exactly what the
+ * audit log records it as — "Cost rule changed · Shop-wide · — CobaltRank only"
  * (artboard 109). Locking it would teach the wrong lesson about what demo mode
  * protects.
  */

@@ -151,7 +151,7 @@ export default async function ListingsPage({
           >
             Listing Audit
           </Link>
-          . They are EtsyPilot’s thresholds, not Etsy’s requirements, except where a rule says it
+          . They are CobaltRank’s thresholds, not Etsy’s requirements, except where a rule says it
           blocks publishing.
         </p>
       </div>

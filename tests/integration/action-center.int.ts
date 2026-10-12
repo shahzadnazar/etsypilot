@@ -203,7 +203,7 @@ describe('a shop that has entered no costs', () => {
      *   THE RULE THE MOST SEVERE CARD IN THE PRODUCT RESTS ON.
      * ══════════════════════════════════════════════════════════════════════
      *
-     * £2 for a listing is almost certainly below cost. EtsyPilot does not know
+     * £2 for a listing is almost certainly below cost. CobaltRank does not know
      * that, because nobody entered a cost — and a CRITICAL card that tells a
      * seller to reprice is the last place to infer one. The default rule is
      * not a substitute either: it is the seller's assumption about listings

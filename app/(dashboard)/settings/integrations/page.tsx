@@ -48,7 +48,7 @@ export default async function IntegrationsPage() {
     <>
       <PageHeader
         title="Integrations"
-        subtitle="Everything EtsyPilot connects to, what it reads, and whether it is connected right now."
+        subtitle="Everything CobaltRank connects to, what it reads, and whether it is connected right now."
       />
 
       <div className="flex flex-col gap-3">
@@ -76,7 +76,7 @@ export default async function IntegrationsPage() {
         <Card className="mt-4 flex flex-col gap-2 p-[18px]">
           <h2 className="text-label text-muted-1">Not available from Etsy at all</h2>
           <p className="max-w-prose text-caption leading-relaxed text-muted-1">
-            These are not integrations EtsyPilot has not built. They are data Etsy does not release
+            These are not integrations CobaltRank has not built. They are data Etsy does not release
             to anyone, so no integration can produce them — and any tool that shows them is
             modelling, whether it says so or not.
           </p>

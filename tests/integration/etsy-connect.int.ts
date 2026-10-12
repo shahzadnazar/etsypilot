@@ -29,7 +29,7 @@ import { acceptTermsFor } from '../support/legal'
  *
  * Two accounts with a shop each, created here and removed afterwards, with a
  * reserved id prefix. TWO, because "an Etsy shop already connected to another
- * EtsyPilot account is refused" needs a second account to be the other one —
+ * CobaltRank account is refused" needs a second account to be the other one —
  * and that is the check a single-fixture suite cannot make.
  */
 
@@ -115,7 +115,7 @@ function fakeEtsy(overrides: { me?: unknown; shop?: unknown; tokenStatus?: numbe
 }
 
 function callbackRequest(params: Record<string, string> = {}) {
-  const url = new URL('https://etsypilot.test/api/etsy/callback')
+  const url = new URL('https://cobaltrank.test/api/etsy/callback')
   url.searchParams.set('code', 'etsy-auth-code')
   url.searchParams.set('state', 'the-state')
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value)
@@ -171,7 +171,7 @@ beforeAll(async () => {
    */
   process.env.ETSY_MODE = 'live'
   process.env.ETSY_API_KEY = 'test-keystring'
-  process.env.ETSY_REDIRECT_URI = 'https://etsypilot.test/api/etsy/callback'
+  process.env.ETSY_REDIRECT_URI = 'https://cobaltrank.test/api/etsy/callback'
 
   const db = await import('@/lib/db')
   getDb = db.getDb
@@ -191,7 +191,7 @@ beforeEach(async () => {
   calls = []
   process.env.ETSY_MODE = 'live'
   process.env.ETSY_API_KEY = 'test-keystring'
-  process.env.ETSY_REDIRECT_URI = 'https://etsypilot.test/api/etsy/callback'
+  process.env.ETSY_REDIRECT_URI = 'https://cobaltrank.test/api/etsy/callback'
 
   await clean()
   await getDb()
@@ -318,7 +318,7 @@ describe('a successful connection', () => {
 
   it('reconnecting the same Etsy shop to the same account is allowed', async () => {
     // The ordinary re-authorisation path. The uniqueness rule is about a
-    // DIFFERENT EtsyPilot shop holding that Etsy id, not about connecting twice.
+    // DIFFERENT CobaltRank shop holding that Etsy id, not about connecting twice.
     expect(outcomeOf(await GET(callbackRequest()))).toBe('connected')
     vi.stubGlobal('fetch', fakeEtsy({ shop: { shop_name: 'Renamed Shop', currency_code: 'EUR' } }))
     expect(outcomeOf(await GET(callbackRequest()))).toBe('connected')
@@ -483,7 +483,7 @@ describe('a signed-out callback', () => {
     // Not an outcome page: a callback landing in a signed-out browser cannot
     // be attributed to anyone, so it goes to the front door.
     expect(outcomeOf(response)).toBeNull()
-    expect(response.headers.get('location')).toContain('etsypilot.test/')
+    expect(response.headers.get('location')).toContain('cobaltrank.test/')
 
     expect(await connectionRow(SHOP_A)).toBeNull()
     expect((await shopRow(SHOP_A))?.etsyShopId).toBeNull()
@@ -524,7 +524,7 @@ describe('the Application Terms gate, at the start of the flow', () => {
    * somebody going straight to the callback": with no verifier, nothing can.
    */
   const connectRequest = () =>
-    new Request('https://etsypilot.test/api/etsy/connect?scopes=listings_r')
+    new Request('https://cobaltrank.test/api/etsy/connect?scopes=listings_r')
 
   it('refuses before the seller leaves for Etsy, and sets no flow cookie', async () => {
     await getDb()

@@ -11,13 +11,13 @@ export function ThemeToggle() {
   const [mode, setMode] = useState<Mode>('system')
 
   useEffect(() => {
-    const stored = (localStorage.getItem('etsypilot-theme') as Mode | null) ?? 'system'
+    const stored = (localStorage.getItem('cobaltrank-theme') as Mode | null) ?? 'system'
     setMode(stored)
   }, [])
 
   function apply(next: Mode) {
     setMode(next)
-    localStorage.setItem('etsypilot-theme', next)
+    localStorage.setItem('cobaltrank-theme', next)
     if (next === 'system') document.documentElement.removeAttribute('data-theme')
     else document.documentElement.setAttribute('data-theme', next)
   }

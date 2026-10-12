@@ -91,7 +91,7 @@ export async function recommendForAction(
       title: action.title,
       explanation: action.explanation,
       /*
-       * The evidence's provenance class, not a cause. EtsyPilot never tells the
+       * The evidence's provenance class, not a cause. CobaltRank never tells the
        * model why something happened, because the product never claims to know.
        */
       diagnosis: action.evidence.provenance,

@@ -143,7 +143,7 @@ export function computeScenario(
     ? revenueProvenance
     : unavailable(
         'Etsy reports fees through the payment-account ledger, not the order receipt, and that ledger has not been read for this period.',
-        'Not something you can fix — EtsyPilot has to read it. Until then every figure that depends on fees is withheld rather than estimated.',
+        'Not something you can fix — CobaltRank has to read it. Until then every figure that depends on fees is withheld rather than estimated.',
       ).provenance
 
   /*

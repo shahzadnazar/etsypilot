@@ -103,7 +103,7 @@ export default async function SalesMapPage() {
           }
           description={
             view.source.kind === 'NOT_SYNCED' || view.source.kind === 'NO_SHOP'
-              ? 'The sales map is built from your order receipts, and EtsyPilot has not read them yet — so this is not a finding that you had no orders. Nothing is filled in from other shops or from a regional average, then or now.'
+              ? 'The sales map is built from your order receipts, and CobaltRank has not read them yet — so this is not a finding that you had no orders. Nothing is filled in from other shops or from a regional average, then or now.'
               : 'The sales map is built from your order receipts. With no orders there is nothing to place on it — nothing is filled in from other shops or from a regional average.'
           }
         />

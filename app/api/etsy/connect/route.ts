@@ -74,7 +74,7 @@ export async function GET(request: Request) {
    * keys the consent screen actually offers are honoured; anything else is
    * dropped rather than passed through to Etsy. selectedScopeStrings adds the
    * REQUIRED scopes regardless, so a hand-edited URL cannot start a flow that
-   * would connect a shop EtsyPilot then cannot read.
+   * would connect a shop CobaltRank then cannot read.
    */
   const requested = new URL(request.url).searchParams.get('scopes') ?? ''
   const offered = new Set(SCOPE_CHOICES.map((s) => s.key))

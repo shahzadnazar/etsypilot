@@ -3,7 +3,7 @@
  *
  * Two rules from the design, both enforced by the shape rather than by copy:
  *
- *   1. The event list is CLOSED. Every notification EtsyPilot can send is one
+ *   1. The event list is CLOSED. Every notification CobaltRank can send is one
  *      of these, so there is nowhere to add a marketing email later without
  *      adding an event to this table and having to name it.
  *
@@ -135,7 +135,7 @@ export function defaultPreferences(): NotificationPreferences {
   }
 }
 
-const STORE_KEY = Symbol.for('etsypilot.notifications.store')
+const STORE_KEY = Symbol.for('cobaltrank.notifications.store')
 
 function store(): Map<string, NotificationPreferences> {
   const g = globalThis as unknown as Record<symbol, Map<string, NotificationPreferences> | undefined>

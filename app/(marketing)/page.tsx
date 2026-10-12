@@ -17,7 +17,7 @@ import {
 export const metadata: Metadata = {
   title: 'Know what you actually made',
   description:
-    'Etsy shows you gross revenue. Fees arrive in a separate ledger and your costs live in your head. EtsyPilot works out what you actually made — and says so when it cannot.',
+    'Etsy shows you gross revenue. Fees arrive in a separate ledger and your costs live in your head. CobaltRank works out what you actually made — and says so when it cannot.',
 }
 
 /*
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
  * product whose entire premise is that absent is not zero cannot open with an
  * invented number. The social proof is the demo: one click, no account.
  *
- * There is also no claim about EtsyPilot's own accuracy that the product
+ * There is also no claim about CobaltRank's own accuracy that the product
  * cannot demonstrate on screen — which is why the hero is a real ledger with
  * real gaps rather than a figure about how much sellers save.
  */

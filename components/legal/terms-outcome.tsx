@@ -23,7 +23,7 @@ const OUTCOMES: Record<string, { title: string; detail: string }> = {
   not_published: {
     title: 'There is nothing to accept yet',
     detail:
-      'EtsyPilot’s Terms and Privacy Policy are still drafts — they name no legal entity, so nobody can accept them and nothing was recorded. Connecting a shop is blocked until they are finished.',
+      'CobaltRank’s Terms and Privacy Policy are still drafts — they name no legal entity, so nobody can accept them and nothing was recorded. Connecting a shop is blocked until they are finished.',
   },
   failed: {
     title: 'That could not be recorded',

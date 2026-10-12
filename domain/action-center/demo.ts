@@ -17,7 +17,7 @@ import 'server-only'
  *             Map seeded from demoChangeJobs(). There is no record of a live
  *             seller's bulk edits to report.
  *   ACT-0004  "Your linen category showed a 2.4× order lift in this window
- *             last year." Needs a year of history. EtsyPilot holds one
+ *             last year." Needs a year of history. CobaltRank holds one
  *             reporting period and one baseline window.
  *
  * ACT-0001 and ACT-0002 are kept here too, unchanged, so that the demo shop's

@@ -65,8 +65,8 @@ export function DraftNotice() {
         className="mt-1.5 max-w-[72ch] text-[13px] leading-relaxed"
         style={{ color: 'var(--danger-ink)' }}
       >
-        These documents are published here in full so you can read what EtsyPilot intends to be
-        bound by. They are not finished: the legal entity behind EtsyPilot has not been established
+        These documents are published here in full so you can read what CobaltRank intends to be
+        bound by. They are not finished: the legal entity behind CobaltRank has not been established
         yet, so every clause naming it still has a blank in it. Each blank is marked in the text
         below rather than hidden.
       </p>

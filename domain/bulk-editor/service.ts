@@ -91,7 +91,7 @@ export async function applyOperation(
       throw error
     }
 
-    const reason = error instanceof AppError ? error.message : 'EtsyPilot could not reach Etsy.'
+    const reason = error instanceof AppError ? error.message : 'CobaltRank could not reach Etsy.'
     return {
       operation: {
         ...operation,

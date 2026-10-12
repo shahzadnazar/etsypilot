@@ -237,7 +237,7 @@ describe('missing data is a first-class state', () => {
     }
   })
 
-  it('names the ads gap even though EtsyPilot cannot close it', () => {
+  it('names the ads gap even though CobaltRank cannot close it', () => {
     const ads = view.results.BASE.missingData.find((m) => m.code === 'ADS_NOT_PER_LISTING')
     expect(ads).toBeDefined()
     // Not resolvable by us, so the way out is an explanation.

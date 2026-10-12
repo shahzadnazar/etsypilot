@@ -3,7 +3,7 @@
     python3 tests/browser/fake-gotrue.py 5998 &
     AUTH_MODE=live NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:5998 \
       NEXT_PUBLIC_SUPABASE_ANON_KEY=anon DATABASE_URL=postgres://... \
-      SUPER_ADMIN_EMAILS=boss@etsypilot.app ADMIN_EMAILS=ops@etsypilot.app \
+      SUPER_ADMIN_EMAILS=boss@cobaltrank.app ADMIN_EMAILS=ops@cobaltrank.app \
       npx next start -p 3100 &
     python3 tests/browser/admin-role-change.py
 
@@ -32,8 +32,8 @@ BASE = os.environ.get("ADMIN_BASE_URL", "http://localhost:3100")
 GOTRUE = os.environ.get("GOTRUE_URL", "http://127.0.0.1:5998")
 CHROME = os.environ.get("CHROME_PATH", "/opt/pw-browsers/chromium-1194/chrome-linux/chrome")
 
-SUPER = ("boss@etsypilot.app", "correct-horse-battery")
-ADMIN = ("ops@etsypilot.app", "admin-password-here")
+SUPER = ("boss@cobaltrank.app", "correct-horse-battery")
+ADMIN = ("ops@cobaltrank.app", "admin-password-here")
 SELLER = ("seller@example.com", "seller-password-x")
 SUBJECT = ("promoted@example.com", "manager-password-y")
 

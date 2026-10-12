@@ -20,7 +20,7 @@ export async function GET() {
     return new Response('Not found', { status: 404 })
   }
   return errorResponse(
-    new Error('LEAKCANARY sk_live_51ABCDEFsecret at /home/user/etsypilot/lib/etsy/tokens.ts:42'),
+    new Error('LEAKCANARY sk_live_51ABCDEFsecret at /home/user/cobaltrank/lib/etsy/tokens.ts:42'),
     { path: '/api/leakprobe' },
   )
 }

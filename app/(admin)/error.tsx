@@ -46,7 +46,7 @@ export default function OperatorError({
     // The server already recorded this through instrumentation.ts, redacted
     // and structured. This is the browser's view of the same event, marked as
     // such so it cannot be mistaken for the record.
-    if (reference) console.warn('[etsypilot] operator error boundary', reference)
+    if (reference) console.warn('[cobaltrank] operator error boundary', reference)
   }, [reference])
 
   return (

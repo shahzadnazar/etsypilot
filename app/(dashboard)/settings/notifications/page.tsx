@@ -19,7 +19,7 @@ export const metadata: Metadata = { title: 'Notifications' }
 /*
  * Notification preferences (artboards 74–75, and the digest settings on 104).
  *
- * The event list is closed, so every notification EtsyPilot can send is on this
+ * The event list is closed, so every notification CobaltRank can send is on this
  * page and there is nowhere for a marketing email to appear without being named
  * here first. Each event has two independent switches, and the digest has its
  * own — nothing is opt-out-once-and-still-arrives.
@@ -41,7 +41,7 @@ export default async function NotificationsPage({
     <>
       <PageHeader
         title="Notifications"
-        subtitle="What EtsyPilot tells you about, and where. Every notification it can send is on this page."
+        subtitle="What CobaltRank tells you about, and where. Every notification it can send is on this page."
       />
 
       {saved === '1' ? (
@@ -69,7 +69,7 @@ export default async function NotificationsPage({
 
           <table className="w-full border-collapse text-body">
             <caption className="sr-only">
-              Every notification EtsyPilot can send, with an in-app and an email switch for each.
+              Every notification CobaltRank can send, with an in-app and an email switch for each.
             </caption>
             <thead>
               <tr className="bg-canvas-soft text-left text-label text-muted-1">
@@ -165,7 +165,7 @@ export default async function NotificationsPage({
         <Card className="p-[18px]">
           <h2 className="pb-1 text-section text-ink-1">Alert thresholds</h2>
           <p className="pb-3 max-w-prose text-caption leading-relaxed text-muted-1">
-            Yours, not EtsyPilot&rsquo;s. The margin floor is measured against your entered costs, so
+            Yours, not CobaltRank&rsquo;s. The margin floor is measured against your entered costs, so
             it is only as good as those are.
           </p>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -197,7 +197,7 @@ export default async function NotificationsPage({
             />
           </div>
           <p className="mt-2 text-caption text-muted-1">
-            Quiet hours are printed and applied in UTC, like every other time in EtsyPilot.{' '}
+            Quiet hours are printed and applied in UTC, like every other time in CobaltRank.{' '}
             <Link
               href="/settings/profile"
               className="font-semibold text-brand-strong underline underline-offset-2"
@@ -213,7 +213,7 @@ export default async function NotificationsPage({
             Save preferences
           </Button>
           <span className="text-caption text-muted-1">
-            Nothing here is sent to Etsy. These control EtsyPilot&rsquo;s own messages only.
+            Nothing here is sent to Etsy. These control CobaltRank&rsquo;s own messages only.
           </span>
         </div>
       </form>

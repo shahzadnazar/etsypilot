@@ -3,7 +3,7 @@
  *
  * Everything in here is SELLER_INPUT. Nothing on this surface is read from
  * Etsy, and nothing on it can be written back: changing a cost changes what
- * EtsyPilot calculates, never what a buyer pays or what a listing says.
+ * CobaltRank calculates, never what a buyer pays or what a listing says.
  *
  * `adSpend` is nullable on purpose. Etsy exposes no ads endpoint (see
  * EtsyService.getAdsPerformance, which can only ever return UNAVAILABLE), so

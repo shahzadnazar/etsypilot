@@ -62,7 +62,7 @@ export async function getChangeHistory(
    * This called `etsy.getListings` on the adapter, which is
    * ETSY_NOT_CONFIGURED in a live deployment with no API key. Measured in a
    * browser: /listings/change-history returned HTTP 500 — the page a seller is
-   * sent to when they want to know what EtsyPilot changed, and the only place
+   * sent to when they want to know what CobaltRank changed, and the only place
    * a write can be undone from.
    */
   const [catalogue, subscription] = await Promise.all([

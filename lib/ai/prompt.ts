@@ -27,7 +27,7 @@ import type { AiRequest, PromptFact } from './interface'
  * Never interpolated. Never assembled from parts. A system prompt that varies
  * per request is a system prompt a caller can influence.
  */
-export const SYSTEM_PROMPT = `You help an Etsy seller improve their own listings inside EtsyPilot.
+export const SYSTEM_PROMPT = `You help an Etsy seller improve their own listings inside CobaltRank.
 
 WHAT YOU ARE WORKING WITH
 The seller's own listing text, the seller's own saved keywords, and a list of

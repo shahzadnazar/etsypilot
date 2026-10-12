@@ -290,7 +290,7 @@ function matchedClaims(
       findings.push({
         code,
         severity: 'BLOCKING',
-        detail: `“${match[0].trim()}” ${description}. EtsyPilot does not claim knowledge of Etsy’s ranking, and does not predict outcomes.`,
+        detail: `“${match[0].trim()}” ${description}. CobaltRank does not claim knowledge of Etsy’s ranking, and does not predict outcomes.`,
         field,
       })
     }

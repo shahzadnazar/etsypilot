@@ -113,7 +113,7 @@ export async function getActions(ctx: ShopContext): Promise<ActionCenterView> {
    *   record of a real seller's bulk edits to report, so no card claims one.
    *
    *   ACT-0004, the seasonal window, claims "a 2.4× order lift in this window
-   *   last year". That needs a year of history; EtsyPilot holds one period and
+   *   last year". That needs a year of history; CobaltRank holds one period and
    *   one baseline window. An ESTIMATED card is still a claim, and this one
    *   cannot be made from what the product has.
    *
@@ -211,7 +211,7 @@ function pulseActions(ctx: ShopContext, pulse: ShopPulseView): Action[] {
           ? 'Orders fell below your baseline with no recorded change'
           : `${c.title} — orders moved ${c.ordersAfterPercent}% after`,
         explanation: unknown
-          ? 'No event in your history explains this. EtsyPilot is not guessing at a cause — the evidence is on Shop Pulse so you can judge it.'
+          ? 'No event in your history explains this. CobaltRank is not guessing at a cause — the evidence is on Shop Pulse so you can judge it.'
           : `${c.scope}. This change and the movement that followed it occurred together; that is a correlation, not a cause.`,
         evidence: {
           summary: c.evidence.observed[1] ?? c.detail,

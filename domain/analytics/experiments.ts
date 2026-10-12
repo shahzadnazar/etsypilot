@@ -41,7 +41,7 @@ export const VERDICT_LABEL: Record<Verdict, string> = {
  * The minimum post-change window before a verdict is anything but inconclusive.
  *
  * Stated on every card, because a seller who reads "Positive" after four days
- * will act on four days of data. The threshold is EtsyPilot's, not a
+ * will act on four days of data. The threshold is CobaltRank's, not a
  * statistical standard, and the cards say so.
  */
 export const MIN_POST_DAYS = 14
@@ -254,7 +254,7 @@ function verdictFor(
   if (after.days < MIN_POST_DAYS) {
     return {
       verdict: 'INCONCLUSIVE',
-      reasoning: `Only ${after.days} days of post-change data. EtsyPilot does not call a result before ${MIN_POST_DAYS} days, because a short window on a small shop is mostly noise.`,
+      reasoning: `Only ${after.days} days of post-change data. CobaltRank does not call a result before ${MIN_POST_DAYS} days, because a short window on a small shop is mostly noise.`,
       limitations,
     }
   }

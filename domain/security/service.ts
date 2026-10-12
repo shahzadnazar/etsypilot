@@ -3,7 +3,7 @@
  *
  * The closing note is the load-bearing part of this screen: the Etsy password
  * is never involved, and the shop connection is a revocable OAuth token. A
- * seller who believes EtsyPilot holds their Etsy password behaves differently —
+ * seller who believes CobaltRank holds their Etsy password behaves differently —
  * more anxiously and less safely — than one who knows it holds a token they can
  * revoke from either end.
  *
@@ -89,7 +89,7 @@ export async function getSecurityView(ctx: ShopContext): Promise<SecurityView> {
    * account, and the controls that would change it are disabled rather than
    * pretending."
    *
-   * EtsyPilot records none of these for a seller account. Not a password, not
+   * CobaltRank records none of these for a seller account. Not a password, not
    * a session, not a sign-in. So the live view returns nothing and the page
    * renders the absence, which is the honest answer and also the one that
    * makes the missing feature visible instead of looking finished.

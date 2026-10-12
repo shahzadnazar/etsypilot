@@ -48,7 +48,7 @@ export default async function ProfilePage({
     <>
       <PageHeader
         title="Profile"
-        subtitle="How you appear in the audit log and how EtsyPilot addresses you. None of this is sent to Etsy."
+        subtitle="How you appear in the audit log and how CobaltRank addresses you. None of this is sent to Etsy."
       />
 
       {problem === 'NAME' ? (
@@ -163,7 +163,7 @@ export default async function ProfilePage({
             <Stated
               label="Time zone for display"
               value={profile.timeZone}
-              note="Every time in EtsyPilot is printed in UTC. A per-account display zone is not offered yet, and a control that changed nothing would be worse than saying so."
+              note="Every time in CobaltRank is printed in UTC. A per-account display zone is not offered yet, and a control that changed nothing would be worse than saying so."
             />
           </div>
 
@@ -174,7 +174,7 @@ export default async function ProfilePage({
             * control and assumes their figures follow it.
             */}
           <p className="max-w-prose rounded-card border border-line bg-canvas-soft p-3 text-caption leading-relaxed text-ink-2">
-            Every figure in EtsyPilot is calculated in UTC, including period boundaries and daily
+            Every figure in CobaltRank is calculated in UTC, including period boundaries and daily
             buckets. A display time zone changes how times are printed, never how numbers are
             computed.{' '}
             <Link

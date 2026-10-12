@@ -81,7 +81,7 @@ export function AuditTable({ view }: { view: AuditLogView }) {
           }
           description={
             view.total === 0
-              ? 'Every action taken through EtsyPilot appears here, including the ones that are refused. The log fills itself — there is nothing to switch on.'
+              ? 'Every action taken through CobaltRank appears here, including the ones that are refused. The log fills itself — there is nothing to switch on.'
               : 'Clear the filters to see the whole log. A record that does not match is still there; it is only hidden by this view.'
           }
           action={
@@ -104,7 +104,7 @@ export function AuditTable({ view }: { view: AuditLogView }) {
         >
           <table className="w-full min-w-[860px] border-collapse text-body">
             <caption className="sr-only">
-              Every action taken on this shop through EtsyPilot, including refusals. Showing{' '}
+              Every action taken on this shop through CobaltRank, including refusals. Showing{' '}
               {view.records.length} of {view.total} records, newest first, in UTC.
             </caption>
             <thead>

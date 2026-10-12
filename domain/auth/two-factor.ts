@@ -189,4 +189,4 @@ export const RECOVERY_CODE_COUNT = 10
  * ask an admin who will go looking for one.
  */
 export const NO_OPERATOR_RESET_NOTICE =
-  'No one at EtsyPilot can reset this for you — not an admin, not support. That is deliberate: anyone who could reset your second factor could sign in as you. If you lose your phone, use a recovery code. If you have lost those too, recovery needs someone with Supabase dashboard access to remove the factor by hand.'
+  'No one at CobaltRank can reset this for you — not an admin, not support. That is deliberate: anyone who could reset your second factor could sign in as you. If you lose your phone, use a recovery code. If you have lost those too, recovery needs someone with Supabase dashboard access to remove the factor by hand.'

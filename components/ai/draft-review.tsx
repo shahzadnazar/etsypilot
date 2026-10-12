@@ -127,7 +127,7 @@ export function DraftReview({ draft, demo }: { draft: AiDraft; demo: boolean }) 
 
         <p className="mt-3 text-caption leading-relaxed text-muted-1">
           Impact is not predicted. After publishing, track the result in the experiment tracker —
-          EtsyPilot measures what happened rather than forecasting what will. Checked against the
+          CobaltRank measures what happened rather than forecasting what will. Checked against the
           guardrails before you saw it: no invented figures, no ranking claims, no forecasts.
         </p>
 

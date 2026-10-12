@@ -40,7 +40,7 @@ export function PublicDemoNotice() {
       <span className="mt-1.5 block">
         With your own shop connected, this same action would show you the exact before-and-after
         first, and send nothing to Etsy until you confirmed it. Every write — including the ones
-        EtsyPilot refuses — is recorded in an audit log you can export.
+        CobaltRank refuses — is recorded in an audit log you can export.
       </span>
       <span className="mt-2 flex flex-wrap gap-2">
         <Link

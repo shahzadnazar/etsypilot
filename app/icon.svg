@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="EtsyPilot">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="CobaltRank">
   <!--
-    The sidebar's EP mark, as the tab icon.
+    The sidebar's CR mark, as the tab icon.
 
     There was none, so every browser asked for /favicon.ico on first load and
     got a 404 in the console — the second error on the Profit Reality page,
@@ -13,5 +13,5 @@
   <rect width="32" height="32" rx="8" fill="#B4472A"/>
   <text x="16" y="21.5" text-anchor="middle"
         font-family="Inter, system-ui, -apple-system, Segoe UI, sans-serif"
-        font-size="14" font-weight="700" fill="#FFFFFF">EP</text>
+        font-size="14" font-weight="700" fill="#FFFFFF">CR</text>
 </svg>

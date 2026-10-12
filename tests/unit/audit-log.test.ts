@@ -53,7 +53,7 @@ describe('reachedLabel', () => {
   it('distinguishes nothing-sent from never-going-to-send', async () => {
     expect(reachedLabel({ kind: 'NOTHING_SENT' })).toBe('No · nothing sent')
     expect(reachedLabel({ kind: 'NOT_APPLICABLE', reason: 'AUTHORISATION' })).toBe('— authorisation')
-    expect(reachedLabel({ kind: 'NOT_APPLICABLE', reason: 'ETSYPILOT_ONLY' })).toBe('— EtsyPilot only')
+    expect(reachedLabel({ kind: 'NOT_APPLICABLE', reason: 'COBALTRANK_ONLY' })).toBe('— CobaltRank only')
     expect(reachedLabel({ kind: 'NOT_APPLICABLE', reason: 'READ_ONLY' })).toBe('— read only')
   })
 })
@@ -70,7 +70,7 @@ describe('isRefusal', () => {
     /*
      * Not a refusal. Confirming a diff never intended to send anything, and
      * counting it as refused would put an authorisation step in the list a
-     * seller opens to find out what EtsyPilot would not do.
+     * seller opens to find out what CobaltRank would not do.
      */
     expect(isRefusal(record({ kind: 'NOT_APPLICABLE', reason: 'AUTHORISATION' }))).toBe(false)
   })
@@ -143,7 +143,7 @@ describe('cost changes become records', () => {
     expect(costChangeRecord({ before: settings, after: settings, actor: 'Salman' })).toBeNull()
   })
 
-  it('records an EtsyPilot-only change, never a send', async () => {
+  it('records a CobaltRank-only change, never a send', async () => {
     const before = defaultCostSettings()
     const record = costChangeRecord({
       before,
@@ -158,7 +158,7 @@ describe('cost changes become records', () => {
       at: '2026-08-13T09:00:00.000Z',
     })
     expect(record).not.toBeNull()
-    expect(record!.reached).toEqual({ kind: 'NOT_APPLICABLE', reason: 'ETSYPILOT_ONLY' })
+    expect(record!.reached).toEqual({ kind: 'NOT_APPLICABLE', reason: 'COBALTRANK_ONLY' })
     // And therefore not a refusal, whatever the filter is doing.
     expect(isRefusal(record!)).toBe(false)
     expect(record!.detail).toContain('→')

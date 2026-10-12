@@ -177,7 +177,7 @@ export function blocks(markdown: string): Block[] {
 
     /*
      * `#{1,4}` and not `#{2,4}`: an H1 used to fall through to the paragraph
-     * branch and print as `# EtsyPilot — Terms of Service`, hash and all, in
+     * branch and print as `# CobaltRank — Terms of Service`, hash and all, in
      * the middle of the prose — which is what a reader saw on /legal/terms.
      *
      * The LOADER is what removes a document's own title (see

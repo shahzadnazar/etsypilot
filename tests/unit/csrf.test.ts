@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import { checkCsrf } from '@/lib/security/csrf'
 
-const SELF = 'https://etsypilot.app'
+const SELF = 'https://cobaltrank.app'
 const post = (over: Partial<Parameters<typeof checkCsrf>[0]> = {}) =>
   checkCsrf({ method: 'POST', path: '/api/billing/cancel', origin: null, referer: null, self: SELF, ...over })
 
@@ -22,12 +22,12 @@ describe('csrf', () => {
 
   it('is not fooled by a prefix domain', () => {
     /*
-     * The bug a startsWith() check would have: "https://etsypilot.app" is a
-     * prefix of "https://etsypilot.app.evil.com", so the attacker only has to
+     * The bug a startsWith() check would have: "https://cobaltrank.app" is a
+     * prefix of "https://cobaltrank.app.evil.com", so the attacker only has to
      * register a subdomain of their own domain.
      */
-    expect(post({ origin: 'https://etsypilot.app.evil.com' }).allowed).toBe(false)
-    expect(post({ referer: 'https://etsypilot.app.evil.com/x' }).allowed).toBe(false)
+    expect(post({ origin: 'https://cobaltrank.app.evil.com' }).allowed).toBe(false)
+    expect(post({ referer: 'https://cobaltrank.app.evil.com/x' }).allowed).toBe(false)
   })
 
   it('accepts a same-origin referer when Origin is absent', () => {

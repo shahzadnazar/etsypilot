@@ -32,7 +32,7 @@ export function CostsForm({
             <h2 className="text-section text-ink-1">Your costs</h2>
             <p className="max-w-prose text-caption leading-relaxed text-muted-1">
               These are yours, not Etsy&rsquo;s. Nothing here is sent to Etsy, and changing a figure
-              changes only what EtsyPilot calculates.
+              changes only what CobaltRank calculates.
             </p>
           </div>
           <ProvenanceBadge type="SELLER_INPUT" demo={demo} />
@@ -90,7 +90,7 @@ export function CostsForm({
             Save costs
           </Button>
           <span className="text-caption text-muted-1">
-            Saved changes are recorded in the audit log as an EtsyPilot-only change.
+            Saved changes are recorded in the audit log as a CobaltRank-only change.
           </span>
         </div>
       </Card>

@@ -64,7 +64,7 @@ export interface Methodology {
  * become five definitions.
  */
 const OUR_OWN_RECORDS =
-  'Counted from EtsyPilot\u2019s own tables, where we are the system of record. Nothing was modelled, and Etsy was not asked \u2014 the operator console makes no Etsy call at all.'
+  'Counted from CobaltRank\u2019s own tables, where we are the system of record. Nothing was modelled, and Etsy was not asked \u2014 the operator console makes no Etsy call at all.'
 
 export const METHODOLOGIES: Record<string, Methodology> = {
   grossSales: {
@@ -159,7 +159,7 @@ export const METHODOLOGIES: Record<string, Methodology> = {
       'Counted from listings observed for the term, then placed in a band: under 8,000 low, under 25,000 medium, above that high.',
     confidence: 'MODERATE',
     limitations: [
-      'A band, not a ranking difficulty score. EtsyPilot does not model Etsy ranking and no one outside Etsy can.',
+      'A band, not a ranking difficulty score. CobaltRank does not model Etsy ranking and no one outside Etsy can.',
       'Observed, not exhaustive — Etsy paginates and rotates search results.',
     ],
     readMoreHref: '/data/methodology#keyword-competition',
@@ -187,7 +187,7 @@ export const METHODOLOGIES: Record<string, Methodology> = {
       'Each listing’s share of your verified revenue, weighted by the severity of its worst issue, subtracted from 100. Errors count fully; warnings count a third.',
     limitations: [
       'Listings with no orders in the period carry no weight, so a broken listing that never sold does not move the score.',
-      'Severity weights are EtsyPilot thresholds, not Etsy requirements — except the rules that say they block publishing, which are Etsy’s.',
+      'Severity weights are CobaltRank thresholds, not Etsy requirements — except the rules that say they block publishing, which are Etsy’s.',
       'Says how much of your money sits behind a broken listing, not how many listings are broken.',
     ],
     readMoreHref: '/data/methodology#listing-health',
@@ -230,7 +230,7 @@ export const METHODOLOGIES: Record<string, Methodology> = {
     type: 'UNAVAILABLE',
     source: 'Etsy Open API v3',
     method:
-      'Etsy does not expose listing views through the public API, so EtsyPilot shows nothing rather than a modelled figure.',
+      'Etsy does not expose listing views through the public API, so CobaltRank shows nothing rather than a modelled figure.',
     limitations: ['Import your Etsy Stats CSV to add this metric. It will not be estimated.'],
     readMoreHref: '/data/methodology#unavailable',
   },
@@ -251,7 +251,7 @@ export const METHODOLOGIES: Record<string, Methodology> = {
   operatorUsage: {
     metric: 'Usage against a plan limit',
     type: 'CALCULATED',
-    source: 'EtsyPilot database · listings, ai_generations, subscriptions',
+    source: 'CobaltRank database · listings, ai_generations, subscriptions',
     method:
       'Counted from the underlying rows at render time and compared with the limit on the plan in force. usage_records.used is never written by anything in the product, so there is no stored counter to read and this is not a reading of one.',
     limitations: [
@@ -265,13 +265,13 @@ export const METHODOLOGIES: Record<string, Methodology> = {
     metric: 'Accounts by plan',
     type: 'VERIFIED',
     definition: OUR_OWN_RECORDS,
-    source: 'EtsyPilot database · subscriptions',
+    source: 'CobaltRank database · subscriptions',
     method:
       'A count of subscription rows by plan, with every plan present including the ones at zero. Nothing is modelled: the row is there or it is not.',
     coverage: 100,
     coverageLabel: 'of accounts, including those with no billing row at all',
     limitations: [
-      'This is EtsyPilot\u2019s own copy of the billing state, not the payment processor\u2019s. It is what the product enforces limits against, which is the right thing for this screen and the wrong thing for reconciling a charge.',
+      'This is CobaltRank\u2019s own copy of the billing state, not the payment processor\u2019s. It is what the product enforces limits against, which is the right thing for this screen and the wrong thing for reconciling a charge.',
     ],
   },
 
@@ -279,7 +279,7 @@ export const METHODOLOGIES: Record<string, Methodology> = {
     metric: 'Accounts by billing status',
     type: 'VERIFIED',
     definition: OUR_OWN_RECORDS,
-    source: 'EtsyPilot database · subscriptions',
+    source: 'CobaltRank database · subscriptions',
     method:
       'A count of subscription rows by their CURRENT status. Every status is present, including the ones at zero, and rows with an unrecognised status are counted in their own bucket rather than dropped.',
     limitations: [
@@ -291,7 +291,7 @@ export const METHODOLOGIES: Record<string, Methodology> = {
     metric: 'Bulk operations by state',
     type: 'VERIFIED',
     definition: OUR_OWN_RECORDS,
-    source: 'EtsyPilot database · bulk_operations',
+    source: 'CobaltRank database · bulk_operations',
     method:
       'A count of bulk_operations rows by their stored state, every state present. An unrecognised state is counted in its own bucket rather than folded into a neighbour.',
     limitations: [
@@ -303,7 +303,7 @@ export const METHODOLOGIES: Record<string, Methodology> = {
     metric: 'Etsy connections by state',
     type: 'VERIFIED',
     definition: OUR_OWN_RECORDS,
-    source: 'EtsyPilot database · etsy_connections, shops',
+    source: 'CobaltRank database · etsy_connections, shops',
     method:
       'A count of shops by the connection state derived from their grant. Revoked, expired and never-connected are facts the row carries. Expiring soon and stale sync are comparisons against thresholds this product chose, and those two counts are reported as calculated rather than verified.',
     limitations: [
@@ -316,7 +316,7 @@ export const METHODOLOGIES: Record<string, Methodology> = {
     type: 'UNAVAILABLE',
     definition:
       'The column exists and nothing writes it. We show what it says rather than a number we worked out, because there is nothing here to work out.',
-    source: 'EtsyPilot database · users.onboarding_state',
+    source: 'CobaltRank database · users.onboarding_state',
     method:
       'Read from users.onboarding_state, which defaults to NOT_STARTED and which nothing in the product writes after provisioning sets it. The count is an accurate report of a stored value and not a measurement of how far anyone gets.',
     limitations: [
@@ -328,8 +328,8 @@ export const METHODOLOGIES: Record<string, Methodology> = {
     metric: 'AI acceptance rate',
     type: 'CALCULATED',
     definition:
-      'A share of the generations a seller has actually DECIDED on, computed from EtsyPilot\u2019s own rows. Reproducible, and it is not a verdict on the AI where few have been decided.',
-    source: 'EtsyPilot database · ai_generations',
+      'A share of the generations a seller has actually DECIDED on, computed from CobaltRank\u2019s own rows. Reproducible, and it is not a verdict on the AI where few have been decided.',
+    source: 'CobaltRank database · ai_generations',
     method:
       'Accepted divided by decided, where decided is accepted plus rejected. Drafts are NOT in the denominator: a draft is undecided, and counting it as "not accepted" would report a shop that generated fifty drafts this morning as having a 0% acceptance rate — a claim about the AI made out of the seller not having got to them yet.',
     coverageLabel: 'of generations have been decided',
@@ -343,7 +343,7 @@ export const METHODOLOGIES: Record<string, Methodology> = {
     metric: 'Shops by what is behind them',
     type: 'VERIFIED',
     definition: OUR_OWN_RECORDS,
-    source: 'EtsyPilot database · shops, etsy_connections',
+    source: 'CobaltRank database · shops, etsy_connections',
     method:
       'A count of shop rows by whether they have a real Etsy grant, no grant, or are a demo shop. A demo shop is counted as neither connected nor unconnected: it is a shop with no Etsy behind it by design.',
   },

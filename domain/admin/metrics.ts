@@ -133,7 +133,7 @@ export function onboardingFunnel(input: MetricsInput): Bucket[] {
         'Read from users.onboarding_state, which nothing in the product writes after provisioning sets it.',
         'This is what the column says. It is not a measurement of how far anyone actually gets.',
       ).provenance,
-      source: 'EtsyPilot database · users.onboarding_state',
+      source: 'CobaltRank database · users.onboarding_state',
     },
   })
 

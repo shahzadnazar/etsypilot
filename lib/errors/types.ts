@@ -167,7 +167,7 @@ export const Errors = {
     new AppError({
       kind: 'EXTERNAL_SERVICE',
       code: 'ETSY_UNAVAILABLE',
-      message: 'EtsyPilot could not reach Etsy.',
+      message: 'CobaltRank could not reach Etsy.',
       recovery: 'Your synced data is still readable. Try again in a few minutes.',
       retryable: true,
     }),
@@ -248,7 +248,7 @@ export const Errors = {
       code: 'TERMS_NOT_PUBLISHED',
       message: 'Connecting an Etsy shop is not open yet.',
       recovery:
-        'EtsyPilot\u2019s Terms of Service and Privacy Policy are still drafts \u2014 the legal entity behind them has not been established, so they name no party and nobody can accept them. Connecting a shop is blocked rather than allowed on an unfinished agreement. You can read both documents in full in the meantime.',
+        'CobaltRank\u2019s Terms of Service and Privacy Policy are still drafts \u2014 the legal entity behind them has not been established, so they name no party and nobody can accept them. Connecting a shop is blocked rather than allowed on an unfinished agreement. You can read both documents in full in the meantime.',
       context: { missing: [...missing] },
     }),
 
@@ -257,7 +257,7 @@ export const Errors = {
       kind: 'UNKNOWN',
       code: 'UNKNOWN',
       message: 'Something went wrong on our side.',
-      recovery: 'This is an EtsyPilot error, not a problem with your shop or your Etsy data. Nothing was published.',
+      recovery: 'This is a CobaltRank error, not a problem with your shop or your Etsy data. Nothing was published.',
       retryable: true,
       context,
     }),

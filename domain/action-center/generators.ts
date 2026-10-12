@@ -36,7 +36,7 @@ import 'server-only'
  *      set from an actor this shop recorded, or left off.
  *   3. NOTHING TO SAY MEANS NO CARD. Every generator returns null when the
  *      shop gives it nothing, and the screen's own empty state takes over.
- *   4. EVERY TIMESTAMP IS AN OBSERVATION. `createdAt` is when EtsyPilot last
+ *   4. EVERY TIMESTAMP IS AN OBSERVATION. `createdAt` is when CobaltRank last
  *      read the data the finding came from, not a constant and not `now()`,
  *      which would make every card look new on every page load.
  */
@@ -190,7 +190,7 @@ export function missingCostsAction(facts: ShopFacts): Action | null {
     id: 'ACT-MISSING-COSTS',
     shopId: facts.shopId,
     /*
-     * ATTENTION, not CRITICAL, even with no rule set. A gap in what EtsyPilot
+     * ATTENTION, not CRITICAL, even with no rule set. A gap in what CobaltRank
      * knows is not the same as a listing losing money on every sale, and
      * ranking them equally would bury the one that is.
      */

@@ -113,7 +113,7 @@ function emptyState(title: string, body: string, cta?: { label: string; href: st
 function render(response: ExtensionResponse): HTMLElement {
   switch (response.state) {
     case 'SIGNED_OUT':
-      return emptyState('Connect your EtsyPilot account to continue', response.message, {
+      return emptyState('Connect your CobaltRank account to continue', response.message, {
         label: 'Log in',
         href: response.signInUrl,
       })
@@ -189,7 +189,7 @@ function render(response: ExtensionResponse): HTMLElement {
       }
 
       const actions = el('nav', 'actions')
-      actions.setAttribute('aria-label', 'Open in EtsyPilot')
+      actions.setAttribute('aria-label', 'Open in CobaltRank')
       for (const action of listing.actions) actions.append(actionLink(action.label, action.href))
       wrap.append(actions)
 

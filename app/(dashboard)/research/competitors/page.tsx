@@ -78,7 +78,7 @@ export default async function CompetitorsPage({
       {view.shops.length === 0 ? (
         <EmptyState
           title="No shops tracked yet"
-          description="Track a shop to see how its catalogue, pricing and tags move over time. Everything shown is public — EtsyPilot has no access to anyone else's Etsy account."
+          description="Track a shop to see how its catalogue, pricing and tags move over time. Everything shown is public — CobaltRank has no access to anyone else's Etsy account."
         />
       ) : (
         <>

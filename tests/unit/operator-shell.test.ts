@@ -1178,7 +1178,7 @@ describe('a methodology drawer credits the source the figure actually used', () 
 
   it('CREDITS ETSY FOR NOTHING, on any operator metric', () => {
     for (const [key, body] of operatorEntries()) {
-      expect(body, `${key} source`).toMatch(/source:\s*['"]EtsyPilot database/)
+      expect(body, `${key} source`).toMatch(/source:\s*['"]CobaltRank database/)
     }
   })
 

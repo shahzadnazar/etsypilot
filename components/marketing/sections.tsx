@@ -11,6 +11,7 @@ import {
 } from '@/domain/billing/founding-pricing'
 import { TRIAL_TERMS } from '@/domain/billing/plans'
 import { LegalLinks } from '@/components/legal/legal-links'
+import { contactAddress, hasContactAddress } from '@/lib/brand'
 import {
   EXPORTABLE_DATASETS,
   exportableNouns,
@@ -41,7 +42,7 @@ export function MarketingNav() {
         aria-label="Main"
       >
         <Link href="/" className="display mr-2 text-[17px]" style={{ color: 'var(--ink-1)' }}>
-          EtsyPilot
+          CobaltRank
         </Link>
         <Link href="#what" className="text-[13px]" style={{ color: 'var(--ink-2)' }}>
           Features
@@ -105,7 +106,7 @@ export function MarketingNav() {
 const HARD_FACTS = [
   {
     heading: 'Etsy Ads spend is not in the API',
-    body: 'Etsy exposes no endpoint for what you spend on Etsy Ads. Any tool showing you an ads figure per listing got it from somewhere other than Etsy, or worked it out. EtsyPilot shows the shop-level figure Etsy does report, and says the per-listing one is unavailable.',
+    body: 'Etsy exposes no endpoint for what you spend on Etsy Ads. Any tool showing you an ads figure per listing got it from somewhere other than Etsy, or worked it out. CobaltRank shows the shop-level figure Etsy does report, and says the per-listing one is unavailable.',
   },
   {
     heading: 'Offsite Ads fees arrive with no link back to the order',
@@ -159,7 +160,7 @@ export function WhyProfitIsHard() {
   )
 }
 
-/* ───────────────────────────────────────────── 5. what EtsyPilot does */
+/* ───────────────────────────────────────────── 5. what CobaltRank does */
 
 const SURFACES = [
   {
@@ -272,7 +273,7 @@ export function ProvenanceSystem() {
           className="display mt-9 max-w-[26ch] text-[24px] leading-[1.25] md:text-[30px]"
           style={{ color: 'var(--ink-1)' }}
         >
-          When EtsyPilot cannot verify a number, it says so instead of estimating one.
+          When CobaltRank cannot verify a number, it says so instead of estimating one.
         </p>
       </div>
     </section>
@@ -303,27 +304,27 @@ const TRUST = [
   {
     claim: 'It never holds your Etsy password.',
     detail:
-      'The connection is an OAuth token, stored encrypted. Revoke it from your Etsy account and EtsyPilot stops reading and writing immediately — there is nothing it can do with a revoked token.',
+      'The connection is an OAuth token, stored encrypted. Revoke it from your Etsy account and CobaltRank stops reading and writing immediately — there is nothing it can do with a revoked token.',
   },
   {
     claim: 'Only you can change your shop.',
     detail:
-      'Every write shows you the exact before-and-after first, fingerprinted so the set you approved is the set that is sent. Nothing goes to Etsy until you confirm that diff, and if the catalogue moved in between, EtsyPilot refuses rather than applying to whatever is left.',
+      'Every write shows you the exact before-and-after first, fingerprinted so the set you approved is the set that is sent. Nothing goes to Etsy until you confirm that diff, and if the catalogue moved in between, CobaltRank refuses rather than applying to whatever is left.',
   },
   {
     claim: 'Not even we can.',
     detail:
-      'EtsyPilot staff can read your shop to support you, and cannot write to it — enforced in code, not by policy. The operator area may change four things, none of them yours: a person’s platform role and three of its own audit tables. It has no way to write a listing, an order, a cost or anything on Etsy.',
+      'CobaltRank staff can read your shop to support you, and cannot write to it — enforced in code, not by policy. The operator area may change four things, none of them yours: a person’s platform role and three of its own audit tables. It has no way to write a listing, an order, a cost or anything on Etsy.',
   },
   {
     claim: 'Refusals are recorded, not just writes.',
     detail:
-      'The audit log is append-only and exportable, and it keeps what EtsyPilot would not do as well as what it did — "Write refused — demo mode · nothing sent" is a record, with the reason and what would have changed.',
+      'The audit log is append-only and exportable, and it keeps what CobaltRank would not do as well as what it did — "Write refused — demo mode · nothing sent" is a record, with the reason and what would have changed.',
   },
   {
     claim: 'A rollback is planned against your shop as it is now.',
     detail:
-      'Not as it was when the job ran. A listing somebody edited on Etsy since is excluded and named, rather than silently overwritten — restoring it would discard work EtsyPilot did not do.',
+      'Not as it was when the job ran. A listing somebody edited on Etsy since is excluded and named, rather than silently overwritten — restoring it would discard work CobaltRank did not do.',
   },
   {
     claim: 'Export what the figures are built on, any time.',
@@ -333,12 +334,12 @@ const TRUST = [
      * datasets, two of which have no exporter. A sentence about what the
      * software does is now rendered from the software.
      */
-    detail: `As CSV, from Settings: ${exportableNouns()}. Each file carries a provenance column beside every value and a header saying what it leaves out. ${notExportableNouns().charAt(0).toUpperCase()}${notExportableNouns().slice(1)} have no exporter yet, so "everything" would be the wrong word. Deletion is a request to privacy@etsypilot.app today and is actioned within 30 days — there is no self-serve delete button yet, and a button that looked like one would be worse than saying so.`,
+    detail: `As CSV, from Settings: ${exportableNouns()}. Each file carries a provenance column beside every value and a header saying what it leaves out. ${notExportableNouns().charAt(0).toUpperCase()}${notExportableNouns().slice(1)} have no exporter yet, so "everything" would be the wrong word. ${deletionRoute()} There is no self-serve delete button yet, and a button that looked like one would be worse than saying so.`,
   },
   {
     claim: 'Two-factor authentication is available on every account.',
     detail:
-      'An authenticator app, with recovery codes. Required for anyone operating EtsyPilot itself.',
+      'An authenticator app, with recovery codes. Required for anyone operating CobaltRank itself.',
   },
   {
     claim: 'Cancel in one click.',
@@ -512,11 +513,11 @@ function TierCard({ tier }: { tier: FoundingTier }) {
 const FAQ = [
   {
     q: 'Is my Etsy account safe?',
-    a: 'EtsyPilot never sees your Etsy password. You connect with an OAuth token, scoped to what it needs, stored encrypted, and revocable from your Etsy account at any moment. Revoking it stops every read and every write.',
+    a: 'CobaltRank never sees your Etsy password. You connect with an OAuth token, scoped to what it needs, stored encrypted, and revocable from your Etsy account at any moment. Revoking it stops every read and every write.',
   },
   {
     q: 'What happens when I connect?',
-    a: 'EtsyPilot reads your listings and your order receipts into its own tables, so the screens are fast and work when Etsy is slow. It writes nothing on connection. Until you run a bulk edit and confirm its diff, EtsyPilot has never sent anything to Etsy.',
+    a: 'CobaltRank reads your listings and your order receipts into its own tables, so the screens are fast and work when Etsy is slow. It writes nothing on connection. Until you run a bulk edit and confirm its diff, CobaltRank has never sent anything to Etsy.',
   },
   {
     q: 'Can it change my listings without asking?',
@@ -524,7 +525,7 @@ const FAQ = [
   },
   {
     q: 'Why is there no keyword research?',
-    a: 'Because Etsy does not expose search volume through its API. Every tool that shows you a volume number got it from somewhere else — a third-party panel, a clickstream, a model — and most of them do not say which. EtsyPilot will not ship an estimate dressed as a measurement. If a trustworthy source appears, it will arrive labelled Estimated with its method attached, and not before.',
+    a: 'Because Etsy does not expose search volume through its API. Every tool that shows you a volume number got it from somewhere else — a third-party panel, a clickstream, a model — and most of them do not say which. CobaltRank will not ship an estimate dressed as a measurement. If a trustworthy source appears, it will arrive labelled Estimated with its method attached, and not before.',
   },
   {
     q: 'When does it launch?',
@@ -532,7 +533,7 @@ const FAQ = [
   },
   {
     q: 'Can I get my data out?',
-    a: `${EXPORTABLE_DATASETS.length} CSV files, from Settings, without asking anybody: ${exportableNouns()}. ${notExportableNouns().charAt(0).toUpperCase()}${notExportableNouns().slice(1)} are not exportable yet, which is why this answer is not the word "everything". Deletion is a request to privacy@etsypilot.app today — actioned within 30 days, with written confirmation of what was removed.`,
+    a: `${EXPORTABLE_DATASETS.length} CSV files, from Settings, without asking anybody: ${exportableNouns()}. ${notExportableNouns().charAt(0).toUpperCase()}${notExportableNouns().slice(1)} are not exportable yet, which is why this answer is not the word "everything". ${deletionRoute()}`,
   },
 ]
 
@@ -564,6 +565,28 @@ export function Faq() {
   )
 }
 
+/*
+ * How a seller asks for their data to be deleted, said once.
+ *
+ * Two surfaces claim this — the trust section and the FAQ — and both used to
+ * print `privacy@<domain>`. No domain has been bought, so that address routed
+ * nowhere. Privacy §6 tells a seller that emailing it is the ONLY way to
+ * exercise a deletion right, which makes a dead address the worst kind of
+ * false claim this page could carry: the remedy for a right, that does not
+ * work.
+ *
+ * So the address comes from lib/brand.ts, where it is `null`, and when it is
+ * null the sentence says what is actually true instead of naming a mailbox
+ * nobody reads. The same rule the legal documents already follow with
+ * `[[PRIVACY_EMAIL]]`.
+ */
+function deletionRoute(): string {
+  const address = contactAddress('privacy')
+  return address
+    ? `Deletion is a request to ${address} today — actioned within 30 days, with written confirmation of what was removed.`
+    : 'Deletion is a request rather than a button today, and the address to send it to is not published yet — no contact domain has been bought. It will be on this page and in the Privacy Policy before anybody can connect a shop.'
+}
+
 /* ───────────────────────────────────────────────────────────────── footer */
 
 export function MarketingFooter() {
@@ -571,7 +594,7 @@ export function MarketingFooter() {
     <footer className="border-t" style={{ borderColor: 'var(--border)', background: 'var(--canvas-soft)' }}>
       <div className="mx-auto flex max-w-[1180px] flex-wrap items-start gap-x-8 gap-y-4 px-5 py-10">
         <span className="display text-[16px]" style={{ color: 'var(--ink-1)' }}>
-          EtsyPilot
+          CobaltRank
         </span>
         <nav className="flex flex-wrap gap-x-5 gap-y-2 text-[13px]" aria-label="Footer">
           {/*
@@ -592,12 +615,24 @@ export function MarketingFooter() {
           <LegalLinks variant="footer" />
           <Link href="/data/methodology" style={{ color: 'var(--ink-2)' }}>Methodology</Link>
           <Link href="/data/sources" style={{ color: 'var(--ink-2)' }}>Data sources</Link>
-          <a href="mailto:hello@etsypilot.app" style={{ color: 'var(--ink-2)' }}>Contact</a>
+          {/*
+            * The Contact link renders only when there is an address to send
+            * people to. No domain has been bought, so today there is not, and
+            * a mailto: that bounces is worse than no link — see lib/brand.ts.
+            */}
+          {hasContactAddress('support') ? (
+            <a
+              href={`mailto:${contactAddress('support')}`}
+              style={{ color: 'var(--ink-2)' }}
+            >
+              Contact
+            </a>
+          ) : null}
         </nav>
         <p className="w-full max-w-[72ch] text-[12px] leading-relaxed" style={{ color: 'var(--muted-1)' }}>
           {/* The same disclaimer the app already carries. */}
-          EtsyPilot is not affiliated with, endorsed by, or sponsored by Etsy, Inc. Etsy is a
-          trademark of Etsy, Inc. EtsyPilot uses the Etsy API but is not endorsed or certified by
+          CobaltRank is not affiliated with, endorsed by, or sponsored by Etsy, Inc. Etsy is a
+          trademark of Etsy, Inc. CobaltRank uses the Etsy API but is not endorsed or certified by
           Etsy.
         </p>
       </div>

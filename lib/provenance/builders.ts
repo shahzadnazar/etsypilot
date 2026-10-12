@@ -26,7 +26,7 @@ export function calculated<T>(
     value,
     provenance: {
       type: 'CALCULATED',
-      source: 'EtsyPilot calculation',
+      source: 'CobaltRank calculation',
       methodology,
       ...(opts.coverage !== undefined ? { coverage: opts.coverage } : {}),
       ...(opts.limitations ? { limitations: opts.limitations } : {}),

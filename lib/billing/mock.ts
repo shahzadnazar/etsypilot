@@ -104,7 +104,7 @@ interface MockStore {
   seenEvents: Set<string>
 }
 
-const STORE_KEY = Symbol.for('etsypilot.billing.mock')
+const STORE_KEY = Symbol.for('cobaltrank.billing.mock')
 
 function store(): MockStore {
   const g = globalThis as unknown as Record<symbol, MockStore | undefined>

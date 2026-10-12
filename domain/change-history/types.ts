@@ -1,7 +1,7 @@
 /*
  * Change history (artboards 44–45).
  *
- * The record of what EtsyPilot wrote to this shop, and the only surface from
+ * The record of what CobaltRank wrote to this shop, and the only surface from
  * which a write can be undone. Not to be confused with the Audit log, which
  * records every action INCLUDING the ones that never reached Etsy (D66). This
  * one is narrower on purpose: it lists jobs that changed listings, because a

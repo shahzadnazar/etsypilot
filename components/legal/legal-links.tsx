@@ -46,8 +46,8 @@ export function LegalLinks({
     if (variant === 'footer') return null
     return (
       <p className={className}>
-        EtsyPilot&rsquo;s Terms of Service and Privacy Policy are still drafts: the legal entity
-        behind EtsyPilot has not been established, so they name no party and are not in force.
+        CobaltRank&rsquo;s Terms of Service and Privacy Policy are still drafts: the legal entity
+        behind CobaltRank has not been established, so they name no party and are not in force.
         Nothing is being presented to you for acceptance, and no Etsy shop can be connected until
         they are finished.
       </p>
@@ -68,7 +68,7 @@ export function LegalLinks({
 
   return (
     <p className={className}>
-      By creating an account you accept EtsyPilot&rsquo;s{' '}
+      By creating an account you accept CobaltRank&rsquo;s{' '}
       <Link href="/legal/terms" className="font-semibold underline underline-offset-2">
         Terms of Service
       </Link>{' '}

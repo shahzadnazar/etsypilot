@@ -279,7 +279,7 @@ function baselineCoverage(
     coverageNote:
       without === 0
         ? `All ${active.length} active listings have orders in the baseline window.`
-        : `${without} of ${active.length} active listings have no orders in the baseline window, so they cannot be baselined. EtsyPilot cannot tell which of those are new and which have simply not sold.`,
+        : `${without} of ${active.length} active listings have no orders in the baseline window, so they cannot be baselined. CobaltRank cannot tell which of those are new and which have simply not sold.`,
   }
 }
 
@@ -415,7 +415,7 @@ function buildChange(
     coverageNote: 'All affected listings have full history in this window',
     limitations: thin
       ? [
-          'Too few orders on these listings to measure a change. EtsyPilot reports this as unknown rather than publishing a percentage the sample cannot support.',
+          'Too few orders on these listings to measure a change. CobaltRank reports this as unknown rather than publishing a percentage the sample cannot support.',
           ORDERS_ONLY_LIMITATION,
         ]
       : [ORDERS_ONLY_LIMITATION],
@@ -588,7 +588,7 @@ function unexplainedDeviations(
         coverageNote: coverage.coverageNote,
         limitations: [
           ORDERS_ONLY_LIMITATION,
-          'EtsyPilot cannot see Etsy’s ranking algorithm and does not model it. We are not guessing at a cause.',
+          'CobaltRank cannot see Etsy’s ranking algorithm and does not model it. We are not guessing at a cause.',
         ],
       }
 

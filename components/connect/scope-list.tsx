@@ -24,11 +24,11 @@ export function ScopeList({ granted }: { granted?: string[] }) {
     <div className="flex flex-col gap-4">
       <Card className="overflow-hidden">
         <div className="border-b border-line p-[18px]">
-          <h2 className="text-section text-ink-1">Choose what EtsyPilot can access</h2>
+          <h2 className="text-section text-ink-1">Choose what CobaltRank can access</h2>
           <p className="mt-1 text-caption leading-relaxed text-muted-1">
             You sign in on Etsy and approve access there.{' '}
             <strong className="font-semibold text-ink-1">
-              EtsyPilot never receives your Etsy password.
+              CobaltRank never receives your Etsy password.
             </strong>{' '}
             Access is granted by Etsy and can be revoked at any time, from Settings → Data
             permissions or from your Etsy account.
@@ -67,7 +67,7 @@ export function ScopeList({ granted }: { granted?: string[] }) {
       </Card>
 
       <Card className="p-[18px]">
-        <h3 className="text-section text-ink-1">What EtsyPilot can’t do</h3>
+        <h3 className="text-section text-ink-1">What CobaltRank can’t do</h3>
         <ul className="mt-2 flex flex-col gap-1.5">
           {CANNOT_DO.map((line) => (
             <li key={line} className="text-small leading-relaxed text-ink-2">

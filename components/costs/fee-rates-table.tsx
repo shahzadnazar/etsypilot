@@ -5,7 +5,7 @@ import type { FeeRate } from '@/domain/fees/rules'
 import { formatCurrency, formatDate, formatPercent } from '@/lib/utils/format'
 
 /*
- * The fee rates EtsyPilot applies.
+ * The fee rates CobaltRank applies.
  *
  * Read-only here, and editable in the Fee Calculator, which is where a seller
  * in another country corrects them for their own shop. Both surfaces read
@@ -58,7 +58,7 @@ export function FeeRatesTable({
       >
         <table className="w-full min-w-[620px] border-collapse text-body">
           <caption className="sr-only">
-            The published Etsy fee rates EtsyPilot applies, what each is charged on, and the
+            The published Etsy fee rates CobaltRank applies, what each is charged on, and the
             condition attached to it.
           </caption>
           <thead>

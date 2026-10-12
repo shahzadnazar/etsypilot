@@ -28,9 +28,9 @@ afterEach(() => setEnv(ENV.superAdmin, ENV.admin))
 
 describe('each role resolves from the right place', () => {
   it('reads SUPER_ADMIN and ADMIN from the environment', () => {
-    setEnv('boss@etsypilot.app', 'ops@etsypilot.app')
-    expect(resolvePlatformRole({ email: 'boss@etsypilot.app' })).toBe('SUPER_ADMIN')
-    expect(resolvePlatformRole({ email: 'ops@etsypilot.app' })).toBe('ADMIN')
+    setEnv('boss@cobaltrank.app', 'ops@cobaltrank.app')
+    expect(resolvePlatformRole({ email: 'boss@cobaltrank.app' })).toBe('SUPER_ADMIN')
+    expect(resolvePlatformRole({ email: 'ops@cobaltrank.app' })).toBe('ADMIN')
   })
 
   it('reads MANAGER from the column', () => {
@@ -39,7 +39,7 @@ describe('each role resolves from the right place', () => {
   })
 
   it('gives everyone else USER', () => {
-    setEnv('boss@etsypilot.app')
+    setEnv('boss@cobaltrank.app')
     expect(resolvePlatformRole({ email: 'seller@x.com', storedRole: 'USER' })).toBe('USER')
     expect(resolvePlatformRole({ email: 'seller@x.com' })).toBe('USER')
   })
@@ -47,8 +47,8 @@ describe('each role resolves from the right place', () => {
 
 describe('the environment outranks the database', () => {
   it('lets SUPER_ADMIN_EMAILS win over any stored role', () => {
-    setEnv('boss@etsypilot.app')
-    expect(resolvePlatformRole({ email: 'boss@etsypilot.app', storedRole: 'USER' })).toBe(
+    setEnv('boss@cobaltrank.app')
+    expect(resolvePlatformRole({ email: 'boss@cobaltrank.app', storedRole: 'USER' })).toBe(
       'SUPER_ADMIN',
     )
   })
@@ -73,17 +73,17 @@ describe('the environment outranks the database', () => {
 describe('unset and malformed environments deny', () => {
   it('denies when both are unset', () => {
     setEnv()
-    expect(resolvePlatformRole({ email: 'boss@etsypilot.app' })).toBe('USER')
+    expect(resolvePlatformRole({ email: 'boss@cobaltrank.app' })).toBe('USER')
   })
 
   it('denies on an empty or whitespace value', () => {
     setEnv('', '   ')
-    expect(resolvePlatformRole({ email: 'boss@etsypilot.app' })).toBe('USER')
+    expect(resolvePlatformRole({ email: 'boss@cobaltrank.app' })).toBe('USER')
   })
 
   it('denies on garbage rather than matching something', () => {
-    setEnv('{"emails":["boss@etsypilot.app"]}')
-    expect(resolvePlatformRole({ email: 'boss@etsypilot.app' })).toBe('USER')
+    setEnv('{"emails":["boss@cobaltrank.app"]}')
+    expect(resolvePlatformRole({ email: 'boss@cobaltrank.app' })).toBe('USER')
   })
 
   it('never lets an account with no email match an empty entry', () => {
@@ -111,30 +111,30 @@ describe('ambiguous env values fail in the direction chosen', () => {
   it('TRIMS whitespace, so a stray space grants rather than locking out', () => {
     // Failing closed here would mean an invisible character silently denying
     // the only administrator, with nothing to diagnose from the outside.
-    setEnv('  boss@etsypilot.app  ,  ', '  ops@x.com ')
-    expect(resolvePlatformRole({ email: 'boss@etsypilot.app' })).toBe('SUPER_ADMIN')
+    setEnv('  boss@cobaltrank.app  ,  ', '  ops@x.com ')
+    expect(resolvePlatformRole({ email: 'boss@cobaltrank.app' })).toBe('SUPER_ADMIN')
     expect(resolvePlatformRole({ email: 'ops@x.com' })).toBe('ADMIN')
     // Trimming grants; it must not also widen. Nobody else gets in.
     expect(resolvePlatformRole({ email: 'boss@x.com' })).toBe('USER')
   })
 
   it('lower-cases BOTH sides, so case never decides the outcome either way', () => {
-    setEnv('Boss@EtsyPilot.App')
-    expect(resolvePlatformRole({ email: 'boss@etsypilot.app' })).toBe('SUPER_ADMIN')
-    expect(resolvePlatformRole({ email: 'BOSS@ETSYPILOT.APP' })).toBe('SUPER_ADMIN')
+    setEnv('Boss@CobaltRank.App')
+    expect(resolvePlatformRole({ email: 'boss@cobaltrank.app' })).toBe('SUPER_ADMIN')
+    expect(resolvePlatformRole({ email: 'BOSS@COBALTRANK.APP' })).toBe('SUPER_ADMIN')
     // And a different address still does not match, capitalised or not.
     expect(resolvePlatformRole({ email: 'Boss@other.app' })).toBe('USER')
   })
 
   it('trims the session email too', () => {
-    setEnv('boss@etsypilot.app')
-    expect(resolvePlatformRole({ email: ' boss@etsypilot.app ' })).toBe('SUPER_ADMIN')
+    setEnv('boss@cobaltrank.app')
+    expect(resolvePlatformRole({ email: ' boss@cobaltrank.app ' })).toBe('SUPER_ADMIN')
   })
 
   it('matches the whole address, never a prefix', () => {
-    setEnv('boss@etsypilot.app')
-    expect(resolvePlatformRole({ email: 'boss@etsypilot.app.evil.com' })).toBe('USER')
-    expect(resolvePlatformRole({ email: 'boss@etsypilot.ap' })).toBe('USER')
+    setEnv('boss@cobaltrank.app')
+    expect(resolvePlatformRole({ email: 'boss@cobaltrank.app.evil.com' })).toBe('USER')
+    expect(resolvePlatformRole({ email: 'boss@cobaltrank.ap' })).toBe('USER')
   })
 })
 
@@ -587,7 +587,7 @@ describe('every operator page gates itself', () => {
      * by a viewer who is refused it:
      *
      *   export const metadata          404, probe string in the response,
-     *                                  refused tab read "PROBE… · EtsyPilot"
+     *                                  refused tab read "PROBE… · CobaltRank"
      *   export async function
      *     generateMetadata()           404, same
      *   metadata on the gated LAYOUT   404, same
@@ -610,12 +610,12 @@ describe('every operator page gates itself', () => {
      *
      *   TWO TITLES IN THE HEAD, because the root layout's metadata emits one
      *   too, and `document.title` is the FIRST in document order. On
-     *   /admin/users the root's landed first and the tab read "EtsyPilot" on a
+     *   /admin/users the root's landed first and the tab read "CobaltRank" on a
      *   plain server render.
      *
      *   A NODE THAT OUTLIVED ITS PAGE. React hoists a COPY and leaves the
      *   original in the body tree; after /admin/audit -> /dashboard the body
-     *   still held <title>Audit log · Operations · EtsyPilot</title>.
+     *   still held <title>Audit log · Operations · CobaltRank</title>.
      */
     for (const file of found) {
       expect(code(file), file).not.toContain('<title>')

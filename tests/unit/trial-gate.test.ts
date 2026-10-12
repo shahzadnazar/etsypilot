@@ -79,7 +79,7 @@ describe('the trial refuses to start without a configured sender', () => {
 
   it('refuses a half-configured sender, which is the state most likely to be missed', () => {
     for (const name of EMAIL_SENDER_VARS) delete process.env[name]
-    process.env.EMAIL_FROM = 'hello@etsypilot.app'
+    process.env.EMAIL_FROM = 'hello@cobaltrank.app'
 
     // An address with no key cannot send; a key with no address cannot address.
     expect(emailSenderConfigured()).toBe(false)
@@ -94,7 +94,7 @@ describe('the trial refuses to start without a configured sender', () => {
      * and ship a product nobody can subscribe to.
      */
     process.env.EMAIL_PROVIDER_API_KEY = 'test-key'
-    process.env.EMAIL_FROM = 'hello@etsypilot.app'
+    process.env.EMAIL_FROM = 'hello@cobaltrank.app'
 
     expect(emailSenderConfigured()).toBe(true)
     const trial = startTrial(new Date('2026-10-08T00:00:00.000Z'))

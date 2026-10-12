@@ -29,7 +29,7 @@ export const metadata: Metadata = { title: 'Data permissions' }
  * ── AND WHAT OUR OWN STAFF CAN SEE ────────────────────────────────────────
  *
  * A6 added the second half, on the same principle as the first. A page that
- * tells a seller what Etsy granted us, and says nothing about who at EtsyPilot
+ * tells a seller what Etsy granted us, and says nothing about who at CobaltRank
  * can look at the result, is answering the easier question.
  *
  * D59a: the privacy page READS the adapters, it does not describe them. Every
@@ -59,8 +59,8 @@ export default async function DataPermissionsPage() {
         title="Data permissions"
         subtitle={
           state.shopName
-            ? `${state.shopName} · what EtsyPilot can reach, and what stops if you take it away`
-            : 'What EtsyPilot can reach once a shop is connected'
+            ? `${state.shopName} · what CobaltRank can reach, and what stops if you take it away`
+            : 'What CobaltRank can reach once a shop is connected'
         }
         actions={
           <Link
@@ -131,7 +131,7 @@ export default async function DataPermissionsPage() {
 
       <Card className="mt-4 flex flex-col gap-3 p-[18px]">
         <div className="flex flex-col gap-1">
-          <h2 className="text-section text-ink-1">What EtsyPilot staff can see</h2>
+          <h2 className="text-section text-ink-1">What CobaltRank staff can see</h2>
           <p className="max-w-prose text-small leading-relaxed text-ink-2">
             Support and operations staff can read your account to answer questions about it. This
             list is generated from the permissions that actually exist in the product, so it
@@ -199,7 +199,7 @@ export default async function DataPermissionsPage() {
             ))}
           </ul>
           <p className="mt-2 max-w-prose text-caption leading-relaxed text-muted-1">
-            Nobody at EtsyPilot can sign in as you, publish to your Etsy shop, or edit your
+            Nobody at CobaltRank can sign in as you, publish to your Etsy shop, or edit your
             listings, orders or costs. If you ask us to fix something in your shop, we will tell
             you how to do it — we cannot do it for you, and that is deliberate.
           </p>
@@ -209,10 +209,10 @@ export default async function DataPermissionsPage() {
       <Card className="mt-4 flex flex-col gap-2 p-[18px]">
         <h2 className="text-label text-muted-1">How access works</h2>
         <p className="max-w-prose text-small leading-relaxed text-ink-2">
-          Access is granted by Etsy, not by a password. EtsyPilot never asks for, receives or stores
+          Access is granted by Etsy, not by a password. CobaltRank never asks for, receives or stores
           your Etsy credentials — the connection is an OAuth token you granted and can revoke from
           your Etsy account, under Account settings → Apps. Revoking stops all reads and writes
-          immediately. There is no Disconnect button in EtsyPilot yet;{' '}
+          immediately. There is no Disconnect button in CobaltRank yet;{' '}
           <Link
             href="/settings/shops"
             className="font-semibold text-brand-strong underline underline-offset-2"

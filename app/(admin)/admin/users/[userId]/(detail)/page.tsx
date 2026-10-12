@@ -351,7 +351,7 @@ function Connection({ detail }: { detail: AdminAccountDetail }) {
       <EmptyState
         quiet
         title="Never connected to Etsy"
-        description="The shop exists in EtsyPilot and has no grant behind it, which is different from a grant that has since been revoked — that would show below with the date it happened."
+        description="The shop exists in CobaltRank and has no grant behind it, which is different from a grant that has since been revoked — that would show below with the date it happened."
       />
     )
   }

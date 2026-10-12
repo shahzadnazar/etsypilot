@@ -42,10 +42,10 @@ export default function GlobalError({
         >
           <p style={{ fontSize: '2.5rem', fontWeight: 700, color: '#8C7F6C', margin: 0 }}>500</p>
           <h1 style={{ fontSize: '1.5rem', color: '#241B12', margin: 0 }}>
-            EtsyPilot failed to load
+            CobaltRank failed to load
           </h1>
           <p style={{ lineHeight: 1.6, margin: 0 }}>
-            This is an EtsyPilot error, not a problem with your shop or your Etsy data. Nothing was
+            This is a CobaltRank error, not a problem with your shop or your Etsy data. Nothing was
             published to Etsy, and nothing in your shop was changed.
           </p>
           {/*

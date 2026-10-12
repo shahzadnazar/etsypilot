@@ -4,7 +4,7 @@
  * The same Warm Editorial tokens as the app (D1/D19), copied rather than
  * imported because an extension cannot reach the app's stylesheet — and pulling
  * one over the network would be a request to a remote host from a surface whose
- * whole promise is that it talks to nobody but EtsyPilot.
+ * whole promise is that it talks to nobody but CobaltRank.
  *
  * Badge fills are literal hex, as in the app (D10): a token that inverts in
  * dark mode would put white on white here too.

@@ -1,4 +1,5 @@
 'use client'
+import { PRODUCT_MONOGRAM, PRODUCT_NAME } from '@/lib/brand'
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -101,9 +102,9 @@ export function Sidebar({
     >
       <div className="flex items-center gap-2.5 px-4 py-4">
         <span className="flex h-[30px] w-[30px] items-center justify-center rounded-control bg-brand text-[12px] font-bold text-brand-on">
-          EP
+          {PRODUCT_MONOGRAM}
         </span>
-        <span className="text-[15px] font-bold tracking-[-0.01em] text-ink-1">EtsyPilot</span>
+        <span className="text-[15px] font-bold tracking-[-0.01em] text-ink-1">{PRODUCT_NAME}</span>
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 pb-4">

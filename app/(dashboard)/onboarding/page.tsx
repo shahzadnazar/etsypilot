@@ -93,7 +93,7 @@ export default async function OnboardingPage({
 
       {active?.key === 'goal' ? (
         <Section
-          title="What should EtsyPilot help with first?"
+          title="What should CobaltRank help with first?"
           note="Pick one. The others stay available in the sidebar — nothing is hidden by this choice."
           options={GOALS.map((g) => ({ key: g.key, label: g.label, detail: g.detail, href: g.href }))}
         />

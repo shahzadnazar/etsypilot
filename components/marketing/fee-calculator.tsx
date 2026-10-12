@@ -174,7 +174,7 @@ export function FeeCalculator() {
                   * CALCULATED, not VERIFIED. These are Etsy's published rates
                   * applied to a number the visitor typed — the product's own
                   * rule (D32) is that dividing or multiplying demotes, and a
-                  * rate table EtsyPilot cannot verify against Etsy's API is
+                  * rate table CobaltRank cannot verify against Etsy's API is
                   * not a verified charge.
                   */}
                 <ProvenanceBadge type="CALCULATED" demo={false} />
@@ -225,7 +225,7 @@ export function FeeCalculator() {
           * The product's own limitations, read from the domain rather than
           * written here, so the page cannot claim more than the calculator
           * does. The rates carry the date they were recorded because Etsy
-          * publishes no fee-rates endpoint — EtsyPilot cannot verify them
+          * publishes no fee-rates endpoint — CobaltRank cannot verify them
           * either, and says so rather than implying it can.
           */}
         Rates recorded {breakdown.effectiveFrom}. {breakdown.limitations[0]}

@@ -1,18 +1,10 @@
-# EtsyPilot — Privacy Policy
+# CobaltRank — Privacy Policy
 
 **DRAFT FOR LEGAL REVIEW. NOT READY TO PUBLISH.**
 
 Placeholders in `[[DOUBLE BRACKETS]]` must be filled before this goes live. Every factual claim
 below was written to match what the software actually does — if the software changes, this
 document must change with it.
-
-`[[CONFIRM: THE PRODUCT NAME. This draft arrived naming the product "CobaltRank". That name appears
-nowhere in the codebase — the product calls itself EtsyPilot in 100+ source files, in the extension
-manifest, in every CSV filename and in the support addresses already published on the landing page.
-Since every other claim here was checked against the code and corrected to match it, the name was
-too: "CobaltRank" has been replaced with "EtsyPilot" throughout. If the product is in fact being
-renamed, the rename belongs in the code first and this substitution should be reversed in the same
-change — not left for these documents to lead.]]`
 
 Last updated: `[[DATE]]`
 
@@ -67,7 +59,7 @@ use them only to compute your figures.
 An OAuth access token, stored encrypted. **We never receive or store your Etsy password.**
 
 **Usage and technical data**
-Audit records of actions taken through EtsyPilot, including actions that were refused. Server logs
+Audit records of actions taken through CobaltRank, including actions that were refused. Server logs
 containing IP address, browser type and timestamps, for security and debugging.
 
 **If you join the waitlist**
@@ -171,12 +163,12 @@ The connection is an OAuth token you grant and can revoke.
 
 - **We never hold your Etsy password.**
 - **Revoke at any time from your Etsy account.** This stops all reads and writes immediately.
-- There is currently **no revoke button inside EtsyPilot** — revoke from Etsy itself.
+- There is currently **no revoke button inside CobaltRank** — revoke from Etsy itself.
 - Tokens are stored encrypted.
 
 ## 8. What we write to your shop
 
-EtsyPilot reads your shop. Where it can write — editing a listing, applying a bulk change — it
+CobaltRank reads your shop. Where it can write — editing a listing, applying a bulk change — it
 shows you exactly what will change and sends nothing to Etsy until you confirm.
 
 **Our staff cannot write to your shop.** Support staff can read your data to help you; the ability
@@ -231,7 +223,7 @@ on, it must be named here and in §4, and this paragraph must change in the same
 
 ## 12. Children
 
-EtsyPilot is for people running a business and is not for anyone under 18. We do not knowingly
+CobaltRank is for people running a business and is not for anyone under 18. We do not knowingly
 collect data from children.
 
 ## 13. Changes

@@ -67,8 +67,8 @@ export function checkCsrf(args: {
 
   /*
    * No Origin. Fall back to Referer, and accept only an exact ORIGIN match.
-   * `startsWith(self)` would be wrong: "https://etsypilot.app" is a prefix of
-   * "https://etsypilot.app.evil.com", so an attacker registers a subdomain of
+   * `startsWith(self)` would be wrong: "https://cobaltrank.app" is a prefix of
+   * "https://cobaltrank.app.evil.com", so an attacker registers a subdomain of
    * their own domain and walks through.
    */
   if (args.referer) {

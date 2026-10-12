@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: 'Audit log' }
 /*
  * Audit log (artboard 109).
  *
- * Built around refusals. The question a dispute asks is "did EtsyPilot change
+ * Built around refusals. The question a dispute asks is "did CobaltRank change
  * my listing?", and the answer is usually no — which a log of successes cannot
  * give, because an absent record proves nothing. So every action is recorded
  * with what it did or did not reach, and "Refused only" is pinned in the filter
@@ -36,7 +36,7 @@ export default async function AuditLogPage({
     <>
       <PageHeader
         title="Audit log"
-        subtitle="Every action taken on this shop through EtsyPilot, including the ones that were refused. Records are immutable and cannot be edited or deleted from this page."
+        subtitle="Every action taken on this shop through CobaltRank, including the ones that were refused. Records are immutable and cannot be edited or deleted from this page."
         actions={
           <>
             <Link

@@ -11,7 +11,7 @@ import 'server-only'
  *     Google sign-in     Connected as salman@willowandfern.com   [Disconnect]
  *     Active sessions    Chrome · macOS   THIS DEVICE   Dhaka, BD · just now
  *                        Safari · iPhone  Dhaka, BD · 2 days ago  [Sign out]
- *                        EtsyPilot extension · Chrome  Dhaka, BD · 6 min ago
+ *                        CobaltRank extension · Chrome  Dhaka, BD · 6 min ago
  *     Recent activity    Failed sign-in · wrong password
  *
  * A stranger's Google account and a stranger's devices, on the screen a seller
@@ -20,7 +20,7 @@ import 'server-only'
  * this is the one that would make a seller act: sign out a session that is not
  * theirs, or trust that the two they can see are all there are.
  *
- * None of it is derivable yet. EtsyPilot does not record sessions, sign-ins or
+ * None of it is derivable yet. CobaltRank does not record sessions, sign-ins or
  * a password for seller accounts, so the live view says so instead.
  */
 
@@ -64,7 +64,7 @@ export function demoSecurity(): DemoSecurity | null {
       {
         id: 'ext-chrome',
         kind: 'EXTENSION',
-        label: 'EtsyPilot extension · Chrome',
+        label: 'CobaltRank extension · Chrome',
         detail: 'Read-only · etsy.com',
         location: 'Dhaka, BD',
         lastSeen: '2026-08-12T14:00:00.000Z',

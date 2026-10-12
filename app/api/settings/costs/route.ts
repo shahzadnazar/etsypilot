@@ -5,7 +5,7 @@
  * depend on a working JavaScript bundle.
  *
  * Nothing here touches Etsy. That is the point of the surface: a cost rule
- * changes what EtsyPilot calculates and reaches nothing outside it, which is
+ * changes what CobaltRank calculates and reaches nothing outside it, which is
  * how the audit log records it.
  *
  * The shop comes from the session, never from the body. A shopId a caller could
@@ -71,7 +71,7 @@ export async function POST(request: Request) {
        *
        * domain/costs/service.ts already held this line in prose: "Demo mode
        * blocks WRITES TO ETSY. A cost rule is not one." A cost rule reaches
-       * nothing outside EtsyPilot, so connection status is not what decides
+       * nothing outside CobaltRank, so connection status is not what decides
        * whether a seller may record one.
        */
       assertNotPublicVisitor(ctx)

@@ -130,8 +130,8 @@ export function transactionsExport(args: {
   coveragePercent: number
 }): ExportSpec<TransactionRow> {
   return {
-    filename: `etsypilot-transactions-${args.periodStart.slice(0, 10)}.csv`,
-    title: 'EtsyPilot — transactions',
+    filename: `cobaltrank-transactions-${args.periodStart.slice(0, 10)}.csv`,
+    title: 'CobaltRank — transactions',
     context: [
       `Period ${args.periodStart.slice(0, 10)} to ${args.periodEnd.slice(0, 10)} (UTC)`,
       `Currency ${args.currency}`,
@@ -162,8 +162,8 @@ export function auditExport(args: { healthScore: number; coveragePercent: number
   AuditFinding & { ruleLabel: string; severity: string }
 > {
   return {
-    filename: 'etsypilot-listing-audit.csv',
-    title: 'EtsyPilot — listing audit',
+    filename: 'cobaltrank-listing-audit.csv',
+    title: 'CobaltRank — listing audit',
     context: [
       `Health score ${args.healthScore} of 100, calculated from rule severity weighted by each listing's share of verified revenue`,
       `Revenue coverage ${args.coveragePercent}% of listings had orders in the period`,
@@ -171,7 +171,7 @@ export function auditExport(args: { healthScore: number; coveragePercent: number
     excludes: [
       'Revenue earned in period is what these listings took, not an estimate of what an issue costs. Nothing here says money is at risk.',
       'Listings with no orders in the period carry no weight in the health score.',
-      'Severity weights are EtsyPilot thresholds, not Etsy requirements, except where the rule says it blocks publishing.',
+      'Severity weights are CobaltRank thresholds, not Etsy requirements, except where the rule says it blocks publishing.',
       'Nothing here predicts ranking. Etsy does not publish its ranking algorithm.',
     ],
     columns: [
@@ -210,10 +210,10 @@ export function auditLogExport(args: {
   planName: string
 }): ExportSpec<AuditRecord> {
   return {
-    filename: 'etsypilot-audit-log.csv',
-    title: 'EtsyPilot — audit log',
+    filename: 'cobaltrank-audit-log.csv',
+    title: 'CobaltRank — audit log',
     context: [
-      'Every action taken on this shop through EtsyPilot, including the ones that were refused.',
+      'Every action taken on this shop through CobaltRank, including the ones that were refused.',
       'All times are UTC.',
       args.retentionDays === null
         ? `Plan ${args.planName} connects no shop, so no shop records are kept.`
@@ -222,7 +222,7 @@ export function auditLogExport(args: {
     excludes: [
       'Changes made directly on Etsy are not recorded here. They appear as differences at the next sync.',
       'A refusal means nothing was sent to Etsy. There is no corresponding change on the listing.',
-      '"— authorisation", "— EtsyPilot only" and "— read only" mean the action never intended to reach Etsy.',
+      '"— authorisation", "— CobaltRank only" and "— read only" mean the action never intended to reach Etsy.',
     ],
     columns: [
       { header: 'Timestamp (UTC)', value: (r) => r.at },

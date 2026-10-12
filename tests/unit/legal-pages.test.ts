@@ -316,7 +316,7 @@ describe('the markdown subset renders the documents without dropping anything', 
   it('strips the document\u2019s own H1, so the title is not printed twice', () => {
     /*
      * Seen in a browser: /legal/terms rendered its heading and then printed
-     * `# EtsyPilot — Terms of Service` below it as body text.
+     * `# CobaltRank — Terms of Service` below it as body text.
      *
      * The loader strips it — lib/legal/documents.ts explains why that
      * decision belongs there and not in the renderer — so this reads the

@@ -53,8 +53,8 @@ from urllib.parse import urlparse, parse_qs
 # check that the new password works and the old one does not needs that to be
 # true here rather than asserted about a no-op.
 ACCOUNTS = {
-    "boss@etsypilot.app": "correct-horse-battery",
-    "ops@etsypilot.app": "admin-password-here",
+    "boss@cobaltrank.app": "correct-horse-battery",
+    "ops@cobaltrank.app": "admin-password-here",
     "seller@example.com": "seller-password-x",
     "promoted@example.com": "manager-password-y",
 }
@@ -67,7 +67,7 @@ RECOVERY_OTP = {}   # email -> the six digits most recently "emailed"
 
 
 def user_id(email):
-    return str(uuid.uuid5(uuid.NAMESPACE_URL, "etsypilot-fake-gotrue:" + email))
+    return str(uuid.uuid5(uuid.NAMESPACE_URL, "cobaltrank-fake-gotrue:" + email))
 
 
 # ---------------------------------------------------------------- TOTP
@@ -395,7 +395,7 @@ class Handler(BaseHTTPRequestHandler):
                 "secret": secret,
             }
             factors_for(email).append(factor)
-            label = f"EtsyPilot:{email}"
+            label = f"CobaltRank:{email}"
             return self._send(200, {
                 "id": factor["id"],
                 "type": "totp",
@@ -408,7 +408,7 @@ class Handler(BaseHTTPRequestHandler):
                                "width%3D%22160%22%20height%3D%22160%22%3E%3Crect%20width"
                                "%3D%22160%22%20height%3D%22160%22%20fill%3D%22%23fff%22/%3E%3C/svg%3E",
                     "secret": secret,
-                    "uri": f"otpauth://totp/{label}?secret={secret}&issuer=EtsyPilot",
+                    "uri": f"otpauth://totp/{label}?secret={secret}&issuer=CobaltRank",
                 },
             })
 

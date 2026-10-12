@@ -52,9 +52,9 @@ from playwright.sync_api import sync_playwright
 BASE = "http://localhost:3100"
 CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
 GOTRUE = "http://127.0.0.1:5998"
-PSQL = "postgres://postgres@127.0.0.1:5999/etsypilot"
+PSQL = "postgres://postgres@127.0.0.1:5999/cobaltrank"
 
-SUPER = ("boss@etsypilot.app", "correct-horse-battery")
+SUPER = ("boss@cobaltrank.app", "correct-horse-battery")
 MANAGER = ("promoted@example.com", "manager-password-y")
 SELLER = ("seller@example.com", "seller-password-x")
 UNREGISTERED = "nobody-at-all@example.com"
@@ -156,7 +156,7 @@ def operator_without_a_factor(browser):
     response = page.goto(f"{BASE}/admin", wait_until="networkidle")
     check(landed(page) == "/two-factor", f"/admin sends an unenrolled operator to setup — got {landed(page)}")
     check(
-        "EtsyPilot operations" not in page.inner_text("body"),
+        "CobaltRank operations" not in page.inner_text("body"),
         "and the console itself never renders for them",
     )
     # The console is refused, not broken: a 5xx here would be a different bug
@@ -186,7 +186,7 @@ def operator_without_a_factor(browser):
         f"/admin opens once the factor is verified — got {landed(page)}",
     )
     check(
-        "EtsyPilot operations" in page.inner_text("body"),
+        "CobaltRank operations" in page.inner_text("body"),
         "and the operator console really renders",
     )
     ctx.close()

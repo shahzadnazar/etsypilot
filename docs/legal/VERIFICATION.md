@@ -144,7 +144,7 @@ and apply") and a read-only shop. Everything else refuses correctly and records 
 demo-mode and public-visitor refusals on costs, notifications, profile and billing all throw from
 the domain, as they should, and leave no trace in the log the sentence points at.
 
-So the audit log's own exported header — "Every action taken on this shop through EtsyPilot,
+So the audit log's own exported header — "Every action taken on this shop through CobaltRank,
 including the ones that were refused" — is true of rollbacks and optimistic about the rest.
 
 Two honest ways to close it, in order of preference:
@@ -193,20 +193,23 @@ One name changed throughout: see below.
 
 ## The product name
 
-Both drafts arrived naming the product **"CobaltRank"**. That name appears nowhere in this
-repository — not in a source file, not in the extension manifest, not in a CSV filename, not in the
-support addresses already published on the landing page. The product is **EtsyPilot** in every one
-of them.
+**Resolved, 12 October 2026.** The drafts arrived naming the product "CobaltRank" while the code
+called itself something else everywhere. The verification pass changed the documents to match the
+code and left a `[[CONFIRM]]` note saying the opposite of what had just been done would be wrong:
+*a policy is the one document that must not lead a rename.*
 
-Since every other claim in these documents was checked against the code and corrected to match it,
-the name was too: `CobaltRank` has been replaced with `EtsyPilot`, and a `[[CONFIRM]]` note at the
-top of each document records the substitution.
+The owner has since renamed the product **to CobaltRank**, in the code first, for a trademark
+reason — Etsy's API Terms §1 forbid a name confusingly similar to Etsy's marks and require Etsy's
+marks to appear less prominently than the developer's own branding, and a name whose dominant
+element was Etsy's trademark would not survive the API-key review. The documents and the code now
+agree, and the `[[CONFIRM]]` note has been removed from both because the question it asked has an
+answer.
 
-**If the product is being renamed, the rename belongs in the code first**, in the same change that
-reverses this substitution. A policy is the one document that must not lead a rename: it is what a
-seller is asked to accept at connection under Etsy's API Terms §4, and a mismatched party name is
-the first thing a regulator or a disputing customer reads. `legal-claims` now compares each
-document's H1 to `package.json`, so the two cannot diverge silently again.
+The guard stays: `legal-claims` compares each document's H1 to `package.json`, and
+`tests/unit/brand.test.ts` fails on the previous name anywhere outside the files deliberately kept
+as history. The dated decision records in `memory.md` and `docs/DECISIONS.md` were **not** rewritten
+— they say what was decided when, which is the only thing they are for — and each carries a new
+dated entry recording this change beside the old one.
 
 ---
 

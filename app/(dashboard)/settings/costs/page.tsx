@@ -65,7 +65,7 @@ export default async function CostsPage({
     <>
       <PageHeader
         title="Costs & fees"
-        subtitle={`${period} UTC · ${view.currency} · your cost inputs, and the fee rates EtsyPilot applies`}
+        subtitle={`${period} UTC · ${view.currency} · your cost inputs, and the fee rates CobaltRank applies`}
         actions={
           <Link
             href="/profit"
@@ -135,7 +135,7 @@ export default async function CostsPage({
             <span className="text-label text-muted-1">Cost coverage</span>
             {/*
               * Calculated, not seller input. The inputs are the seller's; the
-              * share of order value they cover is a ratio EtsyPilot works out
+              * share of order value they cover is a ratio CobaltRank works out
               * over verified order values. Dividing demotes (D32).
               */}
             <ProvenanceBadge type="CALCULATED" demo={demoData} />
@@ -237,7 +237,7 @@ export default async function CostsPage({
         *
         * A cost rule can be read two ways and both are defensible: freeze it
         * onto each order as it syncs, or apply the current rules whenever a
-        * figure is read. EtsyPilot does the second — `order_items.cost_snapshot`
+        * figure is read. CobaltRank does the second — `order_items.cost_snapshot`
         * stays null, and lib/repositories/costs.ts records why. The visible
         * consequence is that editing a figure here moves a number the seller
         * has already seen and may have acted on, so the form that does it says
@@ -245,7 +245,7 @@ export default async function CostsPage({
         */}
       <p className="mt-3 text-caption leading-relaxed text-muted-1">
         <strong className="font-semibold text-ink-2">Changing these restates the past.</strong>{' '}
-        These figures carry no start date, so they apply to every order EtsyPilot holds —
+        These figures carry no start date, so they apply to every order CobaltRank holds —
         including orders that synced before you entered them. Correct a percentage today and last
         month&rsquo;s net profit moves to match, which is what you want from a correction and worth
         knowing before a figure you have already reported changes. Every edit is kept, with who

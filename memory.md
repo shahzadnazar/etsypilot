@@ -1,4 +1,4 @@
-# Etsy Pilot — Working Memory
+# CobaltRank — Working Memory
 
 > This file is intentionally a lightweight working log.  
 > Claude must update it regularly while building the project.
@@ -436,6 +436,24 @@ and Audit log fold into Account.
 Decision: One word everywhere; EP monogram lockup unchanged; no two-word variant.
 Reason: Owner confirmation, matching every screen.
 Impact: All UI copy, metadata, docs and error strings.
+
+### 2026-10-12 — Product renamed to "CobaltRank" (supersedes the entry above)
+Decision: The product is CobaltRank, one word. The entry above stays as written —
+it records what was decided in August, and rewriting it would destroy the only
+thing a dated record is for. See D3a in docs/DECISIONS.md.
+Reason: Etsy's API Terms §1 forbid a mark or name confusingly similar to Etsy's
+trademarks and require Etsy's marks to appear less prominently than the
+developer's own branding. The old name led with Etsy's trademark as its dominant
+element. The API-key application follows this change and the home page is
+reviewed with it, so this is a precondition, not a preference.
+Impact: 184 files rewritten; lib/brand.ts now holds the name, slug, monogram,
+article and contact addresses, and the identity surfaces read it. The monogram
+becomes CR (owner to confirm). The contact addresses are null rather than moved
+to a domain nobody has bought — the landing page, the FAQ and Settings → Export
+& deletion omit the line instead of printing an address that would bounce.
+History left alone: the dated entries in this file and in DECISIONS.md, the two
+applied migrations, docs/PHASE-0-AUDIT.md, docs/SECURITY-REVIEW.md and
+docs/source/handoff/ (artefacts as received).
 
 ## 13b. Permanent Notes (not phase notes — these do not expire)
 

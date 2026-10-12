@@ -92,7 +92,7 @@ SAMPLE_THEME = """
 
 THEME_SCRIPT_NONCE = """() => {
   const tag = [...document.head.querySelectorAll('script')]
-    .find(s => !s.src && s.textContent.includes('etsypilot-theme'))
+    .find(s => !s.src && s.textContent.includes('cobaltrank-theme'))
   if (!tag) return 'ABSENT'
   return tag.getAttribute('nonce') || tag.nonce || 'UNNONCED'
 }"""
@@ -101,7 +101,7 @@ with sync_playwright() as p:
     b = p.chromium.launch(executable_path=CHROME, args=["--no-sandbox"])
     for theme in ("light", "dark"):
         ctx = b.new_context(viewport={"width": 1440, "height": 900})
-        ctx.add_init_script(f"try {{ localStorage.setItem('etsypilot-theme', '{theme}') }} catch (e) {{}}")
+        ctx.add_init_script(f"try {{ localStorage.setItem('cobaltrank-theme', '{theme}') }} catch (e) {{}}")
         ctx.add_init_script(SAMPLE_THEME)
         pg = ctx.new_page()
         noise = []

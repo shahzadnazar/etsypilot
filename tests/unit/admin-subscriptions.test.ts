@@ -178,7 +178,7 @@ describe('nothing here implies a subscription refund exists (D83)', () => {
   /*
    * PATTERNS, NOT THE WORD, and the reason is the tenth instance in this build
    * of a guard matching its own documentation. The page tells the reader, in
-   * words, that EtsyPilot "does not refund plan charges at all" — and a
+   * words, that CobaltRank "does not refund plan charges at all" — and a
    * substring sweep for `refund` fired on the sentence promising there are
    * none. A guard that can only be satisfied by deleting the promise will be
    * satisfied by deleting the promise.

@@ -73,7 +73,7 @@ function pgCode(error: unknown): string | null {
  */
 export type ConnectFailure =
   | 'SHOP_UNKNOWN'
-  /** That Etsy shop is already attached to a DIFFERENT EtsyPilot shop. */
+  /** That Etsy shop is already attached to a DIFFERENT CobaltRank shop. */
   | 'ETSY_SHOP_TAKEN'
 
 export class EtsyConnectionError extends Error {
@@ -84,7 +84,7 @@ export class EtsyConnectionError extends Error {
 }
 
 export interface ConnectEtsyShop {
-  /** EtsyPilot's own shop id, resolved from the session. Never from a request. */
+  /** CobaltRank's own shop id, resolved from the session. Never from a request. */
   shopId: string
   /** Etsy's numeric shop id, as text. */
   etsyShopId: string
@@ -161,7 +161,7 @@ export async function connectEtsyShop(input: ConnectEtsyShop): Promise<void> {
        * interleaving between them would both see nothing and both write.
        *
        * `ne(shops.id, shopId)` is the whole subtlety: RECONNECTING the same
-       * Etsy shop to the same EtsyPilot shop is the ordinary re-authorisation
+       * Etsy shop to the same CobaltRank shop is the ordinary re-authorisation
        * path and must be allowed. Only a DIFFERENT shop row holding that Etsy
        * id is a conflict.
        */

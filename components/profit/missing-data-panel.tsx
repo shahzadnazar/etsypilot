@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils/cn'
  * Rendered inside the panel, at full weight — incomplete coverage is a state
  * this product is designed for, not an error it apologises for in small print.
  *
- * Every gap carries a way out. Even the one EtsyPilot cannot close (Etsy does
+ * Every gap carries a way out. Even the one CobaltRank cannot close (Etsy does
  * not expose ad spend per listing) offers the explanation, so no row is a dead
  * end.
  */

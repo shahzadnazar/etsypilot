@@ -6,10 +6,10 @@ export async function generateMetadata(): Promise<Metadata> {
   const document = legalDocument('terms')
   return {
     title: document.title,
-    description: 'The agreement between you and EtsyPilot.',
+    description: 'The agreement between you and CobaltRank.',
     /*
      * An unfinished agreement should not be the search result somebody finds
-     * when they look for EtsyPilot's terms. It stays reachable by URL — see
+     * when they look for CobaltRank's terms. It stays reachable by URL — see
      * components/legal/draft-notice.tsx for why a 404 would be dishonest —
      * but it is not advertised while it has blanks in it.
      */

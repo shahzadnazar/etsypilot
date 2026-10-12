@@ -2,7 +2,7 @@
  * Turning things that happen into audit records.
  *
  * One function per event, so the log's copy is derived from the change rather
- * than typed next to the code that made it. A cost rule change is EtsyPilot-only
+ * than typed next to the code that made it. A cost rule change is CobaltRank-only
  * by construction here — there is no branch that could mark it as having
  * reached Etsy, because nothing in this file can send anything.
  */
@@ -61,11 +61,11 @@ export function costChangeRecord(args: {
     target: 'Shop-wide',
     source: 'MANUAL',
     /*
-     * Not a refusal, and not a send. Cost settings are EtsyPilot's own state —
+     * Not a refusal, and not a send. Cost settings are CobaltRank's own state —
      * the seller's assumptions about their own costs — and no request to Etsy
      * exists for this to have failed.
      */
-    reached: { kind: 'NOT_APPLICABLE', reason: 'ETSYPILOT_ONLY' },
+    reached: { kind: 'NOT_APPLICABLE', reason: 'COBALTRANK_ONLY' },
     sequence: changes.map((c) => ({
       at,
       label: c.field.label,

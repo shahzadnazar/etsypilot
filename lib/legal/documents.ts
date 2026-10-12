@@ -100,7 +100,7 @@ const LAWYER_NOTES_HEADING = '## Notes for the lawyer reviewing this'
  * ██████████████████████████████████████████████████████████████████████████
  *
  * Seen in a browser: /legal/terms printed its heading and then printed
- * `# EtsyPilot — Terms of Service` underneath it as body text, hash included.
+ * `# CobaltRank — Terms of Service` underneath it as body text, hash included.
  *
  * The H1 was being removed as a SIDE EFFECT — the loader sliced everything
  * above the first `---` rule, and the H1 happens to live up there. That works

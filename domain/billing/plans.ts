@@ -145,7 +145,7 @@ export const CANCELLATION_TERMS =
 
 /** What happens at a limit. Nothing is deleted, and the seller chooses. */
 export const LIMIT_POLICY =
-  'Downgrading keeps your data. If a plan limit is exceeded, EtsyPilot pauses new bulk jobs instead of deleting anything — you choose what to remove.'
+  'Downgrading keeps your data. If a plan limit is exceeded, CobaltRank pauses new bulk jobs instead of deleting anything — you choose what to remove.'
 
 /**
  * The demo shop's plan.

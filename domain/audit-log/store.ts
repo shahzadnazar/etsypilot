@@ -7,10 +7,10 @@ import 'server-only'
  *
  * ██████████████████████████████████████████████████████████████████████████
  *
- * This file was a Map on `Symbol.for('etsypilot.auditlog.store')`, seeded for
+ * This file was a Map on `Symbol.for('cobaltrank.auditlog.store')`, seeded for
  * every shop with `demoAuditRecords()`. Both halves of that were wrong on a
  * live deployment, and the page states the stakes itself: "Every action taken
- * on this shop through EtsyPilot, including the ones that were refused.
+ * on this shop through CobaltRank, including the ones that were refused.
  * Records are immutable and cannot be edited or deleted from this page."
  *
  * Measured in a browser on a live account that has never connected to Etsy:
@@ -20,7 +20,7 @@ import 'server-only'
  *     Aug 9,  11:20  Salman  AI draft accepted,  OP-9088 · title and 4 tags
  *                            then published      Linen table runner · Yes · 1 of 1
  *
- * An immutable record, under that seller's own shop, asserting that EtsyPilot
+ * An immutable record, under that seller's own shop, asserting that CobaltRank
  * published changes to their Etsy listings. In a dispute this log is the
  * evidence, and it was somebody else's.
  *

@@ -30,7 +30,7 @@ import { formatDate } from '@/lib/utils/format'
  * No upgrade, no downgrade, no cancel, no reactivate, and no refund. D94a
  * forecloses the first four — `subscriptions` is not on the operator write
  * allowlist — and D83 removed the fifth from the product altogether: nothing
- * in EtsyPilot can produce a credit for a plan charge, so there is no column,
+ * in CobaltRank can produce a credit for a plan charge, so there is no column,
  * no state and no count here that implies one exists. A screen that can still
  * draw a refund is a screen waiting to lie.
  *
@@ -248,7 +248,7 @@ export default async function SubscriptionsPage() {
             one could write the table.
           </p>
           <p className="mt-2 max-w-prose text-caption leading-relaxed text-muted-1">
-            There is no refund either, and that is not a missing feature: EtsyPilot does not refund
+            There is no refund either, and that is not a missing feature: CobaltRank does not refund
             plan charges at all, for anyone, and the seller agrees to that when they agree to the
             charge. Nothing in the product can produce a credit, so nothing here can show one.
           </p>

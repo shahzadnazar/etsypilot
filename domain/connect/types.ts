@@ -4,7 +4,7 @@
  * The security shape of this file matters more than its size.
  *
  *   - There is no password field. Not on the form, not in the types, not in the
- *     mock. EtsyPilot never receives an Etsy password, and the way to guarantee
+ *     mock. CobaltRank never receives an Etsy password, and the way to guarantee
  *     that is to have nowhere to put one.
  *   - There is no token field either. Access tokens live server-side in Phase
  *     11, never in a view model, never in a response body, and never in browser
@@ -47,7 +47,7 @@ export const ETSY_SCOPES: EtsyScope[] = [
     scopes: ['listings_r', 'shops_r'],
     requirement: 'REQUIRED',
     enables: 'Shows your listings, tags, prices and inventory, and runs audits.',
-    withoutIt: 'EtsyPilot cannot show your shop at all.',
+    withoutIt: 'CobaltRank cannot show your shop at all.',
   },
   {
     key: 'write',
@@ -55,7 +55,7 @@ export const ETSY_SCOPES: EtsyScope[] = [
     scopes: ['listings_w'],
     requirement: 'RECOMMENDED',
     enables: 'Publishes edits, bulk changes and scheduled updates that you confirm.',
-    withoutIt: 'EtsyPilot can only suggest changes — you would apply them on Etsy yourself.',
+    withoutIt: 'CobaltRank can only suggest changes — you would apply them on Etsy yourself.',
   },
   {
     key: 'finance',
@@ -161,7 +161,7 @@ export const CONNECT_OUTCOMES = {
   no_shop: {
     tone: 'info',
     title: 'That Etsy account has no shop',
-    detail: 'Etsy approved the connection, but the account has no shop for EtsyPilot to read. Nothing was connected. Open a shop on Etsy first, then connect again.',
+    detail: 'Etsy approved the connection, but the account has no shop for CobaltRank to read. Nothing was connected. Open a shop on Etsy first, then connect again.',
   },
   exchange_failed: {
     tone: 'warn',
@@ -171,7 +171,7 @@ export const CONNECT_OUTCOMES = {
   not_configured: {
     tone: 'info',
     title: 'No Etsy app is configured on this server',
-    detail: 'EtsyPilot has no Etsy API credentials yet, so there is no shop to connect to. Demo mode needs none and stays fully usable.',
+    detail: 'CobaltRank has no Etsy API credentials yet, so there is no shop to connect to. Demo mode needs none and stays fully usable.',
   },
   terms_not_accepted: {
     tone: 'info',
@@ -183,7 +183,7 @@ export const CONNECT_OUTCOMES = {
      */
     title: 'Accept the Terms and Privacy Policy first',
     detail:
-      'Etsy requires EtsyPilot to have an accepted agreement with each seller before it may read their shop. Nothing was connected and nothing on Etsy was read or changed. Read both documents below, accept them, then connect.',
+      'Etsy requires CobaltRank to have an accepted agreement with each seller before it may read their shop. Nothing was connected and nothing on Etsy was read or changed. Read both documents below, accept them, then connect.',
   },
   terms_not_published: {
     tone: 'info',
@@ -194,24 +194,24 @@ export const CONNECT_OUTCOMES = {
      */
     title: 'Connecting a shop is not open yet',
     detail:
-      'Nothing was connected and nothing on Etsy was read or changed. EtsyPilot\u2019s Terms of Service and Privacy Policy are still drafts: the legal entity behind them has not been established, so they name no party and nobody can accept them. Connecting an Etsy shop is blocked rather than allowed on an unfinished agreement. Both documents are published in full in the meantime.',
+      'Nothing was connected and nothing on Etsy was read or changed. CobaltRank\u2019s Terms of Service and Privacy Policy are still drafts: the legal entity behind them has not been established, so they name no party and nobody can accept them. Connecting an Etsy shop is blocked rather than allowed on an unfinished agreement. Both documents are published in full in the meantime.',
   },
   shop_already_linked: {
     tone: 'warn',
     /*
      * Its own outcome, not a generic failure, because this is a real situation
      * rather than an error: a shop that changed hands, an agency and its
-     * client, one person with two EtsyPilot accounts. Silently attaching the
+     * client, one person with two CobaltRank accounts. Silently attaching the
      * shop to whoever connected last would move a seller's data between
      * accounts, and the seller who connected first would just stop seeing
      * their shop.
      *
      * It says WHICH shop is involved only as "that Etsy shop" — naming the
-     * other EtsyPilot account would tell one seller about another's.
+     * other CobaltRank account would tell one seller about another's.
      */
-    title: 'That Etsy shop is already connected to another EtsyPilot account',
+    title: 'That Etsy shop is already connected to another CobaltRank account',
     detail:
-      'Nothing was connected and nothing was changed on Etsy. An Etsy shop can be connected to one EtsyPilot account at a time. Disconnect it from the other account first, or contact us if you think it is connected somewhere it should not be.',
+      'Nothing was connected and nothing was changed on Etsy. An Etsy shop can be connected to one CobaltRank account at a time. Disconnect it from the other account first, or contact us if you think it is connected somewhere it should not be.',
   },
   demo_mode: {
     tone: 'info',
@@ -229,7 +229,7 @@ export const CONNECT_OUTCOMES = {
      */
     title: 'This server is still serving demo data',
     detail:
-      'Etsy approved the connection, but EtsyPilot is running on the demo catalogue, so connecting would show you sample data as though it were your shop. Nothing was connected. ETSY_MODE needs to be set to live on the server first.',
+      'Etsy approved the connection, but CobaltRank is running on the demo catalogue, so connecting would show you sample data as though it were your shop. Nothing was connected. ETSY_MODE needs to be set to live on the server first.',
   },
 } as const
 

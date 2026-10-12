@@ -193,7 +193,7 @@ describe('a saved cost is in the table, not in this process', () => {
      * ── THE DEFECT THIS SUITE EXISTS FOR ────────────────────────────────
      *
      * domain/costs/store.ts held the five figures in a module-level Map keyed
-     * on `Symbol.for('etsypilot.costs.store')`. Measured in a browser before
+     * on `Symbol.for('cobaltrank.costs.store')`. Measured in a browser before
      * it was deleted: save 41.5, restart the server, and the form reads 38.0
      * — the demo fixture's COGS ratio — silently.
      *

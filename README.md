@@ -1,4 +1,4 @@
-# EtsyPilot
+# CobaltRank
 
 **Make smarter Etsy decisions with data you can trust.**
 

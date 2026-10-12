@@ -111,7 +111,7 @@ export default async function DashboardPage() {
         <UnavailableCard
           label="Listing views"
           reason="Etsy does not provide listing views through the public API."
-          remedy="Import your Etsy Stats file to add this metric. EtsyPilot will not estimate it."
+          remedy="Import your Etsy Stats file to add this metric. CobaltRank will not estimate it."
         />
       </section>
 

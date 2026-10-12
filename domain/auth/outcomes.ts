@@ -31,7 +31,7 @@ export const AUTH_OUTCOMES = {
      * Says "email or password", never which. Naming the wrong one turns this
      * form into an account-existence oracle: an attacker submits an address
      * with a junk password and learns from the wording whether that person has
-     * an EtsyPilot account. Supabase returns one error for both cases, and this
+     * a CobaltRank account. Supabase returns one error for both cases, and this
      * copy preserves that rather than undoing it.
      */
     title: 'That email and password do not match',

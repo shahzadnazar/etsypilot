@@ -428,9 +428,9 @@ export class DatabaseTokenStore implements TokenStore {
         throw new AppError({
           kind: 'NOT_FOUND',
           code: 'TOKEN_SHOP_UNKNOWN',
-          message: 'There is no shop in EtsyPilot with that id, so the connection cannot be saved.',
+          message: 'There is no shop in CobaltRank with that id, so the connection cannot be saved.',
           recovery:
-            'This is a bug on our side rather than anything you did — the shop has to exist in EtsyPilot before its Etsy tokens can be stored.',
+            'This is a bug on our side rather than anything you did — the shop has to exist in CobaltRank before its Etsy tokens can be stored.',
           retryable: false,
           context: { shopId },
         })

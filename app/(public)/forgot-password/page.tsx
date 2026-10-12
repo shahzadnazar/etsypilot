@@ -71,7 +71,7 @@ export default async function ForgotPasswordPage({
         */}
       <p className="mt-4 max-w-prose text-caption leading-relaxed text-muted-1">
         The answer is the same whether or not that address has an account. Otherwise this form
-        would be a way to find out which sellers are on EtsyPilot.
+        would be a way to find out which sellers are on CobaltRank.
       </p>
 
       <p className="mt-4 text-small text-muted-1">

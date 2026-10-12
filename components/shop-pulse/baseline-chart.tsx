@@ -189,7 +189,7 @@ export function BaselineChart({
 
       {/* The claim this chart is allowed to make, and the one it is not. */}
       <p className="mt-3 text-caption leading-relaxed text-muted-1">
-        The baseline is built only from this shop&rsquo;s own order history. EtsyPilot has no
+        The baseline is built only from this shop&rsquo;s own order history. CobaltRank has no
         access to Etsy&rsquo;s ranking algorithm and does not model it — markers show what changed
         and when, not why Etsy ranked anything.
       </p>

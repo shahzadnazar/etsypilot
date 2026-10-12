@@ -1,5 +1,5 @@
 /*
- * EtsyPilot database schema.
+ * CobaltRank database schema.
  *
  * Two invariants hold across this file:
  *
@@ -48,7 +48,7 @@ export const users = pgTable('users', {
    */
   displayName: text('display_name'),
   /**
-   * PLATFORM role — who may operate EtsyPilot itself. NOT a shop role.
+   * PLATFORM role — who may operate CobaltRank itself. NOT a shop role.
    *
    * `memberships.role` is the other axis entirely: who may touch one seller's
    * listings. D20 parked that matrix deliberately, and the two must never be
@@ -77,7 +77,7 @@ export const shops = pgTable(
      * Etsy's own numeric shop id, as text. NULL until a connection is made.
      *
      * NOT the key anything joins on — `shops.id` is. This column exists so one
-     * EtsyPilot shop can say which Etsy shop it is, which is the direction the
+     * CobaltRank shop can say which Etsy shop it is, which is the direction the
      * product needs: a seller has one shop row from signup and connecting Etsy
      * updates it.
      */
@@ -93,7 +93,7 @@ export const shops = pgTable(
   },
   (t) => ({
     /*
-     * ONE ETSY SHOP BELONGS TO ONE ETSYPILOT ACCOUNT, AND THE DATABASE IS WHAT
+     * ONE ETSY SHOP BELONGS TO ONE COBALTRANK ACCOUNT, AND THE DATABASE IS WHAT
      * MAKES THAT TRUE.
      *
      * Two sellers connecting the same Etsy shop is a real case — a shop sold,
@@ -688,7 +688,7 @@ export const ordersRelations = relations(orders, ({ many, one }) => ({
  * NO shopId, deliberately, and it is the only table here without one. The
  * invariant at the top of this file — every table carries shopId — describes
  * SELLER data, scoped by shopContext(). A platform role belongs to no shop:
- * writing one is an act of EtsyPilot's operators upon EtsyPilot, and giving it
+ * writing one is an act of CobaltRank's operators upon CobaltRank, and giving it
  * a shop column would invite someone to scope it to a shop and conclude that
  * seller isolation covers it. It does not, and this table is not seller data.
  *
@@ -811,7 +811,7 @@ export const bulkOperationsRelations = relations(bulkOperations, ({ many }) => (
 /* --------------------------------------------------- change history & audit */
 
 /**
- * What EtsyPilot WROTE to this shop, and the only surface a write is undone
+ * What CobaltRank WROTE to this shop, and the only surface a write is undone
  * from.
  *
  * ── A PROMISE OF IMMUTABILITY NEEDS SOMEWHERE TO KEEP IT ──────────────────
@@ -858,7 +858,7 @@ export const changeJobs = pgTable(
  *
  * Narrower than change_jobs in one direction and wider in the other (D66): a
  * refusal has no before-value to restore, so it is not a change job, but it is
- * the single most important thing this log records — "did EtsyPilot change my
+ * the single most important thing this log records — "did CobaltRank change my
  * listing?" is usually answered no, and an absent record proves nothing.
  *
  * `seq` is part of the record's address, not decoration. See the table comment
@@ -898,7 +898,7 @@ export const auditRecords = pgTable(
 /* ------------------------------------------------------------------ waitlist */
 
 /**
- * People who asked to be told when EtsyPilot opens.
+ * People who asked to be told when CobaltRank opens.
  *
  * ── THE ONE TABLE WITH NO SHOP, AND THEREFORE NO SHOP SCOPING ─────────────
  *

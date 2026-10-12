@@ -4,6 +4,7 @@ import { posixJoin } from '../support/paths'
 import { code } from '../support/shop-scoping'
 import { OPERATOR_WRITABLE } from '@/domain/admin/operator-writes'
 import { PUBLIC_DEMO_COOKIE } from '@/lib/auth/public-demo-actor'
+import { PRODUCT_NAME, PRODUCT_NAME_ARTICLE } from '@/lib/brand'
 import {
   EXPORTABLE_DATASETS,
   EXPORT_DATASET_IDS,
@@ -116,10 +117,10 @@ describe('the documents exist and are still drafts', () => {
      * ── THE DEFECT A FIND-AND-REPLACE LEAVES BEHIND ───────────────────────
      *
      * The drafts arrived naming the product "CobaltRank" and were corrected
-     * to "EtsyPilot" throughout. The article in front of the word changes
+     * to "CobaltRank" throughout. The article in front of the word changes
      * with it, and one sentence was left reading:
      *
-     *     "on the basis of a EtsyPilot figure"
+     *     "on the basis of a CobaltRank figure"
      *
      * Found by a reader, not by the suite — a substitution that is correct at
      * every one of its 22 sites can still break the words either side of it.
@@ -131,13 +132,20 @@ describe('the documents exist and are still drafts', () => {
      * because the documents are hard-wrapped and the article is regularly the
      * last word on a line.
      */
+    const expected: Record<string, string> = {
+      [PRODUCT_NAME]: PRODUCT_NAME_ARTICLE,
+      // "an Etsy shop" — Etsy opens with a vowel sound and always has.
+      Etsy: 'an',
+    }
+
     for (const [label, text] of [['privacy', privacy], ['terms', terms]] as const) {
       const flat = text.replace(/\s+/g, ' ')
-      for (const match of flat.matchAll(/\b(a|an) (EtsyPilot|Etsy)\b/g)) {
+      const pattern = new RegExp(`\\b(a|an) (${PRODUCT_NAME}|Etsy)\\b`, 'g')
+      for (const match of flat.matchAll(pattern)) {
         expect(
           match[1],
-          `${label} reads "${flat.slice(Math.max(0, match.index - 45), match.index + 30)}" — "${match[2]}" takes "an"`,
-        ).toBe('an')
+          `${label} reads "${flat.slice(Math.max(0, match.index - 45), match.index + 30)}" — "${match[2]}" takes "${expected[match[2]!]}"`,
+        ).toBe(expected[match[2]!])
       }
     }
   })
@@ -739,7 +747,7 @@ describe('what /legal/etsy says about the browser extension', () => {
     /*
      * The claim that matters most for Etsy's Prohibited Behavior list: the
      * extension is not a second route to Etsy data. Its only network
-     * destination is the EtsyPilot app.
+     * destination is the CobaltRank app.
      */
     expect(client).toMatch(/new URL\('\/api\/extension\/listing', APP_ORIGIN\)/)
     expect(client.includes('etsy.com'), 'the extension client calls etsy.com').toBe(false)

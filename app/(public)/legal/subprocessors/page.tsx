@@ -7,7 +7,7 @@ import { DocumentDate } from '@/components/legal/document-date'
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: 'Sub-processors',
-    description: 'Every third party that processes data for EtsyPilot, and the ones not yet in use.',
+    description: 'Every third party that processes data for CobaltRank, and the ones not yet in use.',
     ...(legalDocumentsInForce() ? {} : { robots: { index: false, follow: false } }),
   }
 }
@@ -34,7 +34,7 @@ export default function SubProcessorsPage() {
       </header>
 
       <p>
-        A sub-processor is a company that processes your data on EtsyPilot&rsquo;s behalf. The list
+        A sub-processor is a company that processes your data on CobaltRank&rsquo;s behalf. The list
         below is the whole of it. Adding one is an edit to the Privacy Policy, so this page and that
         document cannot disagree.
       </p>
@@ -83,7 +83,7 @@ export default function SubProcessorsPage() {
             These roles are <strong>live</strong>. Data is being processed through them today, and
             the Privacy Policy has not named the company yet. That is a gap in the document, not a
             gap in the processing: UK and EU data protection law requires each processor to be
-            named, and this will be named here and in the policy before EtsyPilot launches.
+            named, and this will be named here and in the policy before CobaltRank launches.
           </p>
           <div className="legal-table-scroll">
             <table>
@@ -168,7 +168,7 @@ export default function SubProcessorsPage() {
 
       <h2 id="telemetry">Analytics, error reporting and email</h2>
       <p>
-        None of the three is connected. EtsyPilot&rsquo;s analytics, error-reporting and email
+        None of the three is connected. CobaltRank&rsquo;s analytics, error-reporting and email
         adapters are inert in this build, so there are no analytics cookies, no third-party
         trackers, and no transactional email — which is why a card-required free trial cannot be
         started here at all: the trial promises an email before it ends, and that promise is

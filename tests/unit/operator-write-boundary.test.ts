@@ -407,7 +407,7 @@ describe('every reachable write targets an allowlisted table', () => {
     /*
      * `users` is on the allowlist but the row belongs to the seller — their
      * email, their name, their onboarding answers. Only platform_role is
-     * EtsyPilot's own record rather than theirs, so the table entry alone is
+     * CobaltRank's own record rather than theirs, so the table entry alone is
      * not enough and the columns actually set are checked.
      */
     const entry = OPERATOR_WRITABLE.find((candidate) => candidate.schemaKey === 'users')
@@ -674,7 +674,7 @@ describe('an operator cannot obtain a writable shop context', () => {
    */
   const operator = {
     userId: 'u-operator',
-    email: 'boss@etsypilot.app',
+    email: 'boss@cobaltrank.app',
     name: 'Boss',
     shopId: 'shop_operator_own',
     isDemo: false, kind: 'SELLER' as const,

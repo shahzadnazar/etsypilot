@@ -70,8 +70,8 @@ export default async function ShopPulsePage() {
           title={pulse.source.kind === 'NO_SHOP' ? 'This shop could not be found' : 'Not synced yet'}
           description={
             pulse.source.kind === 'NO_SHOP'
-              ? 'The shop this page was opened for is no longer in EtsyPilot. Nothing is wrong with your shop on Etsy.'
-              : 'Shop Pulse compares this period against your own 30-day baseline, and EtsyPilot has not read your orders yet — so it has nothing to compare and will not tell you your shop is steady. Once a sync runs, every change appears here with the evidence behind it.'
+              ? 'The shop this page was opened for is no longer in CobaltRank. Nothing is wrong with your shop on Etsy.'
+              : 'Shop Pulse compares this period against your own 30-day baseline, and CobaltRank has not read your orders yet — so it has nothing to compare and will not tell you your shop is steady. Once a sync runs, every change appears here with the evidence behind it.'
           }
         />
       </>

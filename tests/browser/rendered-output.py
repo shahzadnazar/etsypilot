@@ -1124,7 +1124,7 @@ with sync_playwright() as p:
     conn = pg.locator("main").inner_text()
     check("never receives your Etsy password" in conn, "Connect states the password rule")
     check("Publish anything without your confirmation." in conn,
-          "Connect lists what EtsyPilot cannot do")
+          "Connect lists what CobaltRank cannot do")
     check("listings_r" in conn, "Etsy's own scope strings are printed so the grant is inspectable")
     check(pg.locator("input[type=password]").count() == 0, "No password field exists on the page")
 

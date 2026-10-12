@@ -73,7 +73,7 @@ export function demoSyncState(shopName: string, listingCount: number): SyncState
     overallPercent: overallPercent(stages),
     pausedNotice:
       'Etsy temporarily limited requests. Order history continues automatically at 2:40 PM UTC — nothing is lost, and you can keep working.',
-    estimateNote: `This usually takes 3–6 minutes for ${listingCount} listings. You can start using EtsyPilot now — the rest keeps syncing in the background.`,
+    estimateNote: `This usually takes 3–6 minutes for ${listingCount} listings. You can start using CobaltRank now — the rest keeps syncing in the background.`,
   }
 }
 

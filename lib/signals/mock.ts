@@ -638,7 +638,7 @@ function buildProduct(seed: ProductSeed, index: number): ProductSignals {
       ? null
       : calculated(
           opportunityScore(seed),
-          'Modelled demand weighted against observed competition, review count and listing age. 0–100, EtsyPilot’s own scale.',
+          'Modelled demand weighted against observed competition, review count and listing age. 0–100, CobaltRank’s own scale.',
           {
             limitations: [
               'A score, not a prediction. It ranks what has been observed; it does not say what will sell.',
@@ -711,7 +711,7 @@ function buildNiche(term: string, market: string): NicheSignals {
      * confident-looking row built on nothing.
      */
     const none = unavailable(
-      'This niche has not been sampled often enough to model. EtsyPilot samples public listing and autocomplete signals weekly, and a term has to appear across several weeks before it can be reported.',
+      'This niche has not been sampled often enough to model. CobaltRank samples public listing and autocomplete signals weekly, and a term has to appear across several weeks before it can be reported.',
       'Try a broader term, or check back after the next sampling window.',
     )
     return {
@@ -750,7 +750,7 @@ function buildNiche(term: string, market: string): NicheSignals {
     }),
     crowding: calculated(
       perSearch >= 3 ? 'HIGH' : perSearch >= 1.5 ? 'MEDIUM' : 'LOW',
-      `${perSearch.toFixed(1)} listings per modelled monthly search. Bands are EtsyPilot’s, not Etsy’s.`,
+      `${perSearch.toFixed(1)} listings per modelled monthly search. Bands are CobaltRank’s, not Etsy’s.`,
       { limitations: ['Both inputs are estimates, so the band is only as good as they are.'] },
     ),
     priceBand: estimated(seed.priceBand, {

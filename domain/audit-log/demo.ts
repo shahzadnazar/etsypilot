@@ -14,7 +14,7 @@ import 'server-only'
  * ══════════════════════════════════════════════════════════════════════════
  *
  * Eight records by a person that seller has never met, asserting that
- * EtsyPilot published changes to their listings. In a dispute this log is the
+ * CobaltRank published changes to their listings. In a dispute this log is the
  * evidence, and it was somebody else's.
  *
  * Real records are rows now (lib/repositories/change-jobs.ts). This keeps the
@@ -28,7 +28,7 @@ import { isEmptyDataset } from '@/lib/etsy/demo-dataset'
 import { demoAuditRecords } from './demo-records'
 import type { AuditRecord } from './types'
 
-const DEMO_KEY = Symbol.for('etsypilot.auditlog.demo')
+const DEMO_KEY = Symbol.for('cobaltrank.auditlog.demo')
 
 /** The demo log for one shop, seeded once per process. Null elsewhere. */
 export function demoAuditStore(shopId: string): AuditRecord[] | null {

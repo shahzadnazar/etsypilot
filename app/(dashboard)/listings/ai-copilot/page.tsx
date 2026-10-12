@@ -104,7 +104,7 @@ export default async function AiCopilotPage({
         <Card className="mb-4 p-[18px]">
           <h2 className="text-section text-ink-1">This draft was withheld</h2>
           <p className="mt-1 text-small leading-relaxed text-ink-2">
-            EtsyPilot checks every draft before showing it. This one broke a rule, so you are not
+            CobaltRank checks every draft before showing it. This one broke a rule, so you are not
             seeing it — a rewrite that gets one thing wrong is not trustworthy about the rest.
           </p>
           <ul className="mt-3 flex flex-col gap-1.5">

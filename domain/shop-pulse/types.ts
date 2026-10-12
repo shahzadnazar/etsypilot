@@ -5,7 +5,7 @@
  * produced it. `DetectedChange` carries its evidence inline rather than by
  * reference, so a badge can never be rendered from a row that has none.
  *
- * EtsyPilot has no access to Etsy's ranking algorithm and does not model it.
+ * CobaltRank has no access to Etsy's ranking algorithm and does not model it.
  * Nothing in this module claims cause - only that observable things moved
  * together, or demonstrably did not.
  */

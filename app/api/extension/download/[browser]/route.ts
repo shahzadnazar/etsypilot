@@ -97,7 +97,7 @@ export async function GET(
       throw new AppError({
         kind: 'NOT_FOUND',
         code: 'EXTENSION_UNKNOWN_BROWSER',
-        message: 'There is no EtsyPilot package for that browser.',
+        message: 'There is no CobaltRank package for that browser.',
         recovery: `The extension is packaged for ${BROWSERS.join(' and ')}. Both are on the Browser Extension page.`,
       })
     }
@@ -117,7 +117,7 @@ export async function GET(
     return new Response(archive, {
       headers: {
         'Content-Type': 'application/zip',
-        'Content-Disposition': `attachment; filename="etsypilot-${browser}.zip"`,
+        'Content-Disposition': `attachment; filename="cobaltrank-${browser}.zip"`,
         'Content-Length': String(archive.length),
         'Cache-Control': 'private, no-store',
       },

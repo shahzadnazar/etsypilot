@@ -86,7 +86,7 @@ export default async function ListingAuditPage() {
           <>
             <NotYet
               label="Audit settings"
-              reason="Thresholds are EtsyPilot's defaults and are not editable yet."
+              reason="Thresholds are CobaltRank's defaults and are not editable yet."
             />
             {/*
               * A real link, because the audit runs on every request. Loading
@@ -189,7 +189,7 @@ export default async function ListingAuditPage() {
             <span className="mt-3 inline-block">
               <NotYet
                 label="Edit thresholds"
-                reason="The thresholds above are EtsyPilot's defaults. Editing them needs somewhere to keep yours."
+                reason="The thresholds above are CobaltRank's defaults. Editing them needs somewhere to keep yours."
               />
             </span>
           </Card>

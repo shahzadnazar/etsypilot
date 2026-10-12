@@ -42,7 +42,7 @@ export interface ExtensionFacts {
   hostPermissions: string[]
   /** Where the content script is allowed to run, verbatim. */
   contentScriptMatches: string[]
-  /** The one endpoint on the EtsyPilot origin the extension calls. */
+  /** The one endpoint on the CobaltRank origin the extension calls. */
   appEndpoint: string
 }
 

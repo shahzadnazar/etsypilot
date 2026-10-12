@@ -10,7 +10,7 @@
  * construction rather than by discipline:
  *
  *   1. NO TOKEN FIELD. Not on the request, not on the response, not optional.
- *      The extension authenticates with the seller's existing EtsyPilot session
+ *      The extension authenticates with the seller's existing CobaltRank session
  *      cookie, sent by the browser — it never receives, stores or forwards a
  *      credential, because there is nowhere to put one.
  *

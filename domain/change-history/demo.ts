@@ -21,7 +21,7 @@ import type { EtsyListing } from '@/lib/etsy/interface'
 import { demoChangeJobs } from './demo-jobs'
 import type { ChangeJob } from './types'
 
-const DEMO_KEY = Symbol.for('etsypilot.changehistory.demo')
+const DEMO_KEY = Symbol.for('cobaltrank.changehistory.demo')
 
 function demoStore(listings: EtsyListing[]): ChangeJob[] {
   const g = globalThis as unknown as Record<symbol, ChangeJob[] | undefined>

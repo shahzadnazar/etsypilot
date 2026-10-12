@@ -2,7 +2,7 @@
  * Niche research (artboard 102).
  *
  * The screen answers "is this worth entering?" and the answer is deliberately
- * never yes or no. EtsyPilot does not tell a seller to enter a niche — it
+ * never yes or no. CobaltRank does not tell a seller to enter a niche — it
  * states the CONDITIONS the numbers imply, so the seller decides against
  * something they can check.
  *

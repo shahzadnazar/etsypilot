@@ -69,8 +69,8 @@ export default async function ProfitPage() {
           title={view.source.kind === 'NO_SHOP' ? 'This shop could not be found' : 'Not synced yet'}
           description={
             view.source.kind === 'NO_SHOP'
-              ? 'The shop this page was opened for is no longer in EtsyPilot. Nothing is wrong with your shop on Etsy.'
-              : 'Profit is computed from your own order receipts, and EtsyPilot has not read them yet. Rather than show you a waterfall of zeroes and a loss made up of nothing but your fixed costs, this page waits for the first sync.'
+              ? 'The shop this page was opened for is no longer in CobaltRank. Nothing is wrong with your shop on Etsy.'
+              : 'Profit is computed from your own order receipts, and CobaltRank has not read them yet. Rather than show you a waterfall of zeroes and a loss made up of nothing but your fixed costs, this page waits for the first sync.'
           }
           action={
             <Link

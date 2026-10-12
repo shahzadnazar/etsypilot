@@ -1,7 +1,7 @@
 /*
  * Data sources (artboard 94).
  *
- * "Every input EtsyPilot reads, what class of number it produces, how often it
+ * "Every input CobaltRank reads, what class of number it produces, how often it
  * refreshes, and what it cannot tell you."
  *
  * The `status` on each row is READ from the adapter that serves it, never
@@ -64,7 +64,7 @@ export function dataSources(): DataSource[] {
     {
       key: 'cost-setup',
       name: 'Your cost setup',
-      via: 'Entered in EtsyPilot',
+      via: 'Entered in CobaltRank',
       provides:
         'Product cost, shipping cost, labour rate, overhead and other costs, per shop, listing or variation.',
       class: 'SELLER_INPUT',
@@ -101,10 +101,10 @@ export function dataSources(): DataSource[] {
     },
     {
       key: 'event-log',
-      name: 'EtsyPilot event log',
+      name: 'CobaltRank event log',
       via: 'Immutable, generated here',
       provides:
-        'Every change made through EtsyPilot — price, title, tags, state, bulk jobs, AI applications — with actor and operation ID.',
+        'Every change made through CobaltRank — price, title, tags, state, bulk jobs, AI applications — with actor and operation ID.',
       class: 'VERIFIED',
       refresh: 'Immediate',
       limitations:

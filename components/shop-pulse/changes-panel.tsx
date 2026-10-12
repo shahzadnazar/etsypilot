@@ -184,7 +184,7 @@ function EvidencePanel({ change }: { change: DetectedChange }) {
       </div>
 
       <p className="text-caption text-muted-1">
-        Correlation only. EtsyPilot cannot see Etsy&rsquo;s ranking algorithm.
+        Correlation only. CobaltRank cannot see Etsy&rsquo;s ranking algorithm.
       </p>
     </Card>
   )

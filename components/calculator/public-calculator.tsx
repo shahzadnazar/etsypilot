@@ -27,7 +27,7 @@ export function PublicCalculator() {
       {hasResult ? (
         <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
           <span className="text-small leading-relaxed text-ink-2">
-            Want this against your real Etsy fees and confirmed costs? EtsyPilot works from your own
+            Want this against your real Etsy fees and confirmed costs? CobaltRank works from your own
             receipts.
           </span>
           <Link

@@ -1,5 +1,5 @@
 /*
- * PLATFORM roles: who may operate EtsyPilot itself.
+ * PLATFORM roles: who may operate CobaltRank itself.
  *
  * ══════════════════════════════════════════════════════════════════════════
  *  TWO AXES, NEVER ONE. This is the most important sentence in the file.
@@ -11,7 +11,7 @@
  *                      seam and every account has exactly one OWNER row for
  *                      their own shop.
  *
- *   users.platform_role  A PLATFORM role. Who may look at EtsyPilot's own
+ *   users.platform_role  A PLATFORM role. Who may look at CobaltRank's own
  *                      operations — the list of accounts, subscriptions,
  *                      usage. Nothing to do with any particular shop.
  *
@@ -142,7 +142,7 @@ export const PERMISSIONS = [
   /*
    * A seller's own money: revenue, profit, orders, fees.
    *
-   * THE MOST SENSITIVE THING IN THE PRODUCT, and it is here anyway. EtsyPilot's
+   * THE MOST SENSITIVE THING IN THE PRODUCT, and it is here anyway. CobaltRank's
    * core promise is that its numbers are trustworthy, so "my profit looks
    * wrong" is the support case the product most has to be able to answer — and
    * it cannot be answered by someone who cannot see the figures. A support

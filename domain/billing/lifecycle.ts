@@ -166,7 +166,7 @@ export function planChange(args: {
  * What stops working on a downgrade.
  *
  * Every entry is a pause. There is no delete in this domain, so there is none
- * to list: "Downgrading keeps your data. If you exceed a limit, EtsyPilot
+ * to list: "Downgrading keeps your data. If you exceed a limit, CobaltRank
  * pauses new bulk jobs rather than deleting anything — you choose what to
  * remove."
  */

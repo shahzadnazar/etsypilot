@@ -32,7 +32,7 @@ export default function DataSourcesPage() {
     <>
       <PageHeader
         title="Data sources"
-        subtitle="Every input EtsyPilot reads, what class of number it produces, how often it refreshes, and what it cannot tell you."
+        subtitle="Every input CobaltRank reads, what class of number it produces, how often it refreshes, and what it cannot tell you."
         actions={
           <Link
               prefetch={false}

@@ -41,6 +41,7 @@ import { checkAdminRoute } from '@/lib/security/admin-route'
 import { cspFor } from '@/lib/security/csp'
 import { checkCsrf } from '@/lib/security/csrf'
 import { rateLimit } from '@/lib/security/rate-limit'
+import { PRODUCT_SLUG } from '@/lib/brand'
 
 /**
  * A path no route will ever match, used to make /admin genuinely disappear.
@@ -60,7 +61,7 @@ import { rateLimit } from '@/lib/security/rate-limit'
  * Rewriting to a path with no route makes Next render its ordinary not-found
  * page, so the two answers become the same answer.
  */
-const NOWHERE = '/_etsypilot_no_such_route'
+const NOWHERE = `/_${PRODUCT_SLUG}_no_such_route`
 
 /**
  * The caller, for rate limiting.

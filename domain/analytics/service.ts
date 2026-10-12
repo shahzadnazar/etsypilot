@@ -338,7 +338,7 @@ function insightsFrom(args: {
  * to hold. Stated on the page beside the panel it would have been in.
  */
 export const REPEAT_CUSTOMER_STANCE =
-  'EtsyPilot does not read or store buyer identifiers, so it cannot count repeat buyers. The sales map is aggregated by country from the same receipts, and regions with fewer than five orders are suppressed.'
+  'CobaltRank does not read or store buyer identifiers, so it cannot count repeat buyers. The sales map is aggregated by country from the same receipts, and regions with fewer than five orders are suppressed.'
 
 function sum(values: number[]): number {
   return values.reduce((total, value) => total + value, 0)

@@ -1,4 +1,5 @@
 'use client'
+import { PRODUCT_NAME } from '@/lib/brand'
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -50,7 +51,7 @@ export function OperatorSidebar({ groups }: { groups: OperatorNavGroup[] }) {
           <span className="text-[15px] font-bold leading-tight tracking-[-0.01em] text-ink-1">
             Operations
           </span>
-          <span className="text-[10px] font-medium leading-tight text-muted-1">EtsyPilot</span>
+          <span className="text-[10px] font-medium leading-tight text-muted-1">{PRODUCT_NAME}</span>
         </span>
       </div>
 

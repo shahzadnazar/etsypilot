@@ -12,7 +12,7 @@
 const SCRIPT = `
 (function () {
   try {
-    var stored = localStorage.getItem('etsypilot-theme') || 'system';
+    var stored = localStorage.getItem('cobaltrank-theme') || 'system';
     var root = document.documentElement;
     if (stored === 'system') { root.removeAttribute('data-theme'); }
     else { root.setAttribute('data-theme', stored); }

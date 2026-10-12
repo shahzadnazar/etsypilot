@@ -54,7 +54,7 @@ export default function MethodologyPage() {
 
       <Card className="mb-4 p-4">
         <p className="max-w-[80ch] text-small leading-relaxed text-ink-2">
-          Two sentences that apply to everything below. EtsyPilot does not model Etsy&rsquo;s
+          Two sentences that apply to everything below. CobaltRank does not model Etsy&rsquo;s
           ranking algorithm and no one outside Etsy can — nothing here is a prediction of where a
           listing will rank. And where Etsy publishes no data, this product says so and shows
           nothing, rather than filling the gap with a modelled figure wearing a confident label.

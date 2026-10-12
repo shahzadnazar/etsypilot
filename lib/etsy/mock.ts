@@ -234,7 +234,7 @@ function assertDemoShop(shopId: string): void {
   if (process.env.ETSY_MODE === 'live' && !isPublicDemoRequest()) {
     throw Errors.validation(
       'The demo catalogue was asked to serve a live shop.',
-      `EtsyPilot is configured for live Etsy data, so shop ${shopId} must be read through the ` +
+      `CobaltRank is configured for live Etsy data, so shop ${shopId} must be read through the ` +
         'live adapter. No demo figures were returned — showing invented listings as a real shop ' +
         'is the one failure this adapter must never produce.',
     )

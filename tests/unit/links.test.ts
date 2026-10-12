@@ -28,6 +28,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { posixJoin } from '../support/paths'
 import { MOBILE_TABS, NAV_FOOTER, NAV_GROUPS, SETTINGS_NAV } from '@/components/layout/navigation'
+import { PRODUCT_SLUG } from '@/lib/brand'
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
@@ -71,6 +72,43 @@ function resolves(href: string): boolean {
   }
   return API_ROUTES.includes(href)
 }
+
+describe('the admin-hiding rewrite target', () => {
+  /*
+   * ══════════════════════════════════════════════════════════════════════════
+   *   THE ONE LITERAL NOBODY WAS WATCHING.
+   * ══════════════════════════════════════════════════════════════════════════
+   *
+   * middleware.ts rewrites a refused /admin request to a path that matches no
+   * route, so Next renders its ordinary not-found page and a refusal is
+   * indistinguishable from a 404 — which is the whole point of hiding the
+   * operator area rather than refusing it.
+   *
+   * That path carried the product's name, and the rename went looking for the
+   * test that asserted it. There was none: the literal appeared in exactly one
+   * file and nothing checked that it stayed unroutable. If somebody ever
+   * creates that route, every refused /admin request starts serving a real
+   * page and nothing fails.
+   *
+   * So it is derived from the brand slug now, and this is the check that was
+   * missing: whatever it is, no route may answer it.
+   */
+  it('matches no route in the app', () => {
+    const middleware = readFileSync('middleware.ts', 'utf8')
+    const literal = /const NOWHERE = [`']([^`']+)[`']/.exec(middleware)?.[1]
+    expect(literal, 'middleware.ts no longer declares NOWHERE as a single template').toBeTruthy()
+
+    // `/_${PRODUCT_SLUG}_no_such_route` -> the concrete path.
+    const target = literal!.replace('${PRODUCT_SLUG}', PRODUCT_SLUG)
+    expect(target.startsWith('/')).toBe(true)
+    expect(target).not.toContain('$')
+
+    expect(
+      resolves(target),
+      `${target} resolves to a real route, so a refused /admin request would serve it instead of a 404`,
+    ).toBe(false)
+  })
+})
 
 describe('internal links', () => {
   const sources = [...walk('app'), ...walk('components')]

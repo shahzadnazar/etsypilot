@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { PRODUCT_NAME } from '@/lib/brand'
 
 /*
  * THE OPERATOR MARKER.
@@ -38,7 +39,7 @@ export function OperatorBanner({ email, role }: { email: string; role: string })
         Operator
       </span>
       <span className="min-w-0 flex-1 text-[12px] leading-snug" style={{ color: '#F7F3ED' }}>
-        EtsyPilot operations — not a seller account. You are looking at every shop on the
+        {PRODUCT_NAME} operations — not a seller account. You are looking at every shop on the
         platform, read-only.
       </span>
       <span className="tnum truncate text-[11px]" style={{ color: '#C9BCA9' }}>

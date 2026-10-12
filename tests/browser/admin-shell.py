@@ -3,7 +3,7 @@
     python3 tests/browser/fake-gotrue.py 5998 &
     AUTH_MODE=live NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:5998 \
       NEXT_PUBLIC_SUPABASE_ANON_KEY=anon DATABASE_URL=postgres://... \
-      SUPER_ADMIN_EMAILS=boss@etsypilot.app ADMIN_EMAILS=ops@etsypilot.app \
+      SUPER_ADMIN_EMAILS=boss@cobaltrank.app ADMIN_EMAILS=ops@cobaltrank.app \
       npx next start -p 3100 &
     python3 tests/browser/admin-shell.py
 
@@ -41,10 +41,10 @@ from mfa_support import sign_in_with_two_factor
 
 BASE = os.environ.get("ADMIN_BASE_URL", "http://localhost:3100")
 CHROME = os.environ.get("CHROME_PATH", "/opt/pw-browsers/chromium-1194/chrome-linux/chrome")
-PSQL = os.environ.get("PSQL_DSN", "postgres://postgres@127.0.0.1:5999/etsypilot")
+PSQL = os.environ.get("PSQL_DSN", "postgres://postgres@127.0.0.1:5999/cobaltrank")
 
-SUPER = ("boss@etsypilot.app", "correct-horse-battery")
-ADMIN = ("ops@etsypilot.app", "admin-password-here")
+SUPER = ("boss@cobaltrank.app", "correct-horse-battery")
+ADMIN = ("ops@cobaltrank.app", "admin-password-here")
 MANAGER = ("promoted@example.com", "manager-password-y")
 # A signed-in account with no operator role at all, for the half of the
 # seller-link check that matters most.
@@ -229,7 +229,7 @@ def main():
             "the operator banner is on the page, as a labelled status landmark",
         )
         check(SUPER[0] in text, "and names the signed-in operator")
-        check("Operations" in text, "the rail is labelled Operations, not EtsyPilot")
+        check("Operations" in text, "the rail is labelled Operations, not CobaltRank")
         check(
             boss_page.locator('nav[aria-label="Operator sections"]').count() >= 1,
             "the navigation is a labelled landmark",
