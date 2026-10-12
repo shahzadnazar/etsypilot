@@ -38,6 +38,7 @@ import { getSession } from '@/lib/auth'
 import { errorResponse, logFailure } from '@/lib/errors/api'
 import { AppError, Errors } from '@/lib/errors/types'
 import { zipSync, type ZipEntry } from '@/lib/extension/zip'
+import { extensionEnabled } from '@/lib/extension/availability'
 
 export const runtime = 'nodejs'
 
@@ -84,6 +85,22 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ browser: string }> },
 ) {
+
+/*
+ * ── SECOND CHECK, BEHIND THE MIDDLEWARE REWRITE ──────────────────────────
+ *
+ * middleware.ts already rewrites every /settings/extension and /api/extension
+ * request to a path with no route while the extension is off, so this is not
+ * the only thing standing here. It is here anyway for the reason the operator
+ * area has two checks: middleware is not the only way a route can be reached
+ * — a matcher change, a rewrite from elsewhere, a future `proxy.ts` migration
+ * — and a download route that serves a packaged add-on is the single worst
+ * thing in this product to leave depending on one file.
+ */
+  if (!extensionEnabled()) {
+    return new Response('Not found', { status: 404 })
+  }
+
   const { browser } = await params
   try {
     const session = await getSession()

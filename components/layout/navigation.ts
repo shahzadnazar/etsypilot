@@ -65,7 +65,19 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: 'Keywords', href: '/research/keywords' },
       { label: 'Opportunities', href: '/research/opportunities' },
       { label: 'Niche Research', href: '/research/niche' },
-      { label: 'Competitors', href: '/research/competitors' },
+      /*
+       * "Compare shops", not "Competitors".
+       *
+       * The noun describes what the product supposedly HAS on other people;
+       * the verb describes what a seller DOES here, which is the page's own
+       * vocabulary (Analyse / Compare / Track, never "spy"). The distinction
+       * matters to a reader who has never opened it: a nav entry reading
+       * "Competitors" beside a table of another shop's listing counts invites
+       * the inference that this product harvests them. It does not — every
+       * figure on that page is modelled and nothing is read from any shop
+       * page.
+       */
+      { label: 'Compare shops', href: '/research/competitors' },
       { label: 'Keyword Lists', href: '/research/keyword-lists' },
     ],
   },
@@ -80,10 +92,28 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: 'Analytics',
+    /*
+     * ── "YOUR SHOP", NOT "ANALYTICS" ───────────────────────────────────
+     *
+     * Etsy's API Terms, Prohibited Behavior item 25, forbids using the Etsy
+     * API to "collect, scan, or otherwise request Etsy content for purposes
+     * of analytics, machine learning, training artificial intelligence
+     * models, licensing, or content removal" without written authorisation.
+     *
+     * This group holds the one part of the product that genuinely requests
+     * Etsy content through the API — the seller's own orders, payments and
+     * listings — and it was labelled with the exact word that clause keys on.
+     * Nothing about what these pages DO changes: a seller reading their own
+     * receipts is the ordinary purpose of the API, not market analytics over
+     * Etsy's content. What changes is that the label now says so.
+     *
+     * Every item here is the seller's own shop and nobody else's, which is
+     * what the group name now states.
+     */
+    label: 'Your shop',
     items: [
-      { label: 'Shop Analytics', href: '/analytics' },
-      { label: 'Sales Map', href: '/analytics/sales-map' },
+      { label: 'Sales records', href: '/analytics' },
+      { label: 'Sales map', href: '/analytics/sales-map' },
       { label: 'Experiments', href: '/analytics/experiments' },
     ],
   },
@@ -178,3 +208,26 @@ export const SETTINGS_NAV: NavGroup[] = [
     ],
   },
 ]
+
+/*
+ * ── THE SETTINGS RAIL, MINUS ANYTHING SWITCHED OFF ───────────────────────
+ *
+ * SETTINGS_NAV is the whole rail. This is what a given deployment shows.
+ *
+ * It exists because the browser extension comes off the live surface while
+ * Etsy's Prohibited Behavior item 24 is unanswered (lib/extension/
+ * availability.ts), and "nothing in the navigation mentions it" is part of
+ * that. Filtering here rather than inside the rail component keeps the
+ * decision server-side: SettingsNav is a client component and cannot read a
+ * non-public environment variable, and making the flag public would put the
+ * answer in the browser bundle.
+ *
+ * A filter by href, not by label, because a label is copy and copy is edited.
+ */
+export function settingsNavFor(options: { extension: boolean }): NavGroup[] {
+  if (options.extension) return SETTINGS_NAV
+  return SETTINGS_NAV.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => !item.href.startsWith('/settings/extension')),
+  }))
+}

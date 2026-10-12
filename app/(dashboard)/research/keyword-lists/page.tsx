@@ -10,6 +10,7 @@ import { getListsView } from '@/domain/research/service'
 import { getSession } from '@/lib/auth'
 import { shopContext } from '@/lib/permissions'
 import { formatDate } from '@/lib/utils/format'
+import { ModelledNotice } from '@/components/research/modelled-notice'
 
 export const metadata: Metadata = { title: 'Keyword Lists' }
 
@@ -33,7 +34,7 @@ export default async function KeywordListsPage() {
     <>
       <PageHeader
         title="Keyword Lists"
-        subtitle="Save terms while researching, then apply them to listings with a reviewable diff."
+        subtitle="Terms you saved while researching · no figures on this page, modelled or otherwise"
         actions={
           <NotYet
             label="New list"
@@ -102,6 +103,31 @@ export default async function KeywordListsPage() {
         published there either until you have seen the exact before-and-after for every listing and
         confirmed it — a keyword list is research until a human reviews the diff it produces.
       </p>
+
+      <div className="mt-4">
+        {/*
+          * The one Research page whose provenance story is not "modelled":
+          * it has no figures at all. It says what it IS rather than
+          * borrowing the sentence from the other four, and it names the one
+          * Etsy call this section makes — see getListsView() in
+          * domain/research/service.ts.
+          */}
+        <ModelledNotice
+          lead={
+            <>
+              <strong>There are no figures on this page.</strong> A keyword list is terms you saved
+              while researching; the counts are of your own saved terms. Nothing here is Etsy data
+              and nothing here is modelled.
+            </>
+          }
+          sourceCategory="Terms you saved"
+          excludes="Search volume, competitor figures, and anything else this product does not have"
+          limitations={[
+            'Opening this page asks Etsy once whether your shop still exists, through the official API under your own authorisation. Nothing is read from the answer and no figure on this page comes from it.',
+          ]}
+          methodologyHref="/data/methodology"
+        />
+      </div>
     </>
   )
 }

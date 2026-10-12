@@ -12,6 +12,7 @@ import { getNiche, TARGET_MARGIN } from '@/domain/research/niche'
 import { getSession } from '@/lib/auth'
 import { formatRelative } from '@/lib/utils/format'
 import { isDemoMode } from '@/lib/etsy'
+import { ModelledNotice } from '@/components/research/modelled-notice'
 
 export const metadata: Metadata = { title: 'Niche research' }
 
@@ -56,7 +57,7 @@ export default async function NichePage({
     <>
       <PageHeader
         title="Niche research"
-        subtitle="Whether a niche is worth entering — demand, crowding, price ceiling and what would have to be true for you."
+        subtitle="Whether a niche is worth entering — demand, crowding, price ceiling · every figure modelled from public marketplace signals, not Etsy data"
       />
 
       <form
@@ -309,17 +310,18 @@ export default async function NichePage({
 
       <div className="mt-4 flex flex-wrap items-start gap-2">
         <ProvenanceBadge type="ESTIMATED" demo={demoData} />
-        <p className="max-w-prose text-caption leading-relaxed text-muted-1">
-          Every figure on this page is estimated. Etsy publishes no search volume and no competitor
-          sales; these are modelled from public listing and autocomplete signals sampled weekly,
-          shown as ranges, and are not Etsy data.{' '}
-          <Link
-            href="/data/methodology"
-            className="font-semibold text-brand-strong underline underline-offset-2"
-          >
-            Read the full methodology →
-          </Link>
-        </p>
+        <ModelledNotice
+          lead={
+            <>
+              <strong>Every figure on this page is modelled.</strong> Nothing here is Etsy data.
+              Etsy publishes no search volume and no competitor sales to anyone; demand, crowding
+              and the price ceiling are modelled from public listing and autocomplete signals and
+              shown as ranges.
+            </>
+          }
+          excludes="Ads, off-platform traffic, wholesale, refunds"
+          methodologyHref="/data/methodology#keyword-opportunity"
+        />
       </div>
     </>
   )

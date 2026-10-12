@@ -62,11 +62,12 @@ We obtain your shop data only through Etsy's official API. We do not scrape Etsy
 listing content, prices or stock from Etsy's web pages, and we do not use automated systems to
 collect Etsy data outside the API.
 
-Our browser extension is the one thing that touches an Etsy page, and it is worth being exact
-about. While you are on etsy.com it reads the address of the page you are already looking at, to
-work out which listing you are viewing, and asks our servers for your own figures for it. It does
-not read the page's content, your Etsy cookies or your Etsy session, and it does not change
-anything on the page. Everything it shows you came from the API.
+**We do not currently offer a browser extension.** One was built — it would read the address of
+the page you are already looking at on etsy.com, to work out which listing you are viewing, and ask
+our servers for your own figures for it; it would not read the page's content, your Etsy cookies or
+your Etsy session, and would change nothing on the page. It is not published, because Etsy's API
+Terms restrict browser extensions that access Etsy data and we have not asked Etsy about ours yet.
+Nothing in CobaltRank runs inside a page on etsy.com today.
 
 ## 5. How you may and may not use CobaltRank
 

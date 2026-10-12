@@ -94,6 +94,26 @@ export default async function ExtensionSettingsPage({
 }: {
   searchParams: Promise<{ download?: string; ref?: string }>
 }) {
+  /*
+   * ── NO notFound() HERE, AND THAT IS THE RULE RATHER THAN AN OVERSIGHT ──
+   *
+   * This page is hidden by middleware.ts while the extension is off: the
+   * request is rewritten to a path with no route, exactly as a seller's
+   * /admin request is, so the response is an ordinary 404 and the page never
+   * renders.
+   *
+   * A second check inside the component was written here first and
+   * tests/unit/admin-roles.test.ts refused it — no seller page may call
+   * notFound(), because a status decided inside the render boundary can be
+   * committed after a streamed 200 has already gone out. That guard is
+   * right, and middleware is where this decision belongs.
+   *
+   * The two /api/extension route handlers DO carry their own check: a route
+   * handler returns a Response rather than streaming through a boundary, and
+   * a download route that serves a packaged add-on is the last thing in this
+   * product to leave depending on one file.
+   */
+
   const session = await getSession()
   if (!session) redirect('/login')
 

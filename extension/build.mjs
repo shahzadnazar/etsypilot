@@ -206,6 +206,35 @@ function build() {
  * a guaranteed product of the ordinary build rather than a second command a
  * seller has to be told about.
  */
+/*
+ * ── THE SWITCH, READ HERE TOO ────────────────────────────────────────────
+ *
+ * Etsy's Prohibited Behavior item 24 names browser extensions, and the
+ * extension is off until Etsy answers (lib/extension/availability.ts). While
+ * it is off, predev and prebuild must not package it: an ordinary build
+ * should not produce a signed, downloadable add-on for a feature the product
+ * says it does not offer, and a package sitting in extension/build is the one
+ * artefact a reviewer could be handed by accident.
+ *
+ * The flag name is duplicated as a literal rather than imported, because this
+ * is a plain node script with no TypeScript loader and importing a .ts module
+ * here would mean a build step to decide whether to run a build step.
+ * tests/unit/extension-gate.test.ts asserts the two spellings match.
+ *
+ * `npm run extension:build` still works with the flag set, which is how
+ * somebody works on the add-on or packages it the day the answer arrives.
+ */
+const EXTENSION_FLAG = 'BROWSER_EXTENSION_ENABLED'
+const enabled = (process.env[EXTENSION_FLAG] ?? '').trim().toLowerCase() === 'true'
+
+if (!enabled) {
+  console.log(
+    `extension: not packaged — ${EXTENSION_FLAG} is not 'true'. ` +
+      'The browser extension is off pending Etsy API Terms item 24; see lib/extension/availability.ts.',
+  )
+  process.exit(0)
+}
+
 if (process.argv.includes('--if-missing')) {
   const built = BROWSERS.every((b) => fs.existsSync(path.join(here, 'build', b.name, 'manifest.json')))
   if (built) {

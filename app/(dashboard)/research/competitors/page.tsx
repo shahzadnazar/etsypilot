@@ -13,8 +13,9 @@ import { shopContext } from '@/lib/permissions'
 import { formatRelative } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
 import { isDemoMode } from '@/lib/etsy'
+import { ModelledNotice } from '@/components/research/modelled-notice'
 
-export const metadata: Metadata = { title: 'Competitors' }
+export const metadata: Metadata = { title: 'Compare shops' }
 
 /*
  * Competitor shop profile (artboard 34).
@@ -53,8 +54,8 @@ export default async function CompetitorsPage({
   return (
     <>
       <PageHeader
-        title="Competitors"
-        subtitle="Shops you are tracking, from what is publicly visible on their shop pages · estimates are modelled, not Etsy figures"
+        title="Compare shops"
+        subtitle="Shops you are tracking · every figure modelled from public marketplace signals — nothing is read from a shop page, and none of it is Etsy data"
       />
 
       {view.notFound ? (
@@ -111,7 +112,7 @@ export default async function CompetitorsPage({
                   <p className="text-caption text-muted-1">
                     {shop.location} · opened {shop.openedYear} ·{' '}
                     <span className="tnum">{shop.activeListings.toLocaleString('en-US')}</span>{' '}
-                    active listings · last observed {formatRelative(shop.observedAt)}
+                    active listings · model last refreshed {formatRelative(shop.observedAt)}
                   </p>
                 </div>
                 <span
@@ -126,11 +127,14 @@ export default async function CompetitorsPage({
                 </span>
               </Card>
 
-              <section aria-label="Publicly observable" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <section
+                aria-label="Figures a shop page shows, modelled"
+                className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+              >
                 <Observed
                   label="Active listings"
                   value={shop.activeListings.toLocaleString('en-US')}
-                  note="Publicly observable"
+                  note="Modelled from public signals"
                   demo={demoData}
                 />
                 <Observed
@@ -195,12 +199,12 @@ export default async function CompetitorsPage({
                   <Card className="p-[18px]">
                     <h2 className="pb-1 text-section text-ink-1">Compared with your shop</h2>
                     <p className="pb-3 text-caption text-muted-1">
-                      Both sides observable — yours from your connected shop, theirs from their
-                      public pages.
+                      Yours is read from your connected shop. Theirs is modelled — the figure a
+                      shop page would show, estimated rather than fetched.
                     </p>
                     <table className="w-full border-collapse text-body">
                       <caption className="sr-only">
-                        Your shop against {shop.name}, on the figures both shops make visible.
+                        Your shop against {shop.name}, on the figures a shop page makes visible.
                       </caption>
                       <thead>
                         <tr className="bg-canvas-soft text-left text-label text-muted-1">
@@ -253,7 +257,8 @@ export default async function CompetitorsPage({
                   <Card className="p-[18px]">
                     <h2 className="pb-1 text-section text-ink-1">Tags they lean on</h2>
                     <p className="pb-3 text-caption text-muted-1">
-                      Counted across their active listings, against how often each appears on yours.
+                      Modelled across their active listings, against how often each appears on
+                      yours — which is counted, because that shop is yours.
                     </p>
                     <ul className="flex flex-col gap-2">
                       {view.comparison.gaps.map((gap) => (
@@ -292,6 +297,23 @@ export default async function CompetitorsPage({
           ) : null}
         </>
       )}
+
+      <div className="mt-4">
+        <ModelledNotice
+          lead={
+            <>
+              <strong>Every figure on this page is modelled, including the ones that look
+              countable.</strong> Nothing here is Etsy data and nothing is read from a shop page:
+              active listings, reviews, median price and 30-day churn describe what a shop page
+              shows to anybody, but the numbers come from a model of it, not from a visit to it.
+              Monthly sales and revenue are estimates with confidence attached, because only the
+              shop owner can see the real ones.
+            </>
+          }
+          excludes="Private figures of any kind, ads, off-platform sales, wholesale, refunds"
+          methodologyHref="/data/methodology#competitor-sales"
+        />
+      </div>
     </>
   )
 }
@@ -312,11 +334,26 @@ function Observed({
       <div className="flex items-center justify-between gap-2">
         <span className="text-label text-muted-1">{label}</span>
         {/*
-         * VERIFIED, not estimated. These are counted off the shop's own public
-         * pages — the same standing as a figure read from a receipt, and a
-         * different standing from the modelled sales below.
+         * ── THIS BADGE SAID VERIFIED, AND THAT WAS FALSE ─────────────────
+         *
+         * The comment here read: "VERIFIED, not estimated. These are counted
+         * off the shop's own public pages — the same standing as a figure
+         * read from a receipt." Nothing counts anything off any page. The
+         * only implementation behind getSignalsService() is
+         * MockMarketSignalsService, so an active-listing count has exactly
+         * the same standing as the modelled sales below it: a model.
+         *
+         * VERIFIED is the strongest word this product has. It means a figure
+         * was read from a source that can be pointed at, and the whole
+         * provenance system is worth nothing if it is also used for the
+         * figures that merely look countable. ESTIMATED is what these are.
+         *
+         * When a real observation source exists — and lib/signals may not be
+         * it, because scraping Etsy is Prohibited Behavior item 24 — this
+         * can change back, and the srDetail can name the source it came
+         * from.
          */}
-        <ProvenanceBadge type="VERIFIED" demo={demo} srDetail="Counted from public shop pages" />
+        <ProvenanceBadge type="ESTIMATED" demo={demo} srDetail="Modelled, not counted" />
       </div>
       <span className="tnum text-[22px] font-semibold leading-none text-ink-1">{value}</span>
       <span className="text-caption text-muted-1">{note}</span>

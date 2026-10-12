@@ -106,7 +106,22 @@ describe('the packaged extension holds no credentials', () => {
 
   function ensureBuilt(): void {
     if (fs.existsSync(posixJoin(built, 'chrome', 'manifest.json'))) return
-    execFileSync('node', ['extension/build.mjs'], { cwd: ROOT, stdio: 'pipe' })
+    /*
+     * With BROWSER_EXTENSION_ENABLED unset the build script packages nothing
+     * and exits 0 — that is the point of the switch, and predev/prebuild now
+     * produce no add-on at all (Etsy Prohibited Behavior item 24).
+     *
+     * These checks are about what the PACKAGE contains when one is made: no
+     * permission beyond activeTab, no forbidden browser API, nothing shaped
+     * like a credential. They are the reason it is safe to turn the
+     * extension back on, so they must keep running while it is off. So the
+     * flag is passed to this one child process and nowhere else.
+     */
+    execFileSync('node', ['extension/build.mjs'], {
+      cwd: ROOT,
+      stdio: 'pipe',
+      env: { ...process.env, BROWSER_EXTENSION_ENABLED: 'true' },
+    })
   }
 
   function filesIn(dir: string): string[] {
@@ -240,7 +255,19 @@ describe('the endpoint answers only the extension', () => {
 
   async function headersFor(origin: string | null, ids: string): Promise<Headers> {
     const previous = process.env.EXTENSION_IDS
+    /*
+     * The extension is OFF by default now — Etsy's Prohibited Behavior item
+     * 24 — and this route answers 404 while it is. These checks are about
+     * what the endpoint does WHEN IT IS OFFERED: the CORS allow-list, the
+     * cache headers, the refusal of an unknown origin. So the flag is set
+     * here, for the length of one call, and restored.
+     *
+     * tests/unit/extension-gate.test.ts is the other half: it drives the same
+     * route with the flag absent and asserts the 404.
+     */
+    const previousFlag = process.env.BROWSER_EXTENSION_ENABLED
     process.env.EXTENSION_IDS = ids
+    process.env.BROWSER_EXTENSION_ENABLED = 'true'
     try {
       // Imported inside the test so the env var is read at call time.
       const { GET } = await import('@/app/api/extension/listing/route')
@@ -252,6 +279,8 @@ describe('the endpoint answers only the extension', () => {
     } finally {
       if (previous === undefined) delete process.env.EXTENSION_IDS
       else process.env.EXTENSION_IDS = previous
+      if (previousFlag === undefined) delete process.env.BROWSER_EXTENSION_ENABLED
+      else process.env.BROWSER_EXTENSION_ENABLED = previousFlag
     }
   }
 

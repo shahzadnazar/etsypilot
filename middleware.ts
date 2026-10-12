@@ -42,6 +42,8 @@ import { cspFor } from '@/lib/security/csp'
 import { checkCsrf } from '@/lib/security/csrf'
 import { rateLimit } from '@/lib/security/rate-limit'
 import { PRODUCT_SLUG } from '@/lib/brand'
+import { extensionEnabled } from '@/lib/extension/availability'
+import { isExtensionPath } from '@/lib/security/extension-route'
 
 /**
  * A path no route will ever match, used to make /admin genuinely disappear.
@@ -145,6 +147,26 @@ export async function middleware(request: NextRequest) {
   const hideAdminRoute = adminRoute.matched && !adminRoute.reachable
 
   /*
+   * ── THE BROWSER EXTENSION, HIDDEN THE SAME WAY /admin IS ──────────────
+   *
+   * Etsy's Prohibited Behavior item 24 names browser extensions and covers
+   * promoting their use. While lib/extension/availability.ts says the
+   * extension is off, its surfaces are not disabled — they are GONE, which is
+   * a different thing: a disabled page still tells a reviewer the feature
+   * exists and is merely switched off, and item 24 is about offering it.
+   *
+   * Here rather than in each route for the same reason /admin is here: a
+   * route handler that forgets the check is a working download, and the two
+   * API routes under /api/extension are the ones that would actually serve
+   * the add-on. One rewrite covers the page, both routes, and anything added
+   * under those paths later.
+   *
+   * Rewritten rather than returned, so the 404 still carries the nonce and
+   * the CSP — same reasoning as the /admin rewrite below.
+   */
+  const hideExtension = isExtensionPath(url.pathname) && !extensionEnabled()
+
+  /*
    * Then rate limiting, and only for /api. Pages are cheap and a seller
    * clicking around a dashboard must never be throttled; the API routes are
    * where a loop costs real work (/api/export runs the whole profit domain).
@@ -212,9 +234,10 @@ export async function middleware(request: NextRequest) {
    * this block would be the only page in the product served without a policy —
    * and a differently-shaped response is the leak this is trying to close.
    */
-  const response = hideAdminRoute
-    ? NextResponse.rewrite(new URL(NOWHERE, request.url), { request: { headers } })
-    : NextResponse.next({ request: { headers } })
+  const response =
+    hideAdminRoute || hideExtension
+      ? NextResponse.rewrite(new URL(NOWHERE, request.url), { request: { headers } })
+      : NextResponse.next({ request: { headers } })
   response.headers.set('Content-Security-Policy', csp)
 
   /*

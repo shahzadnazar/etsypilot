@@ -14,6 +14,7 @@ import { disableTwoFactor } from '@/lib/auth/mfa-actions'
 import { Button } from '@/components/ui/button'
 import { shopContext } from '@/lib/permissions'
 import { formatDate, formatDateTime, formatRelative } from '@/lib/utils/format'
+import { extensionEnabled } from '@/lib/extension/availability'
 
 export const metadata: Metadata = { title: 'Security' }
 
@@ -264,7 +265,16 @@ export default async function SecurityPage() {
             ))}
           </ul>
           )}
-          {view.sessions.some((s) => s.kind === 'EXTENSION') ? (
+          {/*
+            * The note names the extension and links to its page, so it is
+            * gated with everything else while the extension is off. The
+            * session ROW itself is left alone: if a deployment somehow still
+            * holds an extension session, hiding the row would hide access
+            * that exists, which is the opposite of what a security page is
+            * for. With the extension off no such session can be created —
+            * /api/extension does not answer.
+            */}
+          {extensionEnabled() && view.sessions.some((s) => s.kind === 'EXTENSION') ? (
           <p className="max-w-prose text-caption leading-relaxed text-muted-1">
             The extension is listed here because it has access, even though it holds no Etsy
             credential and cannot write anything.{' '}

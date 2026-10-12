@@ -1,16 +1,40 @@
 /*
  * Competitor shops (artboard 34).
  *
- * The vocabulary is Analyse / Compare / Track, never "spy" — a design rule
- * with a product reason behind it: everything here is publicly visible on the
- * shop page, and calling it surveillance both overstates what it is and invites
- * a seller to expect more than it can give.
+ * Nothing here is private: every figure describes something a shop page shows
+ * to anybody, or a model of it. Calling that surveillance would both overstate
+ * what it is and invite a seller to expect more than it can give.
  *
- * The split that matters is between OBSERVED and ESTIMATED, and it is the same
- * split as everywhere else. Active listings, reviews, median price and the
- * 30-day listing churn are counted off public pages. Monthly sales and revenue
- * are modelled, so they are ranges with confidence attached, and the page says
- * out loud that only the shop owner can see the real figures.
+ * ── WHAT THESE FIGURES ACTUALLY ARE, TODAY ───────────────────────────────
+ *
+ * This comment used to say that active listings, reviews, median price and the
+ * 30-day listing churn "are counted off public pages". NOTHING COUNTS
+ * ANYTHING OFF ANY PAGE. The only implementation behind getSignalsService()
+ * is MockMarketSignalsService; every figure on this screen is modelled, the
+ * observed-looking ones included.
+ *
+ * The sentence described the plan rather than the code, and the plan is the
+ * problem: Etsy's API Terms, Prohibited Behavior item 24, forbids automated
+ * systems that access, analyse or scrape the Etsy Site unless Etsy authorises
+ * it in writing. A live adapter written against lib/signals/interface.ts and
+ * pointed at etsy.com would put this product inside that clause, and the only
+ * thing that was ever stopping it was that nobody had written one.
+ *
+ * tests/unit/signals-boundary.test.ts now stops it: nothing reachable from
+ * lib/signals/ may import a network module or send a request, proved
+ * statically over the import closure and again at runtime with fetch trapped.
+ *
+ * ── THE SPLIT THE PAGE STILL MAKES, AND WHY IT IS STILL RIGHT ────────────
+ *
+ * Two kinds of figure, distinguished by what they WOULD be if the model were
+ * replaced by observation. Active listings, reviews, median price and churn
+ * are single values a shop page shows to anyone; monthly sales and revenue
+ * are not, so they stay ranges with confidence attached and the page says out
+ * loud that only the shop owner can see the real ones. Today both kinds are
+ * modelled, and the page says THAT out loud too — it is the first thing in
+ * the subtitle and the first line of the provenance panel.
+ *
+ * The vocabulary is Analyse / Compare / Track, never "spy".
  */
 
 import { getSignalsService } from '@/lib/signals'

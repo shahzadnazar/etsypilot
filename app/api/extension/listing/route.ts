@@ -24,6 +24,7 @@ import { AppError } from '@/lib/errors/types'
 import { getEtsyService } from '@/lib/etsy'
 import { shopContext } from '@/lib/permissions'
 import type { ExtensionResponse } from '@/lib/extension/contract'
+import { extensionEnabled } from '@/lib/extension/availability'
 
 /** Extension ids allowed to call this route, from the environment. */
 function allowedOrigins(): string[] {
@@ -67,6 +68,22 @@ export async function OPTIONS(request: Request) {
 }
 
 export async function GET(request: Request) {
+
+/*
+ * ── SECOND CHECK, BEHIND THE MIDDLEWARE REWRITE ──────────────────────────
+ *
+ * middleware.ts already rewrites every /settings/extension and /api/extension
+ * request to a path with no route while the extension is off, so this is not
+ * the only thing standing here. It is here anyway for the reason the operator
+ * area has two checks: middleware is not the only way a route can be reached
+ * — a matcher change, a rewrite from elsewhere, a future `proxy.ts` migration
+ * — and a download route that serves a packaged add-on is the single worst
+ * thing in this product to leave depending on one file.
+ */
+  if (!extensionEnabled()) {
+    return new Response('Not found', { status: 404 })
+  }
+
   const origin = request.headers.get('origin')
   const listingId = new URL(request.url).searchParams.get('listingId')
 

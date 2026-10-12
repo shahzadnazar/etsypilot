@@ -46,10 +46,14 @@ for it, and whether you accepted or rejected it. This is how the product can sho
 suggested and what you did with it, and it is why a rejected suggestion is still a record. A draft
 you never accept stays a draft: nothing reaches Etsy from one.
 
-**If you install the browser extension**
-The extension reads the address of the Etsy page you are looking at and sends the listing id to us,
-so we can show you your own figures for that listing. It reads nothing else from the page — not
-prices, not titles, not your Etsy cookies or session — and it changes nothing on it.
+**The browser extension — not currently offered**
+CobaltRank does not offer a browser extension at the moment, so nothing in this section applies to
+you today. One was built and is not published: Etsy's API Terms restrict browser extensions that
+access Etsy data, and we are not offering ours until Etsy has answered that question. If it is ever
+offered, this is what it would collect: it reads the address of the Etsy page you are looking at and
+sends the listing id to us, so we can show you your own figures for that listing. It reads nothing
+else from the page — not prices, not titles, not your Etsy cookies or session — and it changes
+nothing on it.
 
 **Costs you enter**
 The product costs, shipping costs, labour rates and other figures you type in. These are yours; we

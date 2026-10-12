@@ -3,6 +3,7 @@ import { Puzzle, Search, ShieldCheck } from 'lucide-react'
 import { ShopContext } from './shop-context'
 import { ThemeToggle } from './theme-toggle'
 import { UserMenu } from './user-menu'
+import { extensionEnabled } from '@/lib/extension/availability'
 
 /* Top bar: 64px, per Foundations 06. */
 export function TopBar({
@@ -72,13 +73,15 @@ export function TopBar({
         * be found. Same destination as the settings entry; one page, two ways
         * in.
         */}
-      <Link
-        href="/settings/extension"
-        className="hidden h-9 items-center gap-2 rounded-control border border-line px-3 text-[12px] font-semibold text-ink-2 hover:bg-canvas-soft md:inline-flex"
-      >
-        <Puzzle size={14} aria-hidden />
-        Extension
-      </Link>
+      {extensionEnabled() ? (
+        <Link
+          href="/settings/extension"
+          className="hidden h-9 items-center gap-2 rounded-control border border-line px-3 text-[12px] font-semibold text-ink-2 hover:bg-canvas-soft md:inline-flex"
+        >
+          <Puzzle size={14} aria-hidden />
+          Extension
+        </Link>
+      ) : null}
 
       {/*
         * The way back to the console, and the only /admin href in the seller

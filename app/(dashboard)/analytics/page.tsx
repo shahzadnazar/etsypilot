@@ -15,7 +15,7 @@ import { formatDate, formatPercent } from '@/lib/utils/format'
 import type { ProvenanceType } from '@/lib/provenance/types'
 import { isDemoMode } from '@/lib/etsy'
 
-export const metadata: Metadata = { title: 'Shop analytics' }
+export const metadata: Metadata = { title: 'Your sales records' }
 
 /*
  * Shop analytics (artboard 51).
@@ -63,7 +63,7 @@ export default async function AnalyticsPage() {
     return (
       <>
         <PageHeader
-          title="Shop analytics"
+          title="Your sales records"
           subtitle="Your own orders and payments, summed over the reporting period."
         />
         <EmptyState
@@ -80,9 +80,25 @@ export default async function AnalyticsPage() {
 
   return (
     <>
+      {/*
+        * ── "YOUR SALES RECORDS", NOT "SHOP ANALYTICS" ──────────────────
+        *
+        * This is the one page in the Research/Analytics area that genuinely
+        * requests Etsy content through the API — the seller's own orders,
+        * payments and listings, under their own OAuth grant.
+        *
+        * Etsy's Prohibited Behavior item 25 forbids using the API to request
+        * Etsy content "for purposes of analytics" without written
+        * authorisation. A seller reading their own receipts is the ordinary
+        * purpose of the API and not what that clause is about — but the page
+        * was labelled with the exact word the clause keys on, which invites
+        * the wrong reading from somebody who has not opened it. Nothing about
+        * what this page computes changed; the title now says whose numbers
+        * these are and what they are for.
+        */}
       <PageHeader
-        title="Shop analytics"
-        subtitle={`${period} UTC · ${view.currency} · verified orders and payments from your connected shop`}
+        title="Your sales records"
+        subtitle={`${period} UTC · ${view.currency} · your own orders and payments, from your connected shop — bookkeeping, not market analysis`}
         actions={
           <>
             <Link

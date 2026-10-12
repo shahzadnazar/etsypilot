@@ -3,19 +3,23 @@ import Link from 'next/link'
 import { Markdown } from '@/lib/markdown/render'
 import { legalDocument, legalDocumentsInForce } from '@/lib/legal/documents'
 import { extensionFacts, warrantyDisclaimer } from '@/lib/legal/etsy'
+import { extensionEnabled } from '@/lib/extension/availability'
 import { DocumentDate } from '@/components/legal/document-date'
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: 'Etsy, and what this app is',
     description:
-      'CobaltRank’s relationship to Etsy, Inc.: the trademark, the warranty disclaimer, the OAuth connection, and exactly what the browser extension reads.',
+      'CobaltRank’s relationship to Etsy, Inc.: the trademark, the warranty disclaimer, the OAuth connection, and what runs where.',
     ...(legalDocumentsInForce() ? {} : { robots: { index: false, follow: false } }),
   }
 }
 
 export default function EtsyRelationshipPage() {
-  const facts = extensionFacts()
+  const extensionOffered = extensionEnabled()
+  // Reading the manifest is pointless when the section is not rendered, and
+  // on a deployment that ships without extension/ it would throw.
+  const facts = extensionOffered ? extensionFacts() : null
   const terms = legalDocument('terms')
   const privacy = legalDocument('privacy')
 
@@ -26,7 +30,7 @@ export default function EtsyRelationshipPage() {
           Etsy, and what this app is
         </h1>
         <p className="mt-2 text-[13px]" style={{ color: 'var(--muted-1)' }}>
-          Who provides CobaltRank, how it reaches your shop, and what the browser extension reads.
+          Who provides CobaltRank, how it reaches your shop, and what runs where.
         </p>
         <p className="mt-1.5 text-[13px]" style={{ color: 'var(--muted-1)' }}>
           {/*
@@ -88,98 +92,126 @@ export default function EtsyRelationshipPage() {
         </li>
       </ul>
 
-      <h2 id="extension">The browser extension, and exactly what it reads</h2>
-      <p>
-        CobaltRank offers an optional browser extension, downloadable from Settings → Extension by a
-        signed-in seller. It is not required, and nothing in the product depends on it.
-      </p>
-      <p>
-        <strong>This section is deliberately specific.</strong> An earlier draft of the Terms said
-        CobaltRank used no browser extension at all. That was wrong — one ships with the product —
-        and it was found by reading the code rather than the prose. So what follows is read out of
-        the extension&rsquo;s own manifest and source, not written from memory:
-      </p>
+      {/*
+        * Rendered only while the extension is actually offered.
+        *
+        * A legal page describing a feature that is not there is the same
+        * defect as one describing a feature inaccurately — and worse here,
+        * because item 24 covers PROMOTING a browser extension. Describing
+        * one at length on a public page, in a section about how this
+        * product relates to Etsy, is promotion whether or not anyone can
+        * install it.
+        */}
+      {facts ? (
+        <>
+        <h2 id="extension">The browser extension, and exactly what it reads</h2>
+        <p>
+          CobaltRank offers an optional browser extension, downloadable from Settings → Extension by a
+          signed-in seller. It is not required, and nothing in the product depends on it.
+        </p>
+        <p>
+          <strong>This section is deliberately specific.</strong> An earlier draft of the Terms said
+          CobaltRank used no browser extension at all. That was wrong — one ships with the product —
+          and it was found by reading the code rather than the prose. So what follows is read out of
+          the extension&rsquo;s own manifest and source, not written from memory:
+        </p>
 
-      <h3 id="extension-does">What it does</h3>
-      <ul>
-        <li>
-          On an Etsy page you have already opened, it reads{' '}
-          <strong>the address in your address bar</strong>, takes the listing id out of it, and sends
-          that id — and nothing else — to CobaltRank at{' '}
-          <code>{facts.appEndpoint}</code>.
-        </li>
-        <li>
-          CobaltRank answers with <strong>your own figures for your own listing</strong>, which the
-          server already holds, having read them from Etsy&rsquo;s API under your OAuth token. Those
-          figures are shown in the extension&rsquo;s popup.
-        </li>
-        <li>
-          It authenticates as you by your existing CobaltRank session cookie, which the browser
-          sends. The extension holds no token, no key and no credential of any kind — neither
-          CobaltRank&rsquo;s nor Etsy&rsquo;s.
-        </li>
-      </ul>
+        <h3 id="extension-does">What it does</h3>
+        <ul>
+          <li>
+            On an Etsy page you have already opened, it reads{' '}
+            <strong>the address in your address bar</strong>, takes the listing id out of it, and sends
+            that id — and nothing else — to CobaltRank at{' '}
+            <code>{facts.appEndpoint}</code>.
+          </li>
+          <li>
+            CobaltRank answers with <strong>your own figures for your own listing</strong>, which the
+            server already holds, having read them from Etsy&rsquo;s API under your OAuth token. Those
+            figures are shown in the extension&rsquo;s popup.
+          </li>
+          <li>
+            It authenticates as you by your existing CobaltRank session cookie, which the browser
+            sends. The extension holds no token, no key and no credential of any kind — neither
+            CobaltRank&rsquo;s nor Etsy&rsquo;s.
+          </li>
+        </ul>
 
-      <h3 id="extension-does-not">What it does not do</h3>
-      <ul>
-        <li>
-          <strong>It does not read the content of any Etsy page.</strong> No titles, no prices, no
-          stock levels, no search results, no other seller&rsquo;s listing — it does not touch the
-          page&rsquo;s markup at all.
-        </li>
-        <li>
-          <strong>It does not read your Etsy cookies, storage, headers or session</strong>, and it
-          holds no permission that would let it.
-        </li>
-        <li>
-          <strong>It does not change anything on any Etsy page.</strong> Nothing is injected,
-          rewritten, hidden or overlaid.
-        </li>
-        <li>
-          <strong>It never calls etsy.com.</strong> Its only network destination is the CobaltRank
-          application. Every figure it shows came from Etsy&rsquo;s official API, server-side, under
-          your grant.
-        </li>
-        <li>
-          <strong>It runs on no site other than Etsy</strong>, and only while you are on it.
-        </li>
-      </ul>
+        <h3 id="extension-does-not">What it does not do</h3>
+        <ul>
+          <li>
+            <strong>It does not read the content of any Etsy page.</strong> No titles, no prices, no
+            stock levels, no search results, no other seller&rsquo;s listing — it does not touch the
+            page&rsquo;s markup at all.
+          </li>
+          <li>
+            <strong>It does not read your Etsy cookies, storage, headers or session</strong>, and it
+            holds no permission that would let it.
+          </li>
+          <li>
+            <strong>It does not change anything on any Etsy page.</strong> Nothing is injected,
+            rewritten, hidden or overlaid.
+          </li>
+          <li>
+            <strong>It never calls etsy.com.</strong> Its only network destination is the CobaltRank
+            application. Every figure it shows came from Etsy&rsquo;s official API, server-side, under
+            your grant.
+          </li>
+          <li>
+            <strong>It runs on no site other than Etsy</strong>, and only while you are on it.
+          </li>
+        </ul>
 
-      <h3 id="extension-permissions">The permissions it asks your browser for</h3>
-      <p>
-        Read from <code>extension/manifest.chrome.json</code> as this page was served, so this list
-        is the extension&rsquo;s actual request rather than a description of it:
-      </p>
-      <div className="legal-table-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Manifest field</th>
-              <th scope="col">Value</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>permissions</td>
-              <td>
-                <code>{facts.permissions.join(', ') || 'none'}</code>
-              </td>
-            </tr>
-            <tr>
-              <td>host_permissions</td>
-              <td>
-                <code>{facts.hostPermissions.join(', ') || 'none'}</code>
-              </td>
-            </tr>
-            <tr>
-              <td>content script runs on</td>
-              <td>
-                <code>{facts.contentScriptMatches.join(', ') || 'nothing'}</code>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        <h3 id="extension-permissions">The permissions it asks your browser for</h3>
+        <p>
+          Read from <code>extension/manifest.chrome.json</code> as this page was served, so this list
+          is the extension&rsquo;s actual request rather than a description of it:
+        </p>
+        <div className="legal-table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Manifest field</th>
+                <th scope="col">Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>permissions</td>
+                <td>
+                  <code>{facts.permissions.join(', ') || 'none'}</code>
+                </td>
+              </tr>
+              <tr>
+                <td>host_permissions</td>
+                <td>
+                  <code>{facts.hostPermissions.join(', ') || 'none'}</code>
+                </td>
+              </tr>
+              <tr>
+                <td>content script runs on</td>
+                <td>
+                  <code>{facts.contentScriptMatches.join(', ') || 'nothing'}</code>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        </>
+      ) : (
+        <>
+        <h2 id="extension">Browser extensions</h2>
+        <p>
+          <strong>CobaltRank does not offer a browser extension.</strong> There is nothing to
+          install, nothing to download, and no part of this product runs inside a page on etsy.com.
+        </p>
+        <p>
+          Item 24 of Etsy&rsquo;s Prohibited Behavior list names browser extensions, and covers
+          promoting their use as well as using one. An extension was built for this product and is
+          not offered while that clause is unanswered: it is switched off rather than advertised and
+          withheld, so there is no download route, no settings page and no link to one.
+        </p>
+        </>
+      )}
 
       <h2 id="scraping">Scraping, and Etsy&rsquo;s rules about extensions</h2>
       <p>
@@ -190,31 +222,40 @@ export default function EtsyRelationshipPage() {
       </p>
       <p>
         CobaltRank obtains <strong>every piece of Etsy data through Etsy&rsquo;s official API</strong>,
-        server-side, under the OAuth token the seller granted. The extension is not a second route
-        to Etsy data: it reads no Etsy page content, calls no Etsy endpoint, and the only thing it
-        sends anywhere is a listing id taken from the address of a page the seller had already
-        opened.
+        server-side, under the OAuth token the seller granted. Nothing in this product reads a page
+        on etsy.com, and no part of it runs in your browser against Etsy&rsquo;s site.
       </p>
-      <p>
-        <strong>What CobaltRank does not claim here</strong> is that Etsy has reviewed or authorised
-        the extension. It has not been submitted to Etsy, and no written authorisation has been
-        given or asked for. Whether reading a listing id out of a URL counts as &ldquo;accessing
-        Etsy data&rdquo; for the purposes of that rule is Etsy&rsquo;s call, not ours, and this page
-        describes the behaviour precisely rather than asserting a conclusion about it. If Etsy says
-        the extension falls the wrong side of that line, the extension is withdrawn — nothing in the
-        product depends on it.
-      </p>
+      {extensionOffered ? (
+        <p>
+          <strong>What CobaltRank does not claim here</strong> is that Etsy has reviewed or
+          authorised the extension. It has not been submitted to Etsy, and no written authorisation
+          has been given or asked for. Whether reading a listing id out of a URL counts as
+          &ldquo;accessing Etsy data&rdquo; for the purposes of that rule is Etsy&rsquo;s call, not
+          ours, and this page describes the behaviour precisely rather than asserting a conclusion
+          about it. If Etsy says the extension falls the wrong side of that line, the extension is
+          withdrawn — nothing in the product depends on it.
+        </p>
+      ) : (
+        <p>
+          The extension that was built for this product is not offered, and no written
+          authorisation has been asked for or given. Whether reading a listing id out of a URL
+          counts as &ldquo;accessing Etsy data&rdquo; under item 24 is Etsy&rsquo;s call rather
+          than ours, and it is not a question worth answering unilaterally — so it is off until
+          Etsy answers it. Nothing in the product depends on it.
+        </p>
+      )}
 
       <h2 id="elsewhere">Where the rest of this is written down</h2>
       <ul>
         <li>
-          <Link href="/legal/terms">Terms of Service</Link> — section 4 covers connecting your shop,
-          including the same extension description, and section 12 carries the disclaimer above.
+          <Link href="/legal/terms">Terms of Service</Link> — section 4 covers connecting your shop
+          {extensionOffered ? ', including the same extension description' : ''}, and section 12
+          carries the disclaimer above.
         </li>
         <li>
-          <Link href="/legal/privacy">Privacy Policy</Link> — section 2 lists what the extension
-          collects, section 7 covers the OAuth connection, and section 5 covers how long Etsy content
-          is kept.
+          <Link href="/legal/privacy">Privacy Policy</Link> —{' '}
+          {extensionOffered ? 'section 2 lists what the extension collects, ' : ''}section 7 covers
+          the OAuth connection, and section 5 covers how long Etsy content is kept.
         </li>
         <li>
           <Link href="/legal/subprocessors">Sub-processors</Link> — Etsy, Inc. is listed as the

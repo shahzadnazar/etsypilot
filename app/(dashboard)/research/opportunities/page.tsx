@@ -16,6 +16,7 @@ import { getSession } from '@/lib/auth'
 import { formatRelative } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
 import { isDemoMode } from '@/lib/etsy'
+import { ModelledNotice } from '@/components/research/modelled-notice'
 
 export const metadata: Metadata = { title: 'Opportunities' }
 
@@ -63,7 +64,7 @@ export default async function OpportunitiesPage({
     <>
       <PageHeader
         title="Find hot products"
-        subtitle={`${view.market} · modelled from public marketplace signals · sales and revenue are estimated ranges, not official Etsy figures`}
+        subtitle={`${view.market} · every figure modelled from public marketplace signals — sales and revenue are estimated ranges, not Etsy data`}
         actions={
           <Link
             href="/research/keywords"
@@ -317,6 +318,20 @@ export default async function OpportunitiesPage({
             Read the full methodology →
           </Link>
         </p>
+      </div>
+
+      <div className="mt-4">
+        <ModelledNotice
+          lead={
+            <>
+              <strong>Every figure on this page is modelled.</strong> Nothing here is Etsy data.
+              Etsy publishes no product-level sales figures to anyone, so monthly sales, revenue and
+              price bands are estimated from public marketplace signals and shown as ranges.
+            </>
+          }
+          excludes="Ads, off-platform traffic, wholesale, refunds, and any shop that has opted out of public listing"
+          methodologyHref="/data/methodology#keyword-opportunity"
+        />
       </div>
     </>
   )
