@@ -67,11 +67,25 @@ export default async function AuditLogPage({
       <Card className="mt-5 flex flex-col gap-2 p-[18px]">
         <h2 className="text-label text-muted-1">Retention</h2>
         <p className="max-w-prose text-small leading-relaxed text-ink-2">
+          {/*
+            * ── A RETENTION PERIOD NOTHING ENFORCES ────────────────────────
+            *
+            * This branch said records are "kept for 90 days on Solo", which
+            * asserts two things and had neither. There is no Solo plan to be
+            * on — nobody can buy one (lib/billing/index.ts) — and nothing
+            * prunes: grep the tree for a job, a cron, a query or a migration
+            * that deletes from audit_records and the result is this comment.
+            *
+            * A period the product announces and does not apply is a policy
+            * claim with no mechanism, which is the same defect as a named
+            * source with no adapter. Building a pruner is the owner's
+            * decision, so the screen states the plan's period as what the
+            * plan SETS and says plainly that nothing acts on it yet.
+            */}
           Records are append-only and{' '}
           {view.plan === null ? (
             <>
-              no plan is in force, so no plan sets a retention period — nothing here is deleted on
-              a schedule
+              no plan is in force, so no plan sets a retention period
             </>
           ) : view.retentionDays === null ? (
             <>
@@ -79,11 +93,13 @@ export default async function AuditLogPage({
             </>
           ) : (
             <>
-              kept for <span className="tnum font-semibold">{view.retentionDays}</span> days on{' '}
-              {view.plan.name}
+              {view.plan.name} sets a retention period of{' '}
+              <span className="tnum font-semibold">{view.retentionDays}</span> days
             </>
           )}
           {'. '}
+          Nothing is deleted on a schedule today: CobaltRank runs no process that removes audit
+          records, so nothing has been removed from this log.{' '}
           {/*
             * Only the OTHER plans. Naming the seller's own retention twice —
             * "90 days on Solo (90 days on Solo, 365 days on Growth)" — read
@@ -93,7 +109,7 @@ export default async function AuditLogPage({
             .filter((r) => r.plan !== view.plan?.name)
             .map((r) => (
               <span key={r.plan}>
-                On {r.plan} they are kept for <span className="tnum">{r.days}</span> days.{' '}
+                On {r.plan} the period is <span className="tnum">{r.days}</span> days.{' '}
               </span>
             ))}
           Deleting your shop data removes the shop&rsquo;s records; the account-level log of who

@@ -216,11 +216,17 @@ export function auditLogExport(args: {
     context: [
       'Every action taken on this shop through CobaltRank, including the ones that were refused.',
       'All times are UTC.',
+      /*
+       * The same sentence as the screen, and for the same reason: the plan
+       * SETS a period and nothing applies it. See the note on
+       * app/(dashboard)/settings/audit-log/page.tsx.
+       */
       args.planName === null
-        ? 'No plan is in force, so no plan sets a retention period. Nothing in this export is deleted on a schedule.'
+        ? 'No plan is in force, so no plan sets a retention period.'
         : args.retentionDays === null
           ? `Plan ${args.planName} connects no shop, so no shop records are kept.`
-          : `Records are kept for ${args.retentionDays} days on ${args.planName}.`,
+          : `${args.planName} sets a retention period of ${args.retentionDays} days.`,
+      'Nothing is deleted on a schedule today: CobaltRank runs no process that removes audit records.',
     ],
     excludes: [
       'Changes made directly on Etsy are not recorded here. They appear as differences at the next sync.',

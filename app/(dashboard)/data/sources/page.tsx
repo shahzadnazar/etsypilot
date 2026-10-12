@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card'
 import { ProvenanceBadge } from '@/components/provenance/provenance-badge'
 import { dataSources, NOT_RELEASED } from '@/domain/data-sources/service'
 import { TRADEMARK_NOTICE } from '@/domain/connect/types'
+import { getSession } from '@/lib/auth'
 import { isDemoMode } from '@/lib/etsy'
 
 export const metadata: Metadata = { title: 'Data sources' }
@@ -24,8 +25,30 @@ export const metadata: Metadata = { title: 'Data sources' }
  * Nothing on this page is authored. Every status is read from the adapter that
  * serves that source, so the page cannot claim a live connection while the
  * mock is running (D59a).
+ *
+ * ── IT HAS TO ASK WHO IS ASKING FIRST, AND THAT IS NOT DECORATION ────────
+ *
+ * Every status on this page is read through isDemoMode(), which is PER
+ * REQUEST: `process.env.ETSY_MODE !== 'live' || isPublicDemoRequest()`. The
+ * second half is a flag that getSession() sets, and getSession() is the only
+ * place that sets it (lib/demo-request.ts).
+ *
+ * This page did not call it. Next renders a page and its layout in parallel,
+ * so the page's `dataSources()` ran BEFORE the layout's getSession() had
+ * marked the request — and the flag fails closed, to "not a public demo". So a
+ * public-demo visitor was served this table describing a LIVE deployment:
+ * "Etsy Open API · Connected" to somebody with no account, "Demo dataset ·
+ * Off" on the screen reached from the demo banner, and "Market signals · Not
+ * built yet" beside Research screens that were showing them the sample.
+ * Measured in a browser, with the demo banner visible above the table.
+ *
+ * Awaiting the session is the whole fix: it resolves who is asking before
+ * anything asks what mode they are in. The value is deliberately unused — the
+ * layout decides what an unauthenticated request sees, and duplicating that
+ * here would be a second answer to a question already answered.
  */
-export default function DataSourcesPage() {
+export default async function DataSourcesPage() {
+  await getSession()
   const sources = dataSources()
 
   return (

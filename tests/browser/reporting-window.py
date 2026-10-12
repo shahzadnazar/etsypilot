@@ -73,10 +73,28 @@ with sync_playwright() as p:
         pg.wait_for_selector("main", timeout=20000)
         return pg.locator("main").inner_text()
 
+    def main_text_when(route, marker, timeout_ms=20000):
+        """Poll for a marker, because <main> appears before its content does.
+
+        Next streams the dashboard — shop, plan, actions and the metric tiles
+        resolve separately — so wait_for_selector("main") returns while the
+        tiles are still suspended. This check aborted intermittently on exactly
+        that: "the shop has no synced orders" against a shop with 87 of them,
+        on a server that had just started. A fixed sleep would be the same race
+        with a longer fuse.
+        """
+        waited = 0
+        text = main_text(route)
+        while marker not in text and waited < timeout_ms:
+            pg.wait_for_timeout(250)
+            waited += 250
+            text = pg.locator("main").inner_text()
+        return text
+
     # The server must be live and the shop must be connected and synced. Run
     # against demo mode and every assertion below passes for the wrong reason:
     # the fixture window IS the right window there.
-    dash = main_text("/dashboard")
+    dash = main_text_when("/dashboard", "Gross sales")
     if pg.locator('[aria-label="Demo mode"], [aria-label="Public demo"]').count() > 0:
         print("ABORT: the server at " + BASE + " is in DEMO mode. Start it with ETSY_MODE=live.",
               file=sys.stderr)

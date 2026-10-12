@@ -29,13 +29,19 @@ export interface Plan {
     rollbackDays: number | null
     pulseHistoryMonths: number | null
     /*
-     * How long the audit log keeps this shop's records. Null on Free, which
-     * connects no shop and therefore has no shop records to keep.
+     * The retention period this plan SETS. Null on Free, which connects no
+     * shop and therefore has no shop records to keep.
      *
      * It lives here rather than in the audit-log domain because the retention
      * block on that page is a statement about the seller's plan, and a second
      * copy of "90 days on Solo" written next to the table is a copy that gets
      * left behind the day the plan changes.
+     *
+     * NOTHING APPLIES IT. There is no pruner, no job and no migration that
+     * deletes from audit_records, so this is the period the tier commits to
+     * and not a description of what happens. Both surfaces that print it say
+     * so; the Privacy Policy's [[RETENTION_DAYS]] placeholder is waiting on
+     * the same decision.
      */
     auditRetentionDays: number | null
   }
