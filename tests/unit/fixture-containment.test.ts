@@ -89,6 +89,13 @@ const FIXTURES = [
   // that found the window: the audit's clock and the demo shop's stats import.
   'DEMO_AUDIT_NOW',
   'DEMO_STATS_IMPORT_AT',
+  /*
+   * The billing clock, the fourth frozen "now" in this product. It is
+   * 2026-08-20 in lib/billing/mock.ts and domain/billing/service.ts read it as
+   * `today` in every mode, so a live seller's proration was counted from
+   * August. domain/billing/demo.ts is the one place it may be read.
+   */
+  'BILLING_NOW',
   'DEMO_EVENTS',
   'DEMO_COUNTS',
   'DEMO_COST_INPUTS',
@@ -108,6 +115,11 @@ const FIXTURES = [
   'isEmptyDataset',
   'DEMO_LAST_SYNCED',
   'DEMO_GENERATIONS_USED',
+  /*
+   * DEMO_PLAN is in lib/billing/mock.ts now, which this sweep does not read —
+   * the fixture lives with the fixture. It stays on this list so that moving
+   * it back into domain/ fails here.
+   */
   'DEMO_PLAN',
   'demoShops',
   'demoLists',
@@ -125,6 +137,7 @@ const FIXTURES = [
 const ALLOWED = [
   'domain/action-center/demo.ts',
   'domain/audit/demo.ts',
+  'domain/billing/demo.ts',
   'domain/connect/demo.ts',
   'domain/analytics/experiments-demo.ts',
   'domain/audit-log/demo.ts',
@@ -206,24 +219,6 @@ const KNOWN_REMAINING: { file: string; symbol: string; why: string }[] = [
       'The call site of the above. Listed separately so that fixing the service ' +
       'without fixing the page, or the reverse, cannot leave a green guard — the ' +
       'entry has to be deleted from both ends for this list to stay honest.',
-  },
-  {
-    file: 'domain/billing/plans.ts',
-    symbol: 'DEMO_PLAN',
-    why:
-      'Every deployment runs MockBillingProvider — there is no payment provider ' +
-      'wired up — so the plan on /settings/billing is the demo plan for everyone. ' +
-      'This is not a fixture leaking into a live path; it is the whole billing ' +
-      'surface being unimplemented, and the page says so. Fixing it means ' +
-      'integrating a provider, which is a product decision, not a sweep.',
-  },
-  {
-    file: 'domain/billing/service.ts',
-    symbol: 'DEMO_PLAN',
-    why:
-      'The call site of the above, listed for the same reason the shops page is: ' +
-      'a half-fix must not be able to leave this list looking complete. Both go ' +
-      'when a real billing provider lands.',
   },
   {
     file: 'domain/admin/metrics.ts',

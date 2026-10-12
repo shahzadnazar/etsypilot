@@ -38,7 +38,8 @@ export interface ChangeHistoryView {
   total: number
   source: ChangeSource | 'ALL'
   sources: ChangeSource[]
-  plan: Plan
+  /** Null where no plan is in force. See lib/billing/index.ts. */
+  plan: Plan | null
   /** How long the trail itself is kept. Different from the rollback window. */
   retentionDays: number | null
   rollbackWindowDays: number | null
@@ -65,13 +66,18 @@ export async function getChangeHistory(
    * sent to when they want to know what CobaltRank changed, and the only place
    * a write can be undone from.
    */
+  const billing = getBillingProvider()
   const [catalogue, subscription] = await Promise.all([
     loadListings(ctx),
-    getBillingProvider().getSubscription(ctx.shopId),
+    billing ? billing.getSubscription(ctx.shopId) : null,
   ])
   const listings = catalogue.listings
-  const plan = planOf(subscription.plan)
-  const window = plan.limits.rollbackDays
+  /*
+   * Null where no plan is in force. The rollback window was Solo's 30 days on
+   * every live deployment, from a subscription nobody bought.
+   */
+  const plan = subscription ? planOf(subscription.plan) : null
+  const window = plan?.limits.rollbackDays ?? null
 
   /*
    * From `change_jobs`, or the demo narrative. Both are the shop's own: the
@@ -86,7 +92,7 @@ export async function getChangeHistory(
   const rows: ChangeRow[] = jobs.map((job) => ({
     job,
     listingCount: job.items.length,
-    rollback: rollbackStateOf(job, listings, { window, planName: plan.name, now }),
+    rollback: rollbackStateOf(job, listings, { window, planName: plan?.name ?? null, now }),
   }))
 
   const shown = rows.filter((r) => (source === 'ALL' ? true : r.job.source === source))
@@ -98,7 +104,7 @@ export async function getChangeHistory(
     source,
     sources: CHANGE_SOURCES.filter((s) => rows.some((r) => r.job.source === s)),
     plan,
-    retentionDays: plan.limits.auditRetentionDays,
+    retentionDays: plan?.limits.auditRetentionDays ?? null,
     rollbackWindowDays: window,
     selected: selectedRow
       ? { row: selectedRow, drift: driftOf(selectedRow.job, listings) }
@@ -141,8 +147,30 @@ export function driftOf(job: ChangeJob, listings: EtsyListing[]): DriftReport {
 function rollbackStateOf(
   job: ChangeJob,
   listings: EtsyListing[],
-  args: { window: number | null; planName: string; now: string },
+  /*
+   * `planName: null` is no plan at all, which is not the same as a plan that
+   * excludes rollback. Free keeps history readable and not reversible —
+   * NOT_ON_PLAN. No plan in force imposes no window at all.
+   */
+  args: { window: number | null; planName: string | null; now: string },
 ): RollbackState {
+  if (args.planName === null) {
+    const drift = driftOf(job, listings)
+    return drift.restorable.length === 0
+      ? {
+          kind: 'NOTHING_TO_RESTORE',
+          reason:
+            drift.blocked.length > 0
+              ? 'Every listing in this job has changed on Etsy since it ran.'
+              : 'Nothing in this job reached Etsy, so there is nothing to undo.',
+        }
+      : {
+          kind: 'AVAILABLE',
+          daysLeft: null,
+          restorable: drift.restorable.length,
+          blocked: drift.blocked.length,
+        }
+  }
   if (args.window === null) return { kind: 'NOT_ON_PLAN', planName: args.planName }
 
   const elapsed = (Date.parse(args.now) - Date.parse(job.at)) / 86_400_000

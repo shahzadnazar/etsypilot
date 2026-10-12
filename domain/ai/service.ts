@@ -230,7 +230,8 @@ export function consumeGeneration(quota: GenerationQuota): GenerationQuota {
   if (quotaExhausted(quota)) {
     throw Errors.limitReached(
       'AI generations',
-      quota.limit,
+      // Non-null by construction: quotaExhausted() is false without a limit.
+      quota.limit!,
       quota.resetsOn,
       'Manual editing, audits and bulk edits are unaffected.',
     )
@@ -244,13 +245,17 @@ export function consumeGeneration(quota: GenerationQuota): GenerationQuota {
  * A limit written down beside a plan drifts away from it — the copilot said 60
  * while billing said 500, and the seller reads both. One source (D46).
  */
-function quotaFor(plan: Plan): GenerationQuota {
-  const next = nextPlanAfter(plan.key)
+function quotaFor(plan: Plan | null): GenerationQuota {
+  const next = plan === null ? null : nextPlanAfter(plan.key)
   return {
     used: DEMO_GENERATIONS_USED,
-    limit: plan.limits.aiGenerations,
+    limit: plan?.limits.aiGenerations ?? null,
     resetsOn: allowanceResetsOn(),
-    planName: plan.name,
+    /*
+     * The plan's name, or what is true instead. It read "Solo plan" beside the
+     * allowance on every live deployment, from a subscription nobody bought.
+     */
+    planName: plan?.name ?? 'No plan',
     nextTier: next ? { name: next.name, limit: next.limits.aiGenerations } : null,
   }
 }

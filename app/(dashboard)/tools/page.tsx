@@ -55,7 +55,8 @@ const TOOL_DETAIL: Record<string, { detail: string; needs: string }> = {
     needs: 'No shop needed',
   },
   'Seasonal Calendar': {
-    detail: 'When demand for a category historically moves, modelled from public signals.',
+    detail:
+      "When a season runs, as CobaltRank assumes it — with the lift over those dates measured on your own orders.",
     needs: 'No shop needed',
   },
   'Trademark Screening': {

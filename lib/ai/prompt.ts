@@ -35,7 +35,7 @@ FACTS. Each fact carries a class:
 
   VERIFIED      Etsy returned it for this shop. Exact.
   CALCULATED    A visible formula over visible inputs.
-  ESTIMATED     Modelled from public signals. Always a range, never precise.
+  ESTIMATED     Modelled, not measured. Always a range, never precise.
   SELLER_INPUT  The seller entered it.
   UNAVAILABLE   Etsy does not expose it. It does not exist for you.
 
@@ -73,7 +73,7 @@ seller as "you".`
 const CLASS_NOTE: Record<PromptFact['provenance'], string> = {
   VERIFIED: 'VERIFIED — from this shop’s Etsy receipts, exact',
   CALCULATED: 'CALCULATED — computed from the inputs named',
-  ESTIMATED: 'ESTIMATED — modelled from public signals, a range',
+  ESTIMATED: 'ESTIMATED — modelled, not measured, a range',
   SELLER_INPUT: 'SELLER_INPUT — the seller entered this',
   AI_DRAFT: 'AI_DRAFT — not confirmed by anyone yet',
   UNAVAILABLE: 'UNAVAILABLE — Etsy does not expose this; you do not know it',

@@ -7,6 +7,7 @@ import type { RollbackState } from '@/domain/change-history/types'
  * Four answers to "can I undo this?", and the distinctions are the point:
  *
  *   Available · 28 d     within the window, and the listings still hold it
+ *   Available            no plan in force, so no window is closing in on it
  *   Expired              the plan's window has closed. Time, nothing else.
  *   Nothing to restore   the catalogue moved, or the job never landed
  *   Not on your plan     Free keeps history readable but not reversible
@@ -22,7 +23,7 @@ export function RollbackCell({ state, jobId }: { state: RollbackState; jobId: st
           href={`/listings/change-history?job=${jobId}`}
           className="tnum text-[12.5px] font-semibold text-brand-strong underline-offset-2 hover:underline"
         >
-          Available · {state.daysLeft} d
+          {state.daysLeft === null ? 'Available' : `Available · ${state.daysLeft} d`}
         </Link>
         {state.blocked > 0 ? (
           <span className="text-caption text-muted-1">

@@ -20,14 +20,21 @@ export function PlanCards({
   currency,
 }: {
   plans: Plan[]
-  currentPlanKey: string
+  /*
+   * Null where no plan is in force, so no card is marked "YOUR PLAN".
+   *
+   * Not the empty string: a key that matches nothing would render correctly by
+   * accident, and the next person comparing `plan.key === ''` would have to
+   * work out whether that was meant. See lib/billing/index.ts.
+   */
+  currentPlanKey: string | null
   changes: PlanChange[]
   currency: string
 }) {
   return (
     <section aria-label="Plans" className="grid gap-3 lg:grid-cols-3">
       {plans.map((plan) => {
-        const current = plan.key === currentPlanKey
+        const current = currentPlanKey !== null && plan.key === currentPlanKey
         const change = changes.find((c) => c.to.key === plan.key)
 
         return (
@@ -124,8 +131,22 @@ export function PlanCards({
               </div>
             ) : (
               <div className="mt-auto pt-3">
+                {/*
+                  * THREE CASES HERE, NOT TWO.
+                  *
+                  * "No change offered" used to mean "this is your plan", which
+                  * was true while every seller had one. With no plan in force
+                  * — nobody can pay on this deployment (lib/billing/index.ts)
+                  * — no card has a change to offer, so every card said "This
+                  * is the plan you are on", on all three at once. Measured in
+                  * a browser.
+                  */}
                 <span className="text-caption text-muted-1">
-                  This is the plan you are on. Cancelling or moving is one click, below.
+                  {currentPlanKey === null
+                    ? 'Not available to buy yet.'
+                    : current
+                      ? 'This is the plan you are on. Cancelling or moving is one click, below.'
+                      : 'No change is offered from your current plan.'}
                 </span>
               </div>
             )}

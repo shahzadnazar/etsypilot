@@ -149,7 +149,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       userName={session.name}
       /* The one identifier that is never derived — see UserMenu. */
       userEmail={session.email}
-      plan={plan.name}
+      plan={plan?.name ?? null}
       /*
        * From the shop, not from DEMO_COUNTS.
        *
@@ -158,7 +158,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
        * catalogue it is counting, on every page. Exactly the defect the mock's
        * activeListingCount was fixed for (D57); this was the other end of it.
        */
-      usage={{ used: shop?.activeListingCount ?? null, limit: plan.limits.listings }}
+      /*
+       * A null limit, not Solo's 200.
+       *
+       * `currentPlan()` returns null where no plan is in force, which is every
+       * live deployment — nobody can pay yet. The chip read "Solo plan" and
+       * the meter read "6 / 200 listings" to sellers who have never paid, from
+       * MockBillingProvider's authored subscription. See lib/billing/index.ts.
+       */
+      usage={{ used: shop?.activeListingCount ?? null, limit: plan?.limits.listings ?? null }}
       /* A boolean, not the access object: see TopBar. */
       isOperator={operator !== null}
       openActionCount={actions.counts.OPEN ?? 0}

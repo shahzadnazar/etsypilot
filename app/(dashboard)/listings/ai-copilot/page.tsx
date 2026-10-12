@@ -205,18 +205,27 @@ export default async function AiCopilotPage({
 
           <Card className="flex flex-col gap-2 p-[18px]">
             <span className="text-label text-muted-1">Generations this month</span>
+            {/*
+              * No denominator where no plan is in force: nothing has been
+              * bought, so nothing caps the allowance. It read "42 of 60" to
+              * every live seller, from MockBillingProvider's Solo.
+              */}
             <Numeric className="text-[19px] font-semibold text-ink-1">
-              {view.quota.used} of {view.quota.limit}
+              {view.quota.limit === null
+                ? view.quota.used
+                : `${view.quota.used} of ${view.quota.limit}`}
             </Numeric>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-canvas-soft">
-              <div
-                className="h-full rounded-full"
-                style={{
-                  width: `${Math.min(100, (view.quota.used / view.quota.limit) * 100)}%`,
-                  background: exhausted ? 'var(--danger)' : 'var(--brand)',
-                }}
-              />
-            </div>
+            {view.quota.limit === null ? null : (
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-canvas-soft">
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${Math.min(100, (view.quota.used / view.quota.limit) * 100)}%`,
+                    background: exhausted ? 'var(--danger)' : 'var(--brand)',
+                  }}
+                />
+              </div>
+            )}
             <span className="text-caption text-muted-1">
               Resets {view.quota.resetsOn} · {view.quota.planName} plan
             </span>

@@ -29,7 +29,7 @@ function isActive(pathname: string, href: string): boolean {
  * A limit of 0 means "not offered on this plan" rather than "none allowed", so
  * it renders as a count with no denominator instead of a division by zero.
  */
-export function PlanUsage({ usage }: { usage: { used: number | null; limit: number } }) {
+export function PlanUsage({ usage }: { usage: { used: number | null; limit: number | null } }) {
   /*
    * `used` NULL IS "WE HAVE NOT LOOKED", AND IT IS NOT ZERO.
    *
@@ -43,13 +43,21 @@ export function PlanUsage({ usage }: { usage: { used: number | null; limit: numb
    * it. `over` is false in that state because nothing is known to be over.
    */
   const unknown = usage.used === null
-  const over = !unknown && usage.limit > 0 && usage.used! > usage.limit
+  /*
+   * A NULL LIMIT IS NO PLAN, WHICH IS NOT A LIMIT OF ZERO EITHER.
+   *
+   * Zero means "not offered on this plan". Null means no plan is in force —
+   * nobody can pay on this deployment yet — so nothing is over anything and
+   * the count renders without a denominator, the same way zero does.
+   */
+  const limit = usage.limit
+  const over = !unknown && limit !== null && limit > 0 && usage.used! > limit
   const used = unknown ? '—' : usage.used!.toLocaleString('en-US')
   return (
     <>
       <div className={cn('tnum text-caption', over ? 'font-semibold text-danger' : 'text-muted-1')}>
-        {usage.limit > 0
-          ? `${used} / ${usage.limit.toLocaleString('en-US')} listings`
+        {limit !== null && limit > 0
+          ? `${used} / ${limit.toLocaleString('en-US')} listings`
           : `${used} listings`}
       </div>
       {unknown ? (
@@ -75,7 +83,7 @@ export function Sidebar({
   usage,
   counts,
 }: {
-  plan: string
+  plan: string | null
   /*
    * Structured, not a pre-formatted string.
    *
@@ -85,7 +93,7 @@ export function Sidebar({
    * on every screen — did not, so the one number a seller sees constantly was
    * the one that could not tell them anything was wrong.
    */
-  usage: { used: number | null; limit: number }
+  usage: { used: number | null; limit: number | null }
   /*
    * Measured counts, keyed by href. Empty is a valid state and renders no
    * chip — the alternative was the literal badges this replaces, which said
@@ -192,7 +200,15 @@ export function Sidebar({
       {/* Plan usage footer. D22: listings and AI generations only - no shop or
           seat meters, since neither exists in MVP. */}
       <div className="border-t border-line px-4 py-3">
-        <div className="text-[11px] font-semibold text-ink-2">{plan} plan</div>
+        {/*
+          * "No plan yet" rather than a plan name, where none is in force.
+          * This read "{plan} plan" over MockBillingProvider's Solo on every
+          * live deployment — the most-rendered false claim in the product,
+          * since the shell is on every screen.
+          */}
+        <div className="text-[11px] font-semibold text-ink-2">
+          {plan === null ? 'No plan yet' : `${plan} plan`}
+        </div>
         <PlanUsage usage={usage} />
       </div>
     </nav>

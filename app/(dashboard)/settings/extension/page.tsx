@@ -59,7 +59,14 @@ const NEVER = [
 
 const CAN = [
   'Show listing health and the open findings for a listing you own',
-  'Show keyword opportunity and competition, modelled from public signals',
+  /*
+   * This read "modelled from public signals", which named a source that does
+   * not exist — and the figures it describes are not available at all outside
+   * the demo now (lib/signals/index.ts). The list sits directly under a NEVER
+   * entry reading "Claim data it cannot actually access", which is the rule it
+   * was breaking.
+   */
+  'Show keyword opportunity and competition where there is a source for them — in the demo today, where they are modelled sample data',
   'Show your own verified figures for your own listings',
   'Open the matching screen in CobaltRank',
 ] as const

@@ -208,7 +208,9 @@ describe('the view', () => {
 
   it('reads the rollback window from the plan, not a constant', async () => {
     const view = await getChangeHistory(DEMO_CTX)
-    expect(view.rollbackWindowDays).toBe(view.plan.limits.rollbackDays)
+    // Demo mode, so there IS a plan: the mock provider serves the demo one.
+    expect(view.plan, 'no plan in demo mode — the mock provider is gone').not.toBeNull()
+    expect(view.rollbackWindowDays).toBe(view.plan!.limits.rollbackDays)
   })
 
   it('reaches both an available and an expired rollback state', async () => {

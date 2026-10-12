@@ -54,7 +54,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ data
       const log = await getAuditLogView(ctx)
       const spec = auditLogExport({
         retentionDays: log.retentionDays,
-        planName: log.plan.name,
+        planName: log.plan?.name ?? null,
       })
       /*
        * The whole log, not the filtered view. An export named "audit log" that

@@ -59,8 +59,12 @@ export function AppShell({
   userEmail: string
   /** Server-computed. See TopBar. */
   isOperator?: boolean
-  plan: string
-  usage: { used: number | null; limit: number }
+  /*
+   * Null where no plan is in force. The chip said "Solo plan" on every screen
+   * to sellers who have never paid — see lib/billing/index.ts.
+   */
+  plan: string | null
+  usage: { used: number | null; limit: number | null }
   /** Drives the bell's dot on mobile. */
   openActionCount: number
   /** Measured nav counts by href. Never authored — see navigation.ts. */

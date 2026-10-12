@@ -129,7 +129,7 @@ function seasonalWindow(ctx: ShopContext): Action {
     evidence: {
       summary: 'Based on one year of your own order history · confidence moderate',
       provenance: 'ESTIMATED',
-      source: 'your order history and public category seasonality',
+      source: 'your order history and CobaltRank’s own seasonal assumptions',
     },
     destination: { label: 'Open seasonal calendar', href: '/tools/seasonal-calendar' },
     status: 'DISMISSED',

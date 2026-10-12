@@ -68,7 +68,12 @@ export default async function AuditLogPage({
         <h2 className="text-label text-muted-1">Retention</h2>
         <p className="max-w-prose text-small leading-relaxed text-ink-2">
           Records are append-only and{' '}
-          {view.retentionDays === null ? (
+          {view.plan === null ? (
+            <>
+              no plan is in force, so no plan sets a retention period — nothing here is deleted on
+              a schedule
+            </>
+          ) : view.retentionDays === null ? (
             <>
               the {view.plan.name} plan connects no shop, so there are no shop records to keep
             </>
@@ -85,7 +90,7 @@ export default async function AuditLogPage({
             * like a system printing a variable it had already printed.
             */}
           {view.retentionByPlan
-            .filter((r) => r.plan !== view.plan.name)
+            .filter((r) => r.plan !== view.plan?.name)
             .map((r) => (
               <span key={r.plan}>
                 On {r.plan} they are kept for <span className="tnum">{r.days}</span> days.{' '}

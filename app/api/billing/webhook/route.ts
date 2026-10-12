@@ -25,15 +25,33 @@ import { getBillingProvider } from '@/lib/billing'
 import { DEMO_SHOP_ID } from '@/lib/etsy/demo-dataset'
 import { AppError } from '@/lib/errors/types'
 import { billingAuditEvent, handleWebhook } from '@/domain/billing/webhooks'
-import { BILLING_NOW } from '@/lib/billing/mock'
+import { billingToday } from '@/domain/billing/demo'
 
 export async function POST(request: Request) {
   const rawBody = await request.text()
   const signature = request.headers.get('stripe-signature')
 
+  /*
+   * No provider, no webhook. Nobody is sending us one — there is no payment
+   * provider configured on this deployment — and a request that arrives anyway
+   * cannot have its signature verified against anything, so it is rejected
+   * rather than handed to a mock that would accept it.
+   */
+  const provider = getBillingProvider()
+  if (!provider) {
+    log.warn('billing webhook with no provider configured', {
+      path: '/api/billing/webhook',
+      code: 'BILLING_NOT_OPEN',
+    })
+    return new Response(JSON.stringify({ error: 'rejected' }), {
+      status: 400,
+      headers: { 'content-type': 'application/json' },
+    })
+  }
+
   let event
   try {
-    event = getBillingProvider().verifyWebhook(rawBody, signature)
+    event = provider.verifyWebhook(rawBody, signature)
   } catch (error) {
     /*
      * Deliberately uninformative. The reason is useful to the operator, not to
@@ -52,7 +70,12 @@ export async function POST(request: Request) {
     eventId: event.id,
     shopId: DEMO_SHOP_ID,
     outcome,
-    now: `${BILLING_NOW}T00:00:00.000Z`,
+    /*
+     * The billing clock, through the mode check, not the mock's constant. A
+     * webhook can only arrive where a provider exists, and if that provider is
+     * ever a real one the audit record must not be stamped 20 August 2026.
+     */
+    now: `${billingToday()}T00:00:00.000Z`,
   })
   if (audit) {
     // Phase 11 appends this to the event store; until then it is logged so the

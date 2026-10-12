@@ -484,7 +484,7 @@ describe('one plan, read everywhere', () => {
 
     // The copilot said 60 while billing said 500, and a seller reads both.
     expect(copilot.quota.limit).toBe(meter.limit)
-    expect(copilot.quota.planName).toBe(billing.currentPlan.name)
+    expect(copilot.quota.planName).toBe(billing.currentPlan!.name)
     expect(copilot.quota.used).toBe(meter.used)
   })
 })

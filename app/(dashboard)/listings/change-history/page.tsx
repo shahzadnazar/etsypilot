@@ -38,7 +38,7 @@ export default async function ChangeHistoryPage({
       <PageHeader
         title="Change history"
         subtitle={
-          view.retentionDays === null
+          view.retentionDays === null || view.plan === null
             ? 'Immutable audit trail · times in UTC'
             : `Immutable audit trail · ${view.retentionDays} days retained on ${view.plan.name} · times in UTC`
         }

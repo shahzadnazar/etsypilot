@@ -167,8 +167,17 @@ export function assessUsage(row: UsageRow, now: Date): AssessedUsage {
     plan,
     meters: meters.map((meter) => ({
       meter,
-      band: bandFor(meter.used, meter.limit),
-      percent: meter.limit === 0 ? 0 : Math.min(100, Math.round((meter.used / meter.limit) * 100)),
+      /*
+       * The limit cannot be null here: this reads a subscription ROW, so there
+       * is always a plan. Coerced to 0 rather than asserted, because 0 already
+       * means "not offered on this plan" and bands and renders safely — an `!`
+       * here would be the one place this file trusts a type over a row.
+       */
+      band: bandFor(meter.used, meter.limit ?? 0),
+      percent:
+        meter.limit === null || meter.limit === 0
+          ? 0
+          : Math.min(100, Math.round((meter.used / meter.limit) * 100)),
     })),
   }
 }

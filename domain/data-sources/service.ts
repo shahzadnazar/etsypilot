@@ -17,6 +17,7 @@
  */
 
 import { getAiProvider } from '@/lib/ai'
+import { getBillingProvider } from '@/lib/billing'
 import { isDemoMode } from '@/lib/etsy'
 import { marketSignalsMode } from '@/lib/signals'
 import type { ProvenanceType } from '@/lib/provenance/types'
@@ -54,6 +55,12 @@ export function dataSources(): DataSource[] {
   const demo = isDemoMode()
   const ai = getAiProvider().mode
   const signals = marketSignalsMode()
+  /*
+   * Null where no payment provider is configured, which is every live
+   * deployment. See lib/billing/index.ts for what the fallback used to serve
+   * instead.
+   */
+  const billing = getBillingProvider()
 
   return [
     {
@@ -112,6 +119,55 @@ export function dataSources(): DataSource[] {
           : signals === 'MOCK'
             ? 'Modelled sample data'
             : 'Live sampling',
+    },
+    /*
+     * ── TWO ROWS ADDED BY THE SWEEP THAT FOUND THEIR CLAIMS ────────────────
+     *
+     * This catalogue is the product's answer to "where does every figure come
+     * from", and tests/unit/source-claims.test.ts now asserts rendered copy
+     * against it. Two figure-sources were missing from it, and both had been
+     * stating a provenance nobody could check:
+     *
+     *   The payment provider. /billing described a subscription, a renewal
+     *   date, a card and four invoices on every deployment, from
+     *   MockBillingProvider. A row here is what makes "do we have one" a
+     *   question the page asks rather than assumes.
+     *
+     *   The seasonal windows. /tools/seasonal-calendar said its dates were
+     *   "drawn from public category seasonality". There is no such dataset;
+     *   they are three windows authored by hand. An assumption is fine to
+     *   ship, so it is listed as one.
+     */
+    {
+      key: 'payments',
+      name: 'Payment provider',
+      via: billing === null ? 'Nothing connected' : 'Hosted checkout · card never reaches us',
+      provides:
+        'Your subscription and plan, the renewal date, invoices and the card brand and last four digits.',
+      class: billing === null ? 'UNAVAILABLE' : 'VERIFIED',
+      refresh: billing === null ? 'Never' : 'On change',
+      limitations:
+        billing === null
+          ? 'There is no payment provider, so there is no subscription, no card and no invoice — and nobody can be charged. No plan limit is applied to anything meanwhile.'
+          : 'Card numbers are never stored here. A charge is disclosed before it is made, and refunds are the provider’s to decide.',
+      status:
+        billing === null
+          ? 'Not connected — billing is not open'
+          : billing.mode === 'MOCK'
+            ? 'Demo billing — the flows run, no money moves'
+            : 'Connected',
+    },
+    {
+      key: 'seasonality',
+      name: 'CobaltRank’s seasonal assumptions',
+      via: 'Authored here, not sampled',
+      provides:
+        'When each season’s prepare, go-live and peak windows run, on the Seasonal calendar.',
+      class: 'ESTIMATED',
+      refresh: 'When we revise them',
+      limitations:
+        'Three windows, written by hand. Not a dataset, not Etsy’s, and not sampled from anywhere. The LIFT over them is measured on your own orders; the dates themselves are not measured at all.',
+      status: 'Three windows, authored',
     },
     {
       key: 'stats-import',

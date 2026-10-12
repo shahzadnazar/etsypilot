@@ -298,7 +298,13 @@ function ShopMeters({
                       * meter follows. "0 / 0" would read as a shop sitting
                       * exactly at its cap.
                       */}
-                    {meter.limit === 0
+                    {/*
+                      * A null limit means no plan is in force at all, which
+                      * cannot happen here — the operator console reads a
+                      * subscription row, so it always has a plan — and is
+                      * rendered as a count rather than asserted away.
+                      */}
+                    {meter.limit === null || meter.limit === 0
                       ? formatNumber(meter.used)
                       : `${formatNumber(meter.used)} / ${formatNumber(meter.limit)}`}
                   </Numeric>
@@ -306,7 +312,7 @@ function ShopMeters({
                 </span>
               </div>
 
-              {meter.limit > 0 ? (
+              {meter.limit !== null && meter.limit > 0 ? (
                 <div
                   className="h-1.5 w-full overflow-hidden rounded-full bg-canvas-soft"
                   role="img"

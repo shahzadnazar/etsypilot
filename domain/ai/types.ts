@@ -111,7 +111,16 @@ export interface AiDraft {
 
 export interface GenerationQuota {
   used: number
-  limit: number
+  /*
+   * Null where no plan is in force, so no allowance has been bought.
+   *
+   * This was `plan.limits.aiGenerations` read off MockBillingProvider's
+   * subscription, so the copilot told every live seller they had Solo's 60 a
+   * month. Nothing is metered yet either (DEMO_GENERATIONS_USED, in
+   * fixture-containment's KNOWN_REMAINING), so the honest screen states the
+   * count it has and no cap.
+   */
+  limit: number | null
   /** Calendar date the allowance resets, YYYY-MM-DD. Never zoned (D24). */
   resetsOn: string
   planName: string
@@ -120,7 +129,8 @@ export interface GenerationQuota {
 }
 
 export function quotaExhausted(q: GenerationQuota): boolean {
-  return q.used >= q.limit
+  // No limit cannot be exhausted. Nothing has been sold, so nothing is capped.
+  return q.limit !== null && q.used >= q.limit
 }
 
 /**

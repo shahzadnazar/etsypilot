@@ -71,7 +71,7 @@ export default async function SeasonalCalendarPage({
     <>
       <PageHeader
         title="Seasonal calendar"
-        subtitle={`${view.market} · ${view.year} · when to prepare, drawn from your own order history and public category seasonality`}
+        subtitle={`${view.market} · ${view.year} · the dates are CobaltRank's assumption about each season; the lift over them is measured on your own orders`}
       />
 
       {view.empty ? (
@@ -156,13 +156,22 @@ export default async function SeasonalCalendarPage({
         </div>
       )}
 
+      {/*
+        * This said "drawn from your own order history plus public category
+        * seasonality". There is no public category seasonality dataset — the
+        * window dates are three authored seeds in domain/seasonal/service.ts,
+        * which says at length why an assumption is fine to ship and a named
+        * source is not. The lift genuinely is measured on the seller's orders,
+        * and that half keeps saying so.
+        */}
       <p className="mt-4 max-w-prose text-caption leading-relaxed text-muted-1">
-        Windows are drawn from your own order history plus public category seasonality. They are
-        planning guidance, not a forecast, and each is labelled with the confidence the underlying
-        history supports — this shop has{' '}
-        <span className="tnum">{view.historyMonths}</span> months of it, which is why nothing here
-        reads higher than it does. A seasonal claim is a claim about a repeating pattern, and one
-        season cannot show a repeat.
+        The window dates are CobaltRank&rsquo;s own assumption about when each season runs — not a
+        dataset, and not a figure from Etsy or anywhere else. What is measured is the lift: your own
+        orders in those months against the rest of your year. They are planning guidance, not a
+        forecast, and each is labelled with the confidence the underlying history supports — this
+        shop has <span className="tnum">{view.historyMonths}</span> months of it, which is why
+        nothing here reads higher than it does. A seasonal claim is a claim about a repeating
+        pattern, and one season cannot show a repeat.
       </p>
     </>
   )

@@ -18,6 +18,8 @@ import { cancelPlan, changePlan } from '@/domain/billing/service'
 import { writePreferences, defaultPreferences } from '@/domain/notifications/service'
 import { markPublicDemoRequest, resetPublicDemoRequest } from '@/lib/demo-request'
 import { setEtsyService } from '@/lib/etsy'
+import { setBillingProvider } from '@/lib/billing'
+import { AppError } from '@/lib/errors/types'
 import { getDb, schema } from '@/lib/db'
 import { PUBLIC_DEMO_ACTOR_ID } from '@/lib/auth/public-demo-actor'
 import { DEMO_SHOP_ID } from '@/lib/etsy/demo-dataset'
@@ -381,12 +383,25 @@ describe('a public visitor writes nothing at all', () => {
     expect(() => writePreferences(sellerCtx, defaultPreferences())).not.toThrow()
   })
 
-  it('and a demo SELLER keeps the write paths the demo is built to show', async () => {
+  it('and a demo SELLER is refused for the right reason, not as a visitor', async () => {
     /*
      * The demo seller — AUTH_MODE unset, Salman R. — is read-only against Etsy
      * and deliberately NOT read-only against the mock billing provider, so the
-     * billing walkthrough works. That must survive the new gate: it refuses an
-     * anonymous actor, not a read-only one.
+     * billing walkthrough works in demo mode. That must survive the
+     * public-visitor gate: it refuses an anonymous actor, not a read-only one.
+     *
+     * THIS TEST USED TO ASSERT THAT changePlan RESOLVED. It cannot any more,
+     * and the reason is the point rather than a problem: this suite runs with
+     * ETSY_MODE=live, so `isDemoMode()` is false and lib/billing/index.ts
+     * hands out NO provider — there is nothing to change a plan on. A seller
+     * whose shop row is still flagged demo on a live deployment is the
+     * ordinary new signup (domain/sync/source.ts), and billing is shut for
+     * them like everybody else.
+     *
+     * So the property is now about WHICH refusal they get. BILLING_NOT_OPEN is
+     * "nobody can be charged yet"; PUBLIC_DEMO_READ_ONLY is "you are an
+     * anonymous visitor". Confusing the two would tell a real seller they are
+     * not signed in, which is the failure this file exists to prevent.
      */
     const demoSeller: ShopContext = {
       shopId: DEMO_SHOP_ID,
@@ -394,6 +409,37 @@ describe('a public visitor writes nothing at all', () => {
       readOnly: true,
     }
     expect(isPublicVisitor(demoSeller)).toBe(false)
-    await expect(changePlan(demoSeller, 'GROWTH')).resolves.toBeDefined()
+
+    const refusal = await changePlan(demoSeller, 'GROWTH').then(
+      () => null,
+      (error: unknown) => (error instanceof AppError ? error.code : 'NOT AN AppError'),
+    )
+    expect(refusal, 'a demo seller was refused as if they were an anonymous visitor').toBe(
+      'BILLING_NOT_OPEN',
+    )
+  })
+
+  it('and in demo mode the billing walkthrough still runs', async () => {
+    /*
+     * The positive control for the test above, in the mode the demo actually
+     * runs in. Without it, "the refusal names billing" is satisfied by a
+     * product where the plan-change flow is dead everywhere — which is most of
+     * what the billing screen is for.
+     */
+    const previous = process.env.ETSY_MODE
+    process.env.ETSY_MODE = 'mock'
+    setBillingProvider(null)
+    try {
+      const demoSeller: ShopContext = {
+        shopId: DEMO_SHOP_ID,
+        actorId: 'demo-user-salman',
+        readOnly: true,
+      }
+      await expect(changePlan(demoSeller, 'GROWTH')).resolves.toBeDefined()
+    } finally {
+      if (previous === undefined) delete process.env.ETSY_MODE
+      else process.env.ETSY_MODE = previous
+      setBillingProvider(null)
+    }
   })
 })

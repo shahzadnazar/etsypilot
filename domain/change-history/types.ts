@@ -100,7 +100,16 @@ export function isFailure(job: ChangeJob): boolean {
 export type RollbackState =
   | {
       kind: 'AVAILABLE'
-      daysLeft: number
+      /*
+       * Null where no plan sets a window, because no plan is in force: nobody
+       * can pay on this deployment yet (lib/billing/index.ts). The rollback is
+       * genuinely available — the listings still hold the job's values — and
+       * nothing is counting down to taking it away.
+       *
+       * It used to be Solo's 30 days, read off MockBillingProvider, so a live
+       * seller was told "Available · 12 d" by a plan they had not bought.
+       */
+      daysLeft: number | null
       /** Listings that still hold this job's value and can be restored. */
       restorable: number
       /** Changed on Etsy since. Skipped rather than overwritten. */

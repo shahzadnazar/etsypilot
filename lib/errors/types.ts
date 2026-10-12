@@ -207,6 +207,24 @@ export const Errors = {
    * seller-facing half says nothing about configuration — from their side the
    * trial simply is not open yet, which is true.
    */
+  /**
+   * Nobody can pay on this deployment, so there is no subscription to change.
+   *
+   * The billing page does not render a cancel or upgrade button while this is
+   * true, so reaching this means a POST straight to the route. It refuses
+   * rather than mutating a fixture, which is what the mock provider used to do
+   * for every seller on every deployment.
+   */
+  billingNotOpen: (missing: readonly string[]) =>
+    new AppError({
+      kind: 'EXTERNAL_SERVICE',
+      code: 'BILLING_NOT_OPEN',
+      message: 'Billing is not open yet.',
+      recovery:
+        'No payment provider is configured, so no plan can be bought, changed or cancelled — and nothing is being charged. Every feature you can reach is available meanwhile. Join the waitlist and we will tell you when billing opens.',
+      context: { missing: [...missing] },
+    }),
+
   trialNotConfigured: (missing: readonly string[]) =>
     new AppError({
       kind: 'EXTERNAL_SERVICE',

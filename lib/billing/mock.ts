@@ -10,8 +10,16 @@
  * repository, and StripeBillingProvider never touches this file.
  */
 
-import { DEMO_PLAN } from '@/domain/billing/plans'
 import type { PlanKey } from '@/domain/billing/plans'
+
+/**
+ * The plan the fictional shop is on, for the artboards.
+ *
+ * Declared here rather than in domain/billing/plans.ts, where it used to sit
+ * beside the real tiers with a fallback reading it on every billing error. A
+ * fixture belongs with the fixture.
+ */
+const DEMO_PLAN: PlanKey = 'SOLO'
 import { Errors } from '@/lib/errors/types'
 import type {
   BillingProvider,

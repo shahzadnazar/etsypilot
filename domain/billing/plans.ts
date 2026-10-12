@@ -165,7 +165,21 @@ export const LIMIT_POLICY =
  * generator builds (D67). A comment that names a number it does not own goes
  * stale the first time the number is measured.
  */
-export const DEMO_PLAN: PlanKey = 'SOLO'
+/*
+ * DEMO_PLAN HAS MOVED TO lib/billing/mock.ts.
+ *
+ * It was here, in the module that declares the real tiers, and it had two
+ * consumers: the mock provider's invented subscription, and
+ * domain/billing/service.ts, which fell back to it whenever reading a
+ * subscription threw — so a billing outage promoted every seller to Solo in
+ * the shell.
+ *
+ * Its only consumer now is the mock, which is a fixture, so the constant lives
+ * with the fixture. tests/unit/fixture-containment.test.ts carried two
+ * KNOWN_REMAINING entries for it, both reasoned from "every deployment runs
+ * MockBillingProvider"; that stopped being true when lib/billing/index.ts
+ * started returning null instead, and both entries are gone.
+ */
 
 export function planOf(key: PlanKey): Plan {
   const plan = PLANS.find((p) => p.key === key)

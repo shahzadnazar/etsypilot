@@ -10,10 +10,26 @@
  * without a confidence AND the reason for it. There is no shape for a window
  * that just asserts a date range.
  *
- * Windows are drawn from the seller's OWN order history where there is any, and
- * from public category seasonality where there is not — and the card says which,
- * because "your linen category lifted 2.4× last year" and "this category tends
- * to lift in November" are different claims and only one is about this shop.
+ * ── TWO CLAIMS ON ONE CARD, AND ONLY ONE OF THEM IS A MEASUREMENT ────────
+ *
+ * The DATES are CobaltRank's own assumption about when each season runs. They
+ * are the three seeds in buildWindows() below — authored, by hand, once. The
+ * LIFT over them is measured on this shop's own orders, against the rest of its
+ * year, and is null where the history cannot support it.
+ *
+ * This comment used to say the dates came "from public category seasonality",
+ * and the page said it twice more. There is no public category seasonality
+ * dataset: no sampler, no feed, no table, nothing behind the phrase — the same
+ * kind of claim as `SOURCE = 'Public marketplace signals'` in
+ * lib/signals/mock.ts, which was corrected in 3dbce03.
+ *
+ * An assumption is fine to ship. Nobody needs a dataset to know when Q4 gifting
+ * runs, and a seller planning a holiday range is better served by three
+ * reasonable windows than by nothing. What is not fine is calling it a source.
+ * So the copy names it as an assumption, and the measured half keeps saying
+ * measured — because "your linen category lifted 2.4× last year" and "this
+ * category tends to lift in November" are different claims and only one is
+ * about this shop.
  */
 
 import { loadListings } from '@/domain/listings/load'
@@ -282,10 +298,10 @@ function basisFor(args: {
   const history = `${args.historyMonths} months of your own order history`
 
   if (args.sample === 0) {
-    return `You have no orders in these months yet, so this window comes from public category seasonality rather than from your shop. Nothing here is measured on you.`
+    return `You have no orders in these months yet, so these dates are CobaltRank's own assumption about when this season runs, not a figure from your shop or from anywhere else. Nothing here is measured on you.`
   }
   if (args.lift === null) {
-    return `Your history reaches ${args.covered} of this window's ${args.windowMonths} months, which is too few to compare it against the rest of the year. The dates come from public category seasonality; the shape of your own season is not known yet.`
+    return `Your history reaches ${args.covered} of this window's ${args.windowMonths} months, which is too few to compare it against the rest of the year. The dates are CobaltRank's own assumption about the season rather than a measurement; the shape of your own season is not known yet.`
   }
   if (args.confidence === 'HIGH') {
     return `Your orders in these months ran ${args.lift}× the rest of the year, measured over ${args.sample} of your own orders across ${history}.`

@@ -24,7 +24,8 @@ export interface AuditLogView {
   filter: AuditFilter
   source: AuditSource | 'ALL'
   query: string
-  plan: Plan
+  /** Null where no plan is in force. */
+  plan: Plan | null
   /** Null on a plan that connects no shop, so keeps no shop records. */
   retentionDays: number | null
   /*
@@ -51,8 +52,15 @@ export async function getAuditLogView(
   query: AuditLogQuery = {},
 ): Promise<AuditLogView> {
   const all = await readAuditRecords(ctx.shopId)
-  const subscription = await getBillingProvider().getSubscription(ctx.shopId)
-  const plan = planOf(subscription.plan)
+  /*
+   * Null where no plan is in force. This read a subscription that
+   * MockBillingProvider invented on every live deployment, so the retention
+   * sentence below said "kept for 90 days on Solo" to a seller who has never
+   * paid. See lib/billing/index.ts.
+   */
+  const billing = getBillingProvider()
+  const subscription = billing ? await billing.getSubscription(ctx.shopId) : null
+  const plan = subscription ? planOf(subscription.plan) : null
 
   const filter: AuditFilter = query.filter === 'REFUSED' ? 'REFUSED' : 'ALL'
   // Anything not in the closed set is ALL, so a hand-typed query string cannot
@@ -83,7 +91,7 @@ export async function getAuditLogView(
     source,
     query: q,
     plan,
-    retentionDays: plan.limits.auditRetentionDays,
+    retentionDays: plan?.limits.auditRetentionDays ?? null,
     retentionByPlan: PLANS.filter((p) => p.limits.auditRetentionDays !== null).map((p) => ({
       plan: p.name,
       days: p.limits.auditRetentionDays!,
