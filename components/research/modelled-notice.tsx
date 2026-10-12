@@ -29,15 +29,26 @@ import { Card } from '@/components/ui/card'
  *
  * ── WHY THIS IS NOT A DISCLAIMER ─────────────────────────────────────────
  *
- * It names a source category, a date, a confidence and an exclusion list.
- * "These figures are estimates" in small grey type is a disclaimer; this is
+ * It names a source category, a confidence and an exclusion list. "These
+ * figures are estimates" in small grey type is a disclaimer; this is
  * provenance, the same thing the badges do for a single number, at the scale
  * of a page.
+ *
+ * ── THERE IS NO "LAST UPDATED" ROW ANY MORE ─────────────────────────
+ *
+ * It took an `updated` string, documented "when the model last observed", and
+ * every value a caller could have passed it was the one authored constant in
+ * lib/signals/mock.ts. The prop is gone rather than left unused: a row called
+ * "Last updated" standing empty is an invitation to fill it with the nearest
+ * timestamp-shaped thing, which is how it got there.
+ *
+ * If the model ever acquires a run time of its own, the row to add says "model
+ * last ran" — a claim about this product, which is checkable, and not a claim
+ * about Etsy, which is not.
  */
 export function ModelledNotice({
   lead,
-  sourceCategory = 'Modelled from public marketplace signals',
-  updated,
+  sourceCategory = 'Modelled sample data',
   confidence,
   excludes,
   limitations = [],
@@ -46,8 +57,6 @@ export function ModelledNotice({
   /** What is modelled here and from what. One or two sentences. */
   lead: ReactNode
   sourceCategory?: string
-  /** When the model last observed. Omitted when the view has no timestamp. */
-  updated?: string
   confidence?: string
   excludes: string
   limitations?: readonly string[]
@@ -59,7 +68,6 @@ export function ModelledNotice({
       <p className="mt-2 text-small leading-relaxed text-ink-2">{lead}</p>
       <dl className="mt-3 flex flex-col gap-2 text-caption">
         <Row label="Source category" value={sourceCategory} />
-        {updated ? <Row label="Last updated" value={updated} /> : null}
         {confidence ? <Row label="Confidence" value={confidence} /> : null}
         <Row label="Excludes" value={excludes} />
       </dl>

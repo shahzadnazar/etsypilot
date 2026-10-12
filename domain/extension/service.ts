@@ -9,10 +9,12 @@
  *
  * The own-listing distinction is the interesting part. For a listing in the
  * seller's connected shop we have receipts, so the figures are VERIFIED. For
- * anyone else's listing we have public observation only, so they are ESTIMATED
- * ranges from the signals adapter (D36). Same popup, different provenance, and
- * the badge says which — a competitor's modelled sales and your own real ones
- * must never look alike.
+ * anyone else's listing we have nothing measured at all, so they are ESTIMATED
+ * ranges from the signals adapter (D36) — and that adapter exists only in the
+ * demo, so outside it this popup has nothing to say about another shop's
+ * listing and says nothing. Same popup, different provenance, and the badge
+ * says which: a competitor's modelled sales and your own real ones must never
+ * look alike.
  */
 
 import { auditListings } from '@/domain/audit/service'
@@ -149,13 +151,22 @@ async function ownListing(
 
 /* ----------------------------------------------------- anyone else's listing */
 
-async function otherListing(etsyListingId: string): Promise<ListingIntelligence> {
+async function otherListing(etsyListingId: string): Promise<ListingIntelligence | null> {
   const signals = getSignalsService()
   /*
-   * getCompetitor returns null for a shop the model has not observed, which is
+   * No market-signals source on this deployment, so there is nothing to say
+   * about somebody else's listing. Null, which the route already handles as
+   * "no intelligence for this listing" — not a popup full of UNAVAILABLE
+   * rows, which would say "we looked and found nothing" about a thing nobody
+   * looked at. See lib/signals/index.ts.
+   */
+  if (!signals) return null
+
+  /*
+   * getCompetitor returns null for a shop outside the modelled set, which is
    * the ordinary case for a listing the seller happens to be looking at. The
-   * extension then reports UNAVAILABLE rather than a modelled figure for a shop
-   * nothing is known about.
+   * extension then reports UNAVAILABLE rather than a modelled figure for a
+   * shop nothing is known about.
    */
   const competitor = await signals.getCompetitor('Aurelia Made')
   const term = 'birth flower necklace'
@@ -171,7 +182,7 @@ async function otherListing(etsyListingId: string): Promise<ListingIntelligence>
       : {}),
     methodology:
       competitor?.monthlySales.provenance.methodology ??
-      'This shop has not been observed often enough to model.',
+      'This shop is not in the modelled set, so there is nothing to show for it.',
     ...(competitor?.monthlySales.provenance.limitations
       ? { limitations: competitor.monthlySales.provenance.limitations }
       : {}),

@@ -107,7 +107,13 @@ describe('keyword lists hand off to the bulk editor, they do not write', () => {
 
 describe('the keyword view', () => {
   it('assembles signals, related terms and the shop’s own lists', async () => {
+    /*
+     * Nullable now: there is no market-signals service outside demo mode
+     * (lib/signals/index.ts). This suite runs with ETSY_MODE unset.
+     */
     const view = await getKeywordView(CTX, 'birth flower necklace')
+    expect(view, 'no market-signals service — this suite needs demo mode').not.toBeNull()
+    if (!view) return
     expect(view.signals.term).toBe('birth flower necklace')
     expect(view.related.length).toBeGreaterThan(0)
     expect(view.lists.length).toBeGreaterThan(0)

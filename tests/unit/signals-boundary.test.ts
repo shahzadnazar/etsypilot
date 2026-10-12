@@ -5,6 +5,7 @@ import { dirname, normalize } from 'node:path'
 import { posixJoin } from '../support/paths'
 import { code } from '../support/shop-scoping'
 import { getSignalsService } from '@/lib/signals'
+import type { MarketSignalsService } from '@/lib/signals/interface'
 
 /*
  * ██████████████████████████████████████████████████████████████████████████
@@ -164,6 +165,21 @@ const NETWORK_PACKAGES = [
   'jsdom',
 ]
 
+/*
+ * The adapter, asserted rather than assumed.
+ *
+ * getSignalsService() returns null outside demo mode now, which is the point
+ * of lib/signals/index.ts. This suite runs with ETSY_MODE unset, so it gets
+ * the mock — but a null here would make "answered every method and sent
+ * nothing" pass by calling nothing at all, which is the shape of vacuous pass
+ * this file exists to avoid elsewhere.
+ */
+function mockService(): MarketSignalsService {
+  const signals = getSignalsService()
+  expect(signals, 'no market-signals service in this environment').not.toBeNull()
+  return signals!
+}
+
 describe('lib/signals cannot reach a network — read statically', () => {
   it('finds the closure it is meant to be checking', () => {
     /*
@@ -255,7 +271,7 @@ describe('lib/signals cannot reach a network — watched while running', () => {
 
   it('answers every method on the interface without sending anything', async () => {
     const { calls } = trap()
-    const signals = getSignalsService()
+    const signals = mockService()
 
     /*
      * Every method on MarketSignalsService, because the one that reaches out
@@ -289,6 +305,6 @@ describe('lib/signals cannot reach a network — watched while running', () => {
   })
 
   it('and says it is a model, so nothing downstream can mistake it for observation', () => {
-    expect(getSignalsService().mode).toBe('MOCK')
+    expect(mockService().mode).toBe('MOCK')
   })
 })

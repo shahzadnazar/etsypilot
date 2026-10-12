@@ -27,9 +27,9 @@ export interface NicheView {
   market: string
   signals: NicheSignals
   conditions: Condition[]
-  /** True when the term has not been sampled enough to say anything. */
+  /** True when the model has nothing for this term. */
   sparse: boolean
-  /** Terms the sampler HAS observed, offered when the asked-for one is sparse. */
+  /** Terms the modelled set DOES cover, offered when the asked-for one is blank. */
   known: string[]
   mode: 'MOCK' | 'LIVE'
 }
@@ -37,8 +37,18 @@ export interface NicheView {
 /** Margin the conditions are written to clear. Stated on the page. */
 export const TARGET_MARGIN = 0.4
 
-export async function getNiche(query: { q?: string; market?: string } = {}): Promise<NicheView> {
+export async function getNiche(
+  query: { q?: string; market?: string } = {},
+): Promise<NicheView | null> {
   const signals = getSignalsService()
+  /*
+   * No market-signals source on this deployment, so there is nothing to
+   * compute and nothing to show. `null` and not an empty view: an empty view
+   * renders the screen with holes in it, which says "this figure is missing"
+   * when the truth is "this feature is not built". See lib/signals/index.ts.
+   */
+  if (!signals) return null
+
   const market = query.market?.trim() || 'United States'
   const term = query.q?.trim() || 'linen table linens'
   const data = await signals.getNiche(term, market)
@@ -106,7 +116,7 @@ export function conditionsFrom(niche: NicheSignals): Condition[] {
 
   if (concentration !== null && concentration > 0) {
     conditions.push({
-      text: `You differentiate on something other than the term itself — the ten largest shops hold ${concentration}% of observed listings.`,
+      text: `You differentiate on something other than the term itself — the ten largest shops hold ${concentration}% of the modelled listings.`,
       from: 'Concentration',
     })
   }

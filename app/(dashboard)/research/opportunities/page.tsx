@@ -13,20 +13,21 @@ import {
   SORT_LABEL,
 } from '@/domain/research/opportunities'
 import { getSession } from '@/lib/auth'
-import { formatRelative } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
 import { isDemoMode } from '@/lib/etsy'
 import { ModelledNotice } from '@/components/research/modelled-notice'
+import { ResearchNotBuilt } from '@/components/research/not-built'
 
 export const metadata: Metadata = { title: 'Opportunities' }
 
 /*
  * Find hot products (artboard 21).
  *
- * Two kinds of column, and the table's whole job is keeping them apart:
- * observation (price, reviews, favourites, age — publicly visible on the
- * listing) and estimate (sales, revenue — modelled, therefore a range, and
- * "Not enough data" where the model has none).
+ * Two kinds of column, and the table's whole job is keeping them apart: a
+ * single modelled figure (price, reviews, favourites, age) and a modelled band
+ * (sales, revenue — a range, therefore, and "Not enough data" where the model
+ * has none). Both kinds are modelled; this comment used to call the first kind
+ * observation and "publicly visible on the listing", which was the plan.
  *
  * The filters are a GET form. A filtered view is a URL, it survives a reload,
  * and it works with no JavaScript.
@@ -56,6 +57,17 @@ export default async function OpportunitiesPage({
 
   const query = await searchParams
   const view = await getOpportunities(query)
+  /*
+   * No market-signals source on this deployment. See lib/signals/index.ts.
+   */
+  if (!view) {
+    return (
+      <ResearchNotBuilt
+        title="Find hot products"
+        what="Product-level sales, revenue and opportunity scores"
+      />
+    )
+  }
   const filtered =
     view.term !== '' ||
     Object.values(view.filters).some((v) => v !== null)
@@ -64,7 +76,7 @@ export default async function OpportunitiesPage({
     <>
       <PageHeader
         title="Find hot products"
-        subtitle={`${view.market} · every figure modelled from public marketplace signals — sales and revenue are estimated ranges, not Etsy data`}
+        subtitle={`${view.market} · every figure is modelled sample data — sales and revenue are estimated ranges, and none of it is Etsy data`}
         actions={
           <Link
             href="/research/keywords"
@@ -150,7 +162,6 @@ export default async function OpportunitiesPage({
         <span className="tnum">{view.products.length.toLocaleString('en-US')}</span> of{' '}
         <span className="tnum">{view.total.toLocaleString('en-US')}</span> products · sorted by{' '}
         {SORT_LABEL[view.sort].toLowerCase()}
-        {view.observedAt ? ` · last observed ${formatRelative(view.observedAt)}` : ''}
       </p>
 
       {view.products.length === 0 ? (
@@ -164,8 +175,8 @@ export default async function OpportunitiesPage({
           title="No products match these filters"
           description={
             view.filters.minSales !== null
-              ? `A minimum of ${view.filters.minSales} estimated monthly sales rules out every listing the model cannot size yet — and a new listing rarely has enough observed signal. The floor is applied to the low end of each range, so a product has to clear it even on the pessimistic reading.`
-              : 'Nothing observed matches this combination. Widen a filter, or search a broader term.'
+              ? `A minimum of ${view.filters.minSales} estimated monthly sales rules out every listing the model cannot size — and a new listing rarely has enough modelled history. The floor is applied to the low end of each range, so a product has to clear it even on the pessimistic reading.`
+              : 'Nothing in the modelled set matches this combination. Widen a filter, or search a broader term.'
           }
           action={
             <div className="flex flex-wrap gap-2">
@@ -195,9 +206,9 @@ export default async function OpportunitiesPage({
         >
           <table className="w-full min-w-[1000px] border-collapse text-body">
             <caption className="sr-only">
-              Products observed on the marketplace. Price, reviews, favourites and age are publicly
-              visible; estimated monthly sales and revenue are modelled ranges and are blank where
-              the model has too little observation.
+              Modelled products. Price, reviews, favourites and age are single modelled figures;
+              estimated monthly sales and revenue are modelled ranges, and both are blank where the
+              model has nothing.
             </caption>
             <thead>
               <tr className="bg-canvas-soft text-left text-label text-muted-1">
@@ -263,7 +274,7 @@ export default async function OpportunitiesPage({
                           —
                         </span>
                         <span className="sr-only">
-                          Not scored — this listing has too little observation to model
+                          Not scored — the model has nothing to size this listing with
                         </span>
                       </>
                     ) : (
@@ -295,18 +306,19 @@ export default async function OpportunitiesPage({
         <div className="flex flex-wrap items-center gap-2">
           <ProvenanceBadge type="ESTIMATED" demo={demoData} />
           <span className="max-w-prose text-caption leading-relaxed text-muted-1">
-            Estimated columns are modelled ranges, from public listing signals observed over 90 days
-            — review velocity, favourites and price. They exclude wholesale, off-platform and
-            refunded orders, and they are not official Etsy figures. Confidence is carried per row.
+            Estimated columns are modelled ranges, and nothing under them was measured — the
+            review velocity, favourites and price they are modelled from are modelled too. They
+            exclude wholesale, off-platform and refunded orders, and they are not official Etsy
+            figures. Confidence is carried per row.
           </span>
         </div>
         {view.unmodelled > 0 ? (
           <div className="flex flex-wrap items-center gap-2">
             <ProvenanceBadge type="UNAVAILABLE" demo={demoData} />
             <span className="max-w-prose text-caption leading-relaxed text-muted-1">
-              <span className="tnum">{view.unmodelled}</span> of these listings have been observed
-              for too few weeks to model. They show &ldquo;Not enough data&rdquo; and no opportunity
-              score, and they sort to the bottom rather than to zero.
+              <span className="tnum">{view.unmodelled}</span> of these listings are too new in the
+              model to size. They show &ldquo;Not enough data&rdquo; and no opportunity score, and
+              they sort to the bottom rather than to zero.
             </span>
           </div>
         ) : null}
@@ -325,8 +337,9 @@ export default async function OpportunitiesPage({
           lead={
             <>
               <strong>Every figure on this page is modelled.</strong> Nothing here is Etsy data.
-              Etsy publishes no product-level sales figures to anyone, so monthly sales, revenue and
-              price bands are estimated from public marketplace signals and shown as ranges.
+              Etsy publishes no product-level sales figures to anyone, and CobaltRank has no
+              market-data source of its own either — so monthly sales, revenue and price bands are
+              sample data, shown as ranges, and available in the demo only.
             </>
           }
           excludes="Ads, off-platform traffic, wholesale, refunds, and any shop that has opted out of public listing"

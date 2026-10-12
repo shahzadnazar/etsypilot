@@ -95,8 +95,16 @@ export default function MethodologyPage() {
               <dl className="mt-3 flex flex-col gap-2">
                 <Line label="Source">{m.source}</Line>
                 <Line label="How">{m.method}</Line>
+                {/*
+                  * "Observed" was the label, and the only entry that carried a
+                  * freshness was keywordDemand — an authored constant for a
+                  * modelled figure. The value is gone (lib/provenance/
+                  * methodology.ts) so this renders for nothing today; the
+                  * label is "As of" so that the first entry to carry a real
+                  * timestamp is not published under a claim it has to earn.
+                  */}
                 {m.freshness ? (
-                  <Line label="Observed">{formatDateTime(m.freshness)}</Line>
+                  <Line label="As of">{formatDateTime(m.freshness)}</Line>
                 ) : null}
                 {m.confidence ? (
                   <Line label="Confidence">

@@ -20,9 +20,28 @@ const CTX = shopContext(
   DEMO_SHOP_ID,
 )
 
+/*
+ * ── THE FOUR ENTRY POINTS RETURN null WHERE THERE IS NO SOURCE ─────────
+ *
+ * lib/signals/index.ts hands out a service in demo mode and nothing anywhere
+ * else, so getOpportunities(), getNiche(), getCompetitors() and
+ * getKeywordView() are all nullable. This suite runs with ETSY_MODE unset, so
+ * it gets the mock.
+ *
+ * These wrappers assert that instead of spreading `!` through sixty
+ * assertions: a null then fails here, once, with a sentence saying the suite
+ * needs demo mode — rather than thirty lines down as "cannot read properties
+ * of null", which is a defect report about the wrong thing.
+ */
+function present<T>(view: T | null): T {
+  expect(view, 'no market-signals service — this suite needs demo mode').not.toBeNull()
+  return view as T
+}
+
+
 describe('opportunities', () => {
   it('never scores a product it cannot size', async () => {
-    const view = await getOpportunities()
+    const view = present(await getOpportunities())
     const unmodelled = view.products.filter((p) => p.monthlySales.value === null)
     expect(unmodelled.length).toBeGreaterThan(0)
     for (const product of unmodelled) {
@@ -34,7 +53,7 @@ describe('opportunities', () => {
   })
 
   it('applies a sales floor to the low end of the range', async () => {
-    const view = await getOpportunities({ minSales: '40' })
+    const view = present(await getOpportunities({ minSales: '40' }))
     for (const product of view.products) {
       expect(product.monthlySales.value!.min).toBeGreaterThanOrEqual(40)
     }
@@ -43,17 +62,17 @@ describe('opportunities', () => {
      * reading". Applied to the upper bound, a 5–40 band would pass a filter the
      * seller set to exclude exactly that.
      */
-    const loose = await getOpportunities()
+    const loose = present(await getOpportunities())
     expect(view.products.length).toBeLessThan(loose.products.length)
   })
 
   it('excludes unmodelled products from a numeric filter rather than keeping them', async () => {
-    const view = await getOpportunities({ minSales: '1' })
+    const view = present(await getOpportunities({ minSales: '1' }))
     expect(view.products.every((p) => p.monthlySales.value !== null)).toBe(true)
   })
 
   it('sorts unmodelled rows last when the key is an estimate, and normally when it is not', async () => {
-    const products = await getSignalsService().findProducts({ term: '', market: 'United States' })
+    const products = await present(getSignalsService()).findProducts({ term: '', market: 'United States' })
 
     /*
      * The split is between what the SORT KEY is, not what the row is.
@@ -80,7 +99,7 @@ describe('opportunities', () => {
   })
 
   it('offers to drop the filter that emptied the table', async () => {
-    const view = await getOpportunities({ minSales: '99999' })
+    const view = present(await getOpportunities({ minSales: '99999' }))
     expect(view.products).toHaveLength(0)
     expect(view.filters.minSales).toBe(99999)
   })
@@ -88,7 +107,7 @@ describe('opportunities', () => {
 
 describe('competitors', () => {
   it('reports a shop it has not observed as absent', async () => {
-    const view = await getCompetitors(CTX, { shop: 'A Shop That Does Not Exist' })
+    const view = present(await getCompetitors(CTX, { shop: 'A Shop That Does Not Exist' }))
     // The adapter used to answer any string with the same figures, so a typo
     // produced a confident profile for a shop that does not exist.
     expect(view.selected).toBeNull()
@@ -96,14 +115,14 @@ describe('competitors', () => {
   })
 
   it('tracks more than one shop, with different figures', async () => {
-    const view = await getCompetitors(CTX)
+    const view = present(await getCompetitors(CTX))
     expect(view.shops.length).toBeGreaterThan(1)
     const listings = view.shops.map((s) => s.activeListings)
     expect(new Set(listings).size).toBe(listings.length)
   })
 
   it('derives revenue from the sales range and the observed median price', async () => {
-    const view = await getCompetitors(CTX)
+    const view = present(await getCompetitors(CTX))
     for (const shop of view.shops) {
       const sales = shop.monthlySales.value!
       const revenue = shop.monthlyRevenue.value!
@@ -120,7 +139,7 @@ describe('competitors', () => {
   })
 
   it('marks a tag the competitor uses and this shop does not', async () => {
-    const view = await getCompetitors(CTX)
+    const view = present(await getCompetitors(CTX))
     expect(view.comparison!.gaps.length).toBeGreaterThan(0)
     expect(view.comparison!.gaps.some((g) => g.yourCount === 0)).toBe(true)
   })
@@ -128,7 +147,7 @@ describe('competitors', () => {
 
 describe('niche research', () => {
   it('takes everything down together when a term is unsampled', async () => {
-    const view = await getNiche({ q: 'a term nobody has ever sampled' })
+    const view = present(await getNiche({ q: 'a term nobody has ever sampled' }))
     expect(view.sparse).toBe(true)
     expect(view.signals.demand.value).toBeNull()
     /*
@@ -142,14 +161,14 @@ describe('niche research', () => {
   })
 
   it('offers the terms it has actually sampled', async () => {
-    const view = await getNiche({ q: 'nonsense' })
+    const view = present(await getNiche({ q: 'nonsense' }))
     expect(view.known.length).toBeGreaterThan(0)
-    const real = await getNiche({ q: view.known[0]! })
+    const real = present(await getNiche({ q: view.known[0]! }))
     expect(real.sparse).toBe(false)
   })
 
   it('states conditions, never a recommendation', async () => {
-    const view = await getNiche({ q: 'linen table linens' })
+    const view = present(await getNiche({ q: 'linen table linens' }))
     expect(view.conditions.length).toBeGreaterThan(2)
     for (const condition of view.conditions) {
       // A condition carries a number the seller can check. Advice does not.
@@ -162,7 +181,7 @@ describe('niche research', () => {
   })
 
   it('leaves a sub-niche with too few samples with no figures at all', async () => {
-    const view = await getNiche({ q: 'linen table linens' })
+    const view = present(await getNiche({ q: 'linen table linens' }))
     const thin = view.signals.subNiches.find((s) => s.demand.value === null)!
     expect(thin).toBeDefined()
     expect(thin.priceBand).toBeNull()

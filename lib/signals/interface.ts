@@ -4,11 +4,16 @@
  * Deliberately NOT part of EtsyService.
  *
  * Etsy does not publish keyword search volume, competitor sales, or anything
- * else on this interface. Every figure here is modelled from public marketplace
- * observation - listing counts, review velocity, favourites, observed ranking
- * movement. Putting it behind the Etsy adapter would make it look like Etsy data
- * one refactor later, and the badge would be the only thing standing between a
- * seller and that mistake.
+ * else on this interface. NOTHING BEHIND IT IS OBSERVED: there is one
+ * implementation, MockMarketSignalsService, and it generates every figure from
+ * the term it was handed. Putting this behind the Etsy adapter would make it
+ * look like Etsy data one refactor later, and the badge would be the only thing
+ * standing between a seller and that mistake.
+ *
+ * The field comments below used to describe the plan - "publicly visible on the
+ * shop page", "listings observed, with the sampling error stated" - and a
+ * reader had no way to tell the plan from the code. They now describe what the
+ * value IS.
  *
  * Two consequences follow from the separation and are enforced by the types:
  *
@@ -16,7 +21,7 @@
  *      estimate that can be rendered as a single figure will eventually be
  *      rendered as a single figure.
  *
- *   2. A term with too little observation returns UNAVAILABLE with a null
+ *   2. A term the model has nothing for returns UNAVAILABLE with a null
  *      value. There is no shape for a fallback, so "Sparse data" cannot quietly
  *      become a small number.
  *
@@ -42,9 +47,9 @@ export interface TrendPoint {
 export interface KeywordSignals {
   term: string
   market: string
-  /** Modelled monthly searches. Null when observation is too sparse. */
+  /** Modelled monthly searches. Null when there is nothing modelled. */
   demand: Provenanced<EstimatedRange>
-  /** Competing listings observed, and the band that follows from it. */
+  /** Modelled competing-listing count, and the band that follows from it. */
   competingListings: Provenanced<EstimatedRange>
   competition: Provenanced<CompetitionBand>
   /**
@@ -56,13 +61,37 @@ export interface KeywordSignals {
   trend30d: Provenanced<number>
   /** Twelve months, oldest first. Sparse months carry null and render dashed. */
   history: TrendPoint[]
-  /** Share of observed listings whose text matches each intent, 0-1. */
+  /** Share of the modelled listings whose text matches each intent, 0-1. */
   intent: Provenanced<{ label: string; share: number }[]>
-  /** Public listings ranking for the term. Observable, so no estimate needed. */
+  /*
+   * Sample rows, and the shop names in them are invented.
+   *
+   * This said "public listings ranking for the term. Observable, so no estimate
+   * needed", and the Keywords page printed them under "Publicly visible on Etsy
+   * right now. Observed, not modelled." They are three literals in mock.ts.
+   * Nothing is ranked, nothing is visible, and no shop called Aurelia Made
+   * exists.
+   */
   topListings: { title: string; shop: string; price: number; reviews: number }[]
-  /** When the underlying observation was taken. */
-  observedAt: string
 }
+
+/*
+ * ── THERE IS NO TIMESTAMP ON ANY OF THESE ─────────────────────────────
+ *
+ * Each of these four interfaces carried `observedAt: string`, documented as
+ * "when the underlying observation was taken". Every one was the same authored
+ * constant in mock.ts, rendered as "Last updated", "last observed" and "model
+ * last refreshed" on four screens.
+ *
+ * A modelled figure has no observation time — there is nothing for the time to
+ * be OF — so the field is gone rather than renamed. Removing it is what took
+ * the line off the screens: the compiler found all four callers, which is not
+ * true of a field left in place with a better comment on it.
+ *
+ * When the model's own run time becomes a real thing (a nightly job writing
+ * rows, say), the honest field is `modelledAt` and the honest label is "model
+ * last ran" — a different claim, added when there is something to claim.
+ */
 
 export interface RelatedTerm {
   term: string
@@ -79,7 +108,7 @@ export interface CompetitorShop {
   name: string
   location: string
   openedYear: number
-  /** Publicly visible on the shop page. Observation, not estimation. */
+  /** Modelled, though it is the kind of figure a shop page shows to anybody. */
   activeListings: number
   reviews: number
   reviewsAdded30d: number
@@ -89,17 +118,16 @@ export interface CompetitorShop {
   monthlySales: Provenanced<EstimatedRange>
   monthlyRevenue: Provenanced<EstimatedRange>
   topTags: { tag: string; count: number }[]
-  observedAt: string
 }
 
 /*
  * A product observed on the marketplace (artboard 21).
  *
- * Everything publicly visible — title, shop, price, reviews, favourites, age —
- * is a plain value, because it is observation rather than estimation. Sales and
- * revenue are Provenanced<EstimatedRange> for the same reason every other
- * modelled figure is: a range cannot be rendered as a single confident number
- * by accident.
+ * Title, shop, price, reviews, favourites and age are plain values — not
+ * because they are observed (nothing here is) but because the model produces a
+ * single figure for them rather than a band. Sales and revenue are
+ * Provenanced<EstimatedRange> for the same reason every other modelled figure
+ * is: a range cannot be rendered as a single confident number by accident.
  *
  * `opportunity` is null wherever sales are unavailable. A score computed over a
  * missing input is a number invented to fill a column.
@@ -113,13 +141,12 @@ export interface ProductSignals {
   price: number
   reviews: number
   favorites: number
-  /** Months since the listing first appeared in observation. */
+  /** Modelled age of the listing, in months. */
   ageMonths: number
   digital: boolean
   monthlySales: Provenanced<EstimatedRange>
   monthlyRevenue: Provenanced<EstimatedRange>
   opportunity: Provenanced<number> | null
-  observedAt: string
 }
 
 /** What the Opportunities screen can filter on, all optional. */
@@ -147,17 +174,16 @@ export interface NicheSignals {
   term: string
   market: string
   demand: Provenanced<EstimatedRange>
-  /** Listings observed, with the sampling error stated. */
+  /** Modelled listing count, with the width the model reports it to. */
   listings: Provenanced<number>
   /** Listings per search. CALCULATED from the two above. */
   crowding: Provenanced<CompetitionBand> | null
-  /** Middle 50% of observed listing prices. */
+  /** Middle 50% of the modelled listing prices. */
   priceBand: Provenanced<EstimatedRange> | null
-  /** Top ten shops' share of observed listings, 0-100. */
+  /** Top ten shops' share of the modelled listings, 0-100. */
   concentration: Provenanced<number> | null
   history: TrendPoint[]
   subNiches: SubNiche[]
-  observedAt: string
 }
 
 export interface MarketSignalsService {
@@ -165,12 +191,12 @@ export interface MarketSignalsService {
   getKeyword(term: string, market: string): Promise<KeywordSignals>
   getRelated(term: string, market: string): Promise<RelatedTerm[]>
   getCompetitor(shopName: string): Promise<CompetitorShop | null>
-  /** Shops this account is tracking. Observation only — no private data. */
+  /** Shops this account is tracking. Modelled — and no private data anywhere. */
   listCompetitors(): Promise<CompetitorShop[]>
   /** Products matching a query. Empty is a real answer, not an error. */
   findProducts(query: ProductQuery): Promise<ProductSignals[]>
   /** Whether a niche is worth entering. Every figure is modelled. */
   getNiche(term: string, market: string): Promise<NicheSignals>
-  /** Terms the model has enough observation to report on at all. */
+  /** Terms the modelled set covers at all. */
   suggest(prefix: string, market: string): Promise<string[]>
 }

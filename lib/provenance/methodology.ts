@@ -21,7 +21,15 @@ export interface Methodology {
   source: string
   /** How the number was produced. Plain language. */
   method: string
-  /** When the underlying observation was made, not when this rendered. */
+  /*
+   * When the underlying observation was made, not when this rendered.
+   *
+   * NO ENTRY CARRIES ONE TODAY. keywordDemand had
+   * `freshness: '2026-08-10T06:02:00.000Z'` — an authored instant, rendered
+   * on /data/methodology under the label "Observed", for a figure that is
+   * modelled from the term it was handed. The field stays because a source
+   * that really does observe something will have one; the value is gone.
+   */
   freshness?: string
   confidence?: Confidence
   /** Percent of the relevant population this figure covers, 0-100. */
@@ -133,20 +141,37 @@ export const METHODOLOGIES: Record<string, Methodology> = {
     readMoreHref: '/data/methodology#active-listings',
   },
 
+  /*
+   * ── THE FOUR RESEARCH ENTRIES, WHICH DESCRIBED A SAMPLER ─────────────
+   *
+   * These four render in the provenance drawers behind the Research badges and
+   * again on /data/methodology, and they said "sampled weekly", "counted from
+   * listings observed for the term", "observed competing listings" and
+   * "modelled over a 90-day observation window". Nothing is sampled, counted
+   * or observed: lib/signals has one implementation and it is a generator
+   * seeded from the term. The drawer a seller opens to check a figure's
+   * provenance was the most confident statement of the thing that was not
+   * true.
+   *
+   * Everything else in this catalogue stays exactly as it was. grossSales,
+   * orders, activeListings and the operator entries really are counted — from
+   * Etsy's own responses or from our own tables — and "counted" is the correct
+   * word there. The vocabulary is not the problem; using it for figures nobody
+   * counted was.
+   */
   keywordDemand: {
     metric: 'Keyword demand',
     type: 'ESTIMATED',
-    source: 'Public autocomplete and listing-count signals, sampled weekly',
+    source: 'Modelled sample data',
     method:
-      'Signals are normalised into a monthly band. We publish the band, never a midpoint.',
-    freshness: '2026-08-10T06:02:00.000Z',
+      'Modelled from the term itself and normalised into a monthly band. We publish the band, never a midpoint. There is no market-data source behind it, so nothing here is a measurement of anything.',
     confidence: 'MODERATE',
     coverage: 100,
     coverageLabel: 'of the four supported locales',
     limitations: [
       'Etsy publishes no search volume. This is not Etsy search data and does not represent Etsy’s internal figures.',
+      'Not a measurement of anything. Available in the demo only, where it is badged as sample data.',
       'Treat two terms with overlapping bands as equal.',
-      'Confidence drops below 100 competing listings.',
     ],
     readMoreHref: '/data/methodology#keyword-demand',
   },
@@ -154,13 +179,13 @@ export const METHODOLOGIES: Record<string, Methodology> = {
   keywordCompetition: {
     metric: 'Competition',
     type: 'ESTIMATED',
-    source: 'Public marketplace signals · listings observed to match the term',
+    source: 'Modelled sample data · a modelled listing count for the term',
     method:
-      'Counted from listings observed for the term, then placed in a band: under 8,000 low, under 25,000 medium, above that high.',
+      'A modelled listing total for the term, placed in a band: under 8,000 low, under 25,000 medium, above that high. Nothing is measured — there is no source behind it.',
     confidence: 'MODERATE',
     limitations: [
       'A band, not a ranking difficulty score. CobaltRank does not model Etsy ranking and no one outside Etsy can.',
-      'Observed, not exhaustive — Etsy paginates and rotates search results.',
+      'Modelled, not measured. Even a real tally could not be exhaustive — Etsy paginates and rotates search results.',
     ],
     readMoreHref: '/data/methodology#keyword-competition',
   },
@@ -168,9 +193,9 @@ export const METHODOLOGIES: Record<string, Methodology> = {
   keywordOpportunity: {
     metric: 'Opportunity',
     type: 'CALCULATED',
-    source: 'Modelled demand and observed competing listings',
+    source: 'Modelled demand and a modelled competing-listing count',
     method:
-      'Modelled demand divided by observed competing listings, scaled to 0-100. A visible formula over two estimated inputs.',
+      'Modelled demand divided by the modelled competing-listing count, scaled to 0-100. A visible formula over two estimated inputs.',
     limitations: [
       'Inherits the uncertainty of both inputs — it is not more precise than the ranges it came from.',
       'Not a prediction of ranking or sales. Etsy publishes neither.',
@@ -196,8 +221,9 @@ export const METHODOLOGIES: Record<string, Methodology> = {
   competitorSales: {
     metric: 'Competitor estimated sales',
     type: 'ESTIMATED',
-    source: 'Public marketplace signals · review velocity and public sales counter',
-    method: 'Modelled over a 90-day observation window and published as a range.',
+    source: 'Modelled sample data · a model of review velocity and sales-counter movement',
+    method:
+      'Modelled over a 90-day window and published as a range. The inputs are modelled too: no shop page, counter or feed is read.',
     confidence: 'MODERATE',
     limitations: [
       'Only the shop owner can see their real Etsy figures. These can differ materially.',

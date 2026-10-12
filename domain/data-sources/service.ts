@@ -18,7 +18,7 @@
 
 import { getAiProvider } from '@/lib/ai'
 import { isDemoMode } from '@/lib/etsy'
-import { getSignalsService } from '@/lib/signals'
+import { marketSignalsMode } from '@/lib/signals'
 import type { ProvenanceType } from '@/lib/provenance/types'
 
 export interface DataSource {
@@ -40,13 +40,20 @@ export const NOT_RELEASED = [
   { what: 'Listing views and visits', instead: 'Import your Etsy Stats CSV' },
   { what: 'Search terms buyers used', instead: 'Not available anywhere' },
   { what: 'Etsy Ads performance', instead: 'Enter spend manually' },
-  { what: "Another shop's real sales", instead: 'Estimated ranges only' },
+  /*
+   * "Estimated ranges only" was the answer here, and it pointed at the
+   * Research section's competitor estimates. Those exist in the demo and
+   * nowhere else (lib/signals/index.ts), so on a live deployment the
+   * alternative offered was a screen that is not built. The honest answer is
+   * the same one the row above it gives.
+   */
+  { what: "Another shop's real sales", instead: 'Not available anywhere' },
 ] as const
 
 export function dataSources(): DataSource[] {
   const demo = isDemoMode()
   const ai = getAiProvider().mode
-  const signals = getSignalsService().mode
+  const signals = marketSignalsMode()
 
   return [
     {
@@ -73,17 +80,38 @@ export function dataSources(): DataSource[] {
         'Only as accurate as what you enter. Gaps reduce profit coverage rather than being filled in.',
       status: null,
     },
+    /*
+     * ── THE ROW THAT WAS ALREADY TELLING THE TRUTH ─────────────────────
+     *
+     * `signals === 'MOCK' ? 'Modelled sample data' : 'Live sampling'` was the
+     * only honest statement about market signals anywhere in the product, and
+     * it was on the page nobody opens while five Research screens printed
+     * modelled figures as observations. Everything else is now reconciled to
+     * this line rather than the other way round.
+     *
+     * Two things changed here, both because the branch had no third arm: there
+     * is now no adapter at all outside demo mode, so NONE is the live answer,
+     * and the row's own name, cadence and limitations were written for the
+     * sampler that was planned and has never existed.
+     */
     {
       key: 'signals',
-      name: 'Public marketplace signals',
-      via: 'Sampled, aggregated',
+      name: 'Market signals',
+      via: signals === 'NONE' ? 'Nothing connected' : 'Generated, in the demo only',
       provides:
         'Keyword demand bands, competition, category distribution, competitor sales ranges, trend direction.',
-      class: 'ESTIMATED',
-      refresh: 'Weekly',
+      class: signals === 'NONE' ? 'UNAVAILABLE' : 'ESTIMATED',
+      refresh: signals === 'NONE' ? 'Never' : 'Static',
       limitations:
-        'Never official Etsy figures. Always shown as a range with confidence. Four locales only.',
-      status: signals === 'MOCK' ? 'Modelled sample data' : 'Live sampling',
+        signals === 'NONE'
+          ? 'There is no source. Etsy publishes none of this, nothing else is connected, and the Research screens say so rather than modelling it.'
+          : 'Never official Etsy figures and never measured — sample data, shown as a range with confidence. Four locales only.',
+      status:
+        signals === 'NONE'
+          ? 'Not built yet — no source'
+          : signals === 'MOCK'
+            ? 'Modelled sample data'
+            : 'Live sampling',
     },
     {
       key: 'stats-import',

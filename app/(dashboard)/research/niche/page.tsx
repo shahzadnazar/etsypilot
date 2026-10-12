@@ -10,9 +10,9 @@ import { EmptyState } from '@/components/ui/states'
 import { NumericCell } from '@/components/ui/numeric'
 import { getNiche, TARGET_MARGIN } from '@/domain/research/niche'
 import { getSession } from '@/lib/auth'
-import { formatRelative } from '@/lib/utils/format'
 import { isDemoMode } from '@/lib/etsy'
 import { ModelledNotice } from '@/components/research/modelled-notice'
+import { ResearchNotBuilt } from '@/components/research/not-built'
 
 export const metadata: Metadata = { title: 'Niche research' }
 
@@ -51,13 +51,24 @@ export default async function NichePage({
 
   const query = await searchParams
   const view = await getNiche(query)
+  /*
+   * No market-signals source on this deployment. See lib/signals/index.ts.
+   */
+  if (!view) {
+    return (
+      <ResearchNotBuilt
+        title="Niche research"
+        what="Niche demand, crowding, price bands and concentration"
+      />
+    )
+  }
   const { signals } = view
 
   return (
     <>
       <PageHeader
         title="Niche research"
-        subtitle="Whether a niche is worth entering — demand, crowding, price ceiling · every figure modelled from public marketplace signals, not Etsy data"
+        subtitle="Whether a niche is worth entering — demand, crowding, price ceiling · every figure is modelled sample data, and none of it is Etsy data"
       />
 
       <form
@@ -103,10 +114,10 @@ export default async function NichePage({
          * on nothing.
          */
         <EmptyState
-          title={`“${view.term}” has not been sampled enough to model`}
+          title={`The model has nothing for “${view.term}”`}
           description={
             signals.demand.provenance.methodology ??
-            'CobaltRank samples public listing and autocomplete signals weekly, and a term has to appear across several weeks before it can be reported.'
+            'CobaltRank has no market-data source, so a niche is either in the modelled set or it is blank. Nothing is invented to fill it.'
           }
           action={
             <div className="flex flex-wrap gap-2">
@@ -138,7 +149,7 @@ export default async function NichePage({
               label="Listings"
               data={signals.listings}
               demo={demoData}
-              note="±8% sampling error"
+              note="modelled to ±8%"
             >
               <span className="tnum">
                 {signals.listings.value === null
@@ -183,9 +194,14 @@ export default async function NichePage({
 
           <Card className="mt-4 p-[18px]">
             <h2 className="text-section text-ink-1">Twelve-month demand shape</h2>
+            {/*
+              * "last observed {relative}" printed one authored constant from
+              * lib/signals/mock.ts on every niche, for every term. There is
+              * no observation and no model run to date, so the line is gone
+              * rather than relabelled — see lib/signals/interface.ts.
+              */}
             <p className="pb-2 text-caption text-muted-1">
-              Modelled index · the line breaks where sampling was too thin to report · last observed{' '}
-              {formatRelative(signals.observedAt)}
+              Modelled index · the line breaks where the model has no figure for a month
             </p>
             <DemandChart history={signals.history} term={view.term} />
           </Card>
@@ -205,9 +221,9 @@ export default async function NichePage({
             >
               <table className="w-full min-w-[560px] border-collapse text-body">
                 <caption className="sr-only">
-                  Sub-segments of {view.term}, with modelled demand, observed listing counts and
-                  price bands. A sub-niche with too few samples shows no figures rather than small
-                  ones.
+                  Sub-segments of {view.term}, with modelled demand, modelled listing counts and
+                  modelled price bands. A sub-niche the model has nothing for shows no figures
+                  rather than small ones.
                 </caption>
                 <thead>
                   <tr className="bg-canvas-soft text-left text-label text-muted-1">
@@ -247,7 +263,7 @@ export default async function NichePage({
                               —
                             </span>
                             <span className="sr-only">
-                              No price band — too few samples in this sub-niche
+                              No price band — the model has none for this sub-niche
                             </span>
                           </>
                         )}
@@ -314,9 +330,9 @@ export default async function NichePage({
           lead={
             <>
               <strong>Every figure on this page is modelled.</strong> Nothing here is Etsy data.
-              Etsy publishes no search volume and no competitor sales to anyone; demand, crowding
-              and the price ceiling are modelled from public listing and autocomplete signals and
-              shown as ranges.
+              Etsy publishes no search volume and no competitor sales to anyone, and CobaltRank has
+              no market-data source of its own either — so demand, crowding and the price ceiling
+              are sample data, shown as ranges, and available in the demo only.
             </>
           }
           excludes="Ads, off-platform traffic, wholesale, refunds"

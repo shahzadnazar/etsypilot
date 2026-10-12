@@ -525,7 +525,7 @@ const FAQ = [
   },
   {
     q: 'Why is there no keyword research?',
-    a: 'Because Etsy does not expose search volume through its API. Every tool that shows you a volume number got it from somewhere else — a third-party panel, a clickstream, a model — and most of them do not say which. CobaltRank will not ship an estimate dressed as a measurement. If a trustworthy source appears, it will arrive labelled Estimated with its method attached, and not before.',
+    a: 'Because Etsy does not expose search volume through its API. Every tool that shows you a volume number got it from somewhere else — a third-party panel, a clickstream, a model — and most of them do not say which. CobaltRank will not ship an estimate dressed as a measurement. The Research screens are drawn and you can walk through them in the demo, where every figure is sample data and badged as such; on a connected shop they say they are not built rather than inventing a number. If a trustworthy source appears, it will arrive labelled Estimated with its method attached, and not before.',
   },
   {
     q: 'When does it launch?',

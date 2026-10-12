@@ -6,13 +6,13 @@ import { EstimateTile, RangeValue } from '@/components/provenance/estimate'
 import { ProvenanceButton } from '@/components/provenance/provenance-button'
 import { DemandChart } from '@/components/research/demand-chart'
 import { RelatedTermsTable } from '@/components/research/related-terms'
+import { ResearchNotBuilt } from '@/components/research/not-built'
 import { NotYet } from '@/components/settings/not-yet'
 import { Card } from '@/components/ui/card'
 import { Numeric } from '@/components/ui/numeric'
 import { DEFAULT_TERM, getKeywordView } from '@/domain/research/service'
 import { getSession } from '@/lib/auth'
 import { shopContext } from '@/lib/permissions'
-import { formatDateTime } from '@/lib/utils/format'
 import { isDemoMode } from '@/lib/etsy'
 
 export const metadata: Metadata = { title: 'Keywords' }
@@ -52,6 +52,19 @@ export default async function KeywordsPage({
    */
   const demoData = isDemoMode()
   const view = await getKeywordView(ctx, term)
+  /*
+   * No market-signals source on this deployment. Not built, and the screen
+   * says so instead of rendering a mock's output to a live seller. See
+   * lib/signals/index.ts.
+   */
+  if (!view) {
+    return (
+      <ResearchNotBuilt
+        title="Keywords"
+        what="Keyword demand, competition and related terms"
+      />
+    )
+  }
   const { signals } = view
 
   const sparse = signals.demand.value === null
@@ -60,7 +73,7 @@ export default async function KeywordsPage({
     <>
       <PageHeader
         title="Keywords"
-        subtitle={`${term} · ${signals.market} · modelled from public marketplace signals — not official Etsy data`}
+        subtitle={`${term} · ${signals.market} · modelled sample data — nothing here was measured, and none of it is Etsy data`}
         actions={
           <>
             <NotYet
@@ -79,7 +92,7 @@ export default async function KeywordsPage({
       {sparse ? (
         <Card className="mb-4 p-4 text-small leading-relaxed text-ink-2">
           <strong className="font-semibold text-ink-1">
-            Too few public signals were observed for “{term}”.
+            The model has nothing for “{term}”.
           </strong>{' '}
           {signals.demand.provenance.methodology} Rather than print a small number that would
           look like a measurement, this page leaves demand, competition and opportunity blank.
@@ -97,7 +110,7 @@ export default async function KeywordsPage({
           demo={demoData}
           note={
             signals.competingListings.value
-              ? `~${signals.competingListings.value.min.toLocaleString('en-US')}–${signals.competingListings.value.max.toLocaleString('en-US')} competing listings observed`
+              ? `~${signals.competingListings.value.min.toLocaleString('en-US')}–${signals.competingListings.value.max.toLocaleString('en-US')} competing listings, modelled`
               : undefined
           }
         >
@@ -141,7 +154,7 @@ export default async function KeywordsPage({
       <Card className="mt-4 p-[18px]">
         <h2 className="text-section text-ink-1">12-month demand trend</h2>
         <p className="mt-1 text-caption text-muted-1">
-          Indexed · {signals.market} · modelled monthly, broken where observation was sparse
+          Indexed · {signals.market} · modelled monthly, broken where the model has no figure
         </p>
         <div className="mt-3">
           <DemandChart history={signals.history} term={term} />
@@ -170,8 +183,20 @@ export default async function KeywordsPage({
       <div className="mt-5 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
         <Card className="p-[18px]">
           <h2 className="text-section text-ink-1">Top listings for this term</h2>
+          {/*
+            * ── THE SHARPEST SENTENCE IN THE SECTION, AND IT WAS FALSE TWICE ──
+            *
+            * "Publicly visible on Etsy right now. Observed, not modelled."
+            * sat directly above three rows carrying other shops' names,
+            * prices and review counts. They are three literals in
+            * lib/signals/mock.ts. Nothing is visible on Etsy, nothing is
+            * observed, and no shop called Aurelia Made exists — so the one
+            * place the page distinguished observation from modelling made
+            * the invented rows the trustworthy ones.
+            */}
           <p className="mt-1 text-caption text-muted-1">
-            Publicly visible on Etsy right now. Observed, not modelled.
+            Sample rows from the modelled set. These are not Etsy listings and these shops do not
+            exist.
           </p>
           <ul className="mt-3 flex flex-col divide-y divide-line">
             {signals.topListings.map((l) => (
@@ -188,13 +213,21 @@ export default async function KeywordsPage({
         <Card className="p-[18px]">
           <h2 className="text-section text-ink-1">How this data works</h2>
           <p className="mt-2 text-small leading-relaxed text-ink-2">
-            Etsy does not publish keyword search volume — to anyone. CobaltRank models demand from
-            public marketplace signals: listing counts, review velocity, favourites and observed
-            ranking movement.
+            Etsy does not publish keyword search volume — to anyone, through its API or otherwise.
+            CobaltRank has no market-data source either, so every figure on this screen is sample
+            data: modelled from the term itself, so the screen can be explored. Nothing here was
+            measured, and nothing is Etsy data.
           </p>
           <dl className="mt-3 flex flex-col gap-2 text-caption">
-            <Row label="Source category" value="Public marketplace signals" />
-            <Row label="Last updated" value={formatDateTime(signals.observedAt)} />
+            {/*
+              * "Public marketplace signals" named a source that does not
+              * exist, and "Last updated" printed one authored constant from
+              * mock.ts. The source category is now the words /data/sources
+              * has always used for this adapter, and the date is gone: a
+              * modelled figure has no observation time, and there is no
+              * model run to report either. See lib/signals/interface.ts.
+              */}
+            <Row label="Source category" value="Modelled sample data" />
             <Row
               label="Confidence"
               value={

@@ -15,8 +15,8 @@ import { MonthlySeriesChart } from '@/components/charts/monthly-series'
  * arriving through a shared component rather than through a shared number.
  *
  * Sparse months break the line rather than being bridged. An interpolated line
- * over a month with no observation is the chart equivalent of filling a null
- * with a zero: it looks like data and it is a drawing.
+ * over a month the model has no figure for is the chart equivalent of filling a
+ * null with a zero: it looks like data and it is a drawing.
  *
  * Months are plotted from their YYYY-MM key and never passed through a zoned
  * formatter (D24).
@@ -33,13 +33,13 @@ export function DemandChart({
   return (
     <MonthlySeriesChart
       points={history.map((p) => ({ month: p.month, value: p.index }))}
-      description={`Twelve months of modelled demand for ${term}. ${sparse} month${sparse === 1 ? '' : 's'} had too little observation to model and are left blank.`}
+      description={`Twelve months of modelled demand for ${term}. ${sparse} month${sparse === 1 ? '' : 's'} have no modelled figure and are left blank.`}
       caption={
         <>
           Indexed, modelled monthly.{' '}
           {sparse > 0
-            ? `${sparse} month${sparse === 1 ? '' : 's'} had too little observation to model — the line breaks rather than guessing across the gap.`
-            : 'Every month in this window had enough observation to model.'}
+            ? `${sparse} month${sparse === 1 ? '' : 's'} have no modelled figure — the line breaks rather than guessing across the gap.`
+            : 'Every month in this window has a modelled figure.'}
         </>
       }
     />

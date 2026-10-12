@@ -70,8 +70,16 @@ export interface CompetitorsView {
 export async function getCompetitors(
   ctx: ShopContext,
   query: { shop?: string } = {},
-): Promise<CompetitorsView> {
+): Promise<CompetitorsView | null> {
   const signals = getSignalsService()
+  /*
+   * No market-signals source on this deployment, so there is nothing to
+   * compute and nothing to show. `null` and not an empty view: an empty view
+   * renders the screen with holes in it, which says "this figure is missing"
+   * when the truth is "this feature is not built". See lib/signals/index.ts.
+   */
+  if (!signals) return null
+
   const shops = await signals.listCompetitors()
 
   const asked = query.shop?.trim()

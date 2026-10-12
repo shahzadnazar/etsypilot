@@ -60,7 +60,7 @@ export function RelatedTermsTable({ terms, demo }: { terms: RelatedTerm[]; demo:
                     {t.competition?.value ? (
                       COMPETITION_LABEL[t.competition.value]
                     ) : (
-                      <Unknown reason="Not enough observation to place this term in a competition band." />
+                      <Unknown reason="The model has no competition band for this term." />
                     )}
                   </MobileStat>
                   <MobileStat label="Opportunity">
@@ -72,7 +72,7 @@ export function RelatedTermsTable({ terms, demo }: { terms: RelatedTerm[]; demo:
                   </MobileStat>
                   <MobileStat label="30-day trend">
                     {t.trend30d === null || t.trend30d.value === null ? (
-                      <Unknown reason="Not enough observation to measure a trend." />
+                      <Unknown reason="The model has no 30-day trend for this term." />
                     ) : t.trend30d.value === 0 ? (
                       'flat'
                     ) : (
@@ -94,8 +94,8 @@ export function RelatedTermsTable({ terms, demo }: { terms: RelatedTerm[]; demo:
       >
       <table className="w-full min-w-[720px] border-collapse text-body">
         <caption className="sr-only">
-          Related terms with modelled demand, observed competition and a calculated
-          opportunity score. Terms with too little observation show no score.
+          Related terms with modelled demand, modelled competition and a calculated
+          opportunity score. Terms the model has nothing for show no score.
         </caption>
         <thead>
           <tr className="bg-canvas-soft text-left text-label text-muted-1">
@@ -132,7 +132,7 @@ export function RelatedTermsTable({ terms, demo }: { terms: RelatedTerm[]; demo:
                       />
                     </span>
                   ) : (
-                    <Unknown reason="Not enough observation to place this term in a competition band." />
+                    <Unknown reason="The model has no competition band for this term." />
                   )}
                 </td>
                 <NumericCell className="text-ink-2">
@@ -144,7 +144,7 @@ export function RelatedTermsTable({ terms, demo }: { terms: RelatedTerm[]; demo:
                 </NumericCell>
                 <NumericCell className="text-ink-2">
                   {t.trend30d === null || t.trend30d.value === null ? (
-                    <Unknown reason="Not enough observation to measure a trend." />
+                    <Unknown reason="The model has no 30-day trend for this term." />
                   ) : t.trend30d.value === 0 ? (
                     'flat'
                   ) : (

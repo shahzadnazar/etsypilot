@@ -7,7 +7,7 @@
  * The demo terms carry the figures from artboards 23-24 and 34. Any other term
  * is modelled from the same seeded generator, so the screen works for a term
  * the designer never drew - including the case that matters most, a term with
- * too little observation to report.
+ * nothing modelled at all.
  */
 
 import { calculated, estimated, unavailable } from '@/lib/provenance/builders'
@@ -26,11 +26,35 @@ import type {
   TrendPoint,
 } from './interface'
 
-const SOURCE = 'Public marketplace signals'
-const OBSERVED_AT = '2026-08-20T06:02:00.000Z'
+/*
+ * ── THE SOURCE NAME, AND THE INSTANT THAT IS NOT ONE ────────────────────
+ *
+ * This read:
+ *
+ *     const SOURCE = 'Public marketplace signals'
+ *     const OBSERVED_AT = '2026-08-20T06:02:00.000Z'
+ *
+ * The first named a source that does not exist — there is no sampler, no
+ * marketplace feed, nothing behind this file but a seeded generator — and it
+ * was rendered as "Source category" on the Keywords panel and in every
+ * provenance drawer in the Research section.
+ *
+ * The second was worse, because it was a single authored instant rendered as
+ * "Last updated", "last observed" and "Updated 2 months ago". A figure this
+ * file invents has no observation time; there is nothing to be the time OF.
+ * So it is gone rather than relabelled: no `freshness` on any record here, and
+ * no `observedAt` on anything returned, which is what removes it from the
+ * screens rather than trusting five callers to stop printing it.
+ *
+ * SOURCE is now the same words /data/sources has always used for this adapter
+ * — `signals === 'MOCK' ? 'Modelled sample data' : 'Live sampling'`. That line
+ * was the only honest statement about provenance in the product; the rest is
+ * reconciled to it rather than the other way round.
+ */
+const SOURCE = 'Modelled sample data'
 
 const METHODOLOGY =
-  'Etsy does not publish search volume. Demand is modelled from public marketplace signals — listing counts, review velocity, favourites and observed ranking movement — over a 90-day window.'
+  'Etsy publishes no search volume, to anyone. This band is modelled rather than measured — CobaltRank has no market-data source, so the figure is sample data generated from the term itself.'
 
 const LIMITATIONS = [
   'Not official Etsy data. Etsy publishes no search volume for anyone.',
@@ -38,7 +62,7 @@ const LIMITATIONS = [
   'Treat two terms with overlapping ranges as equal — the model cannot separate them.',
 ]
 
-/** Terms with enough observation to report. Everything else is sparse. */
+/** The terms the sample covers. Everything else comes back blank. */
 const CATALOGUE: Record<string, { demand: EstimatedRange; listings: number; trend: number; confidence: Confidence }> = {
   'birth flower necklace': { demand: { min: 14000, max: 22000 }, listings: 38000, trend: 18, confidence: 'HIGH' },
   'personalized birth flower necklace': { demand: { min: 6000, max: 9000 }, listings: 14200, trend: 24, confidence: 'HIGH' },
@@ -52,7 +76,7 @@ const CATALOGUE: Record<string, { demand: EstimatedRange; listings: number; tren
   'custom pet portrait': { demand: { min: 18000, max: 26000 }, listings: 51200, trend: 11, confidence: 'HIGH' },
 }
 
-/** Observed too rarely to model. These return UNAVAILABLE, never a small number. */
+/** Deliberately outside the sample, so the blank path has a term. UNAVAILABLE, never a small number. */
 const SPARSE = new Set(['november birth flower chrysanthemum', 'november birth flower'])
 
 function mulberry32(seed: number): () => number {
@@ -84,8 +108,8 @@ function demandOf(term: string): Provenanced<EstimatedRange> {
   const key = term.trim().toLowerCase()
   if (SPARSE.has(key)) {
     return unavailable(
-      'Too few public signals were observed for this term to model demand.',
-      'Try a broader term, or check back once more listings use it.',
+      'The model has no band for this term, and nothing is invented to fill the gap.',
+      'Try a broader term — the modelled set covers a handful.',
     ) as Provenanced<EstimatedRange>
   }
 
@@ -96,18 +120,17 @@ function demandOf(term: string): Provenanced<EstimatedRange> {
       methodology: METHODOLOGY,
       confidence: entry.confidence,
       limitations: LIMITATIONS,
-      freshness: OBSERVED_AT,
     })
   }
 
   // An unseen term still gets a modelled range, or nothing if the seed puts it
-  // below the observation floor. Sparse is the common case in a real catalogue.
+  // below the floor. Blank is the common case and has to be explorable.
   const rng = mulberry32(seedFor(key))
   const base = Math.round(rng() * 9000)
   if (base < 800) {
     return unavailable(
-      'Too few public signals were observed for this term to model demand.',
-      'Try a broader term, or check back once more listings use it.',
+      'The model has no band for this term, and nothing is invented to fill the gap.',
+      'Try a broader term — the modelled set covers a handful.',
     ) as Provenanced<EstimatedRange>
   }
   const spread = 0.35 + rng() * 0.3
@@ -118,7 +141,6 @@ function demandOf(term: string): Provenanced<EstimatedRange> {
       methodology: METHODOLOGY,
       confidence: base > 4000 ? 'MODERATE' : 'LOW',
       limitations: LIMITATIONS,
-      freshness: OBSERVED_AT,
     },
   )
 }
@@ -135,18 +157,16 @@ function competingOf(term: string): { listings: Provenanced<EstimatedRange>; ban
       {
         source: SOURCE,
         methodology:
-          'Counted from listings observed to match the term, then widened to a range because the marketplace changes daily.',
+          'A modelled listing total for the term, widened to a range. Nothing is measured: there is no source behind it.',
         confidence: 'MODERATE',
-        limitations: ['Observed, not exhaustive — Etsy paginates and rotates results.'],
-        freshness: OBSERVED_AT,
+        limitations: ['Modelled, not measured. Even a real tally could not be exhaustive — Etsy paginates and rotates results.'],
       },
     ),
     band: estimated(bandFor(count), {
       source: SOURCE,
-      methodology: `Band from the observed listing count: under 8,000 low, under 25,000 medium, above that high. Observed ${count.toLocaleString('en-US')}.`,
+      methodology: `Band from the modelled listing count: under 8,000 low, under 25,000 medium, above that high. Modelled ${count.toLocaleString('en-US')}.`,
       confidence: 'MODERATE',
       limitations: ['A band, not a ranking difficulty score. We do not model Etsy ranking.'],
-      freshness: OBSERVED_AT,
     }),
   }
 }
@@ -166,7 +186,7 @@ function opportunityOf(
   const midListings = (listings.value.min + listings.value.max) / 2
   const ratio = midDemand / Math.max(1, midListings)
   const score = Math.max(1, Math.min(100, Math.round(ratio * 160)))
-  return calculated(score, 'Modelled demand divided by observed competing listings, scaled to 0-100.', {
+  return calculated(score, 'Modelled demand divided by modelled competing listings, scaled to 0-100.', {
     limitations: [
       'Built from estimated inputs, so it inherits their uncertainty.',
       'Not a prediction of ranking or sales. Etsy does not publish either.',
@@ -183,8 +203,7 @@ function trendOf(term: string): Provenanced<number> {
     source: SOURCE,
     methodology: 'Change in modelled demand against the previous 30 days.',
     confidence: 'MODERATE',
-    limitations: ['Direction is more reliable than magnitude at this sample size.'],
-    freshness: OBSERVED_AT,
+    limitations: ['Direction is the part worth reading. The magnitude is modelled to no better precision than the band it came from.'],
   })
 }
 
@@ -198,8 +217,8 @@ function historyOf(term: string): TrendPoint[] {
   return months.map((month, i) => {
     const seasonal = 40 + Math.sin((i / 12) * Math.PI * 2 - 1.2) * 22
     const noise = (rng() - 0.5) * 10
-    // Two months of the year fall below the observation floor for most terms;
-    // those render dashed rather than being interpolated into a smooth line.
+    // Two months of the year fall below the floor for most terms; those render
+    // dashed rather than being interpolated into a smooth line.
     const sparse = rng() < 0.12
     return { month, index: sparse ? null : Math.max(4, Math.round(seasonal + noise + 20)) }
   })
@@ -247,13 +266,11 @@ export class MockMarketSignalsService implements MarketSignalsService {
       intent: estimated(INTENTS, {
         source: SOURCE,
         methodology:
-          'Share of observed listings whose title and tags match each intent. Shares overlap and do not sum to 100.',
+          'Share of the modelled listings whose title and tags match each intent. Shares overlap and do not sum to 100.',
         confidence: 'LOW',
-        limitations: ['Read from listing text, not from what buyers typed. Etsy does not release that.'],
-        freshness: OBSERVED_AT,
+        limitations: ['Modelled from listing text, not from what buyers typed — Etsy does not release that.'],
       }),
       topListings: TOP_LISTINGS,
-      observedAt: OBSERVED_AT,
     }
   }
 
@@ -277,11 +294,11 @@ export class MockMarketSignalsService implements MarketSignalsService {
   }
 
   /*
-   * Null for a shop the model has not observed.
+   * Null for a shop that is not in the modelled set.
    *
    * This used to return the same figures for any string it was handed, so a
    * typo produced a confident competitor profile for a shop that does not
-   * exist. Absence of observation is a real answer and now has a shape.
+   * exist. Absence is a real answer and now has a shape.
    */
   async getCompetitor(shopName: string): Promise<CompetitorShop | null> {
     const key = shopName.trim().toLowerCase()
@@ -357,8 +374,8 @@ interface CompetitorSeed {
  *
  * getCompetitor used to answer any string with the same figures, so the screen
  * could only ever show one profile and a mistyped name produced a confident
- * answer about a shop that does not exist. Each of these has its own observed
- * counts, and the estimates are derived from them rather than written beside
+ * answer about a shop that does not exist. Each of these has its own
+ * figures, and the estimates are derived from them rather than written beside
  * them — so a revenue range and a median price can never disagree.
  */
 const COMPETITORS: CompetitorSeed[] = [
@@ -435,16 +452,15 @@ function buildCompetitor(seed: CompetitorSeed): CompetitorShop {
     monthlySales: estimated(seed.salesPerMonth, {
       source: SOURCE,
       methodology:
-        'Modelled from review velocity and public sales counter movement over 90 days.',
+        'Modelled from review velocity and sales-counter movement. Neither is measured — there is no source behind them.',
       confidence: 'MODERATE',
       limitations: [
         'Only the shop owner can see their real Etsy figures.',
         'Can differ materially from actual results.',
       ],
-      freshness: OBSERVED_AT,
     }),
     /*
-     * Derived from the sales range and the observed median price, not written
+     * Derived from the sales range and the modelled median price, not written
      * down. A revenue band authored beside a median price is a band that stops
      * agreeing with it the first time either is edited.
      */
@@ -456,14 +472,12 @@ function buildCompetitor(seed: CompetitorSeed): CompetitorShop {
       {
         source: SOURCE,
         methodology:
-          'Modelled sales multiplied by the observed median price across active listings.',
+          'Modelled sales multiplied by the modelled median price across active listings.',
         confidence: 'MODERATE',
         limitations: ['Excludes refunds, wholesale and off-platform sales.'],
-        freshness: OBSERVED_AT,
       },
     ),
     topTags: seed.topTags,
-    observedAt: OBSERVED_AT,
   }
 }
 
@@ -478,7 +492,7 @@ interface ProductSeed {
   favorites: number
   ageMonths: number
   digital: boolean
-  /** Null where observation is too thin to model — a new listing, usually. */
+  /** Null where there is nothing modelled — a new listing, usually. */
   salesPerMonth: EstimatedRange | null
 }
 
@@ -519,7 +533,7 @@ const PRODUCT_SEEDS: ProductSeed[] = [
   {
     /*
      * Three weeks old with 27 reviews. This is the row the screen exists to
-     * handle honestly: there is not enough observation to model it, so sales,
+     * handle honestly: there is nothing modelled for it, so sales,
      * revenue and the opportunity score are all UNAVAILABLE rather than small.
      */
     title: 'Wedding welcome sign, editable template',
@@ -583,19 +597,18 @@ function buildProduct(seed: ProductSeed, index: number): ProductSignals {
 
   const monthlySales: Provenanced<EstimatedRange> = sparse
     ? (unavailable(
-        'Observed for too few weeks to model. A new listing has no review or favourite history to model from.',
+        'Too new to model. A listing this young has no review or favourite history to model from.',
         'Check again once the listing has been live for a full quarter.',
       ) as Provenanced<EstimatedRange>)
     : estimated(seed.salesPerMonth!, {
         source: SOURCE,
         methodology:
-          'Modelled from review velocity, favourites and observed ranking movement over 90 days.',
+          'Modelled from review velocity, favourites and ranking movement. Nothing is measured — those inputs are modelled too.',
         confidence: seed.reviews > 300 ? 'MODERATE' : 'LOW',
         limitations: [
           'Not official Etsy data. Only the shop owner can see their real figures.',
           'Excludes ads, off-platform traffic, wholesale and refunded orders.',
         ],
-        freshness: OBSERVED_AT,
       })
 
   const monthlyRevenue: Provenanced<EstimatedRange> = sparse
@@ -610,10 +623,9 @@ function buildProduct(seed: ProductSeed, index: number): ProductSignals {
         },
         {
           source: SOURCE,
-          methodology: 'Modelled sales multiplied by the listing’s observed price.',
+          methodology: 'Modelled sales multiplied by the listing’s modelled price.',
           confidence: 'LOW',
           limitations: ['Excludes refunds, discounts and off-platform sales.'],
-          freshness: OBSERVED_AT,
         },
       )
 
@@ -638,14 +650,13 @@ function buildProduct(seed: ProductSeed, index: number): ProductSignals {
       ? null
       : calculated(
           opportunityScore(seed),
-          'Modelled demand weighted against observed competition, review count and listing age. 0–100, CobaltRank’s own scale.',
+          'Modelled demand weighted against modelled competition, review count and listing age. 0–100, CobaltRank’s own scale.',
           {
             limitations: [
-              'A score, not a prediction. It ranks what has been observed; it does not say what will sell.',
+              'A score, not a prediction. It ranks the modelled set; it does not say what will sell.',
             ],
           },
         ),
-    observedAt: OBSERVED_AT,
   }
 }
 
@@ -697,7 +708,7 @@ const NICHES: Record<string, NicheSeed> = {
   },
 }
 
-const SAMPLING_ERROR_PERCENT = 8
+const MODEL_ERROR_PERCENT = 8
 
 function buildNiche(term: string, market: string): NicheSignals {
   const key = term.trim().toLowerCase()
@@ -705,14 +716,14 @@ function buildNiche(term: string, market: string): NicheSignals {
 
   if (!seed) {
     /*
-     * A niche nobody has sampled enough is UNAVAILABLE across the board, and
+     * A niche outside the modelled set is UNAVAILABLE across the board, and
      * every derived figure follows it down. There is no partial answer here:
      * crowding without demand, or a price band without listings, would be a
      * confident-looking row built on nothing.
      */
     const none = unavailable(
-      'This niche has not been sampled often enough to model. CobaltRank samples public listing and autocomplete signals weekly, and a term has to appear across several weeks before it can be reported.',
-      'Try a broader term, or check back after the next sampling window.',
+      'This niche is not in the modelled set. CobaltRank has no market-data source to fall back on, so a niche is either modelled or it is blank.',
+      'Try a broader term — the modelled set covers a handful.',
     )
     return {
       term,
@@ -724,7 +735,6 @@ function buildNiche(term: string, market: string): NicheSignals {
       concentration: null,
       history: historyOf(key).map((p) => ({ ...p, index: null })),
       subNiches: [],
-      observedAt: OBSERVED_AT,
     }
   }
 
@@ -739,14 +749,12 @@ function buildNiche(term: string, market: string): NicheSignals {
       methodology: METHODOLOGY,
       confidence: 'MODERATE',
       limitations: LIMITATIONS,
-      freshness: OBSERVED_AT,
     }),
     listings: estimated(seed.listings, {
       source: SOURCE,
-      methodology: `Counted from public category and search pages, sampled weekly. ±${SAMPLING_ERROR_PERCENT}% sampling error.`,
+      methodology: `A modelled listing total. No page is read and nothing is measured; the ±${MODEL_ERROR_PERCENT}% is the width the model reports it to.`,
       confidence: 'MODERATE',
-      limitations: ['A count of what was visible when sampled, not Etsy’s own index.'],
-      freshness: OBSERVED_AT,
+      limitations: ['A modelled figure, not a tally, and not anything Etsy publishes.'],
     }),
     crowding: calculated(
       perSearch >= 3 ? 'HIGH' : perSearch >= 1.5 ? 'MEDIUM' : 'LOW',
@@ -755,19 +763,17 @@ function buildNiche(term: string, market: string): NicheSignals {
     ),
     priceBand: estimated(seed.priceBand, {
       source: SOURCE,
-      methodology: 'The middle 50% of observed listing prices — the interquartile range.',
+      methodology: 'The middle 50% of the modelled listing prices — the interquartile range.',
       confidence: 'MODERATE',
-      limitations: ['Asking prices, not what anyone paid. Discounts are not visible.'],
-      freshness: OBSERVED_AT,
+      limitations: ['Asking prices, not what anyone paid. Discounts are not modelled.'],
     }),
     concentration: calculated(
       seed.concentration,
-      'Share of observed listings held by the ten largest shops in the niche.',
-      { limitations: ['Counts listings, not sales. A big shop with slow listings still counts.'] },
+      'Share of the modelled listings held by the ten largest shops in the niche.',
+      { limitations: ['Weighs listings, not sales. A big shop with slow listings weighs the same as a busy one.'] },
     ),
     history: historyOf(key),
     subNiches: seed.subNiches.map((sub) => buildSubNiche(sub)),
-    observedAt: OBSERVED_AT,
   }
 }
 
@@ -781,8 +787,8 @@ function buildSubNiche(sub: {
     return {
       name: sub.name,
       demand: unavailable(
-        'Too few samples to model demand for this sub-niche.',
-        'It may become reportable as sampling accumulates.',
+        'The model has no band for this sub-niche.',
+        'Nothing is invented to fill it.',
       ) as Provenanced<EstimatedRange>,
       listings: sub.listings,
       priceBand: null,
@@ -798,16 +804,14 @@ function buildSubNiche(sub: {
       methodology: METHODOLOGY,
       confidence: 'LOW',
       limitations: LIMITATIONS,
-      freshness: OBSERVED_AT,
     }),
     listings: sub.listings,
     priceBand: sub.priceBand
       ? estimated(sub.priceBand, {
           source: SOURCE,
-          methodology: 'The middle 50% of observed listing prices.',
+          methodology: 'The middle 50% of the modelled listing prices.',
           confidence: 'LOW',
           limitations: ['Asking prices, not what anyone paid.'],
-          freshness: OBSERVED_AT,
         })
       : null,
     crowding: calculated(
@@ -817,5 +821,5 @@ function buildSubNiche(sub: {
   }
 }
 
-/** The niches the model has sampled enough to report on. */
+/** The niches the modelled set covers. */
 export const KNOWN_NICHES = Object.keys(NICHES)

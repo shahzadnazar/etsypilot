@@ -11,6 +11,7 @@ import { getSession } from '@/lib/auth'
 import { shopContext } from '@/lib/permissions'
 import { formatDate } from '@/lib/utils/format'
 import { ModelledNotice } from '@/components/research/modelled-notice'
+import { ResearchNotBuilt } from '@/components/research/not-built'
 
 export const metadata: Metadata = { title: 'Keyword Lists' }
 
@@ -29,12 +30,33 @@ export default async function KeywordListsPage() {
 
   const ctx = shopContext(session, session.shopId)
   const lists = await getListsView(ctx)
+  /*
+   * No store behind the lists, so there are no lists. See getListsView().
+   */
+  if (!lists) {
+    return (
+      <ResearchNotBuilt
+        title="Keyword Lists"
+        what="Keyword lists you can save and reuse"
+        missing="store"
+        figures={false}
+        needs={
+          <>
+            A keyword list has to be stored somewhere, and there is no store behind this screen
+            yet — which is what the &ldquo;New list&rdquo; button has always said. The lists in the
+            demo are sample lists that nobody saved. There is nothing to save a term from either:
+            the Keyword Explorer has no source behind it.
+          </>
+        }
+      />
+    )
+  }
 
   return (
     <>
       <PageHeader
         title="Keyword Lists"
-        subtitle="Terms you saved while researching · no figures on this page, modelled or otherwise"
+        subtitle="Sample lists · no figures on this page, modelled or otherwise"
         actions={
           <NotYet
             label="New list"
@@ -47,8 +69,8 @@ export default async function KeywordListsPage() {
       {lists.length === 0 ? (
         <EmptyState
           title="No lists yet"
-          description="Save a term from the Keywords screen and it will appear here."
-          action={<Link href="/research/keywords">Search a keyword</Link>}
+          description="Saving a term is not built yet — these lists are read-only."
+          action={<Link href="/research/keywords">Open the Keyword Explorer</Link>}
         />
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
@@ -115,15 +137,16 @@ export default async function KeywordListsPage() {
         <ModelledNotice
           lead={
             <>
-              <strong>There are no figures on this page.</strong> A keyword list is terms you saved
-              while researching; the counts are of your own saved terms. Nothing here is Etsy data
-              and nothing here is modelled.
+              <strong>There are no figures on this page.</strong> A keyword list is a set of
+              terms, and the counts are of the terms in each list. Nothing here is Etsy data and
+              nothing here is modelled — but nothing here was saved by you either: these are
+              sample lists, because there is no store behind this screen yet.
             </>
           }
-          sourceCategory="Terms you saved"
+          sourceCategory="Sample lists"
           excludes="Search volume, competitor figures, and anything else this product does not have"
           limitations={[
-            'Opening this page asks Etsy once whether your shop still exists, through the official API under your own authorisation. Nothing is read from the answer and no figure on this page comes from it.',
+            'Opening this page asks the Etsy adapter once whether your shop still exists, and throws the answer away. In the demo that adapter is the fictional catalogue, so nothing leaves this machine; on a connected shop it would be one call to the official API under your own authorisation, and no figure on this page would come from it.',
           ]}
           methodologyHref="/data/methodology"
         />

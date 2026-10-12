@@ -10,10 +10,10 @@ import { Money, NumericCell } from '@/components/ui/numeric'
 import { getCompetitors } from '@/domain/research/competitors'
 import { getSession } from '@/lib/auth'
 import { shopContext } from '@/lib/permissions'
-import { formatRelative } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
 import { isDemoMode } from '@/lib/etsy'
 import { ModelledNotice } from '@/components/research/modelled-notice'
+import { ResearchNotBuilt } from '@/components/research/not-built'
 
 export const metadata: Metadata = { title: 'Compare shops' }
 
@@ -49,13 +49,24 @@ export default async function CompetitorsPage({
    */
   const demoData = isDemoMode()
   const view = await getCompetitors(ctx, query)
+  /*
+   * No market-signals source on this deployment. See lib/signals/index.ts.
+   */
+  if (!view) {
+    return (
+      <ResearchNotBuilt
+        title="Compare shops"
+        what="Another shop's catalogue, pricing, churn and estimated sales"
+      />
+    )
+  }
   const shop = view.selected
 
   return (
     <>
       <PageHeader
         title="Compare shops"
-        subtitle="Shops you are tracking · every figure modelled from public marketplace signals — nothing is read from a shop page, and none of it is Etsy data"
+        subtitle="Sample shops · every figure is modelled sample data — nothing is read from a shop page, and none of it is Etsy data"
       />
 
       {view.notFound ? (
@@ -69,10 +80,10 @@ export default async function CompetitorsPage({
           }}
         >
           <strong className="font-semibold">
-            “{view.notFound}” has not been observed.
+            “{view.notFound}” is not in the modelled set.
           </strong>{' '}
-          Nothing is modelled for a shop the sampler has not seen, so there is no profile to show —
-          rather than a profile built on nothing.
+          Nothing is modelled for a shop outside it, so there is no profile to show — rather than a
+          profile built on nothing.
         </div>
       ) : null}
 
@@ -110,9 +121,14 @@ export default async function CompetitorsPage({
                 <div className="flex flex-col gap-1">
                   <h2 className="text-section text-ink-1">{shop.name}</h2>
                   <p className="text-caption text-muted-1">
+                    {/*
+                      * "model last refreshed {relative}" was one authored
+                      * constant from lib/signals/mock.ts, identical for every
+                      * shop. No model has run; there is no refresh to date.
+                      */}
                     {shop.location} · opened {shop.openedYear} ·{' '}
                     <span className="tnum">{shop.activeListings.toLocaleString('en-US')}</span>{' '}
-                    active listings · model last refreshed {formatRelative(shop.observedAt)}
+                    active listings, modelled
                   </p>
                 </div>
                 <span
@@ -131,25 +147,25 @@ export default async function CompetitorsPage({
                 aria-label="Figures a shop page shows, modelled"
                 className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
               >
-                <Observed
+                <ModelledFigure
                   label="Active listings"
                   value={shop.activeListings.toLocaleString('en-US')}
-                  note="Modelled from public signals"
+                  note="Modelled, not measured"
                   demo={demoData}
                 />
-                <Observed
+                <ModelledFigure
                   label="Reviews"
                   value={shop.reviews.toLocaleString('en-US')}
                   note={`▲ ${shop.reviewsAdded30d} in 30 days`}
                   demo={demoData}
                 />
-                <Observed
+                <ModelledFigure
                   label="Median price"
                   value={<Money value={shop.medianPrice} />}
                   note="Across active listings"
                   demo={demoData}
                 />
-                <Observed
+                <ModelledFigure
                   label="New listings"
                   value={shop.newListings30d.toLocaleString('en-US')}
                   note={`Added in 30 days · ${shop.removedListings30d} removed`}
@@ -184,8 +200,8 @@ export default async function CompetitorsPage({
               </div>
 
               <p className="mt-2 max-w-prose text-caption leading-relaxed text-muted-1">
-                These ranges are modelled from public signals and can differ materially from actual
-                results. Only the shop owner can see their real Etsy figures.{' '}
+                These ranges are modelled and can differ materially from actual results — there is
+                no source behind them. Only the shop owner can see their real Etsy figures.{' '}
                 <Link
                   href="/data/methodology"
                   className="font-semibold text-brand-strong underline underline-offset-2"
@@ -204,7 +220,8 @@ export default async function CompetitorsPage({
                     </p>
                     <table className="w-full border-collapse text-body">
                       <caption className="sr-only">
-                        Your shop against {shop.name}, on the figures a shop page makes visible.
+                        Your shop against {shop.name}, on the figures a shop page shows to anybody
+                        — yours from your own catalogue, theirs modelled.
                       </caption>
                       <thead>
                         <tr className="bg-canvas-soft text-left text-label text-muted-1">
@@ -258,7 +275,7 @@ export default async function CompetitorsPage({
                     <h2 className="pb-1 text-section text-ink-1">Tags they lean on</h2>
                     <p className="pb-3 text-caption text-muted-1">
                       Modelled across their active listings, against how often each appears on
-                      yours — which is counted, because that shop is yours.
+                      yours — which is a real figure, because that shop is yours.
                     </p>
                     <ul className="flex flex-col gap-2">
                       {view.comparison.gaps.map((gap) => (
@@ -318,7 +335,16 @@ export default async function CompetitorsPage({
   )
 }
 
-function Observed({
+/*
+ * Named ModelledFigure, and the rename is the point.
+ *
+ * It was called Observed. The four tiles it renders — active listings,
+ * reviews, median price, 30-day churn — are modelled like everything else on
+ * this page, and the identifier was the last place on the screen still saying
+ * otherwise after the badge and the caption were corrected. A component name
+ * is read by the next person deciding what may go in a tile.
+ */
+function ModelledFigure({
   label,
   value,
   note,
@@ -353,7 +379,7 @@ function Observed({
          * can change back, and the srDetail can name the source it came
          * from.
          */}
-        <ProvenanceBadge type="ESTIMATED" demo={demo} srDetail="Modelled, not counted" />
+        <ProvenanceBadge type="ESTIMATED" demo={demo} srDetail="Modelled, not measured" />
       </div>
       <span className="tnum text-[22px] font-semibold leading-none text-ink-1">{value}</span>
       <span className="text-caption text-muted-1">{note}</span>

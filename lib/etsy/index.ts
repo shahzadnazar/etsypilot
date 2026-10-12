@@ -72,9 +72,13 @@ export function setEtsyService(service: EtsyService | null): void {
  * public demo visitor and a signed-in seller are served by the same server at
  * the same time. See lib/demo-request.ts for why it is a request-scoped flag
  * and not a parameter, and for how it fails closed.
+ *
+ * RE-EXPORTED, not defined here. The body moved to lib/demo-mode.ts because
+ * lib/signals needs the same answer and must not be able to see the Etsy
+ * adapter — tests/unit/signals-boundary.test.ts forbids the import, and the
+ * reason is Prohibited Behavior item 24. That file says the rest. Every call
+ * site here is unchanged and there is still one definition.
  */
-export function isDemoMode(): boolean {
-  return process.env.ETSY_MODE !== 'live' || isPublicDemoRequest()
-}
+export { isDemoMode } from '@/lib/demo-mode'
 
 export type * from './interface'

@@ -4,10 +4,14 @@
  * Every column on this screen is one of two things and the table must never let
  * them look alike:
  *
- *   OBSERVED   title, shop, price, reviews, favourites, age. Publicly visible
- *              on the listing, so a plain value with no range.
- *   ESTIMATED  monthly sales, monthly revenue. Modelled from public signals,
- *              so a RANGE, always, and UNAVAILABLE where observation is thin.
+ *   SINGLE     title, shop, price, reviews, favourites, age. The model
+ *              produces one figure for each, so no range is shown.
+ *   RANGE      monthly sales, monthly revenue. A band, always, and UNAVAILABLE
+ *              where the model has nothing.
+ *
+ * Both kinds are modelled. This comment used to call the first group OBSERVED
+ * and "publicly visible on the listing", which was the plan, not the code:
+ * lib/signals has one implementation and it invents all nine columns.
  *
  * The opportunity score is CALCULATED over the estimates, and null wherever
  * they are unavailable — a score over a missing input is a number invented to
@@ -37,7 +41,14 @@ export interface OpportunitiesView {
   filters: AppliedFilters
   /** Products excluded because nothing could be modelled for them. */
   unmodelled: number
-  observedAt: string
+  /*
+   * No `observedAt`.
+   *
+   * It was `all[0]?.observedAt ?? ''` — one authored constant from mock.ts,
+   * read off the first row and printed as "last observed 2 months ago" above
+   * the table. Nothing was observed and there is no time to report. See the
+   * note in lib/signals/interface.ts.
+   */
   mode: 'MOCK' | 'LIVE'
 }
 
@@ -51,8 +62,16 @@ export interface AppliedFilters {
 
 export async function getOpportunities(
   query: Record<string, string | undefined> = {},
-): Promise<OpportunitiesView> {
+): Promise<OpportunitiesView | null> {
   const signals = getSignalsService()
+  /*
+   * No market-signals source on this deployment, so there is nothing to
+   * compute and nothing to show. `null` and not an empty view: an empty view
+   * renders the screen with holes in it, which says "this figure is missing"
+   * when the truth is "this feature is not built". See lib/signals/index.ts.
+   */
+  if (!signals) return null
+
   const market = query.market?.trim() || 'United States'
   const term = query.q?.trim() ?? ''
   const filters = parseFilters(query)
@@ -76,7 +95,6 @@ export async function getOpportunities(
     sort: sortOf(query.sort),
     filters,
     unmodelled: products.filter((p) => p.opportunity === null).length,
-    observedAt: all[0]?.observedAt ?? '',
     mode: signals.mode,
   }
 }
@@ -93,8 +111,8 @@ function sortOf(value: string | undefined): ProductSort {
  *   opportunity, revenue   modelled, so a row with neither cannot be ranked by
  *                          them and goes last. Sorting it as zero would say it
  *                          is the worst, which is a claim nobody made.
- *   age, reviews           observed on the listing itself, so an unmodelled row
- *                          ranks by them like any other.
+ *   age, reviews           a single modelled figure either way, so a row with
+ *                          no band ranks by them like any other.
  *
  * NEWEST is what makes the distinction necessary. The newest listings are
  * exactly the ones too new to model, and pinning them to the bottom would empty
