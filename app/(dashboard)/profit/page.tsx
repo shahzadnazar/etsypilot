@@ -3,8 +3,9 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { PageHeader } from '@/components/layout/page-header'
 import { ProfitTabs } from '@/components/profit/profit-tabs'
-import { EmptyState } from '@/components/ui/states'
+import { DataWithheld } from '@/components/sync/data-withheld'
 import { getProfitView } from '@/domain/profit/service'
+import { withheldReason } from '@/domain/sync/source'
 import { getSession } from '@/lib/auth'
 import { shopContext } from '@/lib/permissions'
 import { formatDate } from '@/lib/utils/format'
@@ -58,20 +59,30 @@ export default async function ProfitPage() {
    * at all" and "no orders in this period" are a different question from
    * "fees unread", and the fee branch is deliberately not overloaded with it.
    */
-  if (view.source.kind === 'NOT_SYNCED' || view.source.kind === 'NO_SHOP') {
+  /*
+   * ── AND THE SAME ARGUMENT NOW COVERS STALE DATA ─────────────────────────
+   *
+   * A third case joined the two below: the receipts were read, and they were
+   * read more than twenty-four hours ago, which is further behind Etsy than
+   * their API Terms §5 allows us to display. The figures are withheld for a
+   * different reason and the same way — the loader has already refused to
+   * return the rows, so falling through to the waterfall would print the $1,322
+   * loss this block exists to prevent.
+   *
+   * withheldReason() is asked rather than `.kind` compared, because the next
+   * state added to that union must not be able to miss this page. See
+   * components/sync/data-withheld.tsx.
+   */
+  if (withheldReason(view.source)) {
     return (
       <>
         <PageHeader
           title="Profit Reality"
           subtitle="Gross revenue to net profit, with every cost line and where it came from."
         />
-        <EmptyState
-          title={view.source.kind === 'NO_SHOP' ? 'This shop could not be found' : 'Not synced yet'}
-          description={
-            view.source.kind === 'NO_SHOP'
-              ? 'The shop this page was opened for is no longer in CobaltRank. Nothing is wrong with your shop on Etsy.'
-              : 'Profit is computed from your own order receipts, and CobaltRank has not read them yet. Rather than show you a waterfall of zeroes and a loss made up of nothing but your fixed costs, this page waits for the first sync.'
-          }
+        <DataWithheld
+          source={view.source}
+          neverSynced="Profit is computed from your own order receipts, and CobaltRank has not read them yet. Rather than show you a waterfall of zeroes and a loss made up of nothing but your fixed costs, this page waits for the first sync."
           action={
             <Link
               href="/settings/shops"

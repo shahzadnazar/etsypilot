@@ -10,8 +10,21 @@ import 'server-only'
  *
  *   DEMO         DEMO_COST_INPUTS, via domain/costs/demo.ts. No table read.
  *   NOT_SYNCED   the shop exists and the seller has set nothing. All null.
+ *   STALE        cost_rules, read exactly as for SYNCED — see below.
  *   SYNCED       cost_rules, newest row per key.
  *   NO_SHOP      the session names a shop row that is gone.
+ *
+ * ── AND A STALE ETSY WINDOW DOES NOT WITHHOLD A SELLER'S OWN COSTS ────────
+ *
+ * Etsy's API Terms §5 bounds how old ETSY CONTENT may be when displayed. A
+ * cost rule is something the seller typed into CobaltRank; Etsy has never
+ * seen it and has no newer version of it, so there is no window for it to be
+ * outside of. Withholding it when the orders window lapsed would hide the
+ * seller's own data to satisfy a clause about somebody else's — and would
+ * make /settings/costs unusable for the hours before a re-read.
+ *
+ * This is the first place in the codebase where the mirrored/derived
+ * distinction the Privacy Policy draws is actually load-bearing in code.
  *
  * ── COSTS DO NOT NEED A SYNC, AND STILL USE THE SYNC SOURCE ───────────────
  *

@@ -40,6 +40,8 @@ import { isDemoMode } from '@/lib/etsy'
 import { log } from '@/lib/observability/logger'
 import { exchangeCode, statesMatch } from '@/lib/etsy/oauth'
 import { connectEtsyShop, EtsyConnectionError } from '@/lib/repositories/etsy-connection'
+import { shopContext } from '@/lib/permissions'
+import { refreshStaleAggregates } from '@/domain/sync/refresh'
 import { hasAcceptedCurrentTerms, termsAreOfferable } from '@/domain/legal/acceptance'
 import { clearFlowCookie, FLOW_COOKIE, outcomeUrl, readFlowCookie, type ConnectOutcome } from '../_flow'
 
@@ -248,6 +250,60 @@ export async function GET(request: Request) {
       }
       throw error
     }
+
+    /*
+     * ══════════════════════════════════════════════════════════════════════
+     *  AND THEN READ THE SHOP, BEFORE THE SELLER REACHES A SCREEN.
+     * ══════════════════════════════════════════════════════════════════════
+     *
+     * This route used to end at the line above, and that was the whole of the
+     * defect found at the top of this task: a seller connected their shop,
+     * landed on /profit, and read "Not synced yet" — for ever. The sync layer
+     * was written, tested and unreachable. Every caller of syncShopListings
+     * and syncShopOrders was in tests/integration.
+     *
+     * So the connection triggers the first read. It is the one moment where a
+     * sync is unambiguously wanted, it is already a POST-shaped action the
+     * seller initiated, and it is the difference between a connected shop that
+     * shows figures and one that shows an empty state nobody can clear.
+     *
+     * ── IT RUNS AFTER connectEtsyShop(), AND IT HAS TO ──────────────────
+     *
+     * syncShopListings asserts `!ctx.readOnly`, which is `shops.is_demo`, and
+     * `is_demo` is true until a connection clears it. Built BEFORE the connect
+     * call, the context would carry readOnly: true and both syncs would refuse
+     * — which is also why the session is not reused for it: `session.isDemo`
+     * was read before the row changed.
+     *
+     * ── AND A FAILED SYNC IS NOT A FAILED CONNECTION ────────────────────
+     *
+     * The tokens are stored and the shop is linked by this point. Reporting
+     * `exchange_failed` because Etsy rate-limited the first catalogue read
+     * would tell the seller their connection did not work when it did, and
+     * invite them to do it again. refreshStaleAggregates reports its failures
+     * as outcomes rather than throwing, they are logged, and the seller lands
+     * on a connected shop whose screens say they are re-reading it — which is
+     * true, and which the next page load acts on.
+     */
+    const connected = {
+      ...session,
+      /*
+       * `session` was resolved at the top of this route, BEFORE connectEtsyShop
+       * cleared `shops.is_demo`, so `session.isDemo` is a fact about a row that
+       * no longer reads that way — and getSession() is request-cached, so
+       * calling it again returns the same stale answer rather than a fresh one.
+       *
+       * Overridden here rather than by reaching past shopContext(): the
+       * cross-shop check is the thing that must not be bypassed, and it still
+       * runs. This one field is restated from the write that just succeeded.
+       */
+      isDemo: false,
+    }
+    const outcomes = await refreshStaleAggregates(shopContext(connected, session.shopId))
+    log.info('first read after an Etsy connection', {
+      path: '/api/etsy/callback',
+      outcomes: outcomes.map((outcome) => `${outcome.aggregate}:${outcome.kind}`).join(','),
+    })
 
     return done('connected')
   } catch (error) {

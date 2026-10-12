@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import { Card } from '@/components/ui/card'
+import { DataWithheld } from '@/components/sync/data-withheld'
+import { withheldReason } from '@/domain/sync/source'
 import { EmptyState } from '@/components/ui/states'
 import { Money, NumericCell } from '@/components/ui/numeric'
 import { PAGE_SIZE, type ListingsView } from '@/domain/listings/service'
@@ -53,32 +55,18 @@ export function ListingsTable({ view }: { view: ListingsView }) {
    * "No usage records. That means nothing has been metered for this account —
    * not that every meter reads zero."
    */
-  if (view.total === 0 && view.source.kind === 'NOT_SYNCED') {
-    return (
-      <EmptyState
-        title="Not synced yet"
-        description="Your shop is connected, but CobaltRank has not read your catalogue yet — so this is not a claim that you have no listings. Once a sync runs, every listing appears here with its status, renewal date and cost coverage."
-        action={
-          <Link
-            href="/settings/shops"
-            className="inline-flex h-11 items-center rounded-control border border-line px-3 text-[12px] font-semibold text-ink-2 hover:bg-canvas-soft md:h-[38px]"
-          >
-            Shop connections
-          </Link>
-        }
-      />
-    )
-  }
-
-  if (view.total === 0 && view.source.kind === 'NO_SHOP') {
+  if (withheldReason(view.source)) {
     /*
-     * The shop row is gone. Not "not synced" — that is a thing a seller can
-     * fix, and this is not, so it does not borrow that copy.
+     * Never synced, stale, or no shop row — three different facts, one place
+     * that knows which sentence each of them gets, and a `total` of zero that
+     * is not consulted. A withheld source carries no rows by construction
+     * (domain/listings/load.ts reads nothing unless the source is SYNCED), so
+     * testing emptiness here would only create a way for the two to disagree.
      */
     return (
-      <EmptyState
-        title="This shop could not be found"
-        description="The shop this page was opened for is no longer in CobaltRank. Nothing is wrong with your listings on Etsy. Open Shop connections to pick a shop."
+      <DataWithheld
+        source={view.source}
+        neverSynced="Your shop is connected, but CobaltRank has not read your catalogue yet — so this is not a claim that you have no listings. Once a sync runs, every listing appears here with its status, renewal date and cost coverage."
         action={
           <Link
             href="/settings/shops"
@@ -93,17 +81,18 @@ export function ListingsTable({ view }: { view: ListingsView }) {
 
   if (view.total === 0) {
     /*
-     * Two sources land here and they are not the same sentence. SYNCED means
-     * we read the shop and it holds nothing. DEMO means the sample catalogue
-     * is empty (DEMO_DATASET=empty), where "your shop synced" would be false
-     * twice over — nothing synced, and it is not their shop.
+     * Two sources land here and they are not the same sentence. A displayable
+     * synced catalogue means we read the shop and it holds nothing. DEMO means
+     * the sample catalogue is empty (DEMO_DATASET=empty), where "your shop
+     * synced" would be false twice over — nothing synced, and it is not their
+     * shop. The withheld sources cannot reach here; they returned above.
      *
      * Caught by reading this diff back rather than by a test: the empty-state
      * browser sweep runs in demo mode and only asserts that the page answers
      * and offers a next step, so it was perfectly happy with the wrong
      * sentence.
      */
-    const synced = view.source.kind === 'SYNCED'
+    const synced = view.source.kind !== 'DEMO'
     return (
       <EmptyState
         title="No listings yet"

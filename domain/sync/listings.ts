@@ -19,10 +19,20 @@ import 'server-only'
  * against LiveEtsyService is the same test with one env var different, which is
  * the whole claim.
  *
- * ── IT IS A FUNCTION, NOT A SCHEDULE ──────────────────────────────────────
+ * ── IT IS A FUNCTION, NOT A SCHEDULE — AND NOW IT HAS A CALLER ────────────
  *
- * No timer, no queue, no cron. When and how often is a later decision and a
- * different kind of problem; this is the thing that would be called.
+ * This header used to end "no timer, no queue, no cron: when and how often is
+ * a later decision and a different kind of problem; this is the thing that
+ * would be called." It was accurate and it was the whole problem: for the
+ * length of two further slices, every caller of this function was in
+ * tests/integration, so a seller could connect a shop and nothing would ever
+ * populate `listings`.
+ *
+ * The decision is made in domain/sync/refresh.ts, and it is still not a
+ * schedule. Etsy's API Terms §5 bounds DISPLAY, not refresh frequency, so a
+ * read that finds this aggregate outside its six-hour window withholds the
+ * rows and asks for this function to run. There is no timer, no queue and no
+ * cron, because there is nothing for one to do.
  *
  * ── assertCanWrite() IS THE GATE, AND IT IS EXACTLY THE RIGHT ONE ─────────
  *

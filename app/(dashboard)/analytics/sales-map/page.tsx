@@ -6,6 +6,8 @@ import { AnalyticsTabs } from '@/components/analytics/analytics-tabs'
 import { ProvenanceBadge } from '@/components/provenance/provenance-badge'
 import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/states'
+import { DataWithheld } from '@/components/sync/data-withheld'
+import { withheldReason } from '@/domain/sync/source'
 import { Money, NumericCell } from '@/components/ui/numeric'
 import { getSalesMap, SUPPRESSION_THRESHOLD } from '@/domain/analytics/sales-map'
 import { isDemoMode } from '@/lib/etsy'
@@ -85,27 +87,31 @@ export default async function SalesMapPage() {
         </div>
       ) : null}
 
-      {view.empty ? (
+      {withheldReason(view.source) ? (
         /*
-         * TWO REASONS FOR AN EMPTY MAP, AND ONLY ONE OF THEM IS A
+         * THREE REASONS FOR AN EMPTY MAP, AND ONLY ONE OF THEM IS A
          * MEASUREMENT.
          *
-         * "No orders in this period" is a finding about the shop. It was
-         * being shown to shops whose orders had never been read, where the
-         * truthful answer is that nothing has been placed on the map because
-         * nothing has been looked at.
+         * "No orders in this period" is a finding about the shop. It was being
+         * shown to shops whose orders had never been read, where the truthful
+         * answer is that nothing has been placed on the map because nothing
+         * has been looked at. Receipts read more than twenty-four hours ago
+         * are a third case — looked at, but longer ago than Etsy's API Terms
+         * §5 lets us display — and it is asked about through withheldReason()
+         * rather than by comparing `.kind` here, so a fourth cannot be missed.
+         *
+         * Checked BEFORE `view.empty` now, not inside it: a withheld source
+         * yields an empty view by construction, and testing emptiness first
+         * made the order of the two conditions load-bearing for no reason.
          */
+        <DataWithheld
+          source={view.source}
+          neverSynced="The sales map is built from your order receipts, and CobaltRank has not read them yet — so this is not a finding that you had no orders. Nothing is filled in from other shops or from a regional average, then or now."
+        />
+      ) : view.empty ? (
         <EmptyState
-          title={
-            view.source.kind === 'NOT_SYNCED' || view.source.kind === 'NO_SHOP'
-              ? 'Not synced yet'
-              : 'No orders in this period'
-          }
-          description={
-            view.source.kind === 'NOT_SYNCED' || view.source.kind === 'NO_SHOP'
-              ? 'The sales map is built from your order receipts, and CobaltRank has not read them yet — so this is not a finding that you had no orders. Nothing is filled in from other shops or from a regional average, then or now.'
-              : 'The sales map is built from your order receipts. With no orders there is nothing to place on it — nothing is filled in from other shops or from a regional average.'
-          }
+          title="No orders in this period"
+          description="The sales map is built from your order receipts. With no orders there is nothing to place on it — nothing is filled in from other shops or from a regional average."
         />
       ) : (
         <div className="grid gap-4 xl:grid-cols-[1fr_1.2fr]">

@@ -8,7 +8,8 @@ import { BaselineChart } from '@/components/shop-pulse/baseline-chart'
 import { ChangesPanel } from '@/components/shop-pulse/changes-panel'
 import { NotYet } from '@/components/settings/not-yet'
 import { Card } from '@/components/ui/card'
-import { EmptyState } from '@/components/ui/states'
+import { DataWithheld } from '@/components/sync/data-withheld'
+import { withheldReason } from '@/domain/sync/source'
 import { getShopPulse } from '@/domain/shop-pulse/service'
 import { getSession } from '@/lib/auth'
 import { pulseChartEvents } from '@/domain/shop-pulse/chart-events'
@@ -59,20 +60,23 @@ export default async function ShopPulsePage() {
    * There is no fourth label for "not read", and there should not be: it is
    * not a diagnosis. So the page says it instead of diagnosing.
    */
-  if (pulse.source.kind === 'NOT_SYNCED' || pulse.source.kind === 'NO_SHOP') {
+  /*
+   * A third withholding state joined these two: orders that WERE read, more
+   * than twenty-four hours ago, which is further behind Etsy than their API
+   * Terms §5 allows an application to display. Same consequence here as never
+   * having read them — there is nothing to compare — so the same block, asked
+   * through withheldReason() so a fourth state cannot miss this page.
+   */
+  if (withheldReason(pulse.source)) {
     return (
       <>
         <PageHeader
           title="Shop Pulse"
           subtitle="Why your orders changed, measured against your own baseline."
         />
-        <EmptyState
-          title={pulse.source.kind === 'NO_SHOP' ? 'This shop could not be found' : 'Not synced yet'}
-          description={
-            pulse.source.kind === 'NO_SHOP'
-              ? 'The shop this page was opened for is no longer in CobaltRank. Nothing is wrong with your shop on Etsy.'
-              : 'Shop Pulse compares this period against your own 30-day baseline, and CobaltRank has not read your orders yet — so it has nothing to compare and will not tell you your shop is steady. Once a sync runs, every change appears here with the evidence behind it.'
-          }
+        <DataWithheld
+          source={pulse.source}
+          neverSynced="Shop Pulse compares this period against your own 30-day baseline, and CobaltRank has not read your orders yet — so it has nothing to compare and will not tell you your shop is steady. Once a sync runs, every change appears here with the evidence behind it."
         />
       </>
     )

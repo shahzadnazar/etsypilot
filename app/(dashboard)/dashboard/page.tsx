@@ -6,6 +6,8 @@ import { ProvenanceButton } from '@/components/provenance/provenance-button'
 import { Card } from '@/components/ui/card'
 import { UnavailableCard } from '@/components/ui/states'
 import { ActionList } from '@/components/action-center/action-list'
+import { DataWithheld } from '@/components/sync/data-withheld'
+import { withheldReason } from '@/domain/sync/source'
 import { getActions } from '@/domain/action-center/service'
 import { getShopOverview } from '@/domain/shop/overview'
 import { getSession } from '@/lib/auth'
@@ -103,7 +105,21 @@ export default async function DashboardPage() {
       */}
       <section aria-label="Action Center" className="mt-5">
         <h2 className="mb-3 text-section text-ink-1">What needs your attention</h2>
-        <ActionList actions={actions} counts={counts} demo={demoData} source={source} />
+        {/*
+          * The quiet form, because this section already has its own heading.
+          * Same reason the Action Center page withholds: the list's empty copy
+          * makes three positive claims about a shop, and none of them is
+          * checkable from orders we have not read or may not display.
+          */}
+        {withheldReason(source) ? (
+          <DataWithheld
+            quiet
+            source={source}
+            neverSynced="CobaltRank has not read your orders yet, so it cannot say what needs your attention — and it will not tell you that nothing does."
+          />
+        ) : (
+          <ActionList actions={actions} counts={counts} demo={demoData} />
+        )}
       </section>
 
       {/* Etsy does not expose views. We say so rather than estimating them. */}

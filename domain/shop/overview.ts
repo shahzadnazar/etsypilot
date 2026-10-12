@@ -6,7 +6,7 @@
  */
 
 import { loadOrders, ordersWereRead } from '@/domain/orders/load'
-import { shopHeader } from '@/domain/sync/source'
+import { shopHeader, withheldReason } from '@/domain/sync/source'
 import { reportingWindow } from '@/domain/clock'
 import { previousPeriod } from '@/domain/analytics/service'
 import { demoBaseline } from './demo'
@@ -102,10 +102,29 @@ export async function getShopOverview(ctx: ShopContext): Promise<ShopOverview> {
    */
   const read = ordersWereRead(source)
   const currencyCode = shop?.currency ?? 'USD'
-  const unread = unavailable(
-    'Nothing has been read from this shop yet, so there are no figures for this period.',
-    'The first sync fills these in. Until then they are withheld rather than shown as zero.',
-  ).provenance
+  /*
+   * ── "NOT SYNCED YET" IS THE WRONG WORDS FOR DATA WE DID READ ──────────
+   *
+   * There are two reasons a tile shows an em dash, and until this task only
+   * one of them existed. The second is STALE: receipts we read, longer ago
+   * than Etsy's API Terms §5 lets us display them. Labelling that "Not synced
+   * yet" tells a seller their shop has never been read, which is false and
+   * points them at a button that will not help.
+   *
+   * Both still show an em dash rather than a zero, and both still drop the
+   * delta: there is nothing to compare either way.
+   */
+  const stale = withheldReason(source) === 'STALE'
+  const unreadNote = stale ? 'Re-reading from Etsy' : 'Not synced yet'
+  const unread = stale
+    ? unavailable(
+        'This shop was read longer ago than Etsy allows an application to display, so these figures are held back.',
+        'CobaltRank is re-reading it now. The figures return as soon as the read finishes.',
+      ).provenance
+    : unavailable(
+        'Nothing has been read from this shop yet, so there are no figures for this period.',
+        'The first sync fills these in. Until then they are withheld rather than shown as zero.',
+      ).provenance
 
   const grossRevenue = profit.grossRevenue
   const orderCount = orders.length
@@ -118,7 +137,7 @@ export async function getShopOverview(ctx: ShopContext): Promise<ShopOverview> {
       display: read ? currency(grossRevenue, currencyCode) : '—',
       deltaPercent: read && comparable ? pctChange(grossRevenue, baseline.revenue) : null,
       note: !read
-        ? 'Not synced yet'
+        ? unreadNote
         : comparable
           ? `vs ${currency(baseline.revenue, currencyCode)} the period before`
           : 'No earlier period to compare against yet',
@@ -133,7 +152,7 @@ export async function getShopOverview(ctx: ShopContext): Promise<ShopOverview> {
       display: read ? String(orderCount) : '—',
       deltaPercent: read && comparable ? pctChange(orderCount, baseline.orders) : null,
       note: !read
-        ? 'Not synced yet'
+        ? unreadNote
         : comparable
           ? `vs ${baseline.orders} the period before`
           : 'No earlier period to compare against yet',
@@ -158,7 +177,7 @@ export async function getShopOverview(ctx: ShopContext): Promise<ShopOverview> {
         !read || profit.netProfit === null ? '—' : currency(profit.netProfit, currencyCode),
       deltaPercent: null,
       note: !read
-        ? 'Not synced yet'
+        ? unreadNote
         : profit.netProfit === null
           ? 'Etsy fees for this period have not been read'
           : `${profit.coveragePercent}% cost coverage`,
@@ -195,10 +214,30 @@ export async function getShopOverview(ctx: ShopContext): Promise<ShopOverview> {
         ? '—'
         : String(shop.activeListingCount),
       deltaPercent: null,
-      note: shop?.activeListingCount === null ? 'Not synced yet' : 'active on Etsy',
+      /*
+       * This tile's reason is the LISTINGS aggregate's, not the orders one the
+       * four tiles above share. They can differ: at seven hours old the
+       * catalogue is outside its six-hour window while the receipts are still
+       * inside their twenty-four-hour one, so a note borrowed from `unreadNote`
+       * would say "Not synced yet" about a catalogue read this morning.
+       */
+      note:
+        shop?.activeListingCount === null
+          ? shop?.listingCountWithheld === 'STALE'
+            ? 'Re-reading from Etsy'
+            : 'Not synced yet'
+          : 'active on Etsy',
       provenance:
         shop?.activeListingCount === null || shop === null
-          ? unread
+          ? shop?.listingCountWithheld === 'STALE'
+            ? unavailable(
+                'Your catalogue was read longer ago than Etsy allows an application to display, so this count is held back.',
+                'CobaltRank is re-reading it now. The count returns as soon as the read finishes.',
+              ).provenance
+            : unavailable(
+                'Your catalogue has not been read yet, so there is no count to report.',
+                'The first sync fills this in. Until then it is withheld rather than shown as zero.',
+              ).provenance
           : verified(null, 'Your connected Etsy shop', shop.lastSyncedAt ?? undefined).provenance,
     },
   ]

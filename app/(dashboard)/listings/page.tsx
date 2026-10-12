@@ -6,6 +6,7 @@ import { ListingFilters } from '@/components/listings/listing-filters'
 import { ListingsTable } from '@/components/listings/listings-table'
 import { ProvenanceBadge } from '@/components/provenance/provenance-badge'
 import { getListingsView, EXPIRING_WITHIN_DAYS } from '@/domain/listings/service'
+import { withheldReason } from '@/domain/sync/source'
 import { getSession } from '@/lib/auth'
 import { shopContext } from '@/lib/permissions'
 import { isDemoMode } from '@/lib/etsy'
@@ -57,18 +58,26 @@ export default async function ListingsPage({
    * correction as the cost coverage card (D69): absence is told apart from
    * completeness by what the zero is out of.
    */
+  const withheld = withheldReason(view.source)
   const summary =
-    view.total === 0
+    view.total === 0 || withheld
       ? /*
          * The subtitle said "No listings synced yet" for all three empty
          * cases, which reads as a count for the one case where no count
          * exists. Each says only what is known. See the table's own note.
+         *
+         * A fourth case since: a catalogue we DID read, longer ago than Etsy's
+         * API Terms §5 lets us display it. "Not synced yet" would be false
+         * about it, and "No listings in this shop" would be the original
+         * defect — a count stated about rows nobody is allowed to look at.
          */
-        view.source.kind === 'NOT_SYNCED'
+        withheld === 'NEVER_SYNCED'
         ? 'Not synced yet'
-        : view.source.kind === 'NO_SHOP'
-          ? 'Shop not found'
-          : 'No listings in this shop'
+        : withheld === 'STALE'
+          ? 'Re-reading from Etsy'
+          : withheld === 'NO_SHOP'
+            ? 'Shop not found'
+            : 'No listings in this shop'
       : [
           `${view.counts.active.toLocaleString('en-US')} active`,
           `${view.counts.drafts.toLocaleString('en-US')} drafts`,
@@ -80,7 +89,7 @@ export default async function ListingsPage({
       <PageHeader
         title="Listings"
         subtitle={
-          view.total === 0
+          view.total === 0 || withheld
             ? summary
             : view.source.kind === 'DEMO'
               ? `${summary} · sample catalogue`
@@ -109,10 +118,10 @@ export default async function ListingsPage({
         * row of empty dropdowns above "No listings yet" is furniture, and the
         * three provenance notes below explain columns that are not on screen.
         */}
-      {view.total > 0 ? <ListingFilters view={view} /> : null}
+      {view.total > 0 && !withheld ? <ListingFilters view={view} /> : null}
       <ListingsTable view={view} />
 
-      {view.total === 0 ? null : (
+      {view.total === 0 || withheld ? null : (
       <div className="mt-4 flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <ProvenanceBadge type="VERIFIED" demo={demoData} />

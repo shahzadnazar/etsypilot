@@ -25,8 +25,21 @@ import 'server-only'
  *               as before. Touches no table.
  *   NOT_SYNCED  nothing has read this shop's orders. The array is empty AND
  *               the caller must not present it as "no orders" — see below.
+ *   STALE       rows we hold, read longer ago than Etsy's API Terms §5 lets
+ *               an application display them. Same empty array, same contract,
+ *               a different sentence on screen.
  *   SYNCED      our own rows, as of the aggregate's own sync time.
  *   NO_SHOP     the session names a shop row that is gone.
+ *
+ * ── WHY STALE WITHHOLDS THE ROWS RATHER THAN MARKING THEM ─────────────────
+ *
+ * §5 says "you will not display" content past the window. The literal reading
+ * is the enforceable one: do not hand the rows to a surface that could render
+ * them. Returning them with a flag would make compliance depend on every
+ * current and future caller remembering the flag, which is the same bet this
+ * file was written to stop taking eleven times over. The rows stay in the
+ * table — they are what the next read compares against, and deleting them
+ * would turn a six-hour-old catalogue into a shop with no listings.
  *
  * ── AN EMPTY ARRAY IS NOT THE ANSWER, AND ORDERS IS THE SHARP CASE ────────
  *
@@ -54,10 +67,11 @@ export interface LoadedOrders {
 /**
  * This shop's orders for a window, from wherever this deployment keeps them.
  *
- * DEMO calls the adapter and touches no table. NOT_SYNCED and NO_SHOP read
- * nothing at all — a query returning an empty array would make them
+ * DEMO calls the adapter and touches no table. NOT_SYNCED, STALE and NO_SHOP
+ * read nothing at all — a query returning an empty array would make them
  * indistinguishable from a synced shop with no orders, at the only point where
- * the difference is still knowable.
+ * the difference is still knowable. For STALE there is a second reason: rows
+ * that must not be displayed are rows not to fetch.
  */
 export async function loadOrders(ctx: ShopContext, window: OrderWindow): Promise<LoadedOrders> {
   const { source, currency } = await shopDataSource(ctx, 'ORDERS')
@@ -72,6 +86,12 @@ export async function loadOrders(ctx: ShopContext, window: OrderWindow): Promise
     return { orders, source, currency: null }
   }
 
+  /*
+   * The single gate, and it is a `!==` on purpose: every source that is not a
+   * displayable synced one reads nothing. A new withholding state added to the
+   * union is therefore withheld by default rather than by an edit here, which
+   * is the only direction this condition is safe to be wrong in.
+   */
   if (source.kind !== 'SYNCED') return { orders: [], source, currency }
 
   return { orders: await readOrders(ctx.shopId, window), source, currency }

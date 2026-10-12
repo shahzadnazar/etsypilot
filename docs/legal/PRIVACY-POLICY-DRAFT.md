@@ -41,10 +41,14 @@ When you use the AI listing helper, the listing's current title and tags are sen
 provider to generate a draft. Nothing is sent unless you ask for a draft, and nothing is published
 until you approve it. See the sub-processor table below.
 
-We also **store each draft** — what was sent, what came back, which listing it was for, who asked
-for it, and whether you accepted or rejected it. This is how the product can show you what it
-suggested and what you did with it, and it is why a rejected suggestion is still a record. A draft
-you never accept stays a draft: nothing reaches Etsy from one.
+We do **not** store the draft. It exists on the screen you asked for it on and goes when you leave
+it; nothing in the product writes a draft to a table, whether you accept it or not. A draft you
+never accept stays a draft, and nothing reaches Etsy from one either way.
+`[[CONFIRM: this paragraph said we store each draft — what was sent, what came back, who asked and
+whether it was accepted — and that a rejected suggestion is still a record. There is an
+ai_generations table with exactly those columns and nothing inserts into it, so the disclosure was
+describing a product that was never built. Keeping that record is worth building and is the owner's
+decision; see §5 and docs/legal/VERIFICATION.md for the sentences to restore when it is.]]`
 
 **The browser extension — not currently offered**
 CobaltRank does not offer a browser extension at the moment, so nothing in this section applies to
@@ -116,20 +120,40 @@ screen, but nothing deletes a record when it expires. Today we keep them longer 
 Either a deletion job exists before launch, or this sentence states the real position.]]`
 
 **Etsy content** — Etsy's API Terms require that listing content we display is no more than 6 hours
-older than Etsy's own, and other Etsy content no more than 24 hours older. We do not keep raw Etsy
-content longer than is needed to provide the service.
-`[[CONFIRM: a sync runs when you connect a shop and when it is triggered. There is no scheduler,
-so nothing currently guarantees the 6-hour and 24-hour windows. This is an Etsy API Terms
-obligation, not only a privacy one, and the claim that we refresh within those windows has been
-removed until a scheduled refresh exists.]]`
+older than Etsy's own, and other Etsy content no more than 24 hours older. We enforce that when a
+screen is built, not on a timer: if the copy we hold is older than its window, the screen holds the
+figures back, tells you how old the copy is and why it is not showing it, and re-reads your shop
+from Etsy. So nothing outside those windows is ever displayed to you, and a shop nobody opens
+costs no Etsy requests at all.
 
-**AI drafts** — while your account is open, alongside the listing they were written for. A
-rejected draft is kept too: the record that a suggestion was made and turned down is part of the
-audit trail, and deleting it would leave the trail saying less than what happened.
+We keep the copy itself while your account is open, and that is longer than the display windows on
+purpose. Two reasons, both honest: a copy we may not display is still what the next read compares
+against, and deleting it would turn a catalogue that is merely six hours old into a shop that
+appears to have no listings — a false statement in place of a true one. And your profit history is
+calculated from that copy every time you open a screen rather than stored as a separate record, so
+the copy IS the historical reporting you are paying for. Closing your account deletes it; so does
+asking us.
 
-**Figures we calculate** — your profit history, margins and cost allocations are records we create
-from your data. We keep these while your account is open, because historical reporting is what you
-are paying for.
+**AI drafts** — not kept. A draft exists in the screen you asked for it on, and goes when you leave
+it: nothing in the product writes a draft to a table, accepted or rejected.
+`[[CONFIRM: this paragraph said drafts were kept while your account is open and that rejected ones
+were kept as part of the audit trail. There is an ai_generations table and nothing inserts into it,
+so neither half was true. Keeping a record of what the assistant suggested and what was done with
+it is a good idea and is the owner's decision to make; until it is made and built, this states the
+real position. The sentence to restore, once it is, is the one about the trail saying less than
+what happened.]]`
+
+**Figures we calculate** — your profit history, margins, cost allocations and the findings on your
+Action Center are not kept. They are recalculated from your own orders, listings and costs every
+time you open the screen that shows them, so there is no separate record of them to keep, to go
+stale, or to delete. What IS kept is what you typed or did: your cost rules, your bulk-edit
+records, your audit log and your Etsy connection.
+`[[CONFIRM: this paragraph previously said these figures were records we create and keep. They are
+not: profit records, baselines, scenarios, events and actions have no insert sites in the code, so
+every figure is derived at read time. The consequence for §5 is deliberate and stated above —
+because nothing derived is stored, the mirrored Etsy copy is what multi-year reporting depends on,
+and the two cannot be given different retention periods while that is true. If the owner later
+decides to store derived figures, the two paragraphs above must be revisited together.]]`
 
 **Server logs** — `[[LOG_RETENTION]]` days.
 

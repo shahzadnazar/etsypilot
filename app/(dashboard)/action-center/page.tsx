@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { ActionList } from '@/components/action-center/action-list'
+import { DataWithheld } from '@/components/sync/data-withheld'
+import { withheldReason } from '@/domain/sync/source'
 import { AssistedNote } from '@/components/ai/assisted-note'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
@@ -34,6 +36,38 @@ export default async function ActionCenterPage() {
   const { actions, counts, source } = await getActions(ctx)
 
   /*
+   * ══════════════════════════════════════════════════════════════════════
+   *   "NOTHING NEEDS YOUR ATTENTION" IS THE MOST DANGEROUS SENTENCE IN THIS
+   *   PRODUCT, AND IT MUST NOT BE SAID ABOUT DATA WE MAY NOT DISPLAY.
+   * ══════════════════════════════════════════════════════════════════════
+   *
+   * The list's own empty copy is specific and reassuring — "No listing is
+   * selling below cost, your cost coverage is complete, and nothing has
+   * crossed your baseline" — three positive claims, none of them verifiable
+   * for a shop whose orders have not been read, or whose receipts were read
+   * longer ago than Etsy's API Terms §5 lets us display. The filter row goes
+   * with it: zero across three tabs is the same reassurance in numbers.
+   *
+   * Returned BEFORE the recommendation is requested, which the version inside
+   * the list could not do: a withheld Action Center used to pay for an AI call
+   * on its way to showing nothing.
+   */
+  if (withheldReason(source)) {
+    return (
+      <>
+        <PageHeader
+          title="Action Center"
+          subtitle="What needs your attention, ordered by measured impact. Every card carries its evidence and a destination."
+        />
+        <DataWithheld
+          source={source}
+          neverSynced="CobaltRank has not read your orders yet, so it cannot say what needs your attention — and it will not tell you that nothing does. Once a sync runs, every finding appears here with its evidence."
+        />
+      </>
+    )
+  }
+
+  /*
    * One recommendation, for the top action only. Same reasoning as the audit
    * page: with a live provider this is a real cost, and the cards already carry
    * their own explanation and evidence. The assistant adds a sentence about
@@ -63,7 +97,7 @@ export default async function ActionCenterPage() {
         </Card>
       ) : null}
 
-      <ActionList actions={actions} counts={counts} demo={demoData} source={source} />
+      <ActionList actions={actions} counts={counts} demo={demoData} />
     </>
   )
 }

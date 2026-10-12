@@ -68,10 +68,16 @@ export async function loadListings(ctx: ShopContext): Promise<LoadedListings> {
   }
 
   /*
-   * NOT_SYNCED and NO_SHOP read nothing: there is provably nothing to read,
-   * and a query returning an empty array would make the two indistinguishable
-   * from a synced-and-empty shop at the only place the difference is still
-   * knowable.
+   * NOT_SYNCED, STALE and NO_SHOP read nothing. For two of them there is
+   * provably nothing to read, and an empty array would make them
+   * indistinguishable from a synced-and-empty shop at the only place the
+   * difference is still knowable. For STALE the rows exist and are deliberately
+   * not fetched: Etsy's API Terms §5 says an application "will not display"
+   * listing content more than six hours older than Etsy's own, and content not
+   * handed to a surface cannot be displayed by one.
+   *
+   * The `!==` is the gate rather than a list of the three, so a withholding
+   * state added later withholds by default.
    */
   if (source.kind !== 'SYNCED') {
     return {

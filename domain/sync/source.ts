@@ -53,6 +53,7 @@ import 'server-only'
  */
 
 import { getEtsyService, isDemoMode } from '@/lib/etsy'
+import { maxContentAgeMs, withinWindow } from '@/lib/etsy/freshness'
 import { countListings, readShopSyncState } from '@/lib/repositories/listings'
 import { readAggregateSyncedAt, type SyncAggregate } from '@/lib/repositories/sync-state'
 import type { ShopContext } from '@/lib/permissions'
@@ -60,6 +61,24 @@ import type { ShopContext } from '@/lib/permissions'
 export type ShopDataSource =
   | { kind: 'DEMO' }
   | { kind: 'NOT_SYNCED' }
+  /**
+   * Our tables hold this aggregate, and the copy is older than Etsy's API
+   * Terms §5 allows us to display.
+   *
+   * Carries everything the withheld state needs to say so in a sentence: when
+   * we last read it, which window it broke, and whether a refresh is being
+   * attempted or has just failed. NOT folded into NOT_SYNCED, although both
+   * withhold the rows: "we have never read your shop" and "what we have is
+   * seven hours old and we are re-reading it now" are different facts with
+   * different remedies, and the second one has an age to report.
+   */
+  | {
+      kind: 'STALE'
+      aggregate: SyncAggregate
+      lastSyncedAt: string
+      /** The window this copy is outside, in milliseconds. From the constants. */
+      maxAgeMs: number
+    }
   | { kind: 'SYNCED'; lastSyncedAt: string }
   /**
    * The shop row is gone, which is not the same as not synced.
@@ -104,10 +123,86 @@ export async function shopDataSource(
    */
   const lastSyncedAt = await readAggregateSyncedAt(ctx.shopId, aggregate)
   if (!lastSyncedAt) return { source: { kind: 'NOT_SYNCED' }, currency: state.currency }
+
+  /*
+   * ── AND THE WINDOW, WHICH IS WHERE ETSY §5 IS ACTUALLY ENFORCED ───────
+   *
+   * "You will not display listing content more than six (6) hours older than
+   * the corresponding information... any other Etsy content more than
+   * twenty-four (24) hours." That is a rule about DISPLAY, so it is checked
+   * at the one place that decides whether a surface may display an
+   * aggregate, and an aggregate outside its window comes back STALE — which
+   * every caller already handles, because STALE withholds its rows through
+   * exactly the path NOT_SYNCED does.
+   *
+   * No refresh is triggered from here, and that is deliberate: this function
+   * is called from page renders, several times per render, and a GET that
+   * writes is a GET that cannot be retried, cached or reasoned about. The
+   * withheld state asks for the refresh instead — one POST, from a surface
+   * that knows it is withholding — and domain/sync/refresh.ts is where the
+   * stampede and the budget are handled.
+   */
+  if (!withinWindow(lastSyncedAt, aggregate, new Date())) {
+    return {
+      source: {
+        kind: 'STALE',
+        aggregate,
+        lastSyncedAt,
+        maxAgeMs: maxContentAgeMs(aggregate),
+      },
+      currency: state.currency,
+    }
+  }
+
   return {
     source: { kind: 'SYNCED', lastSyncedAt },
     currency: state.currency,
   }
+}
+
+/**
+ * Why a surface is not showing this aggregate's rows, or null if it may.
+ *
+ * ── EVERY SURFACE ASKS THIS, AND NONE OF THEM COMPARES `.kind` ITSELF ─────
+ *
+ * Five pages and three components used to test `source.kind === 'NOT_SYNCED'
+ * || source.kind === 'NO_SHOP'` inline. Adding a fourth withholding state to
+ * the union therefore meant editing eight places, and the failure mode of
+ * missing one is the worst one available: the page falls through to its normal
+ * render, the loader has already withheld the rows, and the seller is shown a
+ * screen of zeroes computed from nothing — which is the defect
+ * tests/browser/reporting-window.py was written for.
+ *
+ * So the comparison lives here once and the surfaces call this.
+ * tests/unit/freshness-window.test.ts fails on any surface that compares
+ * `.kind` to a freshness literal of its own, which is what makes a screen
+ * added next month covered by construction rather than by somebody remembering.
+ */
+export type WithheldReason = 'NEVER_SYNCED' | 'STALE' | 'NO_SHOP'
+
+export function withheldReason(source: ShopDataSource): WithheldReason | null {
+  switch (source.kind) {
+    case 'DEMO':
+    case 'SYNCED':
+      return null
+    case 'NOT_SYNCED':
+      return 'NEVER_SYNCED'
+    case 'STALE':
+      return 'STALE'
+    case 'NO_SHOP':
+      return 'NO_SHOP'
+  }
+}
+
+/**
+ * True when a refresh could change the answer.
+ *
+ * NO_SHOP cannot: there is no shop row to read Etsy for, and asking would be a
+ * request spent on a certainty.
+ */
+export function refreshWouldHelp(source: ShopDataSource): boolean {
+  const reason = withheldReason(source)
+  return reason === 'NEVER_SYNCED' || reason === 'STALE'
 }
 
 export interface ShopHeader {
@@ -118,14 +213,31 @@ export interface ShopHeader {
   /** When a sync last completed. Null means never, and the shell says so. */
   lastSyncedAt: string | null
   /**
-   * Active listings we hold, or NULL when nothing has synced.
+   * Active listings we hold, or NULL when we may not say.
    *
    * Null rather than 0, and the distinction is load-bearing: the sidebar's
    * plan chip renders "— / 2,000 listings" for a shop that has not been read,
    * because "0 / 2,000" is a claim that the shop is empty. Same argument as
    * ShopDataSource.NOT_SYNCED, one screen further out.
+   *
+   * ── AND IT IS WITHHELD OUTSIDE THE LISTINGS WINDOW TOO ──────────────────
+   *
+   * A count of active listings IS Etsy listing content, so Etsy's API Terms §5
+   * governs it at six hours like every other listing field — and this was the
+   * one place that would have gone on displaying it. It reaches five surfaces
+   * (the sidebar's plan chip, the dashboard tile, onboarding, the connect
+   * summary and the notification digest), so withholding it here covers all
+   * five rather than asking each to remember.
    */
   activeListingCount: number | null
+  /**
+   * Why the count is null, for a surface that has to word it.
+   *
+   * "Not synced yet" and "read seven hours ago, which is further behind than
+   * we may display" are both em dashes and are not the same sentence. Null
+   * when the count is present.
+   */
+  listingCountWithheld: WithheldReason | null
 }
 
 /**
@@ -159,26 +271,46 @@ export async function shopHeader(ctx: ShopContext): Promise<ShopHeader | null> {
       timezone: shop.timezone,
       lastSyncedAt: shop.lastSyncedAt,
       activeListingCount: shop.activeListingCount,
+      /* The demo catalogue is not Etsy content and has no window. */
+      listingCountWithheld: null,
     }
   }
 
   const state = await readShopSyncState(ctx.shopId)
   if (!state) return null
+
+  /*
+   * Asked of the LISTINGS aggregate specifically, not of `shops.last_synced_at`
+   * — which is the most recent sync of ANYTHING and would report a listing
+   * count as current because the orders sync ran. That is the same defect
+   * sync_state was created to fix, arriving at the one column that still read
+   * the shared timestamp.
+   */
+  const listingsSyncedAt = await readAggregateSyncedAt(ctx.shopId, 'LISTINGS')
+  const countable =
+    listingsSyncedAt !== null && withinWindow(listingsSyncedAt, 'LISTINGS', new Date())
+
   return {
     name: state.name,
     currency: state.currency,
     timezone: state.timezone,
     lastSyncedAt: state.lastSyncedAt,
     /*
-     * Counted only once a sync has run. Before that there is no number to
-     * report, and `countListings` would return 0 — which the chip would print
-     * as a fact about the seller's shop.
+     * Counted only when there is a number we are allowed to state. Before the
+     * first sync there is none, and `countListings` would return 0 — which the
+     * chip would print as a fact about the seller's shop. Outside the six-hour
+     * window there is a number and §5 says not to display it.
      */
-    activeListingCount: state.lastSyncedAt === null ? null : await countListings(ctx.shopId),
+    activeListingCount: countable ? await countListings(ctx.shopId) : null,
+    listingCountWithheld: countable
+      ? null
+      : listingsSyncedAt === null
+        ? 'NEVER_SYNCED'
+        : 'STALE',
   }
 }
 
 /** True when this source means "read our tables", for callers that only care. */
 export function readsDatabase(source: ShopDataSource): boolean {
-  return source.kind === 'SYNCED' || source.kind === 'NOT_SYNCED'
+  return source.kind === 'SYNCED' || source.kind === 'STALE' || source.kind === 'NOT_SYNCED'
 }

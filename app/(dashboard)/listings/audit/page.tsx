@@ -11,7 +11,8 @@ import { AssistedNote } from '@/components/ai/assisted-note'
 import { getAuditView } from '@/domain/audit/service'
 import { explainRule } from '@/domain/ai/explain'
 import { getSession } from '@/lib/auth'
-import { shopHeader } from '@/domain/sync/source'
+import { shopHeader, withheldReason } from '@/domain/sync/source'
+import { DataWithheld } from '@/components/sync/data-withheld'
 import { shopContext } from '@/lib/permissions'
 import { formatDateTime } from '@/lib/utils/format'
 import { isDemoMode } from '@/lib/etsy'
@@ -62,6 +63,20 @@ export default async function ListingAuditPage() {
   const worst = view.results[0]
   const explanation = worst ? await explainRule(worst) : null
 
+  /*
+   * This page keeps rendering when its catalogue is withheld — every card
+   * already shows an em dash rather than a zero, and the rule list is a real
+   * thing to read — so the withheld block is a notice above it rather than a
+   * replacement for it. What it adds is the reason and, when a re-read would
+   * help, the re-read.
+   *
+   * `withheld` rather than `view.source.kind !== 'SYNCED'`, which is what the
+   * subtitle used to compare: STALE is a third answer and the subtitle would
+   * have called it "not synced yet", which is false about a catalogue we read
+   * seven hours ago.
+   */
+  const withheld = view.source ? withheldReason(view.source) : null
+
   return (
     <>
       <PageHeader
@@ -78,9 +93,11 @@ export default async function ListingAuditPage() {
          * are not.
          */
         subtitle={
-          view.source && view.source.kind !== 'DEMO' && view.source.kind !== 'SYNCED'
-            ? `Not synced yet · ${view.ruleCount} rules ready to run, nothing read to run them against`
-            : `${view.listingsChecked} listings checked against ${view.ruleCount} rules · ${view.errors} errors, ${view.warnings} warnings, ${view.passing} pass · last run ${formatDateTime(view.lastRunAt)}`
+          withheld === 'STALE'
+            ? `Re-reading your catalogue · ${view.ruleCount} rules ready to run, nothing displayable to run them against`
+            : withheld
+              ? `Not synced yet · ${view.ruleCount} rules ready to run, nothing read to run them against`
+              : `${view.listingsChecked} listings checked against ${view.ruleCount} rules · ${view.errors} errors, ${view.warnings} warnings, ${view.passing} pass · last run ${formatDateTime(view.lastRunAt)}`
         }
         actions={
           <>
@@ -112,6 +129,15 @@ export default async function ListingAuditPage() {
           </>
         }
       />
+
+      {withheld && view.source ? (
+        <div className="mb-4">
+          <DataWithheld
+            source={view.source}
+            neverSynced={`CobaltRank has not read your catalogue yet, so the ${view.ruleCount} rules below have nothing to run against — this is not a finding that your listings are clean.`}
+          />
+        </div>
+      ) : null}
 
       <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
         <div className="flex flex-col gap-3">

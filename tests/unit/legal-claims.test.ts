@@ -10,6 +10,7 @@ import {
   EXPORT_DATASET_IDS,
   NOT_EXPORTABLE,
 } from '@/domain/export/datasets'
+import { LISTING_CONTENT_MAX_AGE_MS, OTHER_CONTENT_MAX_AGE_MS } from '@/lib/etsy/freshness'
 
 /*
  * ██████████████████████████████████████████████████████████████████████████
@@ -298,35 +299,55 @@ describe('what the documents say about data', () => {
     }
   })
 
-  it('§2: a table that stores shop content is disclosed as something we store', () => {
+  it('§2: what the document says about storing drafts matches what writes them', () => {
     /*
-     * ── SENDING IT AND KEEPING IT ARE TWO DIFFERENT DISCLOSURES ───────────
+     * ── A TABLE IS NOT A WRITE, AND THIS GUARD GOT THAT WRONG ─────────────
      *
-     * §2 already said the AI helper SENDS a listing's title and tags to a
-     * provider. It did not say that the request and the reply are then kept:
-     * `ai_generations` stores `input`, `output`, the listing, the actor and
-     * whether the draft was accepted or rejected. A seller reading "sent to
-     * our AI provider" would reasonably conclude nothing stayed behind.
+     * The first version of this assertion read the SCHEMA: if `ai_generations`
+     * exists with an `input` and an `output` column, §2 must say drafts are
+     * stored. It does exist with exactly those columns, so the document was
+     * made to say so — and NOTHING INSERTS INTO IT. The guard verified one
+     * property and took its neighbour on trust, which is the twelfth recorded
+     * instance of that shape in this repo, and the result was a Privacy Policy
+     * that over-disclosed: it told sellers we keep a record of every AI
+     * suggestion and what they did with it, and no such record exists.
      *
-     * So the guard is on the table, not on the SDK: if a table exists whose
-     * columns are an AI request and its reply, the document must say drafts
-     * are stored. Drop the table and this relaxes.
+     * So the question is the INSERT, not the table. Both directions fail:
+     * stop writing them while the document says you do, or start writing them
+     * while it says you do not.
      */
-    const schema = code('db/schema/index.ts')
-    const storesGenerations =
-      /pgTable\('ai_generations'/.test(schema) &&
-      /input: jsonb\('input'\)/.test(schema) &&
-      /output: text\('output'\)/.test(schema)
+    const writes = walk('lib').concat(walk('domain'), walk('app')).map(code).join('\n')
+    const storesGenerations = /insert\(schema\.aiGenerations\b/.test(writes)
 
-    if (!storesGenerations) return
+    /*
+     * `[[CONFIRM]]` notes are stripped first. A withdrawn claim is recorded in
+     * one — "this paragraph said we store each draft…" — which is exactly the
+     * phrase being searched for, so leaving them in would let the document
+     * satisfy this assertion with the note that says the opposite. A guard
+     * matched by its own correction note is the same failure as one matched by
+     * its own documentation, and this file has met that eight times.
+     */
+    const claims = privacy.replace(/`\[\[CONFIRM:[\s\S]*?\]\]`/g, '')
 
-    expect(
-      /store each draft/i.test(privacy),
-      'ai_generations keeps every AI request and reply, and §2 does not say drafts are stored',
-    ).toBe(true)
-    // And the retention section has to account for them rather than stopping
-    // at "shop data".
-    expect(privacy).toMatch(/draft/i)
+    if (storesGenerations) {
+      expect(
+        /store each draft/i.test(claims),
+        'something inserts into ai_generations and §2 does not say drafts are stored',
+      ).toBe(true)
+    } else {
+      expect(
+        /store each draft/i.test(claims),
+        '§2 says drafts are stored and nothing inserts into ai_generations',
+      ).toBe(false)
+      expect(
+        /do \*\*not\*\* store the draft/i.test(claims),
+        '§2 should say plainly that drafts are not kept, since nothing keeps them',
+      ).toBe(true)
+    }
+
+    // Either way the retention section has to account for them rather than
+    // stopping at "shop data".
+    expect(claims).toMatch(/draft/i)
   })
 
   it('§2 and §9: the Etsy token is encrypted and no plaintext column holds one', () => {
@@ -439,6 +460,102 @@ describe('what the documents say about data', () => {
         `"${absent}" is on the not-exportable list and also has an exporter`,
       ).toBe(false)
     }
+  })
+
+  it('§5: the Etsy freshness windows are the ones the code enforces, and something enforces them', () => {
+    /*
+     * ══════════════════════════════════════════════════════════════════════
+     *  THE CLAIM A REGULATOR COULD ACT ON, AND IT WAS UNGUARDED.
+     * ══════════════════════════════════════════════════════════════════════
+     *
+     * §5 told sellers that "Etsy's API Terms require that listing content we
+     * display is no more than 6 hours older than Etsy's own, and other Etsy
+     * content no more than 24 hours older" — and, until this task, NOTHING
+     * REFRESHED AT ALL. syncShopListings and syncShopOrders had no caller
+     * outside tests/integration. The paragraph carried a `[[CONFIRM]]` note
+     * that was itself wrong in both halves: it said "a sync runs when you
+     * connect a shop and when it is triggered", and neither happened.
+     *
+     * Grepping this file for "6 hours", "24 hours" or "freshness" before that
+     * returned nothing. The document existed, the claim existed, and the only
+     * thing checking either was a reader.
+     *
+     * ── IT READS BOTH NUMBERS OUT OF THE DOCUMENT ─────────────────────────
+     *
+     * Not `expect(privacy).toContain('6 hours')`, which goes green while the
+     * constant says 7. The document's numbers are parsed and compared against
+     * the constants the code enforces, so editing either side alone fails.
+     */
+    const paragraph = privacy.slice(privacy.indexOf('**Etsy content**'))
+    const section = paragraph.slice(0, paragraph.indexOf('**AI drafts**'))
+    expect(section.length, '§5 no longer has an Etsy content paragraph').toBeGreaterThan(200)
+
+    const hours = [...section.matchAll(/no more than (\d+) hours/g)].map((m) => Number(m[1]))
+    expect(
+      hours,
+      '§5 should state the listing window and then the other-content window, in hours',
+    ).toEqual([LISTING_CONTENT_MAX_AGE_MS / 3_600_000, OTHER_CONTENT_MAX_AGE_MS / 3_600_000])
+
+    /*
+     * ── AND THE CLAIM IS ABOUT ENFORCEMENT, NOT INTENT ────────────────────
+     *
+     * "We refresh within those windows" was removed by an earlier task
+     * precisely because nothing did. The sentence that replaced it says the
+     * windows are enforced when a screen is built, which is a claim about a
+     * code path — so the code path is asserted here, not just the wording.
+     */
+    const source = code('domain/sync/source.ts')
+    expect(source, 'nothing checks the window where the display decision is made').toMatch(
+      /withinWindow\(/,
+    )
+
+    const refresh = code('domain/sync/refresh.ts')
+    for (const sync of ['syncShopListings', 'syncShopOrders']) {
+      expect(refresh, `${sync} has no caller outside the test suite again`).toMatch(
+        new RegExp(`\\b${sync}\\s*\\(`),
+      )
+    }
+
+    /*
+     * The two reachable triggers. If both of these go, the sync layer is
+     * unreachable again and §5 becomes false again in exactly the way it was.
+     */
+    expect(
+      code('app/api/sync/refresh/route.ts'),
+      'the refresh endpoint no longer refreshes',
+    ).toMatch(/refreshStaleAggregates\(/)
+    expect(
+      code('app/api/etsy/callback/route.ts'),
+      'connecting a shop no longer reads it, so a new seller sees an empty product',
+    ).toMatch(/refreshStaleAggregates\(/)
+
+    /*
+     * ── THE RETENTION HALF, WHICH IS A DIFFERENT CLAIM ────────────────────
+     *
+     * §5 says the mirrored copy is kept while the account is open, and gives
+     * as one of its reasons that the figures are not stored but recalculated.
+     * That is a property of the code — five tables with no insert site — and
+     * it is the reason the paragraph cannot promise a shorter retention for
+     * the Etsy copy than for "your history". If an insert site appears, the
+     * document is describing a product that no longer exists.
+     */
+    const writes = walk('lib').concat(walk('domain'), walk('app')).map(code).join('\n')
+    for (const derived of [
+      'profitRecords',
+      'baselines',
+      'profitScenarios',
+      'events',
+      'actions',
+    ]) {
+      expect(
+        new RegExp(`insert\\(schema\\.${derived}\\b`).test(writes),
+        `§5 says calculated figures are not kept, and something now inserts into ${derived}`,
+      ).toBe(false)
+    }
+    expect(
+      section,
+      '§5 should say why the copy outlives the display window, not only that it does',
+    ).toMatch(/calculated from that copy/)
   })
 })
 

@@ -10,8 +10,15 @@ import 'server-only'
  *
  * lib/etsy/index.ts is the only file that chooses an adapter and both adapters
  * satisfy the same EtsyService, so this asks the selector for whichever one
- * the deployment has and writes what comes back. No timer, no queue, no cron:
- * when and how often is a later decision and a different kind of problem.
+ * the deployment has and writes what comes back.
+ *
+ * ── AND IT HAS A CALLER NOW ───────────────────────────────────────────────
+ *
+ * This said "no timer, no queue, no cron: when and how often is a later
+ * decision". The decision is domain/sync/refresh.ts, and the answer turned out
+ * not to be a schedule at all: Etsy's API Terms §5 bounds how old displayed
+ * content may be, so a read that finds these rows more than twenty-four hours
+ * behind withholds them and asks for this. Still no timer and no queue.
  *
  * assertCanWrite(ctx) is the gate, and it refuses a demo shop — so the mock's
  * invented receipts can never land in a seller's tables, where they would

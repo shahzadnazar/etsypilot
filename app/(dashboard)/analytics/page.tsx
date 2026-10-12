@@ -7,6 +7,8 @@ import { SalesChart } from '@/components/analytics/sales-chart'
 import { ProvenanceBadge } from '@/components/provenance/provenance-badge'
 import { Card } from '@/components/ui/card'
 import { EmptyState, UnavailableCard } from '@/components/ui/states'
+import { DataWithheld } from '@/components/sync/data-withheld'
+import { withheldReason } from '@/domain/sync/source'
 import { Money, Numeric, NumericCell } from '@/components/ui/numeric'
 import { getAnalytics, REPEAT_CUSTOMER_STANCE } from '@/domain/analytics/service'
 import { getSession } from '@/lib/auth'
@@ -59,20 +61,22 @@ export default async function AnalyticsPage() {
    * orders and payments from your connected shop". A shop nobody has read is
    * told, in the product's own voice, that it sold nothing.
    */
-  if (view.source.kind === 'NOT_SYNCED' || view.source.kind === 'NO_SHOP') {
+  /*
+   * Stale counts the same way, and for the same reason: receipts read more
+   * than twenty-four hours ago are further behind Etsy than their API Terms §5
+   * allows us to display, the loader has withheld them, and five zeroes under
+   * "your own orders and payments" would be read as a measurement.
+   */
+  if (withheldReason(view.source)) {
     return (
       <>
         <PageHeader
           title="Your sales records"
           subtitle="Your own orders and payments, summed over the reporting period."
         />
-        <EmptyState
-          title={view.source.kind === 'NO_SHOP' ? 'This shop could not be found' : 'Not synced yet'}
-          description={
-            view.source.kind === 'NO_SHOP'
-              ? 'The shop this page was opened for is no longer in CobaltRank. Nothing is wrong with your shop on Etsy.'
-              : 'Every figure on this page is summed from your own order receipts, and CobaltRank has not read them yet. Zeroes here would read as a shop that sold nothing, which is not what is being reported.'
-          }
+        <DataWithheld
+          source={view.source}
+          neverSynced="Every figure on this page is summed from your own order receipts, and CobaltRank has not read them yet. Zeroes here would read as a shop that sold nothing, which is not what is being reported."
         />
       </>
     )
