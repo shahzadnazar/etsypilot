@@ -10,13 +10,7 @@
 
 import { loadOrders, ordersWereRead } from '@/domain/orders/load'
 import { shopHeader } from '@/domain/sync/source'
-import {
-  BASELINE_END,
-  BASELINE_START,
-  PERIOD_DAYS,
-  PERIOD_END,
-  PERIOD_START,
-} from '@/lib/etsy/demo-dataset'
+import { REPORTING_DAYS, baselineWindow, reportingWindow } from '@/domain/clock'
 import { readEvents } from '@/lib/repositories/events'
 import { loadListings } from '@/domain/listings/load'
 import type { EtsyListing } from '@/lib/etsy/interface'
@@ -60,7 +54,7 @@ import type {
 function emptyBaseline(metric: 'orders' | 'revenue'): Baseline {
   return {
     metric,
-    windowDays: PERIOD_DAYS,
+    windowDays: REPORTING_DAYS,
     series: [],
     expectedTotal: 0,
     actualTotal: 0,
@@ -72,6 +66,10 @@ function emptyBaseline(metric: 'orders' | 'revenue'): Baseline {
 }
 
 export async function getShopPulse(ctx: ShopContext): Promise<ShopPulseView> {
+  // The rolling windows, not the fixture's four constants. See domain/clock.ts.
+  const reporting = reportingWindow()
+  const prior = baselineWindow()
+
   /*
    * ── THE SHOP'S OWN FACTS COME FROM OUR ROW, NOT THE ADAPTER ─────────────
    *
@@ -92,11 +90,11 @@ export async function getShopPulse(ctx: ShopContext): Promise<ShopPulseView> {
    * serves whichever source this deployment has.
    */
   const catalogue = await loadListings(ctx)
-  const period = await loadOrders(ctx, { since: PERIOD_START, until: PERIOD_END })
+  const period = await loadOrders(ctx, { since: reporting.start, until: reporting.end })
   const periodOrders = period.orders
   const { orders: priorOrders } = await loadOrders(ctx, {
-    since: BASELINE_START,
-    until: BASELINE_END,
+    since: prior.start,
+    until: prior.end,
   })
 
   /*
@@ -113,8 +111,8 @@ export async function getShopPulse(ctx: ShopContext): Promise<ShopPulseView> {
    */
   if (!ordersWereRead(period.source) || !shop) {
     return {
-      periodStart: PERIOD_START,
-      periodEnd: PERIOD_END,
+      periodStart: reporting.start,
+      periodEnd: reporting.end,
       currency: shop?.currency ?? 'USD',
       source: period.source,
       orders: emptyBaseline('orders'),
@@ -127,8 +125,8 @@ export async function getShopPulse(ctx: ShopContext): Promise<ShopPulseView> {
   const baselineArgs = {
     priorOrders,
     periodOrders,
-    periodStart: PERIOD_START,
-    periodDays: PERIOD_DAYS,
+    periodStart: reporting.start,
+    periodDays: REPORTING_DAYS,
     timezone: shop.timezone,
     ...baselineCoverage(priorOrders, catalogue.listings),
   }
@@ -151,7 +149,7 @@ export async function getShopPulse(ctx: ShopContext): Promise<ShopPulseView> {
    * history.
    */
   const events =
-    demoEvents() ?? (await readEvents(ctx.shopId, { since: BASELINE_START, until: PERIOD_END }))
+    demoEvents() ?? (await readEvents(ctx.shopId, { since: prior.start, until: reporting.end }))
 
   const recorded = recordedChanges(periodOrders, events)
 
@@ -188,8 +186,8 @@ export async function getShopPulse(ctx: ShopContext): Promise<ShopPulseView> {
   ].sort((a, b) => rank(a) - rank(b) || a.occurredAt.localeCompare(b.occurredAt))
 
   return {
-    periodStart: PERIOD_START,
-    periodEnd: PERIOD_END,
+    periodStart: reporting.start,
+    periodEnd: reporting.end,
     currency: shop.currency,
     source: period.source,
     orders,
@@ -371,18 +369,19 @@ function buildChange(
   const first = spec.events[0]
   if (!first) throw new Error('change spec with no events')
 
+  const reporting = reportingWindow()
   const comparison = compareRates(
     orders,
     spec.listingIds,
     first.timestamp,
-    PERIOD_START,
-    PERIOD_END,
+    reporting.start,
+    reporting.end,
   )
   const diagnosis = diagnose(comparison, true)
   const confidence = confidenceFor(comparison, spec.listingIds.length)
   const thin = !hasEnoughData(comparison)
 
-  const shopWide = compareRates(orders, [], first.timestamp, PERIOD_START, PERIOD_END)
+  const shopWide = compareRates(orders, [], first.timestamp, reporting.start, reporting.end)
 
   const observed: string[] = [
     `${formatDate(first.timestamp)} · ${first.type}${
@@ -391,12 +390,12 @@ function buildChange(
         : ''
     }${first.operationId ? `, operation ${first.operationId}` : ''}.`,
     thin
-      ? `${formatDate(first.timestamp)} – ${formatDate(PERIOD_END)} · outcome window — too few orders on ${
+      ? `${formatDate(first.timestamp)} – ${formatDate(reporting.end)} · outcome window — too few orders on ${
           spec.listingIds.length
         } listing${spec.listingIds.length === 1 ? '' : 's'} to measure a rate (${
           comparison.ordersBefore
         } before, ${comparison.ordersAfter} after).`
-      : `${formatDate(first.timestamp)} – ${formatDate(PERIOD_END)} · outcome window — orders on ${
+      : `${formatDate(first.timestamp)} – ${formatDate(reporting.end)} · outcome window — orders on ${
           spec.listingIds.length
         } listing${spec.listingIds.length === 1 ? '' : 's'} moved from ${
           comparison.beforePerDay
@@ -520,6 +519,7 @@ function unexplainedDeviations(
   events: readonly DomainEvent[],
   coverage: BaselineCoverage,
 ): DetectedChange[] {
+  const reporting = reportingWindow()
   /*
    * Only a change to the residual population can explain residual movement.
    * An event on a listing another change already accounts for is not an
@@ -562,8 +562,8 @@ function unexplainedDeviations(
         orders,
         [],
         `${from}T00:00:00.000Z`,
-        PERIOD_START,
-        PERIOD_END,
+        reporting.start,
+        reporting.end,
       )
 
       const evidence: Evidence = {

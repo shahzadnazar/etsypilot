@@ -13,12 +13,15 @@ import 'server-only'
  * nothing writes that table yet — which is the honest chart.
  */
 
-import { BASELINE_START, PERIOD_END } from '@/lib/etsy/demo-dataset'
+import { baselineWindow, reportingWindow } from '@/domain/clock'
 import { readEvents } from '@/lib/repositories/events'
 import type { DomainEvent } from '@/lib/events/types'
 import type { ShopContext } from '@/lib/permissions'
 import { demoEvents } from './demo'
 
 export async function pulseChartEvents(ctx: ShopContext): Promise<DomainEvent[]> {
-  return demoEvents() ?? readEvents(ctx.shopId, { since: BASELINE_START, until: PERIOD_END })
+  return (
+    demoEvents() ??
+    readEvents(ctx.shopId, { since: baselineWindow().start, until: reportingWindow().end })
+  )
 }

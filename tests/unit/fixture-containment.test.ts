@@ -50,13 +50,45 @@ const ROOTS = ['domain', 'app', 'components']
 /**
  * The figure-bearing symbols. NOT the module.
  *
- * PERIOD_START, PERIOD_END, PERIOD_DAYS, BASELINE_START, BASELINE_END and
- * DEMO_SHOP_ID's siblings live in the demo dataset too; the first five are the
- * product's reporting window, which every domain service legitimately imports.
- * Banning the module would force them somewhere else purely to get the guard
- * green, which is how a guard teaches people to route around it.
+ * ── THE FIVE THIS LIST USED TO NAME AND EXCUSE ───────────────────────────
+ *
+ * It said: "PERIOD_START, PERIOD_END, PERIOD_DAYS, BASELINE_START,
+ * BASELINE_END … the first five are the product's reporting window, which
+ * every domain service legitimately imports. Banning the module would force
+ * them somewhere else purely to get the guard green, which is how a guard
+ * teaches people to route around it."
+ *
+ * The objection was right and the conclusion was wrong, and this is the first
+ * time in this project a check named the defect beside the one it was testing
+ * and argued itself out of covering it. There was a third option, already in
+ * the tree: domain/clock.ts had taken `DEMO_NOW` — the constant sitting in the
+ * same file, two lines away — and put it behind a function that checks the
+ * mode. Neither banning the import nor permitting it; asking instead.
+ *
+ * What the excuse cost, measured on 12 October 2026 on a live shop with 87
+ * synced orders running to the previous day: all six money screens reported on
+ * 14 July to 12 August and counted 15 orders worth $830.00. Fifty-one orders
+ * worth $3,843.80 were invisible. The dashboard printed "▲ 26.5% vs the period
+ * before" from two windows that had both closed two months earlier.
+ *
+ * The five are now reached through `reportingWindow()`, `baselineWindow()` and
+ * `previousWindow()` in domain/clock.ts, which derive them from `nowIso()` —
+ * and in demo mode reproduce these exact constants, which is asserted in
+ * tests/unit/reporting-window.test.ts. So they are ordinary fixtures here,
+ * with no allowance, like everything else in this list.
  */
 const FIXTURES = [
+  // The reporting window. See the note above for why these took eleven months
+  // to get into this list.
+  'PERIOD_START',
+  'PERIOD_END',
+  'PERIOD_DAYS',
+  'BASELINE_START',
+  'BASELINE_END',
+  // Two instants that were living in domain/ as bare literals until the sweep
+  // that found the window: the audit's clock and the demo shop's stats import.
+  'DEMO_AUDIT_NOW',
+  'DEMO_STATS_IMPORT_AT',
   'DEMO_EVENTS',
   'DEMO_COUNTS',
   'DEMO_COST_INPUTS',
@@ -92,6 +124,7 @@ const FIXTURES = [
  */
 const ALLOWED = [
   'domain/action-center/demo.ts',
+  'domain/audit/demo.ts',
   'domain/connect/demo.ts',
   'domain/analytics/experiments-demo.ts',
   'domain/audit-log/demo.ts',
@@ -323,5 +356,113 @@ describe('nothing asks the Etsy adapter for a catalogue it may not have', () => 
         /getEtsyService\s*\(/.test(code(file)),
     )
     expect(offenders, 'a screen asks the adapter for a catalogue directly').toEqual([])
+  })
+})
+
+describe('no authored instant stands in for the clock', () => {
+  /*
+   * ── THE RULE THE SYMBOL SWEEP ABOVE CANNOT EXPRESS ────────────────────
+   *
+   * A frozen moment does not have to arrive by import. Four of them were
+   * written out by hand in domain/, each one past its own sell-by date:
+   *
+   *   domain/audit/rules.ts       AUDIT_NOW = '2026-08-20T00:00:00.000Z',
+   *                               used with no mode check, so on 12 October a
+   *                               live shop's audit flagged a listing that had
+   *                               renewed on 22 August as "Renews within 7
+   *                               days" and said nothing about one renewing on
+   *                               16 October. Inverted, and the /listings
+   *                               table one click away got both right because
+   *                               it reads nowIso().
+   *   domain/costs/service.ts     lastImportAt: rows.length > 0 ?
+   *                               '2026-08-09…' : null — so any shop with
+   *                               receipts was told it had uploaded an Etsy
+   *                               Stats file in August. The condition tested
+   *                               whether orders exist, not whether an import
+   *                               happened.
+   *   domain/analytics/experiments.ts
+   *                               since: '2026-04-15T00:00:00.000Z' inside a
+   *                               live order query — the fixture's baseline
+   *                               start, on the one screen whose whole job is
+   *                               before-and-after.
+   *   domain/ai/service.ts and domain/billing/service.ts
+   *                               '2026-09-01' twice, as the date a monthly AI
+   *                               allowance resets. Six weeks in the past, on
+   *                               two separate screens, from two separate
+   *                               literals.
+   *
+   * None of those names a fixture symbol, so the sweep above was blind to all
+   * of them. This rule is about the SHAPE of the thing instead: a date written
+   * into the source is either a fact about the outside world that has a date
+   * (Etsy's published fee schedule) or it is a clock nobody is winding.
+   */
+  const INSTANT = /['"`]\d{4}-\d{2}-\d{2}(T[\d:.]+Z?)?['"`]/
+
+  /**
+   * Instants in domain/ that are NOT a stopped clock, each with its reason.
+   *
+   * Same contract as KNOWN_REMAINING: an entry has to stay true, and deleting
+   * it is what fixing one looks like.
+   */
+  const KNOWN_INSTANTS: { file: string; why: string }[] = [
+    {
+      file: 'domain/fees/rules.ts',
+      why:
+        'FEE_RULES_EFFECTIVE is the date Etsy\u2019s published fee schedule took ' +
+        'effect. It is a fact about a document outside this product, it is ' +
+        'rendered beside the rates it governs so a seller can check them against ' +
+        'the same policy page, and it is correct until Etsy publishes new rates \u2014 ' +
+        'at which point the rates change in the same edit. A date that describes ' +
+        'the world is not a clock.',
+    },
+    {
+      file: 'domain/research/service.ts',
+      why:
+        'The created and updated dates on demoLists(), the two sample keyword ' +
+        'lists. They are demo-only since getListsView() began returning null ' +
+        'outside demo mode, so no live seller sees them \u2014 but the literals still ' +
+        'sit in a service rather than in the dataset, and moving them is the ' +
+        'keyword-list persistence slice that KNOWN_REMAINING already names for ' +
+        'the same symbol. Listed rather than exempted by directory so the two ' +
+        'entries go together.',
+    },
+  ]
+
+  const scoped = files.filter((f) => f.startsWith('domain/'))
+
+  it('sweeps domain/ and can see an instant when there is one', () => {
+    /*
+     * Anti-vacuity, two ways. The sweep has to be looking at files, and the
+     * pattern has to be able to match — a regex broken by an escaping slip
+     * reports a clean tree and reads exactly like one.
+     */
+    expect(scoped.length).toBeGreaterThan(60)
+    expect(scoped).toContain('domain/audit/rules.ts')
+    expect(scoped).toContain('domain/costs/service.ts')
+
+    expect(INSTANT.test("const x = '2026-08-20T00:00:00.000Z'")).toBe(true)
+    expect(INSTANT.test("const x = '2026-09-01'")).toBe(true)
+    expect(INSTANT.test('const x = `${month}-15T12:00:00.000Z`')).toBe(false)
+    expect(INSTANT.test('const x = nowIso()')).toBe(false)
+
+    // And the exempt files really do still contain one, so the exemptions are
+    // not quietly covering nothing.
+    for (const known of KNOWN_INSTANTS) {
+      expect(
+        INSTANT.test(code(known.file)),
+        `${known.file} has no instant left; delete its KNOWN_INSTANTS entry`,
+      ).toBe(true)
+      expect(known.why.length, `${known.file} has no reason recorded`).toBeGreaterThan(80)
+    }
+  })
+
+  it('finds no stopped clock in domain/', () => {
+    const exempt = new Set([...ALLOWED, ...DATASETS, ...KNOWN_INSTANTS.map((k) => k.file)])
+    const offenders = scoped.filter((f) => !exempt.has(f) && INSTANT.test(code(f)))
+    expect(
+      offenders,
+      'an authored date literal is on a live path \u2014 read it off domain/clock.ts, ' +
+        'or add it to KNOWN_INSTANTS with the reason it is a fact and not a clock',
+    ).toEqual([])
   })
 })

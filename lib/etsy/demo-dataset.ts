@@ -36,6 +36,39 @@ export const PERIOD_END = '2026-08-12T23:59:59.999Z'
 /** Fixed "now" for the demo shop, so freshness copy stays stable. */
 export const DEMO_NOW = '2026-08-12T14:06:00.000Z'
 
+/*
+ * The demo shop's audit clock, which is EIGHT DAYS AFTER its own "now".
+ *
+ * This lived in domain/audit/rules.ts as `AUDIT_NOW`, used with no mode check,
+ * so the Listing Audit measured every real seller's renewal distances against
+ * 20 August 2026. Measured on a live shop on 12 October: a listing that had
+ * renewed on 22 August was flagged "Renews within 7 days" and one renewing on
+ * 16 October was not — the same inversion domain/clock.ts records, on the
+ * screen whose whole output is distances from now, and now contradicting the
+ * /listings table one click away, which reads the clock.
+ *
+ * It is still a separate instant because collapsing it onto DEMO_NOW MOVES THE
+ * DEMO. Measured: under 2026-08-20 the fixture flags 41 listings renewing
+ * 2026-08-27; under DEMO_NOW it flags a different 41, renewing 2026-08-16. The
+ * count is the same and the rows are not, so the audit screen and the health
+ * score both change. That is an artboard decision rather than a defect fix,
+ * and it is recorded here instead of being taken quietly.
+ */
+export const DEMO_AUDIT_NOW = '2026-08-20T00:00:00.000Z'
+
+/*
+ * When the demo shop last imported an Etsy Stats CSV.
+ *
+ * This was a literal inside domain/costs/service.ts:
+ *
+ *     lastImportAt: reconciliation.rows.length > 0 ? '2026-08-09...' : null
+ *
+ * — so any shop with receipts was told it had imported a stats file on 9
+ * August, including a live shop that has never uploaded one. The condition
+ * tested the wrong thing: rows mean orders exist, not that an import happened.
+ */
+export const DEMO_STATS_IMPORT_AT = '2026-08-09T00:00:00.000Z'
+
 /**
  * The 90 days before the period. Shop Pulse baselines against this, so it has
  * to exist as real orders rather than as a stored average - otherwise the

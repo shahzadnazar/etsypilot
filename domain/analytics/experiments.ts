@@ -21,7 +21,7 @@
 
 import { loadListings } from '@/domain/listings/load'
 import { loadOrders } from '@/domain/orders/load'
-import { PERIOD_END } from '@/lib/etsy/demo-dataset'
+import { baselineWindow, reportingWindow } from '@/domain/clock'
 import { demoExperimentResults } from './experiments-demo'
 
 import type { DomainEvent } from '@/lib/events/types'
@@ -104,7 +104,16 @@ export async function getExperiments(ctx: ShopContext): Promise<ExperimentsView>
     // A wide window: an experiment's "before" reaches behind the reporting
     // period, and reading only the period would compare against a truncated
     // history without saying so.
-    loadOrders(ctx, { since: '2026-04-15T00:00:00.000Z', until: PERIOD_END }),
+    /*
+     * The baseline start, not a literal. This read
+     * `since: '2026-04-15T00:00:00.000Z'` — the fixture's baseline start,
+     * written out by hand inside a live order query, so the one screen whose
+     * whole job is before-and-after could see nothing after 12 August.
+     */
+    loadOrders(ctx, {
+      since: baselineWindow().start,
+      until: reportingWindow().end,
+    }),
     loadListings(ctx),
   ])
 

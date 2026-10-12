@@ -19,8 +19,8 @@
 import { loadListings } from '@/domain/listings/load'
 import type { ShopDataSource } from '@/domain/sync/source'
 import { loadOrders } from '@/domain/orders/load'
-import { BASELINE_START, PERIOD_END } from '@/lib/etsy/demo-dataset'
-import { nowIso } from '@/domain/clock'
+
+import { baselineWindow, nowIso, reportingWindow } from '@/domain/clock'
 import type { EtsyListing } from '@/lib/etsy/interface'
 import type { StoredOrder } from '@/domain/orders/types'
 import type { Confidence } from '@/lib/provenance/types'
@@ -83,7 +83,7 @@ export async function getSeasonalCalendar(
    * sources travel with the view.
    */
   const [{ orders, source: ordersSource }, catalogue] = await Promise.all([
-    loadOrders(ctx, { since: BASELINE_START, until: PERIOD_END }),
+    loadOrders(ctx, { since: baselineWindow().start, until: reportingWindow().end }),
     loadListings(ctx),
   ])
   const listings = catalogue.listings
@@ -92,7 +92,7 @@ export async function getSeasonalCalendar(
   const category = query.category && sections.includes(query.category) ? query.category : 'All'
 
   const now = nowIso()
-  const historyMonths = monthsBetween(BASELINE_START, now)
+  const historyMonths = monthsBetween(baselineWindow().start, now)
   const windows = listings.length === 0 ? [] : buildWindows({ orders, listings, category, historyMonths })
 
   return {

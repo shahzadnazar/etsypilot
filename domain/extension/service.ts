@@ -21,7 +21,7 @@ import { auditListings } from '@/domain/audit/service'
 import { loadListings } from '@/domain/listings/load'
 import { loadOrders } from '@/domain/orders/load'
 import type { StoredOrder } from '@/domain/orders/types'
-import { PERIOD_END, PERIOD_START } from '@/lib/etsy/demo-dataset'
+import { nowIso, reportingWindow } from '@/domain/clock'
 import type { EtsyListing } from '@/lib/etsy/interface'
 import type { ShopContext } from '@/lib/permissions'
 import { getSignalsService } from '@/lib/signals'
@@ -31,7 +31,22 @@ import type {
   ListingIntelligence,
 } from '@/lib/extension/contract'
 
-const OBSERVED_ON = '2026-08-20'
+/*
+ * The day the popup says its figures are from.
+ *
+ * This was `const OBSERVED_ON = '2026-08-20'`, rendered by the popup as
+ * "Observed 2026-08-20" for every listing on every shop in every mode. The
+ * extension is off the live surface behind BROWSER_EXTENSION_ENABLED, so
+ * nothing reaches it today, which is why 3dbce03 left it — and why it is a
+ * date nobody would have noticed going stale.
+ *
+ * The seller's own figures are read at request time, so the honest answer is
+ * the day of the request, frozen to the fixture's clock in demo mode like
+ * every other date in the product.
+ */
+function observedOn(): string {
+  return nowIso().slice(0, 10)
+}
 
 function appUrl(path: string): string {
   const base = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
@@ -52,7 +67,8 @@ export async function getListingIntelligence(
   const own = listings.find((l) => l.etsyListingId === etsyListingId)
   if (!own) return otherListing(etsyListingId)
 
-  const { orders } = await loadOrders(ctx, { since: PERIOD_START, until: PERIOD_END })
+  const period = reportingWindow()
+  const { orders } = await loadOrders(ctx, { since: period.start, until: period.end })
   return ownListing(own, listings, orders, costs)
 }
 
@@ -145,7 +161,7 @@ async function ownListing(
       { label: 'Shop Pulse', href: appUrl('/shop-pulse') },
       { label: 'Action Center', href: appUrl('/action-center') },
     ],
-    observedOn: OBSERVED_ON,
+    observedOn: observedOn(),
   }
 }
 
@@ -231,6 +247,6 @@ async function otherListing(etsyListingId: string): Promise<ListingIntelligence 
       { label: 'Shop Pulse', href: appUrl('/shop-pulse') },
       { label: 'Action Center', href: appUrl('/action-center') },
     ],
-    observedOn: OBSERVED_ON,
+    observedOn: observedOn(),
   }
 }

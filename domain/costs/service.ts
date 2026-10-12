@@ -34,7 +34,8 @@ import { reconcile } from '@/domain/profit/reconciliation'
 import { loadListings } from '@/domain/listings/load'
 import { loadOrders } from '@/domain/orders/load'
 import { shopHeader } from '@/domain/sync/source'
-import { PERIOD_END, PERIOD_START } from '@/lib/etsy/demo-dataset'
+import { reportingWindow } from '@/domain/clock'
+import { demoStatsImportAt } from '@/domain/costs/demo'
 import type { ShopContext } from '@/lib/permissions'
 import { demoUnmatchedReceiptIds } from './demo'
 import { loadCosts } from './load'
@@ -77,9 +78,10 @@ export interface CostsView {
 }
 
 export async function getCostsView(ctx: ShopContext): Promise<CostsView> {
+  const period = reportingWindow()
   const [shop, { orders }, catalogue] = await Promise.all([
     shopHeader(ctx),
-    loadOrders(ctx, { since: PERIOD_START, until: PERIOD_END }),
+    loadOrders(ctx, { since: period.start, until: period.end }),
     loadListings(ctx),
   ])
   const listings = catalogue.listings
@@ -151,18 +153,20 @@ export async function getCostsView(ctx: ShopContext): Promise<CostsView> {
 
   return {
     currency: shop?.currency ?? 'USD',
-    periodStart: PERIOD_START,
-    periodEnd: PERIOD_END,
+    periodStart: period.start,
+    periodEnd: period.end,
     settings,
     coverage,
     missingCosts,
     imports: {
       /*
-       * Null when nothing has been imported, which is the state a new shop is
-       * in. The demo shop has one import behind it, and the counts come from
-       * the reconciliation rather than being written down beside it.
+       * Null when nothing has been imported, which is the state every shop but
+       * the demo one is in. The counts come from the reconciliation rather than
+       * being written down beside it; the date comes from the demo module,
+       * which checks the mode — see domain/costs/demo.ts for what the old
+       * condition claimed and to whom.
        */
-      lastImportAt: reconciliation.rows.length > 0 ? '2026-08-09T00:00:00.000Z' : null,
+      lastImportAt: demoStatsImportAt(),
       matched: reconciliation.matched,
       unmatched: reconciliation.unmatched,
     },

@@ -1,6 +1,7 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { and, eq, inArray, isNotNull, sql } from 'drizzle-orm'
 import { acceptTermsFor } from '../support/legal'
+import { inReportingWindow, wideWindow } from '../support/window'
 
 import { syncShopOrders } from '@/domain/sync/orders'
 import { syncShopListings } from '@/domain/sync/listings'
@@ -48,9 +49,20 @@ const USER_A = 'costs-test-user-a'
 const USER_B = 'costs-test-user-b'
 const OURS = [SHOP_A, SHOP_B]
 
-const WINDOW = { since: '2026-07-14T00:00:00.000Z', until: '2026-08-12T23:59:59.999Z' }
+/*
+ * The reporting window is asked for, not written down.
+ *
+ * This file declared `{ since: '2026-07-14…', until: '2026-08-12…' }` and an
+ * IN_PERIOD inside it, so that a seeded order was one the screens actually
+ * read. The window rolls now (domain/clock.ts), so those literals put every
+ * seeded order two months outside it and the screens correctly reported
+ * nothing — which is the same failure this file's own comment already
+ * recorded once: "The assertion was right and the fixture was in the wrong
+ * month." See tests/support/window.ts.
+ */
+const WINDOW = wideWindow
 /** Inside the demo dataset's reporting period, which is what the screens read. */
-const IN_PERIOD = '2026-07-20T10:00:00.000Z'
+const IN_PERIOD = inReportingWindow
 const ENV = { ...process.env }
 
 const ctxFor = (shopId: string, actorId = USER_A): ShopContext => ({
@@ -70,7 +82,7 @@ const ctxFor = (shopId: string, actorId = USER_A): ShopContext => ({
 function order(id: string, overrides: Partial<EtsyOrder> = {}): EtsyOrder {
   return {
     etsyReceiptId: id,
-    placedAt: IN_PERIOD,
+    placedAt: IN_PERIOD(),
     gross: 100,
     discounts: 0,
     refunds: 0,
@@ -404,7 +416,7 @@ describe('a per-listing cost is a confirmed cost', () => {
   it('moves cost coverage off zero, measured through the page view', async () => {
     setEtsyService(fakeAdapter([order('R1')], [listing('9001')]) as never)
     await syncShopListings(ctxFor(SHOP_A))
-    await syncShopOrders(ctxFor(SHOP_A), WINDOW)
+    await syncShopOrders(ctxFor(SHOP_A), WINDOW())
 
     const before = await getCostsView(ctxFor(SHOP_A))
     expect(before.coverage.percent).toBe(0)
@@ -426,7 +438,7 @@ describe('a seller who has set nothing is told nothing, not zero', () => {
   it('gets a null net profit and the words “Not set”', async () => {
     setEtsyService(fakeAdapter([order('R1')], [listing('9001')]) as never)
     await syncShopListings(ctxFor(SHOP_A))
-    await syncShopOrders(ctxFor(SHOP_A), WINDOW)
+    await syncShopOrders(ctxFor(SHOP_A), WINDOW())
 
     const view = await getProfitView(ctxFor(SHOP_A))
 
@@ -456,7 +468,7 @@ describe('a seller who has set nothing is told nothing, not zero', () => {
   it('and the scenarios withhold the same lines rather than projecting them', async () => {
     setEtsyService(fakeAdapter([order('R1')], [listing('9001')]) as never)
     await syncShopListings(ctxFor(SHOP_A))
-    await syncShopOrders(ctxFor(SHOP_A), WINDOW)
+    await syncShopOrders(ctxFor(SHOP_A), WINDOW())
 
     const view = await getProfitView(ctxFor(SHOP_A))
     for (const kind of ['CONSERVATIVE', 'BASE', 'OPTIMISTIC'] as const) {
@@ -474,7 +486,7 @@ describe('a seller who has set nothing is told nothing, not zero', () => {
      */
     setEtsyService(fakeAdapter([order('R1')], [listing('9001')]) as never)
     await syncShopListings(ctxFor(SHOP_A))
-    await syncShopOrders(ctxFor(SHOP_A), WINDOW)
+    await syncShopOrders(ctxFor(SHOP_A), WINDOW())
     await writeCostRules(SHOP_A, USER_A, ALL_FIELDS)
 
     const view = await getProfitView(ctxFor(SHOP_A))
@@ -502,7 +514,7 @@ describe('changing a rule restates a closed period', () => {
      */
     setEtsyService(fakeAdapter([order('R1')], [listing('9001')]) as never)
     await syncShopListings(ctxFor(SHOP_A))
-    await syncShopOrders(ctxFor(SHOP_A), WINDOW)
+    await syncShopOrders(ctxFor(SHOP_A), WINDOW())
 
     await writeCostRules(SHOP_A, USER_A, ALL_FIELDS)
     const first = (await getProfitView(ctxFor(SHOP_A))).results.BASE.netProfit
@@ -527,7 +539,7 @@ describe('changing a rule restates a closed period', () => {
     setEtsyService(fakeAdapter([order('R1')], [listing('9001')]) as never)
     await syncShopListings(ctxFor(SHOP_A))
     await writeCostRules(SHOP_A, USER_A, ALL_FIELDS)
-    await syncShopOrders(ctxFor(SHOP_A), WINDOW)
+    await syncShopOrders(ctxFor(SHOP_A), WINDOW())
 
     const lines = await getDb()
       .select({ snapshot: schema.orderItems.costSnapshot })

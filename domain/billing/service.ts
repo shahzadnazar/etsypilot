@@ -42,6 +42,7 @@ import {
   type TrialState,
 } from './lifecycle'
 import { buildMeters, enforce, pressureWarning, type LimitDecision, type MetricKey, type UsageMeter } from './usage'
+import { allowanceResetsOn } from '@/domain/clock'
 
 export interface BillingView {
   /** True when the whole surface is running against the mock provider. */
@@ -85,7 +86,7 @@ export async function getBillingView(ctx: ShopContext): Promise<BillingView> {
     // Active listings only — the population the plan limit applies to.
     activeListings: listings.filter((l) => l.state === 'ACTIVE').length,
     aiGenerationsUsed: 42,
-    aiResetsOn: '2026-09-01',
+    aiResetsOn: allowanceResetsOn(),
   })
 
   return {

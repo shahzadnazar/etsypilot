@@ -16,6 +16,7 @@
  * which validates, diffs and requires confirmation like any other write.
  */
 
+import { auditNow } from '@/domain/audit/demo'
 import type { EtsyListing } from '@/lib/etsy/interface'
 
 export type Severity = 'ERROR' | 'WARNING'
@@ -232,20 +233,36 @@ export const AUDIT_RULES: AuditRule[] = [
     bulkFixable: false,
     test: (l) => {
       if (!l.renewsAt) return false
-      const days = (Date.parse(l.renewsAt) - Date.parse(AUDIT_NOW)) / 86_400_000
+      const days = (Date.parse(l.renewsAt) - Date.parse(auditNow())) / 86_400_000
       return days >= 0 && days <= 7
     },
   },
 ]
 
-/**
- * Fixed "now" for the demo, in UTC (D24).
+/*
+ * ── THE AUDIT'S "NOW" WAS A CONSTANT, ON EVERY SHOP ──────────────────────
  *
- * Not Date.now(): a rule that depends on the wall clock produces a different
- * audit on every render, which makes the screen impossible to test and the
- * health score impossible to compare with last week's.
+ * This file declared:
+ *
+ *     export const AUDIT_NOW = '2026-08-20T00:00:00.000Z'
+ *
+ * and RENEWS_SOON measured against it unconditionally, so on 12 October a
+ * live seller's audit was computing renewal distances from a date seven weeks
+ * stale. Measured, on a shop with two listings: one that renewed on 22 August
+ * was flagged "Renews within 7 days"; one renewing on 16 October was not.
+ * Inverted, which is worse than absent — and the /listings table beside it got
+ * both right, because that screen reads nowIso().
+ *
+ * The stated reason for the constant was sound: "a rule that depends on the
+ * wall clock produces a different audit on every render, which makes the
+ * screen impossible to test". domain/clock.ts is the answer to it. nowIso() is
+ * frozen in demo mode, so the fixture and every test that runs against it get
+ * a stable audit, and only a live deployment gets the wall clock.
+ *
+ * auditNow() is in domain/audit/demo.ts rather than here because the demo
+ * answer is NOT nowIso(): the fixture's audit clock is eight days after its
+ * own, and collapsing them moves the artboards. See DEMO_AUDIT_NOW.
  */
-export const AUDIT_NOW = '2026-08-20T00:00:00.000Z'
 
 if (AUDIT_RULES.length !== 14) {
   throw new Error(`The audit advertises 14 rules and has ${AUDIT_RULES.length}.`)

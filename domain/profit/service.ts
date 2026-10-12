@@ -9,7 +9,7 @@ import { loadListings } from '@/domain/listings/load'
 import { loadOrders } from '@/domain/orders/load'
 import { loadCosts } from '@/domain/costs/load'
 import { shopHeader, type ShopDataSource } from '@/domain/sync/source'
-import { PERIOD_END, PERIOD_START } from '@/lib/etsy/demo-dataset'
+import { reportingWindow } from '@/domain/clock'
 import { demoUnmatchedReceiptIds } from '@/domain/costs/demo'
 import { feeTotals, feesAreKnown, type StoredOrder } from '@/domain/orders/types'
 import type { ShopContext } from '@/lib/permissions'
@@ -55,9 +55,11 @@ export interface ProfitView {
 }
 
 export async function getProfitView(ctx: ShopContext): Promise<ProfitView> {
+  // The rolling window, not the fixture's two constants. See domain/clock.ts.
+  const period = reportingWindow()
   const [shop, { orders, source }, catalogue] = await Promise.all([
     shopHeader(ctx),
-    loadOrders(ctx, { since: PERIOD_START, until: PERIOD_END }),
+    loadOrders(ctx, { since: period.start, until: period.end }),
     loadListings(ctx),
   ])
   const sellerCosts = await loadCosts(ctx)
@@ -137,8 +139,8 @@ export async function getProfitView(ctx: ShopContext): Promise<ProfitView> {
   const { results, comparison } = buildScenarios(verified, assumptions, { coverage, missingData })
 
   return {
-    periodStart: PERIOD_START,
-    periodEnd: PERIOD_END,
+    periodStart: period.start,
+    periodEnd: period.end,
     currency: shop?.currency ?? 'USD',
     source,
     verified,

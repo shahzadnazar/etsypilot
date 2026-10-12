@@ -17,7 +17,7 @@
 
 import { loadOrders } from '@/domain/orders/load'
 import { shopHeader, type ShopDataSource } from '@/domain/sync/source'
-import { PERIOD_END, PERIOD_START } from '@/lib/etsy/demo-dataset'
+import { reportingWindow } from '@/domain/clock'
 import type { StoredOrder } from '@/domain/orders/types'
 import type { ShopContext } from '@/lib/permissions'
 
@@ -61,6 +61,8 @@ export interface SalesMapView {
 }
 
 export async function getSalesMap(ctx: ShopContext): Promise<SalesMapView> {
+  // The rolling window, not the fixture's two constants. See domain/clock.ts.
+  const period = reportingWindow()
   /*
    * The sales map aggregates by country code and nothing else — no buyer, no
    * address, no name. `aggregateByCountry` is the only consumer of the orders
@@ -69,15 +71,15 @@ export async function getSalesMap(ctx: ShopContext): Promise<SalesMapView> {
    */
   const [shop, { orders, source }] = await Promise.all([
     shopHeader(ctx),
-    loadOrders(ctx, { since: PERIOD_START, until: PERIOD_END }),
+    loadOrders(ctx, { since: period.start, until: period.end }),
   ])
 
   const rows = aggregateByCountry(orders)
   const maxOrders = Math.max(...rows.filter((r) => !r.aggregate).map((r) => r.orders), 1)
 
   return {
-    periodStart: PERIOD_START,
-    periodEnd: PERIOD_END,
+    periodStart: period.start,
+    periodEnd: period.end,
     currency: shop?.currency ?? 'USD',
     rows,
     totalOrders: orders.length,

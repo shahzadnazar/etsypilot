@@ -20,11 +20,7 @@ import { costInputsFrom, loadCosts } from '@/domain/costs/load'
 import { loadListings } from '@/domain/listings/load'
 import { loadOrders } from '@/domain/orders/load'
 import { shopHeader, type ShopDataSource } from '@/domain/sync/source'
-import {
-  PERIOD_DAYS,
-  PERIOD_END,
-  PERIOD_START,
-} from '@/lib/etsy/demo-dataset'
+import { previousWindow, reportingWindow } from '@/domain/clock'
 import type { EtsyListing } from '@/lib/etsy/interface'
 import type { StoredOrder } from '@/domain/orders/types'
 import type { ShopContext } from '@/lib/permissions'
@@ -92,7 +88,8 @@ export interface AnalyticsView {
 }
 
 export async function getAnalytics(ctx: ShopContext): Promise<AnalyticsView> {
-  const previous = previousPeriod()
+  const period = reportingWindow()
+  const previous = previousWindow()
 
   /*
    * Through the loaders and the shop row. This asked the adapter for all four,
@@ -102,7 +99,7 @@ export async function getAnalytics(ctx: ShopContext): Promise<AnalyticsView> {
    */
   const [shop, { orders, source }, { orders: priorOrders }, catalogue] = await Promise.all([
     shopHeader(ctx),
-    loadOrders(ctx, { since: PERIOD_START, until: PERIOD_END }),
+    loadOrders(ctx, { since: period.start, until: period.end }),
     loadOrders(ctx, { since: previous.start, until: previous.end }),
     loadListings(ctx),
   ])
@@ -130,8 +127,8 @@ export async function getAnalytics(ctx: ShopContext): Promise<AnalyticsView> {
   const priorAov = priorOrders.length === 0 ? null : priorGross / priorOrders.length
 
   return {
-    periodStart: PERIOD_START,
-    periodEnd: PERIOD_END,
+    periodStart: period.start,
+    periodEnd: period.end,
     currency: shop?.currency ?? 'USD',
     source,
     grossSales,
@@ -163,14 +160,16 @@ export async function getAnalytics(ctx: ShopContext): Promise<AnalyticsView> {
   }
 }
 
-/** The equal-length window immediately before the reporting period. */
+/**
+ * The equal-length window immediately before the reporting period.
+ *
+ * Kept as a name this screen and the dashboard both already read, and now one
+ * line over domain/clock.ts so the two cannot disagree about what "the
+ * previous 30 days" means — which was the stated reason for sharing it in the
+ * first place, and was being met by sharing a constant.
+ */
 export function previousPeriod(): { start: string; end: string } {
-  const start = Date.parse(PERIOD_START)
-  const span = PERIOD_DAYS * 86_400_000
-  return {
-    start: new Date(start - span).toISOString(),
-    end: new Date(start - 1).toISOString(),
-  }
+  return previousWindow()
 }
 
 /**

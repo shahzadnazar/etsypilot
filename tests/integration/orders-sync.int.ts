@@ -1,6 +1,7 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import { acceptTermsFor } from '../support/legal'
+import { inReportingWindow } from '../support/window'
 
 import { syncShopOrders } from '@/domain/sync/orders'
 import { syncShopListings } from '@/domain/sync/listings'
@@ -43,16 +44,19 @@ const OURS = [SHOP_A, SHOP_B]
 
 const WINDOW = { since: '2026-01-01T00:00:00.000Z', until: '2026-12-31T00:00:00.000Z' }
 /*
- * Inside the demo dataset's own reporting period, so an order written here is
- * one the profit screen and the Action Center actually read.
+ * Inside the window the product reports on, ASKED rather than written down.
  *
- * Found by three tests failing with `verified.etsyFees` reading 0 rather than
- * null: the screens read PERIOD_START..PERIOD_END and my orders were placed
- * outside it, so they were looking at an EMPTY set — for which fees ARE known
- * (there are none) and a net profit IS computable. The assertion was right and
- * the fixture was in the wrong month.
+ * This was '2026-07-20T10:00:00.000Z', with a comment explaining that it had
+ * to be inside the demo dataset's reporting period "so an order written here
+ * is one the profit screen and the Action Center actually read" — found, it
+ * said, by three tests failing because "the screens read
+ * PERIOD_START..PERIOD_END and my orders were placed outside it… The
+ * assertion was right and the fixture was in the wrong month."
+ *
+ * The window rolls now, so the literal reproduced that failure exactly, two
+ * months out instead of one. tests/support/window.ts asks domain/clock.ts.
  */
-const IN_PERIOD = '2026-07-20T10:00:00.000Z'
+const IN_PERIOD = inReportingWindow
 const ENV = { ...process.env }
 
 const ctxFor = (shopId: string): ShopContext => ({ shopId, actorId: USER_A, readOnly: false })
@@ -60,7 +64,7 @@ const ctxFor = (shopId: string): ShopContext => ({ shopId, actorId: USER_A, read
 function order(id: string, overrides: Partial<EtsyOrder> = {}): EtsyOrder {
   return {
     etsyReceiptId: id,
-    placedAt: IN_PERIOD,
+    placedAt: IN_PERIOD(),
     gross: 48,
     discounts: 2,
     refunds: 0,

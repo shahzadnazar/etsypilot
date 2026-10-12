@@ -31,6 +31,7 @@ import { currentPlan } from '@/domain/billing/service'
 import { nextPlanAfter, type Plan } from '@/domain/billing/plans'
 import { listingFacts } from './facts'
 import { validateDraft } from './validate'
+import { allowanceResetsOn } from '@/domain/clock'
 import {
   DEFAULT_GUARDRAILS,
   type AiDraft,
@@ -54,7 +55,6 @@ export interface CopilotView {
 
 /** Demo figures. The LIMIT is never one of them — that comes from the plan. */
 const DEMO_GENERATIONS_USED = 42
-const AI_RESETS_ON = '2026-09-01'
 
 /**
  * Null when the shop has no listings at all.
@@ -249,7 +249,7 @@ function quotaFor(plan: Plan): GenerationQuota {
   return {
     used: DEMO_GENERATIONS_USED,
     limit: plan.limits.aiGenerations,
-    resetsOn: AI_RESETS_ON,
+    resetsOn: allowanceResetsOn(),
     planName: plan.name,
     nextTier: next ? { name: next.name, limit: next.limits.aiGenerations } : null,
   }

@@ -1,6 +1,7 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { eq, inArray } from 'drizzle-orm'
 import { acceptTermsFor } from '../support/legal'
+import { earlyInReportingWindow, inPreviousWindow, inReportingWindow, wideWindow } from '../support/window'
 
 import {
   appendAuditRecord,
@@ -57,7 +58,18 @@ const USER_A = 'ch-test-user-a'
 const USER_B = 'ch-test-user-b'
 const OURS = [SHOP_A, SHOP_B]
 
-const WINDOW = { since: '2026-07-14T00:00:00.000Z', until: '2026-08-12T23:59:59.999Z' }
+/*
+ * The reporting window is asked for, not written down.
+ *
+ * This file declared `{ since: '2026-07-14…', until: '2026-08-12…' }` and an
+ * IN_PERIOD inside it, so that a seeded order was one the screens actually
+ * read. The window rolls now (domain/clock.ts), so those literals put every
+ * seeded order two months outside it and the screens correctly reported
+ * nothing — which is the same failure this file's own comment already
+ * recorded once: "The assertion was right and the fixture was in the wrong
+ * month." See tests/support/window.ts.
+ */
+const WINDOW = wideWindow
 const ENV = { ...process.env }
 
 const ctxFor = (shopId: string, actorId = USER_A): ShopContext => ({
@@ -69,7 +81,7 @@ const ctxFor = (shopId: string, actorId = USER_A): ShopContext => ({
 function job(id: string, overrides: Partial<ChangeJob> = {}): ChangeJob {
   return {
     id,
-    at: '2026-08-01T09:00:00.000Z',
+    at: earlyInReportingWindow(),
     actor: 'Ada L.',
     source: 'BULK_EDIT',
     summary: 'Price +8%',
@@ -90,7 +102,7 @@ function job(id: string, overrides: Partial<ChangeJob> = {}): ChangeJob {
 function record(id: string, overrides: Partial<AuditRecord> = {}): AuditRecord {
   return {
     id,
-    at: '2026-08-01T09:00:00.000Z',
+    at: earlyInReportingWindow(),
     actor: { name: 'Ada L.', role: 'Owner', session: '2a··f1', device: 'This browser' },
     action: 'Cost rule changed',
     detail: `${id} · COGS 36% → 38%`,
@@ -341,8 +353,8 @@ describe('the dashboard baseline', () => {
      * baseline $20,287.00" — Willow & Fern's 90-day revenue, on the first
      * screen a real seller sees after signing in.
      */
-    setEtsyService(fakeAdapter([order('R1', '2026-07-20T10:00:00.000Z', 48)], []) as never)
-    await syncShopOrders(ctxFor(SHOP_A), WINDOW)
+    setEtsyService(fakeAdapter([order('R1', inReportingWindow(), 48)], []) as never)
+    await syncShopOrders(ctxFor(SHOP_A), WINDOW())
 
     const view = await getShopOverview(ctxFor(SHOP_A))
     const gross = view.metrics.find((m) => m.key === 'gross')!
@@ -359,13 +371,13 @@ describe('the dashboard baseline', () => {
      */
     setEtsyService(
       fakeAdapter([
-        order('R1', '2026-07-20T10:00:00.000Z', 100),
-        order('PRIOR', '2026-06-20T10:00:00.000Z', 200),
+        order('R1', inReportingWindow(), 100),
+        order('PRIOR', inPreviousWindow(), 200),
       ]) as never,
     )
     await syncShopOrders(
       ctxFor(SHOP_A),
-      { since: '2026-06-01T00:00:00.000Z', until: WINDOW.until },
+      { since: wideWindow().since, until: wideWindow().until },
     )
 
     const view = await getShopOverview(ctxFor(SHOP_A))

@@ -20,7 +20,7 @@ import { costRuleHistory } from '@/lib/repositories/costs'
 import { readAggregateSyncedAt } from '@/lib/repositories/sync-state'
 import { withAccountStore } from '@/lib/repositories/accounts'
 import { shopHeader, type ShopDataSource } from '@/domain/sync/source'
-import { PERIOD_END, PERIOD_START } from '@/lib/etsy/demo-dataset'
+import { reportingWindow } from '@/domain/clock'
 import type { ShopContext } from '@/lib/permissions'
 import type { ShopPulseView } from '@/domain/shop-pulse/types'
 import { belowCostAction, missingCostsAction, type ShopFacts } from './generators'
@@ -63,7 +63,8 @@ export interface ActionCenterView {
  * orders are a separate question and are handled in the branch below.
  */
 export async function getActions(ctx: ShopContext): Promise<ActionCenterView> {
-  const { orders, source } = await loadOrders(ctx, { since: PERIOD_START, until: PERIOD_END })
+  const period = reportingWindow()
+  const { orders, source } = await loadOrders(ctx, { since: period.start, until: period.end })
 
   if (!ordersWereRead(source)) {
     /*
@@ -244,6 +245,8 @@ async function shopFacts(
 ): Promise<ShopFacts | null> {
   if (isDemoMode()) return null
 
+  const period = reportingWindow()
+
   const [shop, catalogue, sellerCosts, listingsSyncedAt, ordersSyncedAt, history] = await Promise.all([
     shopHeader(ctx),
     loadListings(ctx),
@@ -275,7 +278,7 @@ async function shopFacts(
      * observations. `new Date()` is not: it would restamp every card as new on
      * every page load, on the one screen that ranks by what needs attention.
      */
-    observedAt: listingsSyncedAt ?? ordersSyncedAt ?? PERIOD_END,
+    observedAt: listingsSyncedAt ?? ordersSyncedAt ?? period.end,
     lastCostEdit: lastEdit ? { at: lastEdit.at, by: await actorName(lastEdit.actorId) } : null,
   }
 }

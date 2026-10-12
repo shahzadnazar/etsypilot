@@ -33,7 +33,12 @@ import 'server-only'
  */
 
 import { isDemoMode } from '@/lib/etsy'
-import { DEMO_COST_INPUTS, demoConfirmedCosts, demoUnmatchedOrderIds } from '@/lib/etsy/demo-dataset'
+import {
+  DEMO_COST_INPUTS,
+  DEMO_STATS_IMPORT_AT,
+  demoConfirmedCosts,
+  demoUnmatchedOrderIds,
+} from '@/lib/etsy/demo-dataset'
 import type { EtsyListing } from '@/lib/etsy/interface'
 import type { SellerCosts } from '@/lib/repositories/costs'
 
@@ -104,4 +109,21 @@ export function demoUnmatchedReceiptIds(
 export function demoListingCosts(listings: EtsyListing[]): Map<string, number> | null {
   if (!isDemoMode()) return null
   return demoConfirmedCosts(listings)
+}
+
+/**
+ * When the demo shop last imported an Etsy Stats CSV, or null.
+ *
+ * /settings/costs read `reconciliation.rows.length > 0 ? '2026-08-09…' : null`
+ * — a literal, in any mode, behind a condition that tests whether the shop has
+ * RECEIPTS rather than whether it has imported anything. So a live shop with
+ * orders and no import was told, on the page that lists what it knows about
+ * its own costs, that it had uploaded a stats file in August.
+ *
+ * Null outside the demo, because nothing stores a real import yet. The page
+ * already renders that state — it is what a new shop sees.
+ */
+export function demoStatsImportAt(): string | null {
+  if (!isDemoMode()) return null
+  return DEMO_STATS_IMPORT_AT
 }

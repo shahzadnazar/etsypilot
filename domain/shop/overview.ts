@@ -7,7 +7,7 @@
 
 import { loadOrders, ordersWereRead } from '@/domain/orders/load'
 import { shopHeader } from '@/domain/sync/source'
-import { PERIOD_END, PERIOD_START } from '@/lib/etsy/demo-dataset'
+import { reportingWindow } from '@/domain/clock'
 import { previousPeriod } from '@/domain/analytics/service'
 import { demoBaseline } from './demo'
 import { calculated, unavailable, verified } from '@/lib/provenance/builders'
@@ -42,6 +42,8 @@ export interface ShopOverview {
 }
 
 export async function getShopOverview(ctx: ShopContext): Promise<ShopOverview> {
+  // The rolling window, not the fixture's two constants. See domain/clock.ts.
+  const period = reportingWindow()
   /*
    * ── THE BASELINE IS THIS SHOP'S OWN PREVIOUS PERIOD ─────────────────────
    *
@@ -63,7 +65,7 @@ export async function getShopOverview(ctx: ShopContext): Promise<ShopOverview> {
   const previous = previousPeriod()
   const [shop, { orders, source }, { orders: priorOrders }] = await Promise.all([
     shopHeader(ctx),
-    loadOrders(ctx, { since: PERIOD_START, until: PERIOD_END }),
+    loadOrders(ctx, { since: period.start, until: period.end }),
     loadOrders(ctx, { since: previous.start, until: previous.end }),
   ])
 
@@ -206,8 +208,8 @@ export async function getShopOverview(ctx: ShopContext): Promise<ShopOverview> {
     currency: currencyCode,
     timezone: shop?.timezone ?? 'UTC',
     lastSyncedAt: shop?.lastSyncedAt ?? null,
-    periodStart: PERIOD_START,
-    periodEnd: PERIOD_END,
+    periodStart: period.start,
+    periodEnd: period.end,
     metrics,
     coveragePercent: profit.coveragePercent,
     netProfit: profit.netProfit,

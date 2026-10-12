@@ -1,6 +1,7 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { eq, inArray } from 'drizzle-orm'
 import { acceptTermsFor } from '../support/legal'
+import { earlyInReportingWindow, inReportingWindow, wideWindow } from '../support/window'
 
 import { syncShopOrders } from '@/domain/sync/orders'
 import { syncShopListings } from '@/domain/sync/listings'
@@ -47,8 +48,19 @@ const USER_A = 'ac-test-user-a'
 const USER_B = 'ac-test-user-b'
 const OURS = [SHOP_A, SHOP_B]
 
-const WINDOW = { since: '2026-07-14T00:00:00.000Z', until: '2026-08-12T23:59:59.999Z' }
-const IN_PERIOD = '2026-07-20T10:00:00.000Z'
+/*
+ * The reporting window is asked for, not written down.
+ *
+ * This file declared `{ since: '2026-07-14…', until: '2026-08-12…' }` and an
+ * IN_PERIOD inside it, so that a seeded order was one the screens actually
+ * read. The window rolls now (domain/clock.ts), so those literals put every
+ * seeded order two months outside it and the screens correctly reported
+ * nothing — which is the same failure this file's own comment already
+ * recorded once: "The assertion was right and the fixture was in the wrong
+ * month." See tests/support/window.ts.
+ */
+const WINDOW = wideWindow
+const IN_PERIOD = inReportingWindow
 const ENV = { ...process.env }
 
 const ctxFor = (shopId: string, actorId = USER_A): ShopContext => ({
@@ -60,7 +72,7 @@ const ctxFor = (shopId: string, actorId = USER_A): ShopContext => ({
 function order(id: string, listingId: string, gross: number, quantity = 1): EtsyOrder {
   return {
     etsyReceiptId: id,
-    placedAt: IN_PERIOD,
+    placedAt: IN_PERIOD(),
     gross,
     discounts: 0,
     refunds: 0,
@@ -113,7 +125,7 @@ function fakeAdapter(orders: EtsyOrder[], listings: EtsyListing[] = []) {
 async function seed(shopId: string, orders: EtsyOrder[], listings: EtsyListing[]) {
   setEtsyService(fakeAdapter(orders, listings) as never)
   await syncShopListings(ctxFor(shopId))
-  await syncShopOrders(ctxFor(shopId), WINDOW)
+  await syncShopOrders(ctxFor(shopId), WINDOW())
   const rows = await getDb()
     .select({ id: schema.listings.id, etsyListingId: schema.listings.etsyListingId })
     .from(schema.listings)
@@ -460,7 +472,7 @@ describe('a finding nobody could measure is not work', () => {
       shopId: SHOP_A,
       listingId: ids.get('770001')!,
       actorId: USER_A,
-      timestamp: new Date('2026-07-18T09:00:00.000Z'),
+      timestamp: new Date(earlyInReportingWindow()),
       type: 'PRICE_CHANGED',
       source: 'MANUAL',
       field: 'price',

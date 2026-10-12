@@ -30,13 +30,12 @@
 import { loadListings } from '@/domain/listings/load'
 import { loadOrders } from '@/domain/orders/load'
 import type { ShopDataSource } from '@/domain/sync/source'
-import { PERIOD_END, PERIOD_START } from '@/lib/etsy/demo-dataset'
 import type { EtsyListing } from '@/lib/etsy/interface'
 import type { StoredOrder } from '@/domain/orders/types'
 import type { ShopContext } from '@/lib/permissions'
 import { calculated, unavailable, verified } from '@/lib/provenance/builders'
 import type { Provenanced } from '@/lib/provenance/types'
-import { nowIso } from '@/domain/clock'
+import { nowIso, reportingWindow } from '@/domain/clock'
 import { AUDIT_RULES, DEFAULT_THRESHOLDS, type AuditRule, type RuleContext, type Severity } from './rules'
 
 export interface AuditFinding {
@@ -105,9 +104,10 @@ export async function getAuditView(ctx: ShopContext): Promise<AuditView> {
    * aggregate — and pairing a synced catalogue with the demo cost fixture
    * would put invented margins on a real seller's listings.
    */
+  const period = reportingWindow()
   const [catalogue, { orders, source }] = await Promise.all([
     loadListings(ctx),
-    loadOrders(ctx, { since: PERIOD_START, until: PERIOD_END }),
+    loadOrders(ctx, { since: period.start, until: period.end }),
   ])
 
   return {
