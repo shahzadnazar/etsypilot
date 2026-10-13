@@ -144,13 +144,37 @@ describe('the compliance document names things that exist', () => {
     expect(exportedNames.size).toBeGreaterThan(300)
   })
 
-  it('covers every clause the owner asked it to cover', () => {
-    for (const item of [2, 5, 10, 11, 13, 14, 15, 16, 17, 19, 21, 22, 24, 25]) {
+  it('covers all twenty-five Prohibited Behaviors and Sections 3 to 5', () => {
+    /*
+     * All twenty-five, not the fourteen the first brief named. The numbering
+     * was fetched on 14 October 2026 and ten of those fourteen rows turned out
+     * to describe a different clause — so the whole list is covered now, which
+     * is both more useful and the only way a future row cannot be silently
+     * mis-numbered into a gap.
+     */
+    for (let item = 1; item <= 25; item += 1) {
       expect(doc, `item ${item} is not covered`).toContain(`**Item ${item}**`)
     }
     for (const section of ['Section 3', 'Section 4', 'Section 5']) {
       expect(doc, `${section} is not covered`).toContain(`**${section}**`)
     }
+  })
+
+  it('and places the Prohibited Behaviors inside Section 5, where they live', () => {
+    /*
+     * A STRUCTURAL CORRECTION, NOT A LABEL ONE. The first version of this
+     * document had a "Prohibited Behavior" heading beside a "Sections 3, 4 and
+     * 5" heading, which read as two locations in the terms. They are one:
+     * both the Prohibited Behaviors list and the Display of Data requirements
+     * are subsections of Section 5, "Use of the Etsy API". A citation of
+     * "Section 5" and a citation of an item number name the same place.
+     */
+    expect(doc).toContain('## Section 5 — Use of the Etsy API: the 25 Prohibited Behaviors')
+    expect(doc).toContain('**both inside Section 5**')
+    // And the two requirement sections are cited by Etsy's own headings.
+    expect(doc).toContain('Application Requirements')
+    expect(doc).toContain('Your Privacy and Etsy Member Privacy')
+    expect(doc).toContain('Use of the Etsy API')
   })
 
   it('and every row carries evidence or says plainly that there is none', () => {
@@ -236,17 +260,57 @@ describe('the compliance document names things that exist', () => {
     }
   })
 
-  it('and the numbering is marked as unverified where it is', () => {
+  it('and never presents a summary as a quotation', () => {
     /*
-     * This repository cannot reach etsy.com, and Etsy renumbers the prohibited
-     * behavior list between revisions. A document that stated numbers it had
-     * not checked would be the same defect it exists to prevent, so the rows
-     * whose clause text is not held here are marked and the marker is
-     * explained at the top.
+     * ══════════════════════════════════════════════════════════════════════
+     *   THE RULE THE DOCUMENT IS MOST LIKELY TO BREAK NEXT.
+     * ══════════════════════════════════════════════════════════════════════
+     *
+     * The numbering arrived as a list of one-line SUMMARIES of each clause,
+     * not as its text. A document that looks verbatim and is not is worse than
+     * one that says which is which — the same failure as a Verified badge on a
+     * modelled figure, which this product has already made twice.
+     *
+     * So every clause cell in an evidence table must carry exactly one of two
+     * markers, and the Verbatim ones are counted: only the two quotations the
+     * repository actually holds from Etsy's own page may claim it. A third
+     * Verbatim marker is a summary that got promoted.
      */
-    expect(doc).toContain('Subject unconfirmed')
-    expect(doc).toContain('must be checked against the current revision')
+    const clauseRows = rows().filter((r) => /^\*\*(Item \d+|Section \d+)/.test(r.clause))
+    expect(clauseRows.length, 'no clause rows found; this rule is checking nothing')
+      .toBeGreaterThanOrEqual(28)
+
+    const unmarked = clauseRows.filter(
+      (r) => !r.clause.includes('*Summary.*') && !r.clause.includes('**Verbatim.**'),
+    )
+    expect(
+      unmarked.map((r) => r.clause.slice(0, 70)),
+      'a clause cell is neither marked as a summary nor as a quotation. Say which it is.',
+    ).toEqual([])
+
+    const verbatim = clauseRows.filter((r) => r.clause.includes('**Verbatim.**'))
+    expect(
+      verbatim.length,
+      'more rows claim to quote Etsy than the repository holds quotations for. ' +
+        'A summary promoted to a quotation is the defect this rule exists for.',
+    ).toBe(2)
+    for (const row of verbatim) {
+      expect(row.clause, 'a Verbatim row carries no quotation marks').toMatch(/"/)
+    }
+  })
+
+  it('and still says the numbering must be re-checked before submission', () => {
+    /*
+     * The note that was right. Etsy renumbers this list between revisions, and
+     * the first version of this document was written against numbers that were
+     * wrong for ten of its fourteen rows. The fetch date is recorded so the
+     * next reader knows how old the mapping is.
+     */
+    expect(doc).toContain('https://www.etsy.com/legal/api/')
+    expect(doc).toContain('14 October 2026')
+    expect(doc).toMatch(/re-checked against the live page before the API\s+application is submitted/)
     expect(doc).toContain('**Verbatim**')
+    expect(doc).toContain('**Summary**')
   })
 })
 

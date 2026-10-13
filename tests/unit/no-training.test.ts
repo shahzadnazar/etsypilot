@@ -263,6 +263,40 @@ describe('shop content has exactly one egress', () => {
     expect(callers).toEqual(['lib/ai/claude.ts'])
   })
 
+  it('and the keyword data seam carries no shop content and no network call', () => {
+    /*
+     * ── THE ROW ITEM 18 POINTS AT, MADE EXPLICIT ─────────────────────────
+     *
+     * Section 5, item 18 forbids transferring member data to third parties.
+     * The next third party this product will have is a bought keyword data
+     * provider, and the place its adapter goes is lib/signals/live.ts — empty
+     * today, holding a null constructor.
+     *
+     * The sweep above already covers it structurally: a `fetch` in that file
+     * makes it an egress the allowlist does not name, and a shop-content type
+     * in it makes it a second third-party egress. Both fail. This assertion
+     * states the contract AT the file, because emergent coverage is coverage
+     * nobody reads — and docs/ETSY-COMPLIANCE.md cites this test for item 18,
+     * so the citation should point at something a reader can find.
+     *
+     * A keyword lookup may send the term the seller typed. That is the
+     * seller's own query, not member data, and not shop content.
+     */
+    const seam = 'lib/signals/live.ts'
+    expect(files, 'the keyword data seam is gone').toContain(seam)
+    expect(
+      transmits(seam),
+      'the keyword data seam now reaches the network. Put it on the egress allowlist ' +
+        'with what it sends, and check it is not sending shop content.',
+    ).toBe(false)
+    expect(
+      carriesShopContent(seam),
+      'the keyword data seam now references a shop-content type. A keyword lookup sends ' +
+        'the term the seller typed — never a listing, an order, a cost or a title. ' +
+        'Section 5, item 18.',
+    ).toBe(false)
+  })
+
   it('and no module outside lib/ai imports the provider SDK', () => {
     const importers = files.filter((f) =>
       new RegExp(`from '${AI_PROVIDER_SDK.replace('/', '\\/')}'`).test(code(f)),
