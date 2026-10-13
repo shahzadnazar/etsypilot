@@ -54,9 +54,37 @@ export const PLANS: Plan[] = [
     key: 'FREE',
     name: 'Free',
     priceMonthly: 0,
-    positioning: 'Research and calculators, no shop connection',
+    positioning: 'Calculators and methodology, no shop connection',
+    /*
+     * ── "KEYWORD, NICHE AND PRODUCT RESEARCH" CAME OFF THIS LIST ──────────
+     *
+     * Two reasons, and either on its own is enough.
+     *
+     * IT IS NOT BUILT. 3dbce03 made all five Research screens unbuilt in live
+     * mode, because lib/signals has no source outside the demo. So this line
+     * advertised, on the pricing page, a thing a seller who signed up could
+     * not reach — and Etsy's API review criterion 1 puts the home and pricing
+     * pages in scope, which means the first page a reviewer opens was making
+     * the claim.
+     *
+     * AND ETSY NOW GIVES IT AWAY. Marketplace Insights shipped in Shop
+     * Manager in September 2025: search and listing counts over 30 days,
+     * related terms and trending searches, 15 searches a week free and
+     * unlimited on Etsy Plus. Prohibited Behavior item 22 forbids "charging
+     * sellers for Application features that Etsy provides free of charge" —
+     * so even once a keyword source exists, keyword research is not a thing
+     * this product may put behind a price. The same goes for AI title
+     * suggestions, which Etsy also ships free; descriptions and tags, which
+     * it does not, are what the drafter is for.
+     *
+     * The positioning line went with it. "Research and calculators" named the
+     * same unbuilt thing one line higher up.
+     *
+     * The tier is thinner for it, and that is the true position rather than a
+     * presentational problem to solve here. Adding a line to compensate is
+     * what rules.md §7 forbids.
+     */
     includes: [
-      'Keyword, niche and product research',
       'All six calculators',
       'Methodology and data sources',
       '5 AI generations / month',
@@ -98,7 +126,30 @@ export const PLANS: Plan[] = [
       '500 AI generations / month',
       '90-day rollback window',
       '12-month Shop Pulse history',
-      'Full data export (CSV and JSON)',
+      /*
+       * ── "FULL DATA EXPORT (CSV AND JSON)" CAME OFF THIS LIST ───────────
+       *
+       * Not an Etsy question. Two of our own documents made it wrong:
+       *
+       *   Privacy §6 says access and portability are exercised by "export
+       *   from Settings, any time, with no request". It does not say "on
+       *   Growth", and it cannot: the right does not depend on a tier.
+       *
+       *   GDPR Article 20 gives every user their own data in a portable
+       *   format and Article 12(5) says it is free. §6 already promises in
+       *   as many words that "we will not charge you... because you
+       *   exercised a right".
+       *
+       * So export is not a feature of a tier. It is a right, and a right
+       * does not belong in a list of things you get for $29 — putting it
+       * there implies the other tiers do not have it, which is the
+       * advertisement being wrong rather than the code.
+       *
+       * Nothing gated it in code, because no plan is in force at all: the
+       * route checks the dataset name and the session's own shop and nothing
+       * else. tests/unit/export-ungated.test.ts now holds both directions —
+       * no plan may advertise it, and no code may gate it.
+       */
       'Priority sync and support',
     ],
     limits: { listings: 2000, aiGenerations: 500, rollbackDays: 90, pulseHistoryMonths: 12, auditRetentionDays: 365 },

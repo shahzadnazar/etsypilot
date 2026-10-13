@@ -43,6 +43,7 @@ import 'server-only'
 
 import { emailSenderConfigured } from '@/domain/billing/trial'
 import { paymentProviderConfigured } from '@/lib/billing'
+import { keywordDataProviderConfigured } from '@/lib/signals'
 import { legalDocument } from './documents'
 
 /*
@@ -110,6 +111,38 @@ const UNNAMED_ROLES: Record<string, () => { status: SubProcessorStatus; because:
           status: 'NOT_IN_USE',
           because:
             'No email sender is configured, so no email is sent at all. This is also why a card-required free trial cannot start here: the trial promises an email before it ends, and the flow refuses rather than taking a card it cannot warn.',
+        },
+  /*
+   * ── THE SEAM, AND WHY IT IS CLASSIFIED ON CONFIGURATION ALONE ──────────
+   *
+   * The owner intends to buy clickstream keyword data after the Etsy key is
+   * approved. Nothing is bought and no adapter is written, so today this row
+   * is NOT_IN_USE and no request is made to anybody.
+   *
+   * It reads keywordDataProviderConfigured() and NOT marketSignalsMode(),
+   * although the second is more precise about whether anything is actually
+   * read. That is deliberate. GDPR Article 28 attaches to engaging a
+   * processor, and configuring one with a credential is the moment to name it
+   * — whether or not we have yet written the code that calls it. A page that
+   * waited for the adapter would leave a configured provider unnamed, which
+   * is the gap this page exists to report rather than the one it should
+   * create.
+   *
+   * What this row must never do is name a provider. Until the Privacy Policy
+   * names one, `who` is the role; tests/unit/source-claims.test.ts fails on
+   * any copy in the product that names a source the product does not have.
+   */
+  KEYWORD_DATA_PROVIDER: () =>
+    keywordDataProviderConfigured()
+      ? {
+          status: 'IN_USE_UNNAMED',
+          because:
+            'A keyword data provider is configured on this deployment. It must be named in the Privacy Policy. It receives the search terms you type on a Research screen and nothing from your shop — no listing, no order, no cost.',
+        }
+      : {
+          status: 'NOT_IN_USE',
+          because:
+            'No keyword data provider is bought or configured, so no search term is sent anywhere and the Research screens are not built. When one arrives it is bought clickstream data rather than anything read from Etsy, which is why it may exist at all: nothing is accessed, analysed or scraped from the Etsy API or the Etsy site for it.',
         },
   PAYMENT_PROVIDER: () =>
     paymentProviderConfigured()

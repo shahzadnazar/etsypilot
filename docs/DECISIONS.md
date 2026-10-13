@@ -4936,3 +4936,51 @@ satisfied by deleting the documentation will eventually be satisfied by deleting
 the documentation.** The fix each time is to make the guard match the SHAPE of
 the thing rather than its name — a heading, a field reference, a SELECT — and
 never the words a person would use to describe it.
+
+---
+
+## D22a — Two lines come off the plan cards — AMENDED, 13 October 2026
+
+D22 above is left exactly as approved. This records what changed and why, in
+the same way D17's trial terms were superseded rather than overwritten: the
+approved text is the record of what was decided, and quietly editing it would
+destroy the only evidence of what the product used to claim.
+
+**Free loses "Keyword, niche and product research".**
+
+Two independent reasons, either sufficient. It is not built — `3dbce03` made all
+five Research screens unbuilt in live mode, because `lib/signals` has no source
+outside the demo — so the pricing page advertised something a signed-up seller
+could not reach, on a page Etsy's API review criterion 1 puts in scope. And Etsy
+now provides it free: Marketplace Insights shipped in Shop Manager in September
+2025 (search and listing counts over 30 days, related terms, trending searches;
+15 searches a week free, unlimited on Etsy Plus). Prohibited Behavior item 22
+forbids charging sellers for Application features Etsy provides free of charge,
+so keyword research is not a thing this product may put behind a price even
+after a source exists. The same reasoning retires any thought of charging for AI
+*title* suggestions, which Etsy also now ships free; descriptions and tags it
+does not, and that is what the drafter is for.
+
+The positioning line "Research and calculators, no shop connection" went with
+it, because it named the same unbuilt thing one line higher.
+
+**Free now reads:** all six calculators · methodology and data sources · 5 AI
+generations a month · ✕ no shop connection, profit or bulk editing.
+
+That is thin, and it is recorded here as thin rather than padded. Nothing was
+added to compensate, because adding a line to balance a card is what `rules.md`
+§7 forbids. What would honestly fill it is a feature, not a sentence.
+
+**Growth loses "Full data export (CSV and JSON)".**
+
+Not an Etsy question. Privacy §6 already promises access and portability by
+"export from Settings, any time, with no request", with no tier attached; GDPR
+Article 20 gives every user their own data in a portable format and Article
+12(5) makes it free; and §6 says in as many words that we will not charge for
+exercising a right. A right in a list of what $29 buys implies the other tiers
+do not have it.
+
+Nothing gated it in code — no plan is in force at all — so this was the
+advertisement being wrong rather than the behaviour.
+`tests/unit/export-ungated.test.ts` now holds both directions: no plan may
+advertise export, and no code may gate it on a plan.

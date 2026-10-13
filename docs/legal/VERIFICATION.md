@@ -74,7 +74,9 @@ Three suites carry claims this guard delegates to rather than re-implementing:
 | 2 | Server logs hold IP, browser and timestamps | NOT CODE | Operator. This is the hosting provider's log, not ours — confirm what it retains and for how long |
 | 3 | Lawful bases per category | NOT CODE | Lawyer |
 | 3 | Payment data is processed to bill you | **NARROWED** | No payment provider is connected on this deployment. **Correcting this row's earlier wording:** a Stripe adapter does exist, at `lib/billing/stripe.ts`, and every method of it except webhook signature verification refuses with a stated reason until a key and a shop→customer mapping arrive. `paymentProviderConfigured()` in `lib/billing/index.ts` is the one condition that decides, and `/legal/subprocessors` reads it so the public page cannot say "not in use" once it is switched on |
-| 3 | No advertising, no sale of data, no AI training on your content | VERIFIED + **TESTED** | No ad or tracking dependency in `package.json`; all three telemetry adapters are `Noop` (`lib/telemetry/index.ts`). The guard additionally requires that the no-training promise is accompanied by the disclosure that a provider *does* see listing text |
+| 3 | No advertising, no sale of data, no AI training on your content | **TESTED**, 13 October 2026 | Was VERIFIED by reading: no ad or tracking dependency in `package.json`, all three telemetry adapters `Noop`. The promise itself is now guarded. `tests/unit/no-training.test.ts` proves shop content has exactly one egress — every network call in the product is on a named allowlist with its destination, and exactly one of them both reaches a third party and touches a shop-content type — and that no store of shop content exists that is not scoped to a single shop. `ai_generations` still has no insert site. The logs and the telemetry call sites are swept too, because a listing title in a log line is the quietest corpus available |
+| 3 | "that provider does not train on it either" | **NOT CODE — recorded instead**, 13 October 2026 | A claim about Anthropic's terms, which no code can check; a guard that pretended to would make the sentence look checked. `lib/ai/provider-terms.ts` records the provider, the document the sentence rests on, its address, and whether a person has read the clause — and `/data/sources` renders it, so "relied upon" is never displayed as "checked". The guarded part is that the record describes the provider the adapter actually imports, so a provider swap fails `tests/unit/no-training.test.ts` until somebody reads the new one's terms. **`clauseRecordedBy` is still `NOT_YET_READ_BY_A_PERSON`: the owner must read the clause and put their name in it.** |
+| 4 | Sub-processor table — the keyword data provider | **ADDED**, 13 October 2026 | A row for the bought keyword data source the owner intends to buy after the Etsy key is approved. Nothing is bought, so `lib/legal/subprocessors.ts` resolves it NOT IN USE from `keywordDataProviderConfigured()` and the page says why — and moves it to "in use, not yet named" the moment a deployment configures one, measured rather than written down. Verified in a browser on a third server with `SIGNALS_PROVIDER` set: `tests/browser/etsy-application.py` |
 | 4 | Sub-processor table | **CORRECTED**, still incomplete | Anthropic, PBC added — it receives listing content and was missing while the section above promised notice before adding one. Email and payment providers remain placeholders. Lawyer's note 2; must be complete before launch |
 | 5 | Account and shop data kept while the account is open; 30-day export after closure | **OPEN GAP**, flagged | There is no account-closure flow in the product. `[[CONFIRM]]` in the document says so. Owner: operator + code |
 | 5 | Audit records kept for the plan's retention period | **OPEN GAP**, flagged | The period is defined per plan and displayed on the audit-log screen, but nothing deletes an expired record. Today records are kept *longer* than the sentence says. `[[CONFIRM]]` in the document |
@@ -273,8 +275,15 @@ Outstanding, in the order they block:
 
 - [ ] **The entity.** Country, type, address, support and privacy addresses. Everything in Privacy
       §1 and Terms §1, and the governing-law and consumer-rights clauses that follow from it.
-- [ ] **The sub-processor table.** The email and payment providers are not chosen. GDPR requires
-      naming them.
+- [ ] **The sub-processor table.** The email, payment and keyword data providers are not chosen.
+      GDPR requires naming them. The keyword data row is dormant and says so; the other two are
+      the same, and the database and hosting rows are LIVE and unnamed, which is the gap that
+      blocks launch.
+- [ ] **Read the AI provider's no-training clause** and put a name and a date in
+      `lib/ai/provider-terms.ts`. Privacy §3 says "that provider does not train on it either";
+      the record currently says nobody here has read the clause, and `/data/sources` says so to
+      the seller. This is a five-minute job for whoever owns the account and it is the last
+      unverified sentence in either document.
 - [ ] **An operational deletion process** behind the 30-day promise in Privacy §6. Lawyer's note 1.
 - [ ] **An account-closure flow**, or a Privacy §5 and Terms §10 that describe the real position.
 - [x] **The Etsy 6h/24h windows.** Closed 12 October 2026, and not with a scheduler: §5 of Etsy's

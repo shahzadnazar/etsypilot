@@ -19,7 +19,8 @@
 import { getAiProvider } from '@/lib/ai'
 import { getBillingProvider } from '@/lib/billing'
 import { isDemoMode } from '@/lib/etsy'
-import { marketSignalsMode } from '@/lib/signals'
+import { marketSignalsMode, signalsAreUnavailable } from '@/lib/signals'
+import { AI_PROVIDER_TERMS, providerTermsNote } from '@/lib/ai/provider-terms'
 import type { ProvenanceType } from '@/lib/provenance/types'
 
 export interface DataSource {
@@ -55,6 +56,7 @@ export function dataSources(): DataSource[] {
   const demo = isDemoMode()
   const ai = getAiProvider().mode
   const signals = marketSignalsMode()
+  const signalsUnavailable = signalsAreUnavailable(signals)
   /*
    * Null where no payment provider is configured, which is every live
    * deployment. See lib/billing/index.ts for what the fallback used to serve
@@ -100,25 +102,46 @@ export function dataSources(): DataSource[] {
      * is now no adapter at all outside demo mode, so NONE is the live answer,
      * and the row's own name, cadence and limitations were written for the
      * sampler that was planned and has never existed.
+     *
+     * ── AND A FOURTH ARM, BECAUSE THE SEAM MADE ONE REACHABLE ───────────
+     *
+     * `signals === 'NONE' ? … : …` was a two-way branch over a three-way
+     * answer the moment lib/signals grew a configuration check. A deployment
+     * that sets SIGNALS_PROVIDER with no adapter written would have fallen
+     * into the else arm and printed "Live sampling" over nothing — the exact
+     * defect this row exists to prevent, recreated by a widened union. So the
+     * unavailable cases are asked about through signalsAreUnavailable()
+     * rather than compared here, and LIVE is the only arm that claims a
+     * source.
      */
     {
       key: 'signals',
       name: 'Market signals',
-      via: signals === 'NONE' ? 'Nothing connected' : 'Generated, in the demo only',
+      via: signalsUnavailable
+        ? signals === 'CONFIGURED_NOT_BUILT'
+          ? 'Provider configured, no adapter built'
+          : 'Nothing connected'
+        : signals === 'MOCK'
+          ? 'Generated, in the demo only'
+          : 'Bought keyword data · never from Etsy',
       provides:
         'Keyword demand bands, competition, category distribution, competitor sales ranges, trend direction.',
-      class: signals === 'NONE' ? 'UNAVAILABLE' : 'ESTIMATED',
-      refresh: signals === 'NONE' ? 'Never' : 'Static',
-      limitations:
-        signals === 'NONE'
-          ? 'There is no source. Etsy publishes none of this, nothing else is connected, and the Research screens say so rather than modelling it.'
-          : 'Never official Etsy figures and never measured — sample data, shown as a range with confidence. Four locales only.',
-      status:
-        signals === 'NONE'
-          ? 'Not built yet — no source'
-          : signals === 'MOCK'
-            ? 'Modelled sample data'
-            : 'Live sampling',
+      class: signalsUnavailable ? 'UNAVAILABLE' : 'ESTIMATED',
+      refresh: signalsUnavailable ? 'Never' : signals === 'MOCK' ? 'Static' : 'On request',
+      limitations: signalsUnavailable
+        ? signals === 'CONFIGURED_NOT_BUILT'
+          ? 'A keyword data provider is configured on this deployment and no adapter has been written for it, so nothing is read and nothing is sent. The Research screens stay unbuilt.'
+          : 'There is no source. Etsy publishes none of this, nothing else is connected, and the Research screens say so rather than modelling it.'
+        : signals === 'MOCK'
+          ? 'Never official Etsy figures and never measured — sample data, shown as a range with confidence. Four locales only.'
+          : 'Never official Etsy figures. Bought keyword data, which is why it may exist at all: nothing is read from the Etsy API or the Etsy site for it.',
+      status: signalsUnavailable
+        ? signals === 'CONFIGURED_NOT_BUILT'
+          ? 'Not built yet — provider configured, adapter missing'
+          : 'Not built yet — no source'
+        : signals === 'MOCK'
+          ? 'Modelled sample data'
+          : 'Live sampling',
     },
     /*
      * ── TWO ROWS ADDED BY THE SWEEP THAT FOUND THEIR CLAIMS ────────────────
@@ -198,12 +221,40 @@ export function dataSources(): DataSource[] {
     {
       key: 'llm',
       name: 'Language model',
-      via: 'Drafting only',
+      via: ai === 'MOCK' ? 'Drafting only' : `Drafting only · ${AI_PROVIDER_TERMS.provider}`,
       provides: 'Title, tag and description drafts, issue explanations, recommended actions.',
       class: 'AI_DRAFT',
       refresh: 'On request',
+      /*
+       * ── THE PROVIDER'S TERMS ARE NAMED HERE, AND WHY ────────────────────
+       *
+       * Privacy §3 makes two promises about training. The first is about this
+       * product and is enforced: tests/unit/no-training.test.ts proves shop
+       * content has exactly one egress and no store that could accumulate as
+       * a corpus. The second — "that provider does not train on it either" —
+       * is a claim about somebody else's terms, and no code can check it.
+       *
+       * So it is stated here rather than left to a document nobody re-reads.
+       * The note says which provider, which document the sentence rests on,
+       * when that was recorded, and whether a person has actually read the
+       * clause. lib/ai/provider-terms.ts carries it beside the adapter, so a
+       * provider swap fails the guard until the record is rewritten.
+       *
+       * Only in the live arm. The mock sends nothing anywhere, so there is no
+       * provider whose terms could matter, and naming one would be the same
+       * class of claim this page exists to prevent.
+       */
+      /*
+       * The mock arm is left exactly as it was, down to the byte. Its status
+       * already reads "Rule-based drafter — nothing leaves this machine", so a
+       * second copy of that sentence in the limitations said nothing new and
+       * moved a demo screen for no reason. Only the live arm gains anything,
+       * because only the live arm has a provider whose terms could matter.
+       */
       limitations:
-        'Never applied without your approval. Produces language, never data — no figure originates here.',
+        ai === 'MOCK'
+          ? 'Never applied without your approval. Produces language, never data — no figure originates here.'
+          : `Never applied without your approval. Produces language, never data — no figure originates here. ${providerTermsNote()}`,
       status: ai === 'MOCK' ? 'Rule-based drafter — nothing leaves this machine' : 'Live model',
     },
     {

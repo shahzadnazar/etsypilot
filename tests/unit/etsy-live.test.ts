@@ -652,11 +652,31 @@ describe('swapping the adapter is a one-file change', () => {
   const sources = listSources(['app', 'components', 'domain', 'lib'])
 
   it('is imported by nothing but the selector', () => {
-    const importers = sources.filter(
-      (f) =>
-        /from\s+['"](@\/lib\/etsy\/live|\.\/live)['"]/.test(fs.readFileSync(f, 'utf8')) ||
-        /require\(['"]\.\/live['"]\)/.test(fs.readFileSync(f, 'utf8')),
-    )
+    /*
+     * ── THE RELATIVE ARMS ARE SCOPED TO lib/etsy, AND HAD TO BE ──────────
+     *
+     * This matched `./live` and `require('./live')` ANYWHERE under app,
+     * components, domain or lib, on the assumption that only one adapter
+     * family would ever have a sibling called `live`. lib/signals grew the
+     * same seam — a lazily required `./live` for a bought keyword data
+     * provider — and this assertion went red on a file that has nothing to
+     * do with Etsy.
+     *
+     * The absolute form stays unscoped, because `@/lib/etsy/live` can only
+     * mean one module from anywhere. The relative forms are now scoped the
+     * way the `./mock` assertion directly below has been since it was
+     * written, which is the shape this one should have had: a check that
+     * verified one property and assumed its neighbour.
+     */
+    const ETSY = posixJoin(ROOT, 'lib/etsy')
+    const importers = sources.filter((f) => {
+      const text = fs.readFileSync(f, 'utf8')
+      if (/from\s+['"]@\/lib\/etsy\/live['"]/.test(text)) return true
+      if (!f.startsWith(ETSY)) return false
+      return (
+        /from\s+['"]\.\/live['"]/.test(text) || /require\(['"]\.\/live['"]\)/.test(text)
+      )
+    })
     expect(importers.map((f) => posixRelative(ROOT, f))).toEqual(['lib/etsy/index.ts'])
   })
 

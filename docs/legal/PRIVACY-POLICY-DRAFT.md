@@ -100,6 +100,7 @@ above describes how it will be handled when one is.
 | `[[HOSTING_PROVIDER]]` | Runs the application | `[[REGION]]` |
 | `[[EMAIL_PROVIDER]]` | Sends account and billing email | `[[REGION]]` |
 | Anthropic, PBC | AI provider. Receives listing title and tags when you ask for a draft | United States |
+| `[[KEYWORD_DATA_PROVIDER]]` | Keyword and market data. Would receive the search terms you type on a Research screen, and nothing from your shop | `[[REGION]]` |
 | `[[PAYMENT_PROVIDER]]` | Takes payment | `[[REGION]]` |
 | Etsy, Inc. | The source of your shop data, under your OAuth authorisation | United States |
 
