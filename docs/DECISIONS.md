@@ -4984,3 +4984,124 @@ Nothing gated it in code — no plan is in force at all — so this was the
 advertisement being wrong rather than the behaviour.
 `tests/unit/export-ungated.test.ts` now holds both directions: no plan may
 advertise export, and no code may gate it on a plan.
+
+---
+
+## D95 — The extension and the AI Copilot are archived to a branch, then removed — DECIDED, 14 October 2026
+
+**This is a decision to archive, not a decision to abandon.** The owner intends
+to bring both features back. They are finished, tested work, and the only
+reason they are leaving the working tree is the Etsy API application being
+submitted now.
+
+Heading level is `##` rather than `###` because
+`tests/unit/operator-write-boundary.test.ts` asserts this file carries no
+third-level heading for the decision numbered one after D94. That assertion was
+written to stop one rule being recorded in two places and it reaches further
+than it meant to; the constraint is that the test passes unchanged, and it does.
+Same workaround as D22a above. Nothing is lost but the heading level.
+
+### The archive
+
+| | |
+|---|---|
+| Branch | `with-ai-and-extension` |
+| Commit | `0be86ba790ee440b87b73d7fca761f4509dd532a` |
+| Created | 14 October 2026, from the then-HEAD of `claude/etsy-pilot-setup-aocmte` |
+| Pushed | `origin/with-ai-and-extension` |
+
+A branch is a pointer, not a copy. It references the same commit and the same
+history as the working branch did at that moment, so it costs nothing and
+duplicates nothing. No commit was made on it and no file was changed on it —
+the only commit that moved either branch after it was created is this entry,
+which lands on the working branch and not on the archive. That is why the SHA
+above is the parent of this entry's own commit rather than its commit.
+
+### What is on it that the working branch will not have
+
+**The browser extension.** Eleven files under `extension/` — the Chrome and
+Firefox manifests, the build script, the popup and the three source modules —
+plus everything in the app that reaches it:
+
+- `app/(dashboard)/settings/extension/page.tsx`
+- `app/api/extension/download/[browser]/route.ts`
+- `app/api/extension/listing/route.ts`
+- `lib/extension/availability.ts`, `contract.ts`, `policy.ts`, `zip.ts`
+- `lib/security/extension-route.ts`, `domain/extension/service.ts`
+- `tests/unit/extension.test.ts`, `extension-gate.test.ts`, `extension-zip.test.ts`
+- `tests/browser/extension-popup.py`
+
+**The AI Copilot.**
+
+- `app/(dashboard)/listings/ai-copilot/` (page and loading state)
+- `lib/ai/` — the selector, the interface, the Claude provider, the rule-based
+  mock, the prompt, and `provider-terms.ts`
+- `domain/ai/` — the service, the validator, the facts builder, the audit
+  trail, the explainers
+- `tests/unit/ai-copilot.test.ts`, `ai-hardening.test.ts`,
+  `admin-ai-activity.test.ts`, `no-training.test.ts`
+
+### Why removed rather than left switched off
+
+The extension has been off since `d2dd0b3` — middleware rewrites its paths so
+the settings page and both download routes 404, and `lib/extension/
+availability.ts` is the single switch. That was the right call then and it is
+not enough now, for three reasons:
+
+1. **Prohibited Behavior item 24 names browser extensions**, and covers
+   promoting their use as well as using one. The application is being submitted
+   without an extension. A reviewer who finds a finished, packaged add-on in the
+   repository is reading the clause with the thing in front of them, and an API
+   application cannot be re-submitted cheaply.
+2. **Code that is merely unreachable is still compiled into the build.** An
+   `off` switch removes a route; it does not remove the module graph behind it.
+3. **It is still readable in the repository**, which matters more than usual
+   here — see the note on visibility below.
+
+The AI Copilot goes for a different reason and in the same step: it is the only
+feature that sends shop content to a third party, and the application is
+stronger submitted without an egress to explain. The no-training guard exists
+because of it; with the feature gone, the guard goes with it, and that is a
+deliberate trade recorded here rather than a gap.
+
+### How to get it back
+
+One path at a time, onto whatever branch is current:
+
+```
+git checkout with-ai-and-extension -- extension/
+git checkout with-ai-and-extension -- lib/ai domain/ai "app/(dashboard)/listings/ai-copilot"
+```
+
+Or start from it and bring the rest of the product forward:
+
+```
+git switch -c ai-and-extension-again with-ai-and-extension
+```
+
+Neither feature should come back without its tests, and the AI Copilot must not
+come back without `tests/unit/no-training.test.ts` — the no-training promise in
+Terms §6 and Privacy §3 is enforced by that file and by nothing else.
+`docs/ETSY-COMPLIANCE.md` cites it for Section 5 items 18 and 25, and
+`tests/unit/etsy-compliance.test.ts` fails if a cited test stops existing, so
+the removal task has to answer for those citations.
+
+### The repository is PUBLIC, so this branch hides nothing
+
+`shahzadnazar/etsypilot` is public (`"private": false` from the GitHub API on
+14 October 2026, and `claude/etsy-pilot-setup-aocmte` is its default branch).
+So:
+
+- The archive branch is browsable at
+  `https://github.com/shahzadnazar/etsypilot/tree/with-ai-and-extension`.
+- Every commit that ever contained the extension or the Copilot is still
+  browsable, on this branch and in the history of the working branch.
+- Deleting the files changes **the build** and **what a reader of the default
+  branch sees first**. It does not make the code unavailable or unfindable to
+  anybody who looks.
+
+That is worth knowing before relying on the removal for anything beyond the
+build output. If the intent were for the code not to be readable at all, a
+branch in the same public repository is the wrong instrument and nothing short
+of rewriting history in a private repository would do it — which would also
+destroy the archive this entry exists to point at.
