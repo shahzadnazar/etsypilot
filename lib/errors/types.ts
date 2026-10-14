@@ -18,7 +18,6 @@ export type ErrorKind =
   | 'EXTERNAL_SERVICE'
   | 'BACKGROUND_JOB'
   | 'PLAN_LIMIT'
-  | 'AI_UNAVAILABLE'
   | 'UNKNOWN'
 
 export interface UserFacingError {
@@ -129,29 +128,18 @@ export const Errors = {
     }),
 
   /*
-   * The AI could not produce a draft.
+   * ── AI_UNAVAILABLE IS GONE, AND SO ARE THE TWO FACTORIES ────────────────
    *
-   * `detail` is ours, written here — never the provider's message, which can
-   * carry request ids, model names and header hints. What the seller needs is
-   * that nothing changed and nothing was charged, and both are stated.
+   * `aiUnavailable()` and `aiRefused()` existed so a failed draft reached a
+   * seller in our own words rather than the provider's — "nothing was changed
+   * on your listing and no generation was counted" — because a provider
+   * message can carry request ids, model names and header hints.
+   *
+   * D95 removed the drafter, so nothing can fail this way. The lesson is kept
+   * where it still applies: `etsyUnavailable()` and `rateLimited()` below are
+   * the same shape for the one external service left, and lib/errors/api.ts
+   * still refuses to compile with an ErrorKind missing from its status map.
    */
-  aiUnavailable: (detail: string) =>
-    new AppError({
-      kind: 'AI_UNAVAILABLE',
-      code: 'AI_UNAVAILABLE',
-      message: 'No draft could be produced.',
-      recovery: `${detail} Nothing was changed on your listing and no generation was counted against your allowance. Try again, or edit manually.`,
-      retryable: true,
-    }),
-
-  /** The model declined. A legitimate outcome, reported as one. */
-  aiRefused: (explanation?: string) =>
-    new AppError({
-      kind: 'AI_UNAVAILABLE',
-      code: 'AI_REFUSED',
-      message: 'The assistant declined to draft this listing.',
-      recovery: `${explanation ? `${explanation} ` : ''}Nothing was changed and no generation was counted. Edit manually, or rephrase the listing text and try again.`,
-    }),
 
   rateLimited: (resumesAt: string) =>
     new AppError({

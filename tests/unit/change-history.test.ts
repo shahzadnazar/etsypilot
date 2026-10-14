@@ -64,8 +64,22 @@ describe('outcome', () => {
   })
 
   it('never says Approved over a job with a failure in it', async () => {
-    const ai = { ...jobFor('4788'), items: [...jobFor('4788').items] }
+    /*
+     * The AI_ASSISTED job is BUILT here now, and that is the point of the
+     * change rather than a workaround. It used to be demo job 4788, which was
+     * seeded `AI_ASSISTED`; D95 removed the Copilot, so the demo no longer
+     * invents a job of a kind the product cannot produce (see
+     * domain/change-history/demo-jobs.ts).
+     *
+     * The RULE is unchanged and still has to hold: 'Approved' is what
+     * outcomeLabel says over an AI-assisted job with nothing wrong in it, a
+     * deployment may still hold such a job from before the removal, and a
+     * failure inside one must be named ahead of the approval either way.
+     */
+    const base = jobFor('4788')
+    const ai: ChangeJob = { ...base, source: 'AI_ASSISTED', items: [...base.items] }
     expect(outcomeLabel(ai)).toBe('Approved')
+    expect(outcomeLabel(base)).toBe('Complete')
     const broken: ChangeJob = {
       ...ai,
       items: [{ ...ai.items[0]!, status: 'FAILED' as const }],

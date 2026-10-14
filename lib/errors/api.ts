@@ -7,8 +7,9 @@
  * Measured before it was written: an unhandled throw in a route handler
  * returned `500` with an EMPTY body and no content-type. A caller doing
  * `await response.json()` gets a parse error on top of the original failure,
- * and has nothing to show a user. The browser extension is exactly such a
- * caller.
+ * and has nothing to show a user. Every fetch in the product is such a caller,
+ * and the one that made this concrete — the browser extension's popup, which
+ * had no server to render a fallback in — is gone (D95).
  *
  * The shape is AppError's `toUserFacing()` — message, recovery, retryable,
  * reference — because that is already the only shape allowed to cross the
@@ -36,7 +37,6 @@ const STATUS: Record<ErrorKind, number> = {
    * default status — the map has to be completed deliberately.
    */
   BACKGROUND_JOB: 500,
-  AI_UNAVAILABLE: 503,
   UNKNOWN: 500,
 }
 

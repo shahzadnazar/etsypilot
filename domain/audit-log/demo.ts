@@ -13,6 +13,11 @@ import 'server-only'
  *                            then published     · Yes · 1 of 1
  * ══════════════════════════════════════════════════════════════════════════
  *
+ * (The second record read "AI draft accepted, then published" when that was
+ * measured. D95 removed the Copilot and the demo record is a manual edit now;
+ * the transcript is left as it was taken, because a measurement is not edited
+ * afterwards to match the present.)
+ *
  * Eight records by a person that seller has never met, asserting that
  * CobaltRank published changes to their listings. In a dispute this log is the
  * evidence, and it was somebody else's.

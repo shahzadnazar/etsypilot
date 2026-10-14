@@ -3,83 +3,63 @@ import { readFileSync, readdirSync, statSync } from 'node:fs'
 
 import { posixJoin } from '../support/paths'
 import { code } from '../support/shop-scoping'
-import { AI_PROVIDER_SDK, AI_PROVIDER_TERMS, providerClauseWasRead, providerTermsNote } from '@/lib/ai/provider-terms'
 
 /*
  * ██████████████████████████████████████████████████████████████████████████
  *
- *   SHOP CONTENT HAS EXACTLY ONE EGRESS, AND NOTHING STORES IT WHERE IT
- *   COULD ACCUMULATE AS A CORPUS.
+ *   EVERY NETWORK CALL IN THIS PRODUCT IS ON A LIST, WITH WHERE IT GOES AND
+ *   WHAT IT CARRIES. SHOP CONTENT LEAVES FOR NOBODY BUT ETSY.
  *
  * ██████████████████████████████████████████████████████████████████████████
  *
- * Terms §6 and Privacy §3:
+ * ── WHY THIS FILE IS NOT CALLED no-training ANY MORE ──────────────────────
  *
- *     "We do not use your shop data or your content to train artificial
- *      intelligence models."
+ * It was. The AI Copilot was the one feature that sent a seller's listing text
+ * to a third party, and this rule was built to hold the sentence in Terms §6
+ * and Privacy §3: "We do not use your shop data or your content to train
+ * artificial intelligence models."
  *
- * Both true. Until this file, neither was enforced — and it was the only
- * load-bearing claim in the product without a guard behind it. The freshness
- * windows, the research honesty rules, the source claims, the fixture
- * containment, the selector cache and the operator write boundary all hold
- * theirs.
+ * The Copilot is gone — D95, archived on `with-ai-and-extension`. The half of
+ * this file that was about a model went with it: there is no provider, no SDK,
+ * no prompt, and nothing that could send a listing to one, so assertions about
+ * which SDK the adapter imports and how many third-party egresses carry shop
+ * content had nothing left to check.
  *
- * ── WHAT "COULD ACCUMULATE AS A CORPUS" MEANS, AND WHY THAT DEFINITION ────
+ * THE REST IS NOT ABOUT AI AND NEVER WAS. "Every network call is named, and
+ * none of them outside Etsy carries shop content" is a statement about the
+ * whole product. It is the mechanism docs/ETSY-COMPLIANCE.md leans on for
+ * Section 5 item 18 — transferring member data to third parties — and it is
+ * what will stop the keyword data adapter, when somebody writes it, from
+ * posting listing text to a provider. A rule named after a feature that no
+ * longer exists is a rule somebody deletes along with the feature, so it is
+ * named after what it does.
  *
- * A guard cannot check USE. Nothing in a repository can prove what somebody
- * does with a database they already have. So the rule is about the two
- * conditions that make training possible in the first place, because each is
- * a property of the code:
+ * ── THE TWO HALVES, AND WHY BOTH SURVIVED ─────────────────────────────────
  *
- *   EGRESS. Shop content leaves this machine at exactly one place. Not "we
- *   promise not to send it anywhere else" — one place, and a second one is a
- *   test failure. That bounds who could ever train on it to one named party
- *   whose terms are recorded in lib/ai/provider-terms.ts.
+ *   EGRESS. Four network calls in app/, components/, domain/ and lib/, each on
+ *   the allowlist below with its destination and payload. It was five; the AI
+ *   provider was the fifth. No egress outside Etsy may reference a
+ *   shop-content type, which is a stronger statement than the one it replaced
+ *   ("exactly one does") and is checkable the same way.
  *
- *   POOLING. You cannot train on per-shop rows without first pooling them. So
- *   no store of shop content may exist that is not scoped to one shop: every
- *   table that holds a listing, an order or their text carries a shop_id, RLS
- *   is on it, and the repositories take a ShopContext rather than reading an
- *   ambient one. An unscoped table of listing text is the shape a corpus has,
- *   and it is the shape this rule refuses.
- *
- * `ai_generations` is the specific candidate and it gets its own assertion: a
- * table of prompt inputs and model outputs is exactly what a fine-tune
- * consumes, it exists in the schema, and NOTHING INSERTS INTO IT. The day
- * something does, the Privacy Policy has to change in two places and this
- * fails until it does.
- *
- * Three things are deliberately NOT treated as a corpus, each for a stated
- * reason:
- *
- *   change_jobs    holds the before and after of every listing field a bulk
- *                  edit touched. It is the seller's own change history: they
- *                  read it on /listings/change-history, rollback needs it, and
- *                  it is shop-scoped under RLS. A record the seller can see
- *                  and act on is not a corpus.
- *   listings        the mirror of their own shop. Etsy's own §5 retention
- *                  clause governs it and docs/legal §5 states the position.
- *   the logs        not a store of content at all, and ASSERTED so below —
- *                  the quietest corpus available is a log line carrying a
- *                  listing title, because logs accumulate, outlive the row
- *                  and travel to wherever logs are shipped. The redactor
- *                  strips credentials, not prose.
- *
- * ── AND THE HALF THAT CANNOT BE ENFORCED ─────────────────────────────────
- *
- * Privacy §3 also says the AI provider "does not train on it either". That is
- * a claim about somebody else's terms and no code can check it. It is made
- * VISIBLE instead: lib/ai/provider-terms.ts records which provider, which
- * document, and whether a person has read the clause, /data/sources renders
- * it, and the assertions at the bottom bind the record to the SDK the adapter
- * actually imports — so changing provider fails here until somebody reads the
- * new one's terms.
+ *   POOLING. Eight tables hold listing or order content; each is named with
+ *   why it is not a corpus, and each carries a shop_id. This was worth
+ *   re-asking with the Copilot gone, and the answer is that it matters MORE.
+ *   The no-training commitment in Terms §6 and Privacy §3 did not go with the
+ *   feature — it is the owner's commitment to Etsy and to sellers, it is true,
+ *   and it stays true with or without an AI feature. With no egress, an
+ *   unscoped pool of listing text is the only remaining shape that could make
+ *   it false: by us, or by anybody who ends up holding the database. And
+ *   `ai_generations` is still in the schema, because an applied migration is
+ *   never edited — a prompt-and-completion table with no writer is now MORE
+ *   likely to mislead a future reader into thinking a feature exists, not
+ *   less, so the assertion that nothing writes it stays.
  */
 
 const ROOTS = ['app', 'components', 'domain', 'lib']
 
 /** This file names the things it bans in order to ban them. */
-const SELF = 'tests/unit/no-training.test.ts'
+const SELF = 'tests/unit/egress-boundary.test.ts'
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
@@ -144,14 +124,20 @@ const TRANSMITS = [
 ] as const
 
 /** What a module reaching the network is talking to. */
-type Destination = 'ETSY' | 'AUTH_PROVIDER' | 'AI_PROVIDER'
+type Destination = 'ETSY' | 'AUTH_PROVIDER'
 
 /**
  * Every egress in the product, with its destination and why it is allowed.
  *
- * The sweep below must find exactly these files. A new one is a new place
- * shop content could leave from, and the author has to come here and say
- * where it goes — which is the whole mechanism.
+ * The sweep below must find exactly these files. A new one is a new place shop
+ * content could leave from, and the author has to come here and say where it
+ * goes — which is the whole mechanism.
+ *
+ * FOUR. It was five until D95 removed the AI Copilot and with it
+ * `lib/ai/claude.ts`, which was the only egress that carried a seller's
+ * listing text to anybody but Etsy. Nothing replaced it: there is no
+ * third-party destination in this product at all now, which is why the
+ * assertion below reads "none" rather than "one".
  */
 const EGRESS: Record<string, { to: Destination; why: string }> = {
   'lib/etsy/http.ts': {
@@ -179,14 +165,6 @@ const EGRESS: Record<string, { to: Destination; why: string }> = {
     why:
       'A second, isolated auth client for re-authentication before a sensitive action. ' +
       'Same payload as above: a credential, never shop content.',
-  },
-  'lib/ai/claude.ts': {
-    to: 'AI_PROVIDER',
-    why:
-      'THE ONE EGRESS FOR SHOP CONTENT TO A THIRD PARTY. The seller asks for a draft; ' +
-      'the listing title, tags and description go to the provider named in ' +
-      'lib/ai/provider-terms.ts and nowhere else. Privacy §3 discloses exactly this, ' +
-      'and the no-training promise about the provider rests on that record.',
   },
 }
 
@@ -264,31 +242,56 @@ describe('shop content has exactly one egress', () => {
     ).toEqual(Object.keys(EGRESS).sort())
   })
 
-  it('and exactly one of them sends shop content to a third party', () => {
+  it('and NONE of them sends shop content to a third party', () => {
     /*
-     * The sentence this guard exists for. Etsy is not a third party for this
-     * purpose — it is where the content came from and the party the seller
-     * authorised — so the question is how many OTHER destinations can ever
-     * receive it.
+     * The sentence this guard exists for, and it got stronger rather than
+     * weaker. It read `toEqual(['lib/ai/claude.ts'])` — exactly one — because
+     * the AI Copilot sent listing text to a model. With the Copilot gone there
+     * is no third-party destination left: Etsy is not one for this purpose (it
+     * is where the content came from and the party the seller authorised), and
+     * the two auth egresses carry a credential.
+     *
+     * This is the assertion a future keyword data adapter will meet. A
+     * clickstream provider may receive the term the seller typed; the moment
+     * its module also references a listing, an order or a cost, it becomes a
+     * third-party egress for shop content and fails here.
      */
     const thirdParty = Object.entries(EGRESS)
       .filter(([, entry]) => entry.to !== 'ETSY')
       .filter(([file]) => carriesShopContent(file))
       .map(([file]) => file)
-    expect(thirdParty).toEqual(['lib/ai/claude.ts'])
+    expect(
+      thirdParty,
+      'a network call outside Etsy references a shop-content type. Shop content has no ' +
+        'third-party destination in this product — Section 5, item 18.',
+    ).toEqual([])
   })
 
-  it('and the serialiser that turns shop content into a payload has one caller', () => {
-    /*
-     * renderRequest() is the only function in the product that renders a
-     * seller's listing text into a string for somebody else to read. A second
-     * caller is a second destination even if it shares a transport, so this is
-     * the tighter half of the rule above.
-     */
-    const callers = files.filter(
-      (f) => f !== 'lib/ai/prompt.ts' && /\brenderRequest\s*\(/.test(source(f)),
-    )
-    expect(callers).toEqual(['lib/ai/claude.ts'])
+  /*
+   * ── TWO ASSERTIONS WENT WITH THE FEATURE ───────────────────────────────
+   *
+   * There was a rule that `renderRequest()` — the only function that rendered
+   * a seller's listing text into a string for somebody else to read — had
+   * exactly one caller, and a rule that no module outside lib/ai imported the
+   * provider SDK. Both described lib/ai, which no longer exists, so both would
+   * now pass by sweeping nothing. The assertion below replaces them with the
+   * stronger fact: there is no AI provider SDK in this product at all.
+   */
+  it('and no AI provider SDK is a dependency of this product', () => {
+    const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as {
+      dependencies?: Record<string, string>
+      devDependencies?: Record<string, string>
+    }
+    const installed = [
+      ...Object.keys(pkg.dependencies ?? {}),
+      ...Object.keys(pkg.devDependencies ?? {}),
+    ]
+    for (const sdk of ['@anthropic-ai/sdk', 'openai', '@google/generative-ai', 'cohere-ai']) {
+      expect(installed, `${sdk} is installed and there is no AI feature to use it`).not.toContain(sdk)
+    }
+    // And nothing in the tree imports one under any name.
+    const importers = files.filter((f) => /@anthropic-ai\/sdk|from 'openai'/.test(source(f)))
+    expect(importers, 'a module imports an AI provider SDK').toEqual([])
   })
 
   it('and the keyword data seam carries no shop content and no network call', () => {
@@ -325,12 +328,6 @@ describe('shop content has exactly one egress', () => {
     ).toBe(false)
   })
 
-  it('and no module outside lib/ai imports the provider SDK', () => {
-    const importers = files.filter((f) =>
-      new RegExp(`from '${AI_PROVIDER_SDK.replace('/', '\\/')}'`).test(source(f)),
-    )
-    expect(importers).toEqual(['lib/ai/claude.ts'])
-  })
 })
 
 /* ──────────────────────────── the accumulation ─────────────────────────── */
@@ -535,66 +532,80 @@ describe('nothing stores shop content where it could accumulate', () => {
   })
 })
 
-/* ──────────────────── the half that cannot be enforced ─────────────────── */
+/* ─────────── the commitment that outlived the feature ─────────────────── */
 
-describe('the provider half is recorded rather than checked', () => {
-  it('records the provider the adapter actually talks to', () => {
+describe('the no-training commitment, with no AI in the product', () => {
+  it('is still made in both documents', () => {
     /*
-     * The one thing worth guarding about somebody else's terms: that the
-     * record describes the provider in use. A swap to a different SDK fails
-     * here, which is exactly when "that provider does not train on it either"
-     * would otherwise go stale with nobody noticing.
+     * Terms §6 and Privacy §3 both say "We do not use your shop data or your
+     * content to train artificial intelligence models." That sentence did NOT
+     * go with the Copilot and must not: it is the owner's commitment to Etsy
+     * and to sellers, it was true when there was a model and it is true now,
+     * and Section 5 item 25 of Etsy's API Terms names AI training explicitly.
+     *
+     * What did go is the sentence beside it that described the feature —
+     * "the listing text is sent to our AI provider to produce it; that
+     * provider does not train on it either". With no AI feature the first half
+     * describes something that cannot happen and the second vouches for a
+     * provider that is not there.
      */
-    const adapter = code('lib/ai/claude.ts')
-    expect(adapter).toContain(`from '${AI_PROVIDER_TERMS.sdk}'`)
-    const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as {
-      dependencies?: Record<string, string>
-    }
-    expect(
-      Object.keys(pkg.dependencies ?? {}),
-      'the recorded SDK is not a dependency of this product',
-    ).toContain(AI_PROVIDER_TERMS.sdk)
-  })
-
-  it('and the Privacy Policy names the same provider in its sub-processor table', () => {
-    const privacy = readFileSync('docs/legal/PRIVACY-POLICY-DRAFT.md', 'utf8')
-    const section = privacy.slice(privacy.indexOf('## 4.'), privacy.indexOf('## 5.'))
-    expect(
-      section,
-      'the sub-processor table does not name the provider shop content is sent to',
-    ).toContain(AI_PROVIDER_TERMS.provider)
-  })
-
-  it('and both halves of the §3 promise are still in the document', () => {
     const privacy = readFileSync('docs/legal/PRIVACY-POLICY-DRAFT.md', 'utf8')
     const terms = readFileSync('docs/legal/TERMS-OF-SERVICE-DRAFT.md', 'utf8')
-    const ours = 'to train artificial intelligence models'
-    expect(privacy, 'Privacy §3 no longer makes the no-training promise').toContain(ours)
-    expect(terms, 'Terms §6 no longer makes the no-training promise').toContain(ours)
-    // The provider half, which this guard cannot enforce and therefore names.
-    expect(privacy).toContain('does not train on it either')
+    const commitment = 'to train artificial intelligence models'
+    expect(privacy, 'Privacy §3 no longer makes the no-training commitment').toContain(commitment)
+    expect(terms, 'Terms §6 no longer makes the no-training commitment').toContain(commitment)
+
+    /*
+     * ── SCOPED TO §3, AND IT HAS TO BE ────────────────────────────────────
+     *
+     * Read against the whole document this went red on §2, which says in as
+     * many words that listing text "was sent to our AI provider when you
+     * asked for a draft" — past tense, recording what the section used to
+     * disclose. That is the document doing its job: a privacy policy that
+     * drops a disclosure silently leaves a reader unable to tell whether the
+     * practice stopped or the sentence did.
+     *
+     * A guard satisfiable only by deleting that record would eventually be
+     * satisfied by deleting it. So the assertion is about the CLAIM, which
+     * lives in §3, and `[[CONFIRM]]` notes are stripped for the same reason.
+     */
+    const section3 = privacy
+      .slice(privacy.indexOf('## 3.'), privacy.indexOf('## 4.'))
+      .replace(/`\[\[CONFIRM:[\s\S]*?\]\]`/g, '')
+    expect(section3.length, 'the Privacy Policy no longer has a section 3').toBeGreaterThan(400)
+    expect(
+      section3,
+      'Privacy §3 still vouches for an AI provider, and there is no AI provider',
+    ).not.toContain('does not train on it either')
+    expect(
+      section3,
+      'Privacy §3 still says listing text is sent to an AI provider',
+    ).not.toMatch(/sent to our AI provider/)
+    // And it still answers the question that sentence used to answer.
+    expect(
+      section3,
+      'Privacy §3 makes the no-training promise without saying who, if anyone, receives shop content',
+    ).toMatch(/no AI provider|nothing in CobaltRank sends/i)
   })
 
-  it('and says plainly whether a person has read the clause', () => {
+  it('and there is nothing in the product that could break it', () => {
     /*
-     * Not an assertion that it HAS been read — that is the owner's to do, and
-     * a test that demanded it would be red on a true statement. What is
-     * asserted is that the record distinguishes the two and that the surface
-     * renders the distinction, so "relied upon" is never displayed as
-     * "checked".
+     * The two halves above, in one sentence: no egress carries shop content to
+     * a third party, and no store of shop content exists that is not scoped to
+     * one shop. Asserted here as a single statement so a reader of
+     * docs/ETSY-COMPLIANCE.md items 18 and 25 has one place to look.
      */
-    expect(typeof providerClauseWasRead()).toBe('boolean')
-    const note = providerTermsNote()
-    expect(note).toContain(AI_PROVIDER_TERMS.provider)
-    expect(note).toContain(AI_PROVIDER_TERMS.document)
-    expect(note).toContain(AI_PROVIDER_TERMS.recordedOn)
-    if (!providerClauseWasRead()) {
-      expect(
-        note,
-        'the record says nobody has read the clause and the note does not say so',
-      ).toMatch(/relied upon rather than checked/)
-    }
-    expect(AI_PROVIDER_TERMS.recordedOn).toMatch(/^\d{4}-\d{2}-\d{2}$/)
-    expect(Number.isNaN(Date.parse(AI_PROVIDER_TERMS.recordedOn))).toBe(false)
+    const thirdPartyEgress = Object.entries(EGRESS)
+      .filter(([, entry]) => entry.to !== 'ETSY')
+      .filter(([file]) => carriesShopContent(file))
+    expect(thirdPartyEgress).toEqual([])
+
+    const unscoped = tables().filter((t) => t.columns.length > 0 && !t.shopScoped)
+    expect(unscoped).toEqual([])
+
+    const generationWriters = files.filter((f) =>
+      /insert\(schema\.aiGenerations\b/.test(source(f)),
+    )
+    expect(generationWriters).toEqual([])
   })
 })

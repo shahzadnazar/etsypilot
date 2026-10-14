@@ -25,7 +25,6 @@ export interface Plan {
   limits: {
     /** Listings the plan may manage. 0 means the plan connects no shop. */
     listings: number
-    aiGenerations: number
     rollbackDays: number | null
     pulseHistoryMonths: number | null
     /*
@@ -49,6 +48,19 @@ export interface Plan {
   excludes: string[]
 }
 
+/*
+ * ── THE AI GENERATION ALLOWANCES CAME OFF EVERY TIER ─────────────────────
+ *
+ * D95 removed the AI Copilot, so "5 / 60 / 500 AI generations a month" was
+ * three tiers advertising a feature that does not exist — on /pricing and on
+ * /billing, which are the two surfaces Etsy's API review criterion 1 puts in
+ * scope. `limits.aiGenerations` went with the copy rather than being left as a
+ * number nothing consumes: a limit is only meaningful if something can hit it,
+ * and the meter that displayed it is gone too (domain/billing/usage.ts).
+ *
+ * Free is thinner again for it. As with D22a, that is recorded rather than
+ * padded — what would honestly fill it is a feature.
+ */
 export const PLANS: Plan[] = [
   {
     key: 'FREE',
@@ -87,7 +99,6 @@ export const PLANS: Plan[] = [
     includes: [
       'All six calculators',
       'Methodology and data sources',
-      '5 AI generations / month',
     ],
     /*
      * Zero listings, not null. Free connects no shop, so it manages no
@@ -95,7 +106,7 @@ export const PLANS: Plan[] = [
      * turned an upgrade from Free into a warning that bulk jobs would pause.
      * An ambiguous null in a limits table is a bug waiting for a reader.
      */
-    limits: { listings: 0, aiGenerations: 5, rollbackDays: null, pulseHistoryMonths: null, auditRetentionDays: null },
+    limits: { listings: 0, rollbackDays: null, pulseHistoryMonths: null, auditRetentionDays: null },
     excludes: ['No shop connection, profit or bulk editing'],
   },
   {
@@ -109,9 +120,8 @@ export const PLANS: Plan[] = [
       'Profit Reality with scenarios, and cost setup',
       'Bulk edits with validation, diff and 30-day rollback',
       'Shop Pulse with 90-day baseline and weekly digest',
-      '60 AI generations / month',
     ],
-    limits: { listings: 200, aiGenerations: 60, rollbackDays: 30, pulseHistoryMonths: 3, auditRetentionDays: 90 },
+    limits: { listings: 200, rollbackDays: 30, pulseHistoryMonths: 3, auditRetentionDays: 90 },
     // D22 consequence 3: do not advertise the absence of something no tier has.
     excludes: ['One shop'],
   },
@@ -123,7 +133,6 @@ export const PLANS: Plan[] = [
     includes: [
       'Everything in Solo',
       'Up to 2,000 listings',
-      '500 AI generations / month',
       '90-day rollback window',
       '12-month Shop Pulse history',
       /*
@@ -152,7 +161,7 @@ export const PLANS: Plan[] = [
        */
       'Priority sync and support',
     ],
-    limits: { listings: 2000, aiGenerations: 500, rollbackDays: 90, pulseHistoryMonths: 12, auditRetentionDays: 365 },
+    limits: { listings: 2000, rollbackDays: 90, pulseHistoryMonths: 12, auditRetentionDays: 365 },
     excludes: [],
   },
 ]

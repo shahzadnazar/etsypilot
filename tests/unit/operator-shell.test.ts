@@ -787,7 +787,7 @@ describe('the operator console uses the shared state surfaces', () => {
     posixJoin(pageFor(`/admin/${screen}`).replace(/\/page\.tsx$/, ''), 'loading.tsx')
 
   const QUERY_SCREENS = [
-    'ai',
+    // 'ai' was the tenth. D95 removed /admin/ai with the Copilot it reported on.
     'audit',
     'etsy',
     'managers',
@@ -912,8 +912,9 @@ describe('the operator console uses the shared state surfaces', () => {
 
   it('renders an unavailable figure through UnavailableCard, never an em dash', () => {
     /*
-     * admin/ai, admin/users/[userId] and admin/metrics each re-implemented an
-     * unavailable figure locally as `—` plus a paragraph. One component draws
+     * admin/ai (since removed by D95), admin/users/[userId] and admin/metrics
+     * each re-implemented an unavailable figure locally as `—` plus a
+     * paragraph. One component draws
      * it now, and the branch is what makes "a null value cannot render as a
      * number" true by construction rather than by care.
      */
@@ -967,7 +968,8 @@ describe('the operator console formats no number of its own', () => {
     const users = pagesUnder(ADMIN_ROOT).filter((page) =>
       /<(Numeric|Money|NumericCell)\b/.test(code(page)),
     )
-    expect(users.length).toBeGreaterThanOrEqual(9)
+    // Nine until D95 removed /admin/ai, which rendered four figures of its own.
+    expect(users.length).toBeGreaterThanOrEqual(8)
   })
 
   it('SENDS THE ONE PRICE THROUGH Money, so a missing one cannot read as free', () => {
@@ -1093,7 +1095,8 @@ describe('an operator figure cannot render without its provenance', () => {
   })
 
   it('RENDERS A BADGE ON EVERY SCREEN THE REPORT NAMED', () => {
-    for (const screen of ['usage', 'subscriptions', 'operations', 'etsy', 'metrics', 'ai']) {
+    // 'ai' was on this list. The report named that screen; D95 removed it.
+    for (const screen of ['usage', 'subscriptions', 'operations', 'etsy', 'metrics']) {
       const page = posixJoin(ADMIN_ROOT, `admin/${screen}/page.tsx`)
       expect(code(page), page).toContain('<OperatorFigure')
     }

@@ -1,13 +1,12 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { ActionList } from '@/components/action-center/action-list'
+import { WhereToStart } from '@/components/ui/where-to-start'
 import { DataWithheld } from '@/components/sync/data-withheld'
 import { withheldReason } from '@/domain/sync/source'
-import { AssistedNote } from '@/components/ai/assisted-note'
 import { PageHeader } from '@/components/layout/page-header'
 import { Card } from '@/components/ui/card'
 import { getActions } from '@/domain/action-center/service'
-import { recommendForAction } from '@/domain/ai/explain'
 import { getSession } from '@/lib/auth'
 import { shopContext } from '@/lib/permissions'
 import { isDemoMode } from '@/lib/etsy'
@@ -68,13 +67,18 @@ export default async function ActionCenterPage() {
   }
 
   /*
-   * One recommendation, for the top action only. Same reasoning as the audit
-   * page: with a live provider this is a real cost, and the cards already carry
-   * their own explanation and evidence. The assistant adds a sentence about
-   * what to do first — and if it is withheld, the card is unchanged.
+   * ── WHERE TO START: THE ACTION'S OWN EXPLANATION ───────────────────────
+   *
+   * This called domain/ai/explain.ts, which handed the finding and the
+   * evidence line to a model and fell back to `action.explanation` whenever
+   * the model was unavailable or its answer was withheld. That fallback is
+   * what renders now: the assistant was decorating the card's own sentence,
+   * and D95 removed the assistant.
+   *
+   * Still the top open action only, which is the point of the block — the list
+   * below is ordered by measured impact and this names the first one.
    */
   const top = actions.find((a) => a.status === 'OPEN') ?? actions[0]
-  const recommendation = top ? await recommendForAction(top) : null
 
   return (
     <>
@@ -82,17 +86,17 @@ export default async function ActionCenterPage() {
         title="Action Center"
         subtitle="What needs your attention, ordered by measured impact. Every card carries its evidence and a destination."
       />
-      {recommendation && top ? (
+      {top ? (
         <Card className="mb-4 p-[18px]">
-          <AssistedNote
-            explanation={recommendation}
-            demo={demoData}
-            label={`Where to start · ${top.title}`}
-          />
+          <WhereToStart label={`Where to start · ${top.title}`} text={top.explanation} />
           <p className="mt-2 text-caption leading-relaxed text-muted-1">
-            Advice, not instruction. It rests only on the evidence shown on the card below — the
-            assistant is given your screen and nothing else, and anything it wrote that did not
-            trace back to that evidence was withheld.
+            {/*
+              * The paragraph about the assistant went with the assistant. What
+              * is left is the thing that was true underneath it: this is the
+              * card's own explanation, and the evidence for it is on the card.
+              */}
+            Advice, not instruction. It rests on the evidence shown on the card below and on
+            nothing else.
           </p>
         </Card>
       ) : null}

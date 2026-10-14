@@ -33,7 +33,13 @@ const SECRET_SHAPE: [RegExp, string][] = [
    * it was caught at all.
    */
   [/\b(sk|pk|rk|whsec)_[A-Za-z0-9_]{8,}/g, '$1_[redacted]'],
-  // Anthropic.
+  /*
+   * Anthropic. Kept although D95 removed the AI provider: a deployment whose
+   * environment still carries ANTHROPIC_API_KEY can still put it in front of
+   * this redactor, and a pattern for a credential the product does not use
+   * costs one regex. Removing a redaction because the feature went is how a
+   * key reaches a log line.
+   */
   [/\bsk-ant-[A-Za-z0-9-]{6,}/g, 'sk-ant-[redacted]'],
   // form-encoded and JSON-ish assignments: code_verifier=..., "access_token": "..."
   [/((?:access|refresh|id)_token|code_verifier|client_secret|api[_-]?key)(["']?\s*[:=]\s*["']?)[^"'&,\s}]+/gi, '$1$2[redacted]'],

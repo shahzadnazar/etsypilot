@@ -61,22 +61,26 @@ export function demoSecurity(): DemoSecurity | null {
         current: false,
         readOnly: false,
       },
-      {
-        id: 'ext-chrome',
-        kind: 'EXTENSION',
-        label: 'CobaltRank extension · Chrome',
-        detail: 'Read-only · etsy.com',
-        location: 'Dhaka, BD',
-        lastSeen: '2026-08-12T14:00:00.000Z',
-        current: false,
-        /*
-         * The extension holds no privileged Etsy credential and cannot write.
-         * That is a property of what it was built as, not a setting, so it is
-         * stated on the row rather than shown as a toggle somebody could
-         * mistake for something they can change.
-         */
-        readOnly: true,
-      },
+      /*
+       * ── THE DEMO NO LONGER HAS AN EXTENSION SESSION ──────────────────────
+       *
+       * There was a third row here: `ext-chrome`, "CobaltRank extension ·
+       * Chrome", read-only, last seen on etsy.com. It was the one entry in
+       * this fixture that advertised a feature — a demo visitor reading the
+       * security page would conclude an extension exists and that they could
+       * install one.
+       *
+       * D95 removed the extension, so the row is an authored claim about
+       * something that is not there, which is exactly what a demo fixture may
+       * not be. The CODE PATH stays: `SessionKind` still has 'EXTENSION',
+       * /settings/security still renders such a row with its read-only note
+       * and a working Revoke, and the page explains it — because a live
+       * deployment may still hold a real extension session granted before the
+       * removal, and hiding access that exists is the opposite of what a
+       * security page is for.
+       *
+       * So: nothing invented in the demo, nothing hidden in live.
+       */
     ],
     events: [
       { at: '2026-08-12T08:41:00.000Z', label: 'Signed in · Chrome, macOS', outcome: 'SUCCEEDED' },

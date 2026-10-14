@@ -86,7 +86,6 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'All Listings', href: '/listings' },
       { label: 'Listing Audit', href: '/listings/audit' },
-      { label: 'AI Copilot', href: '/listings/ai-copilot' },
       { label: 'Bulk Editor', href: '/listings/bulk-editor' },
       { label: 'Change History', href: '/listings/change-history' },
     ],
@@ -213,31 +212,25 @@ export const SETTINGS_NAV: NavGroup[] = [
        * all; D21 is what stops it becoming a destination before it is one.
        */
       { label: 'Integrations', href: '/settings/integrations' },
-      { label: 'Browser extension', href: '/settings/extension' },
       { label: 'Data export & deletion', href: '/settings/export' },
     ],
   },
 ]
 
 /*
- * ── THE SETTINGS RAIL, MINUS ANYTHING SWITCHED OFF ───────────────────────
+ * ── settingsNavFor() IS GONE, AND SO IS THE REASON FOR IT ────────────────
  *
- * SETTINGS_NAV is the whole rail. This is what a given deployment shows.
+ * It filtered '/settings/extension' out of the rail while the browser
+ * extension was switched off, because "nothing in the navigation mentions it"
+ * was part of keeping Etsy's Prohibited Behavior item 24 answered.
  *
- * It exists because the browser extension comes off the live surface while
- * Etsy's Prohibited Behavior item 24 is unanswered (lib/extension/
- * availability.ts), and "nothing in the navigation mentions it" is part of
- * that. Filtering here rather than inside the rail component keeps the
- * decision server-side: SettingsNav is a client component and cannot read a
- * non-public environment variable, and making the flag public would put the
- * answer in the browser bundle.
+ * D95 removed the extension from the working tree, so there is no entry to
+ * filter and no flag to read: SETTINGS_NAV is the rail, on every deployment.
+ * A filter whose only job was to hide one entry that no longer exists is a
+ * function that makes a reader look for a feature.
  *
- * A filter by href, not by label, because a label is copy and copy is edited.
+ * If the extension comes back from `with-ai-and-extension`, this comes back
+ * with it — the shape is in that branch's history, and the reason it has to be
+ * server-side is that SettingsNav is a client component and cannot read a
+ * non-public environment variable.
  */
-export function settingsNavFor(options: { extension: boolean }): NavGroup[] {
-  if (options.extension) return SETTINGS_NAV
-  return SETTINGS_NAV.map((group) => ({
-    ...group,
-    items: group.items.filter((item) => !item.href.startsWith('/settings/extension')),
-  }))
-}

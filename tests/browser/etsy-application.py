@@ -113,17 +113,25 @@ with sync_playwright() as p:
               f"{label} /billing: the three PLANS tiers are listed")
         check("Calculators and methodology, no shop connection" in billing_text,
               f"{label} /billing: the Free tier is positioned on what it has")
-        for real in ["All six calculators", "Methodology and data sources",
-                     "5 AI generations / month"]:
+        for real in ["All six calculators", "Methodology and data sources"]:
             check(real in billing_text, f"{label} /billing: the Free tier lists {real!r}")
+        # "5 AI generations / month" was the third line here, and D95 removed
+        # the feature it priced. Checked in the negative now, on both surfaces:
+        # a tier that advertises a generation allowance is selling nothing.
+        check("AI generations" not in billing_text,
+              f"{label} /billing: no tier advertises an AI allowance")
         check("No shop connection, profit or bulk editing" in billing_text,
               f"{label} /billing: the Free tier still states what it excludes")
 
     # And Growth still has reasons to exist, on both surfaces.
     for route in ["/pricing", "/billing"]:
         growth = body(LIVE, route)
-        for real in ["2,000 listings", "500 AI generations", "90-day rollback", "Priority sync"]:
+        for real in ["2,000 listings", "90-day rollback", "Priority sync"]:
             check(real in growth, f"live {route}: Growth still lists {real!r}")
+        # "500 AI generations" was here. Growth is thinner for it, which is the
+        # true position rather than a gap to fill with a replacement line.
+        check("AI generations" not in growth,
+              f"live {route}: Growth advertises no AI allowance")
 
     # ── 2. EXPORT, ON NO PLAN AT ALL ───────────────────────────────────────
     #
@@ -154,16 +162,46 @@ with sync_playwright() as p:
     for invented in ["eRank", "Semrush", "Keyword Tool", "Marmalade"]:
         check(invented not in subs,
               f"live /legal/subprocessors: names no unconnected provider ({invented!r})")
-    # The one provider that IS in use is named, so this is not a blank page.
-    check("Anthropic, PBC" in subs,
-          "live /legal/subprocessors: the AI provider in use is named")
+    # Anthropic, PBC was the one named provider in use, and D95 removed the
+    # feature that sent to it. A sub-processor row is an Article 28 statement
+    # that this company processes your data TODAY, so the row came off with the
+    # feature — and both directions are checked, because a table that names a
+    # company nothing sends to is false in the same way as a missing row.
+    # Asserted on the ROW rather than on the word. The page names Anthropic in
+    # one sentence — saying a sub-processor has been removed is the same kind
+    # of notice as saying one has been added, and a guard satisfiable only by
+    # deleting that sentence would eventually be satisfied by deleting it. What
+    # must be gone is the row: the "what they do" cell that said a provider
+    # receives listing content.
+    check("AI provider. Receives listing title and tags" not in subs,
+          "live /legal/subprocessors: no row says an AI provider receives listing content")
+    check("Anthropic, PBC was on this list" in subs,
+          "live /legal/subprocessors: the removal is stated rather than silent")
+    # Still not a blank page: the one named row left is the source of the data.
+    check("Etsy, Inc." in subs,
+          "live /legal/subprocessors: the named section still carries Etsy, Inc.")
+    check("CobaltRank no longer has an AI feature" in subs,
+          "live /legal/subprocessors: says why the AI provider is not listed")
 
-    # ── 4. /data/sources REPORTS THE EMPTY SEAM AND THE AI PROVIDER'S TERMS ─
+    # ── 4. /data/sources REPORTS THE EMPTY SEAM, AND THE ABSENT MODEL ──────
     sources = body(LIVE, "/data/sources")
     check("Not built yet — no source" in sources,
           "live /data/sources: market signals report no source")
     check("Bought keyword data" not in sources,
           "live /data/sources: does not describe a source it does not have")
+    # The language-model row did NOT disappear with the Copilot. This page is
+    # the catalogue of what the product reads from, and "there is no language
+    # model here" is a fact a seller came to it to learn — the same reason the
+    # email, payment and keyword-provider rows are listed while resolving to
+    # nothing. It used to read "Rule-based drafter — nothing leaves this
+    # machine" or "Live model", whichever the adapter answered.
+    check("Not connected — no AI provider in this product" in sources,
+          "live /data/sources: the language-model row says there is no model")
+    check("no listing, order or cost of yours is sent to a language model" in sources.lower(),
+          "live /data/sources: the row says what is not sent, not only that it is off")
+    for gone in ["Rule-based drafter", "Live model", "Anthropic"]:
+        check(gone not in sources,
+              f"live /data/sources: no longer claims a drafter ({gone!r})")
 
     # ── 5. THE SEAM REPORTS ITSELF WHEN A PROVIDER IS CONFIGURED ───────────
     configured_subs = body(CONFIGURED, "/legal/subprocessors")

@@ -19,7 +19,7 @@ export function HistoryTable({ view }: { view: ChangeHistoryView }) {
     return (
       <EmptyState
         title="Nothing has been changed yet"
-        description="Every listing CobaltRank writes to appears here, with what it changed and a way to undo it. Bulk edits, scheduled jobs and accepted AI drafts all land in the same trail."
+        description="Every listing CobaltRank writes to appears here, with what it changed and a way to undo it. Bulk edits, scheduled jobs and manual edits all land in the same trail."
         action={
           <Link
             href="/listings/bulk-editor"

@@ -42,8 +42,6 @@ import { cspFor } from '@/lib/security/csp'
 import { checkCsrf } from '@/lib/security/csrf'
 import { rateLimit } from '@/lib/security/rate-limit'
 import { PRODUCT_SLUG } from '@/lib/brand'
-import { extensionEnabled } from '@/lib/extension/availability'
-import { isExtensionPath } from '@/lib/security/extension-route'
 
 /**
  * A path no route will ever match, used to make /admin genuinely disappear.
@@ -147,24 +145,13 @@ export async function middleware(request: NextRequest) {
   const hideAdminRoute = adminRoute.matched && !adminRoute.reachable
 
   /*
-   * ── THE BROWSER EXTENSION, HIDDEN THE SAME WAY /admin IS ──────────────
-   *
-   * Etsy's Prohibited Behavior item 24 names browser extensions and covers
-   * promoting their use. While lib/extension/availability.ts says the
-   * extension is off, its surfaces are not disabled — they are GONE, which is
-   * a different thing: a disabled page still tells a reviewer the feature
-   * exists and is merely switched off, and item 24 is about offering it.
-   *
-   * Here rather than in each route for the same reason /admin is here: a
-   * route handler that forgets the check is a working download, and the two
-   * API routes under /api/extension are the ones that would actually serve
-   * the add-on. One rewrite covers the page, both routes, and anything added
-   * under those paths later.
-   *
-   * Rewritten rather than returned, so the 404 still carries the nonce and
-   * the CSP — same reasoning as the /admin rewrite below.
+   * The extension rewrite that used to sit here is gone with the extension
+   * (D95). It hid /settings/extension and both /api/extension routes behind a
+   * 404 while Etsy's Prohibited Behavior item 24 was unanswered. There is
+   * nothing left to hide: the routes, the page and the add-on are off the
+   * working tree, archived on `with-ai-and-extension`. A rewrite guarding
+   * paths that do not exist is a rewrite that reads as a feature in hiding.
    */
-  const hideExtension = isExtensionPath(url.pathname) && !extensionEnabled()
 
   /*
    * Then rate limiting, and only for /api. Pages are cheap and a seller
@@ -235,7 +222,7 @@ export async function middleware(request: NextRequest) {
    * and a differently-shaped response is the leak this is trying to close.
    */
   const response =
-    hideAdminRoute || hideExtension
+    hideAdminRoute
       ? NextResponse.rewrite(new URL(NOWHERE, request.url), { request: { headers } })
       : NextResponse.next({ request: { headers } })
   response.headers.set('Content-Security-Policy', csp)

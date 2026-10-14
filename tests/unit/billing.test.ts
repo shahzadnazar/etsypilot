@@ -260,15 +260,19 @@ describe('the trial says what happens at its end', () => {
 /* ------------------------------------------------------------------ limits */
 
 describe('a limit pauses work and says what continues', () => {
-  const meters = buildMeters({
-    plan: 'SOLO',
-    activeListings: 412,
-    aiGenerationsUsed: 42,
-    aiResetsOn: '2026-09-01',
-  })
+  /*
+   * ── ONE METRIC, AND THESE ASSERTIONS USED THE OTHER ONE ─────────────────
+   *
+   * They enforced 'aiGenerations' against Solo's 60-a-month allowance, which
+   * D95 removed with the Copilot. The rules being checked are not about AI:
+   * a limit names both halves, allows the unit below the cap, and warns only
+   * when a meter is actually close. They now read the listings capacity,
+   * which is Solo's 200.
+   */
+  const meters = buildMeters({ plan: 'SOLO', activeListings: 412 })
 
   it('never reports only what stopped', () => {
-    const decision = enforce({ plan: 'SOLO', metric: 'aiGenerations', used: 60 })
+    const decision = enforce({ plan: 'SOLO', metric: 'listings', used: 200 })
     expect(decision.allowed).toBe(false)
     expect(decision.blocked!.pauses.length).toBeGreaterThan(0)
     expect(decision.blocked!.continues.length).toBeGreaterThan(0)
@@ -276,7 +280,7 @@ describe('a limit pauses work and says what continues', () => {
   })
 
   it('allows work below the limit', () => {
-    const decision = enforce({ plan: 'SOLO', metric: 'aiGenerations', used: 59 })
+    const decision = enforce({ plan: 'SOLO', metric: 'listings', used: 199 })
     expect(decision.allowed).toBe(true)
     expect(decision.remaining).toBe(1)
     expect(decision.blocked).toBeNull()
@@ -284,19 +288,27 @@ describe('a limit pauses work and says what continues', () => {
 
   it('warns only when a meter is actually close', () => {
     expect(pressureWarning(meters)).not.toBeNull() // 412 of 200 — over.
-    const roomy = buildMeters({
-      plan: 'GROWTH',
-      activeListings: 412,
-      aiGenerationsUsed: 42,
-      aiResetsOn: '2026-09-01',
-    })
+    const roomy = buildMeters({ plan: 'GROWTH', activeListings: 412 })
     // A permanent "approaching your limit" strip at 20% is an advertisement.
     expect(pressureWarning(roomy)).toBeNull()
   })
 
   it('gives the listings meter no reset date, because it is a capacity', () => {
-    expect(meters.find((m) => m.metric === 'listings')?.resetsOn).toBeNull()
-    expect(meters.find((m) => m.metric === 'aiGenerations')?.resetsOn).toBe('2026-09-01')
+    /*
+     * The contrast case is gone. This line used to sit beside
+     * `aiGenerations` expecting '2026-09-01', which is what proved
+     * `resetsOn` could carry a date at all — so the assertion below is now
+     * the only state the field is ever in, and on its own it is close to
+     * asserting a literal.
+     *
+     * It stays, with the field, because the distinction is the point: a
+     * capacity resets on no date, and `resetsOn: null` is how the meter says
+     * so instead of printing today's month. components/billing/usage-meters
+     * renders the sentence only when a date is present, and a monthly
+     * allowance arriving again is exactly when this has to be true.
+     */
+    expect(meters.map((m) => m.metric)).toEqual(['listings'])
+    expect(meters[0]!.resetsOn).toBeNull()
   })
 })
 
@@ -473,18 +485,44 @@ describe('calendar arithmetic stays calendar arithmetic', () => {
 /* ------------------------------------------------------------ one source */
 
 describe('one plan, read everywhere', () => {
-  it('gives the AI copilot the plan’s own generation limit', async () => {
-    const { getCopilotView } = await import('@/domain/ai/service')
-    const { getBillingView } = await import('@/domain/billing/service')
-    const ctx = { shopId: 'demo-willow-fern', actorId: 'demo-user-salman', readOnly: true }
+  /*
+   * ── THE PAIR THAT COULD DISAGREE IS A DIFFERENT PAIR NOW ────────────────
+   *
+   * This block held one test: the AI Copilot's quota against the billing
+   * meter's limit, because the Copilot said 60 while /billing said 500 and a
+   * seller reads both. D95 removed the Copilot, so that pair is gone.
+   *
+   * The defect class is not. Every plan states its listing cap TWICE — once
+   * as a number in `limits.listings`, which the meter and `enforce()` read,
+   * and once in English in `positioning` and `includes`, which /pricing
+   * prints. Raising a cap and forgetting the sentence beside it is the same
+   * bug: two statements of one number, both shown to the same seller.
+   */
+  it('advertises the listing cap it enforces', () => {
+    let stated = 0
+    for (const plan of PLANS) {
+      for (const line of [plan.positioning, ...plan.includes]) {
+        const match = /([\d,]+) listings/i.exec(line)
+        if (!match) continue
+        stated += 1
+        expect(
+          Number(match[1]!.replace(/,/g, '')),
+          `${plan.name} advertises "${line}" and enforces ${plan.limits.listings}`,
+        ).toBe(plan.limits.listings)
+      }
+    }
+    // Not vacuous: two tiers name a number, and Free deliberately names none.
+    expect(stated).toBe(4)
+  })
 
-    const [copilot, billing] = await Promise.all([getCopilotView(ctx), getBillingView(ctx)])
-    if (!copilot) throw new Error('expected a view for the demo shop')
-    const meter = billing.meters.find((m) => m.metric === 'aiGenerations')!
-
-    // The copilot said 60 while billing said 500, and a seller reads both.
-    expect(copilot.quota.limit).toBe(meter.limit)
-    expect(copilot.quota.planName).toBe(billing.currentPlan!.name)
-    expect(copilot.quota.used).toBe(meter.used)
+  it('and Free says it connects no shop rather than naming a cap', () => {
+    /*
+     * Zero is a cap a seller could read as "unlimited" if it were null, and
+     * "up to 0 listings" is not a sentence. Free says the thing that is
+     * actually true instead, which is why the sweep above finds no number.
+     */
+    const free = PLANS.find((p) => p.key === 'FREE')!
+    expect(free.limits.listings).toBe(0)
+    expect(`${free.positioning} ${free.excludes.join(' ')}`).toMatch(/no shop connection/i)
   })
 })

@@ -36,28 +36,31 @@ order sync stores a two-letter country code only, for aggregate reporting — ne
 buyer. **This is enforced by an automated test that fails if buyer-identifying data appears in our
 tables.**
 
-**Listing text you ask us to rewrite, and the drafts we produce**
-When you use the AI listing helper, the listing's current title and tags are sent to our AI
-provider to generate a draft. Nothing is sent unless you ask for a draft, and nothing is published
-until you approve it. See the sub-processor table below.
+**Listing text — nothing is sent to a language model**
+No title, description, tag, order or cost of yours is sent to an AI provider, because CobaltRank
+has no AI feature and no AI provider. Nothing on any screen is written by a language model, there
+is no drafting or rewriting tool, and the sub-processor table in §4 names no model provider.
 
-We do **not** store the draft. It exists on the screen you asked for it on and goes when you leave
-it; nothing in the product writes a draft to a table, whether you accept it or not. A draft you
-never accept stays a draft, and nothing reaches Etsy from one either way.
-`[[CONFIRM: this paragraph said we store each draft — what was sent, what came back, who asked and
-whether it was accepted — and that a rejected suggestion is still a record. There is an
-ai_generations table with exactly those columns and nothing inserts into it, so the disclosure was
-describing a product that was never built. Keeping that record is worth building and is the owner's
-decision; see §5 and docs/legal/VERIFICATION.md for the sentences to restore when it is.]]`
+A listing drafter was built for this product and has been removed from it. While it existed, this
+section disclosed that a listing's current title and tags were sent to our AI provider when you
+asked for a draft. That no longer happens and cannot: there is nothing in the application that
+could send it.
+`[[CONFIRM: there is still an ai_generations table in the database, with input, output and status
+columns, and nothing writes to it — an applied migration is never edited, so it stays. It held no
+rows while the feature existed either, which is why an earlier version of this section
+over-disclosed: it told sellers we kept a record of every suggestion and what they did with it,
+and no such record was ever written. Nothing needs to be said to a seller about an empty table
+nothing writes to; this note is here so the next reader of the schema does not conclude the
+document is incomplete.]]`
 
-**The browser extension — not currently offered**
-CobaltRank does not offer a browser extension at the moment, so nothing in this section applies to
-you today. One was built and is not published: Etsy's API Terms restrict browser extensions that
-access Etsy data, and we are not offering ours until Etsy has answered that question. If it is ever
-offered, this is what it would collect: it reads the address of the Etsy page you are looking at and
-sends the listing id to us, so we can show you your own figures for that listing. It reads nothing
-else from the page — not prices, not titles, not your Etsy cookies or session — and it changes
-nothing on it.
+**There is no browser extension**
+CobaltRank does not offer one, so nothing in this section applies to you and there is nothing to
+install. One was built and has been removed from the application — not left unpublished behind a
+switch, but taken out. It would have read the address of the Etsy page you were looking at and
+sent the listing id to us, so we could show you your own figures for that listing; it read nothing
+else from the page — not prices, not titles, not your Etsy cookies or session — and changed
+nothing on it. Etsy's API Terms restrict browser extensions that access Etsy data, that question
+has not been put to Etsy, and it is not one worth answering unilaterally.
 
 **Costs you enter**
 The product costs, shipping costs, labour rates and other figures you type in. These are yours; we
@@ -85,9 +88,9 @@ Your email address, your shop URL if you give it, and which part of the page you
 | Waitlist email | To tell you when we launch | Consent |
 
 We do not use your data for advertising. We do not sell it. **We do not use your shop data or your
-content to train artificial intelligence models.** Where you ask for an AI draft, the listing text
-is sent to our AI provider to produce it; that provider does not train on it either, and the
-sub-processor table below names them.
+content to train artificial intelligence models.** Nobody else does either, because nothing in
+CobaltRank sends your shop content to a language model: there is no AI feature in this product and
+no AI provider in the sub-processor table below.
 
 We do not currently collect payment data, because no payment provider is connected yet. The row
 above describes how it will be handled when one is.
@@ -99,7 +102,6 @@ above describes how it will be handled when one is.
 | `[[DATABASE_PROVIDER]]` | Database and authentication | `[[REGION]]` |
 | `[[HOSTING_PROVIDER]]` | Runs the application | `[[REGION]]` |
 | `[[EMAIL_PROVIDER]]` | Sends account and billing email | `[[REGION]]` |
-| Anthropic, PBC | AI provider. Receives listing title and tags when you ask for a draft | United States |
 | `[[KEYWORD_DATA_PROVIDER]]` | Keyword and market data. Would receive the search terms you type on a Research screen, and nothing from your shop | `[[REGION]]` |
 | `[[PAYMENT_PROVIDER]]` | Takes payment | `[[REGION]]` |
 | Etsy, Inc. | The source of your shop data, under your OAuth authorisation | United States |
@@ -135,14 +137,9 @@ calculated from that copy every time you open a screen rather than stored as a s
 the copy IS the historical reporting you are paying for. Closing your account deletes it; so does
 asking us.
 
-**AI drafts** — not kept. A draft exists in the screen you asked for it on, and goes when you leave
-it: nothing in the product writes a draft to a table, accepted or rejected.
-`[[CONFIRM: this paragraph said drafts were kept while your account is open and that rejected ones
-were kept as part of the audit trail. There is an ai_generations table and nothing inserts into it,
-so neither half was true. Keeping a record of what the assistant suggested and what was done with
-it is a good idea and is the owner's decision to make; until it is made and built, this states the
-real position. The sentence to restore, once it is, is the one about the trail saying less than
-what happened.]]`
+**AI drafts** — there are none. CobaltRank has no AI feature, so no draft is produced, shown or
+kept, and nothing of yours is sent to a language model to produce one. This paragraph used to say
+that a draft existed only on the screen you asked for it on; the screen is gone.
 
 **Figures we calculate** — your profit history, margins, cost allocations and the findings on your
 Action Center are not kept. They are recalculated from your own orders, listings and costs every

@@ -5064,6 +5064,13 @@ stronger submitted without an egress to explain. The no-training guard exists
 because of it; with the feature gone, the guard goes with it, and that is a
 deliberate trade recorded here rather than a gap.
 
+> **That last sentence was wrong, and the removal did not follow it.** The
+> guard had two halves and only one of them was about AI. See *What the removal
+> actually decided* below: the egress allowlist and the pooling sweep both
+> survived, in `tests/unit/egress-boundary.test.ts`, and items 18 and 25 of
+> `docs/ETSY-COMPLIANCE.md` now cite a file that exists and makes a stronger
+> claim than the one it replaces.
+
 ### How to get it back
 
 One path at a time, onto whatever branch is current:
@@ -5079,12 +5086,14 @@ Or start from it and bring the rest of the product forward:
 git switch -c ai-and-extension-again with-ai-and-extension
 ```
 
-Neither feature should come back without its tests, and the AI Copilot must not
-come back without `tests/unit/no-training.test.ts` — the no-training promise in
-Terms §6 and Privacy §3 is enforced by that file and by nothing else.
-`docs/ETSY-COMPLIANCE.md` cites it for Section 5 items 18 and 25, and
-`tests/unit/etsy-compliance.test.ts` fails if a cited test stops existing, so
-the removal task has to answer for those citations.
+Neither feature should come back without its tests. `tests/unit/no-training.test.ts`
+is the one to read first if the Copilot returns: it is now
+`tests/unit/egress-boundary.test.ts` in the working tree, with the AI-specific
+assertions dropped, so bringing the feature back means putting them back —
+`lib/ai/claude.ts` on the egress allowlist with what it sends, the provider's
+recorded no-training clause, and the `ai_generations` insert site that would
+then exist. The branch has the original file; do not restore it wholesale over
+the renamed one, because the halves that are not about AI have moved on.
 
 ### The repository is PUBLIC, so this branch hides nothing
 
@@ -5105,3 +5114,109 @@ build output. If the intent were for the code not to be readable at all, a
 branch in the same public repository is the wrong instrument and nothing short
 of rewriting history in a private repository would do it — which would also
 destroy the archive this entry exists to point at.
+
+---
+
+### What the removal actually decided — carried out 14 October 2026
+
+The archive above is the first half of D95. This is the second: what was
+removed, what was deliberately kept, and the four questions that were not a
+subtree delete.
+
+**`domain/ai/explain` called a model, so it went — and nothing was lost.** Both
+exports (`explainRule`, `recommendForAction`) took an `AiProvider`, called it,
+validated what came back, and on any failure returned `plain`:
+`${rule.why} ${rule.fix}` for the audit, `action.explanation` for the Action
+Center. Those are fields the domain already computes. `components/ai/assisted-note.tsx`
+said so in its own header — *"AI is decoration on an explanation the domain
+already computed, never the explanation itself, which is why 'the AI is down'
+costs a badge rather than a paragraph"* — so the paragraph a seller reads on
+either screen is unchanged. What is gone is the AI_DRAFT badge and the line
+saying a version was withheld. `components/ui/where-to-start.tsx` replaces
+`AssistedNote` and renders the same text with no provenance claim on it.
+
+**The `llm` row on `/data/sources` stayed.** The catalogue is what this product
+reads from, and "there is no language model here" is a fact a seller came to
+that page to learn — the same reason the email, payment and keyword-provider
+rows are listed while resolving to nothing. The row no longer reads an adapter,
+because there is none to read: it is permanently `UNAVAILABLE`, its status is
+"Not connected — no AI provider in this product", and its limitations say what
+is *not* sent — no listing, order or cost — rather than only that the feature
+is off. `tests/unit/source-claims.test.ts` checks the claim against the
+filesystem: the row is a lie the day `lib/ai/` or `domain/ai/` comes back, and
+that is what the assertion fails on.
+
+**The no-training guard kept the half that is not about AI.** Renamed
+`tests/unit/no-training.test.ts` → `tests/unit/egress-boundary.test.ts`,
+because the egress allowlist — every network call in `app/`, `components/`,
+`domain/` and `lib/`, each named with its destination and what it sends — is a
+statement about the whole product and not about a feature. It is one entry
+shorter: `lib/etsy/http.ts`, `lib/etsy/oauth.ts`, `lib/auth/supabase.ts`,
+`lib/auth/step-up.ts`, and `lib/ai/claude.ts` gone. The third-party assertion
+got *stronger* rather than being dropped — "exactly one of them sends shop
+content to a third party" became "and NONE of them does", with `.toEqual([])`
+— and a new assertion holds that no AI provider SDK is a dependency, checked
+against `package.json` and against the dependency tree.
+
+The pooling half was asked the same question and kept, for three reasons: the
+no-training *commitment* in Terms §6 and Privacy §3 outlives the feature; with
+no egress at all, an unscoped pool is the only remaining way to make that
+commitment false; and `ai_generations` is still in the schema — an applied
+migration is never edited — so a reader could mistake it for a live feature if
+nothing asserted that nothing writes to it.
+
+**Two reset-date helpers went with the meter that needed them.**
+`domain/clock.ts`'s `allowanceResetsOn()` and `domain/admin/usage.ts`'s
+`firstOfNextMonth()` each computed the first of next month for the AI
+generation allowance. There is no monthly allowance anywhere in the product
+now: the one meter left is active listings, which is a standing capacity and
+resets on no date. Three unit tests went with `firstOfNextMonth`.
+
+**`ai.view` stayed as a permission key**, with a new detail saying it grants
+nothing since the Copilot was removed and is kept so existing role records stay
+readable. Removing the key would have touched the role matrix, the seeded
+`admin_role_permissions` rows, audit records that name it, and about ten
+fixture uses in `admin-permissions.test.ts` — all to delete a string.
+
+**`AI_UNAVAILABLE` left `lib/errors/`** with its two factories
+(`aiUnavailable`, `aiRefused`) and its 503 in the status map. Nothing can fail
+that way any more, and `Record<ErrorKind, number>` still refuses to compile
+with a kind missing from the map.
+
+**The demo lost its extension session.** `domain/security/demo.ts` had an
+`EXTENSION` row — "CobaltRank extension · Chrome", read-only, last seen on
+etsy.com — which was the one entry in that fixture advertising a feature. The
+`SessionKind` and the rendering path stay: a live deployment may still hold a
+real extension session granted before the removal, and hiding access that
+exists is the opposite of what a security page is for.
+
+**The legal documents.** Privacy §3 lost both halves of "the listing text is
+sent to our AI provider to produce it; that provider does not train on it
+either" and gained the positive statement that nothing is sent to a model at
+all. §2 and §5 say there is no AI feature and no draft, and §2 records in the
+past tense what it used to disclose — a privacy policy that drops a disclosure
+silently leaves the reader unable to tell whether the practice stopped or the
+sentence did. §4 lost the Anthropic, PBC row, and `/legal/subprocessors` says
+why in a sentence rather than going quiet. Terms §6 keeps its number and its
+no-training commitment and now states that the product generates no listing
+text. `docs/legal/VERIFICATION.md` marks the affected rows **SUPERSEDED** with
+the date rather than deleting them: "this was checked and then its subject went"
+is a different fact from "this was never true".
+
+**Guards flipped rather than relaxed.** Three were satisfiable by doing nothing
+after the removal, which is how a guard becomes decoration, so each gained its
+converse: `legal-claims` now fails if the sub-processor table names an AI
+provider with no SDK behind it (as well as the reverse), if either document
+promises no training without saying whether anything receives shop content, and
+if `.env.example` carries an extension variable or any module reads one.
+`admin-roles` bans `schema.aiGenerations` outright in the operator repository,
+which is the stronger rule now that no query reads it — a blanket ban is the
+weaker rule only while the table is read.
+
+**Counts.** 84 test files / 1560 tests → 78 / 1424, and every one of the 136 is
+accounted for: six files deleted (`ai-copilot` 22, `ai-hardening` 33,
+`admin-ai-activity` 31, `extension` 22, `extension-gate` 9, `extension-zip` 8 =
+125), `no-training` 16 → `egress-boundary` 13, `admin-usage` −4, `legal-claims`
+−4, `etsy-live` −1, `billing` +1. Integration: 12 files / 213 tests, unchanged.
+`npm run build` compiles and type-checks clean; `tests/browser/etsy-application.py`
+passes 88 checks, up from 86, having been rewritten to assert the absences.

@@ -688,7 +688,6 @@ export interface AdminUsageRow {
   isDemo: boolean
   plan: string | null
   activeListings: number
-  aiGenerationsThisMonth: number
 }
 
 export async function adminListUsage(monthStart: Date): Promise<AdminUsageRow[]> {
@@ -718,19 +717,13 @@ export async function adminListUsage(monthStart: Date): Promise<AdminUsageRow[]>
     .where(eq(schema.listings.state, 'ACTIVE'))
     .groupBy(schema.listings.shopId)
 
-  /* Generations this month per shop. Also a count, for the same reason twice
-     over: ai_generations.output is the seller's own listing copy. */
-  const generationCounts = await db
-    .select({
-      shopId: schema.aiGenerations.shopId,
-      used: count(),
-    })
-    .from(schema.aiGenerations)
-    .where(gte(schema.aiGenerations.createdAt, monthStart))
-    .groupBy(schema.aiGenerations.shopId)
-
+  /*
+   * The per-shop generation count went with the AI Copilot (D95). It read
+   * ai_generations, which has had no writer since it was created and now has
+   * no feature behind it either, so every row it produced was a zero reported
+   * as a measurement.
+   */
   const listings = new Map(listingCounts.map((entry) => [entry.shopId, entry.active]))
-  const generations = new Map(generationCounts.map((entry) => [entry.shopId, entry.used]))
 
   const seen = new Set<string>()
   return shops
@@ -746,80 +739,23 @@ export async function adminListUsage(monthStart: Date): Promise<AdminUsageRow[]>
       isDemo: shop.isDemo,
       plan: shop.plan,
       activeListings: listings.get(shop.shopId) ?? 0,
-      aiGenerationsThisMonth: generations.get(shop.shopId) ?? 0,
     }))
 }
 
-/* ------------------------------------------------- AI activity, every shop */
-
-/**
- * Generation counts grouped by shop, kind and status.
+/*
+ * ── AI ACTIVITY, REMOVED ─────────────────────────────────────────────────
  *
- * ── THE TEXT IS NOT SELECTED, AND CANNOT BE ───────────────────────────────
+ * `adminCountGenerations()` and the two types beside it read `ai_generations`
+ * grouped by shop, kind and status, for the operator's /admin/ai screen. D95
+ * removed the AI Copilot and that screen with it.
  *
- * `ai_generations.input` and `.output` hold a seller's own listing copy. The
- * SELECT names neither, the returned type has no field either could arrive
- * in, and the guard in tests/unit/admin-roles.test.ts reads the SELECT and
- * fails on a bare column. Three layers for one rule, because this is the rule
- * most likely to be relaxed by somebody adding "just the first line" to a
- * support screen.
- *
- * `listing_id` and `actor_id` are not read either. A count per listing is a
- * list of listings wearing a count's clothes, and a count per actor is a
- * record of which teammate used the feature — neither is what "what is the AI
- * costing" asks.
- *
- * ── GROUPED IN SQL ────────────────────────────────────────────────────────
- *
- * One row per (shop, kind, status), so no generation row enters the process at
- * all. The folding into per-shop totals happens in the pure domain module over
- * numbers.
+ * The property this block was careful about is worth keeping on the record,
+ * because it applies to any future reader of that table: `ai_generations.input`
+ * and `.output` hold a seller's own listing copy, so the SELECT named neither
+ * and the returned type had no field either could arrive in. The table is still
+ * in the schema — an applied migration is never edited — and still has no
+ * writer. tests/unit/egress-boundary.test.ts asserts that.
  */
-export interface AdminGenerationTally {
-  shopId: string
-  kind: string
-  status: string
-  count: number
-}
-
-/** Just enough about a shop to label a tally. No plan, no counts, no content. */
-export interface AdminShopLabel {
-  shopId: string
-  shopName: string
-  isDemo: boolean
-  ownerEmail: string | null
-}
-
-export async function adminCountGenerations(
-  since: Date,
-): Promise<{ tallies: AdminGenerationTally[]; shops: AdminShopLabel[] }> {
-  const db = getDb()
-
-  const tallies = await db
-    .select({
-      shopId: schema.aiGenerations.shopId,
-      kind: schema.aiGenerations.kind,
-      status: schema.aiGenerations.status,
-      count: count(),
-    })
-    .from(schema.aiGenerations)
-    .where(gte(schema.aiGenerations.createdAt, since))
-    .groupBy(schema.aiGenerations.shopId, schema.aiGenerations.kind, schema.aiGenerations.status)
-
-  const shops = await db
-    .select({
-      shopId: schema.shops.id,
-      shopName: schema.shops.name,
-      isDemo: schema.shops.isDemo,
-      ownerEmail: schema.users.email,
-    })
-    .from(schema.shops)
-    .leftJoin(schema.users, eq(schema.users.id, schema.shops.ownerId))
-    .orderBy(asc(schema.shops.name))
-    .limit(500)
-
-  return { tallies, shops }
-}
 
 /* ------------------------------------------------- bulk operations, all shops */
 

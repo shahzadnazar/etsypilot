@@ -169,12 +169,18 @@ export default async function KeywordsPage({
               label="Save to list"
               reason="Keyword Lists is read-only until saving is built."
             />
-            <Link
-              href="/listings/ai-copilot"
-              className="inline-flex h-11 items-center rounded-control bg-brand px-3 text-[12px] font-semibold text-brand-on hover:bg-brand-strong md:h-[38px]"
-            >
-              Optimize a listing with selected
-            </Link>
+            {/*
+              * "Optimize a listing with selected" pointed at the AI Copilot,
+              * which D95 removed. It is not replaced by a link to the bulk
+              * editor: that applies a change the seller specifies, and this
+              * button promised a draft written from the selected terms. A
+              * button that does something adjacent to what it says is worse
+              * than no button.
+              */}
+            <NotYet
+              label="Optimize a listing with selected"
+              reason="Writing a listing from selected terms was the AI Copilot's job, and CobaltRank no longer has one. Edit the listing yourself from All Listings."
+            />
           </div>
         </div>
         <RelatedTermsTable terms={view.related} demo={demoData} />

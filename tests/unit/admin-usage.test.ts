@@ -10,7 +10,6 @@ import {
   atOrOverLimit,
   bandFor,
   countByBand,
-  firstOfNextMonth,
   planInForce,
   unmeasurable,
   type UsageRow,
@@ -55,7 +54,6 @@ function row(overrides: Partial<UsageRow> = {}): UsageRow {
     isDemo: false,
     plan: 'SOLO',
     activeListings: 10,
-    aiGenerationsThisMonth: 5,
     ...overrides,
   }
 }
@@ -86,7 +84,12 @@ describe('the figures are counts, not a stored counter', () => {
     expect(query.length).toBeGreaterThan(100) // positive control
     expect(query).not.toContain('usageRecords')
     expect(query).toContain('.from(schema.listings)')
-    expect(query).toContain('.from(schema.aiGenerations)')
+    /*
+     * It also asserted `.from(schema.aiGenerations)`. That query went with the
+     * AI meter (D95) — not because counting was wrong, but because there is
+     * nothing left to count. What the rule is about survives in the line
+     * above: the figures come from the rows that ARE the usage.
+     */
   })
 
   it('CONFIRMS NOTHING IN THE PRODUCT WRITES THAT COUNTER', () => {
@@ -133,10 +136,9 @@ describe('limits come from the plan (D46)', () => {
     for (const file of [MODEL, PAGE]) {
       const source = code(file)
       for (const plan of PLANS) {
-        for (const [value, unit] of [
-          [plan.limits.listings, 'listings'],
-          [plan.limits.aiGenerations, 'AI generations|generations'],
-        ] as const) {
+        // One metric now. `[plan.limits.aiGenerations, 'generations']` was the
+        // second pair, and D95 removed the limit it read.
+        for (const [value, unit] of [[plan.limits.listings, 'listings']] as const) {
           if (value === 0) continue
           const spellings = [String(value), value.toLocaleString('en-US')].join('|')
           expect(source, `${file} :: ${plan.key} ${value}`).not.toMatch(
@@ -150,7 +152,7 @@ describe('limits come from the plan (D46)', () => {
   it('measures each meter against the plan’s own figure', () => {
     const entry = assessUsage(row({ plan: 'SOLO' }), NOW)
     expect(meterFor(entry, 'listings').meter.limit).toBe(limitFor('SOLO', 'listings'))
-    expect(meterFor(entry, 'aiGenerations').meter.limit).toBe(limitFor('SOLO', 'aiGenerations'))
+    expect(entry.meters.map((m) => m.meter.metric)).toEqual(['listings'])
   })
 
   it('builds the meters from the SELLER’s model, not a second one', () => {
@@ -190,42 +192,27 @@ describe('a quota reads as a boundary, not a fine (D37)', () => {
     expect(line).toContain('{meter.continues}')
   })
 
-  it('states that a failed generation is never counted, and why structurally', () => {
-    /*
-     * D37 by construction rather than by filter: ai_generations.status is
-     * DRAFT | ACCEPTED | REJECTED with no failure state, so a generation that
-     * failed leaves no row to count. Asserted against the schema, so this goes
-     * red if a FAILED status is ever added without the screen being revisited.
-     */
-    const schema = readFileSync('db/schema/index.ts', 'utf8')
-    const table = schema.slice(
-      schema.indexOf('export const aiGenerations'),
-      schema.indexOf('export const aiGenerations') + 900,
-    )
-    expect(table).toContain('DRAFT | ACCEPTED | REJECTED')
-    expect(table).not.toContain('FAILED')
-    expect(readFileSync(PAGE, 'utf8')).toMatch(/failed AI generation is never counted/i)
-  })
-
-  it('counts a REJECTED draft, because it spent the allowance', () => {
-    // The seller declined something that was produced. Excluding it would
-    // understate what they used and overstate what is left.
-    expect(readFileSync(PAGE, 'utf8')).toMatch(/rejected draft does count/i)
-
-    /*
-     * Scoped to the USAGE query, not to the whole repository file. Written
-     * first as a file-wide sweep, and the AI-activity screen made it red by
-     * legitimately GROUPING by status — which is a different question in a
-     * different query. A guard about one query has to be asked of that query.
-     */
-    const source = code(READS)
-    const usageQuery = source.slice(
-      source.indexOf('export async function adminListUsage'),
-      source.indexOf('export async function adminListUsage') + 2200,
-    )
-    expect(usageQuery.length).toBeGreaterThan(100) // positive control
-    expect(usageQuery).not.toContain('aiGenerations.status')
-  })
+  /*
+   * ── TWO TESTS ABOUT GENERATIONS WERE HERE, AND BOTH ARE GONE ────────────
+   *
+   * 'states that a failed generation is never counted, and why structurally'
+   * read db/schema's ai_generations.status — DRAFT | ACCEPTED | REJECTED,
+   * with no failure state, so a generation that failed left no row to count —
+   * and 'counts a REJECTED draft, because it spent the allowance' held the
+   * other direction. Both asserted copy on a screen that no longer prints it,
+   * against a query that no longer runs (D95).
+   *
+   * The ai_generations table is still in the schema and will stay: an applied
+   * migration is never edited. Nothing counts it, and nothing on this screen
+   * mentions it, which is what tests/unit/egress-boundary.test.ts asserts
+   * from the other side — no code may insert into it either.
+   *
+   * The second one also recorded a lesson worth keeping where it is cheap to
+   * keep: a guard about ONE query has to be asked of that query. Written as a
+   * file-wide sweep, it went red on the AI-activity screen legitimately
+   * GROUPING by status. The two assertions above still slice
+   * adminListUsage out of the repository file for exactly that reason.
+   */
 })
 
 /* ────────────────────────────── the bands ───────────────────────────────── */
@@ -283,15 +270,20 @@ describe('the summary counts every band, including the empty ones', () => {
     expect(countByBand([], 'listings').length).toBe(BAND_ORDER.length)
   })
 
-  it('counts the two metrics independently', () => {
-    const entry = row({
-      plan: 'SOLO',
-      activeListings: solo.limits.listings + 1,
-      aiGenerationsThisMonth: 1,
-    })
+  it('counts the one metric there is, and names it in the provenance', () => {
+    /*
+     * 'counts the two metrics independently' — a shop over its listing cap
+     * with one AI generation had to be OVER on one meter and UNDER on the
+     * other. There is one meter now, so independence is not a property this
+     * can have; what is still worth asserting is that the count says which
+     * meter it counted, because every operator figure must carry where it
+     * came from.
+     */
+    const entry = row({ plan: 'SOLO', activeListings: solo.limits.listings + 1 })
     const assessed = [assessUsage(entry, NOW)]
-    expect(countByBand(assessed, 'listings').find((b) => b.band === 'OVER')?.count.value).toBe(1)
-    expect(countByBand(assessed, 'aiGenerations').find((b) => b.band === 'OVER')?.count.value).toBe(0)
+    const over = countByBand(assessed, 'listings').find((b) => b.band === 'OVER')!
+    expect(over.count.value).toBe(1)
+    expect(over.count.provenance.methodology).toMatch(/active listing meter/i)
   })
 })
 
@@ -340,41 +332,38 @@ describe('the pressing list', () => {
      * never offered one. Filing it under "over limit" would send an operator
      * to tell a seller they are over a cap that does not exist.
      */
-    const rows = [
-      assessUsage(row({ plan: 'FREE', activeListings: 500, aiGenerationsThisMonth: 0 }), NOW),
-    ]
+    const rows = [assessUsage(row({ plan: 'FREE', activeListings: 500 }), NOW)]
     expect(atOrOverLimit(rows)).toEqual([])
 
     /*
-     * The fixture matters and the first draft got it wrong: the default row
-     * has five generations, which is exactly Free's monthly allowance, so the
-     * shop was on the list for its AI meter and the assertion failed for the
-     * right reason on the wrong meter. Pinned here so the next reader does not
-     * repeat it — and the converse is asserted, because a filter that excluded
-     * the whole shop rather than the one meter would be worse than the bug.
+     * The converse used to be asserted on the second meter: the same Free
+     * shop, also at its AI allowance, had to appear exactly once — because a
+     * filter that excluded the whole SHOP rather than the one METER would be
+     * worse than the bug. With one meter per shop that distinction cannot be
+     * drawn from a fixture, so it is drawn from a plan that offers the
+     * capability: Solo at its listing cap is on the list, which is what makes
+     * the exclusion above about NOT_OFFERED rather than about Free.
      */
-    const alsoAtAiLimit = [
-      assessUsage(
-        row({ plan: 'FREE', activeListings: 500, aiGenerationsThisMonth: free.limits.aiGenerations }),
-        NOW,
-      ),
+    const onAPlanThatOffersIt = [
+      assessUsage(row({ plan: 'SOLO', activeListings: solo.limits.listings }), NOW),
     ]
-    expect(atOrOverLimit(alsoAtAiLimit).length).toBe(1)
+    expect(atOrOverLimit(onAPlanThatOffersIt).length).toBe(1)
   })
 })
 
 /* ──────────────────────── the reset date ─────────────────────────────────── */
 
-describe('the monthly allowance resets on a calendar date', () => {
-  it('is the first of next month, and never zoned (D24)', () => {
-    expect(firstOfNextMonth(new Date('2026-09-23T23:59:00Z'))).toBe('2026-10-01')
-    expect(firstOfNextMonth(new Date('2026-01-01T00:00:00Z'))).toBe('2026-02-01')
-  })
-
-  it('rolls the year over in December', () => {
-    expect(firstOfNextMonth(new Date('2026-12-15T00:00:00Z'))).toBe('2027-01-01')
-  })
-})
+/*
+ * firstOfNextMonth() HAD THREE ASSERTIONS HERE, AND NOTHING LEFT CALLS IT.
+ *
+ * They pinned the first of next month, UTC and unzoned (D24), including the
+ * December roll-over — the date the AI generation allowance reset. D95 removed
+ * the allowance, the function went with it (domain/admin/usage.ts says where),
+ * and a test for a function nobody calls is a test that keeps dead code alive.
+ *
+ * The one meter left is a capacity: `UsageMeter.resetsOn` is null for it, and
+ * tests/unit/billing.test.ts asserts that.
+ */
 
 /* ────────────────────── the page is gated and read-only ──────────────────── */
 

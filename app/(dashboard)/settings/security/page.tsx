@@ -14,7 +14,6 @@ import { disableTwoFactor } from '@/lib/auth/mfa-actions'
 import { Button } from '@/components/ui/button'
 import { shopContext } from '@/lib/permissions'
 import { formatDate, formatDateTime, formatRelative } from '@/lib/utils/format'
-import { extensionEnabled } from '@/lib/extension/availability'
 
 export const metadata: Metadata = { title: 'Security' }
 
@@ -266,25 +265,25 @@ export default async function SecurityPage() {
           </ul>
           )}
           {/*
-            * The note names the extension and links to its page, so it is
-            * gated with everything else while the extension is off. The
-            * session ROW itself is left alone: if a deployment somehow still
-            * holds an extension session, hiding the row would hide access
-            * that exists, which is the opposite of what a security page is
-            * for. With the extension off no such session can be created —
-            * /api/extension does not answer.
+            * ── THE EXTENSION NOTE IS GONE; THE SESSION ROW IS NOT ────────
+            *
+            * The note explained what the extension could and could not do and
+            * linked to its page. D95 removed both, so the note links nowhere
+            * and describes nothing.
+            *
+            * The session ROW is deliberately left in place, including its
+            * EXTENSION kind. If a deployment still holds an extension session
+            * from before the removal, hiding the row would hide access that
+            * exists — the opposite of what a security page is for — and the
+            * Revoke control beside it still works. No new one can be created:
+            * /api/extension does not exist.
             */}
-          {extensionEnabled() && view.sessions.some((s) => s.kind === 'EXTENSION') ? (
+          {view.sessions.some((s) => s.kind === 'EXTENSION') ? (
           <p className="max-w-prose text-caption leading-relaxed text-muted-1">
-            The extension is listed here because it has access, even though it holds no Etsy
-            credential and cannot write anything.{' '}
-            <Link
-              href="/settings/extension"
-              className="font-semibold text-brand-strong underline underline-offset-2"
-            >
-              What the extension can and cannot do
-            </Link>
-            .
+            A browser extension session is listed here because it has access, even though it
+            holds no Etsy credential and cannot write anything. CobaltRank no longer offers an
+            extension, so no new session of this kind can be created — revoke this one when you
+            are ready.
           </p>
           ) : null}
         </Card>

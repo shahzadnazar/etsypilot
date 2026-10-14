@@ -12,7 +12,18 @@
 
 import { nextPlanAfter, planOf, type PlanKey } from './plans'
 
-export type MetricKey = 'listings' | 'aiGenerations'
+/*
+ * ── ONE METRIC NOW, AND IT WAS TWO ───────────────────────────────────────
+ *
+ * 'aiGenerations' came off with the AI Copilot (D95). A meter is a claim about
+ * what a seller is consuming, and "AI generations 0 / 5, resets 1 November" is
+ * a claim about a feature that no longer exists — on /billing, in the sidebar
+ * footer, and on the operator's usage screen.
+ *
+ * D22 consequence 1 said "two meters remain: Listings and AI generations",
+ * after dropping connected shops and team seats. It is one.
+ */
+export type MetricKey = 'listings'
 
 export interface UsageMeter {
   metric: MetricKey
@@ -56,18 +67,15 @@ export interface LimitDecision {
 
 const METRIC_LABEL: Record<MetricKey, string> = {
   listings: 'Listings',
-  aiGenerations: 'AI generations',
 }
 
 const PAUSES: Record<MetricKey, string> = {
   listings: 'New bulk jobs pause.',
-  aiGenerations: 'AI drafting pauses until the reset.',
 }
 
 const CONTINUES: Record<MetricKey, string> = {
   listings:
     'Every listing stays exactly as it is. Audits, profit, Shop Pulse and manual editing are unaffected, and nothing is removed for you.',
-  aiGenerations: 'Manual editing, audits, bulk edits and everything else are unaffected.',
 }
 
 export function limitFor(plan: PlanKey | null, metric: MetricKey): number | null {
@@ -75,11 +83,9 @@ export function limitFor(plan: PlanKey | null, metric: MetricKey): number | null
 }
 
 export function buildMeters(args: {
-  /** Null where no plan is in force: the meters become counts. */
+  /** Null where no plan is in force: the meter becomes a count. */
   plan: PlanKey | null
   activeListings: number
-  aiGenerationsUsed: number
-  aiResetsOn: string
 }): UsageMeter[] {
   const p = args.plan === null ? null : planOf(args.plan)
   return [
@@ -92,15 +98,6 @@ export function buildMeters(args: {
       resetsOn: null,
       pauses: PAUSES.listings,
       continues: CONTINUES.listings,
-    },
-    {
-      metric: 'aiGenerations',
-      label: METRIC_LABEL.aiGenerations,
-      used: args.aiGenerationsUsed,
-      limit: p?.limits.aiGenerations ?? null,
-      resetsOn: args.aiResetsOn,
-      pauses: PAUSES.aiGenerations,
-      continues: CONTINUES.aiGenerations,
     },
   ]
 }

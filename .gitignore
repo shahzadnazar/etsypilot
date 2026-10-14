@@ -16,9 +16,10 @@ playwright-report/
 test-results/
 drizzle/
 
-# Extension build output. Rebuilt by `npm run extension:build`.
-extension/dist/
-extension/build/
+# extension/dist/ and extension/build/ were ignored here, as the output of
+# `npm run extension:build`. D95 removed the extension and its packaging
+# scripts; the directories are gone, and an ignore rule for a path that cannot
+# be created is a rule the next reader has to go and check.
 
 #check-db.mjs is a local utility script that connects to the database and checks for connectivity. It should not be committed to version control.
 check-db.mjs

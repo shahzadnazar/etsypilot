@@ -140,7 +140,18 @@ export const PERMISSION_LABELS: Record<Permission, { title: string; detail: stri
     detail: 'See who is on which plan and what they are billed.',
   },
   'usage.view': { title: 'Usage', detail: 'See how much of their plan each account is using.' },
-  'ai.view': { title: 'AI', detail: 'See AI drafting activity and its costs.' },
+  /*
+   * The screen this gated was removed with the AI Copilot (D95), and the key
+   * is kept rather than deleted: it is stored against roles in
+   * `admin_role_permissions`, it appears in permission-change audit records
+   * that must keep saying what they said, and an applied migration is never
+   * edited. It now grants access to nothing, which is why the detail says so
+   * instead of describing drafting activity that does not happen.
+   */
+  'ai.view': {
+    title: 'AI',
+    detail: 'Granted nothing since the AI Copilot was removed. Kept so existing role records stay readable.',
+  },
   'etsy.view': { title: 'Etsy', detail: 'See Etsy connection health and sync state.' },
   'operations.view': {
     title: 'Operations',

@@ -119,17 +119,18 @@ describe('plans describe what exists', () => {
     expect(AGENCY_NOTE).toContain('we will not bill you for something that does not exist yet')
   })
 
-  it('raises Growth to 2,000 listings and 500 generations', () => {
+  it('raises Growth to 2,000 listings', () => {
+    // Also '500 generations' until D95 removed the allowance with the Copilot.
     expect(planOf('GROWTH').limits.listings).toBe(2000)
-    expect(planOf('GROWTH').limits.aiGenerations).toBe(500)
     expect(planOf('SOLO').limits.listings).toBe(200)
+    expect(planOf('FREE').limits.listings).toBe(0)
   })
 
   it('counts listings rather than stating them', async () => {
     const view = await getBillingView(CTX)
     const meter = view.meters.find((m) => m.label === 'Listings')!
     expect(meter.used).toBeGreaterThan(0)
-    expect(view.meters.map((m) => m.label)).toEqual(['Listings', 'AI generations'])
+    expect(view.meters.map((m) => m.label)).toEqual(['Listings'])
   })
 
   it('points a blocked limit at a real ceiling and says what pauses', () => {

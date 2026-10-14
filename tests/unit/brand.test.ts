@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 
 import { posixJoin } from '../support/paths'
 import { code } from '../support/shop-scoping'
@@ -190,7 +190,7 @@ describe('the identity surfaces read the name rather than spelling it', () => {
     }
   })
 
-  it('the monogram is the one the brand module derives, in all five places', () => {
+  it('the monogram is the one the brand module derives, in all four places', () => {
     /*
      * Two letters that are not the word, so a grep for the old name finds
      * none of them. It read "EP" beside the word CobaltRank until somebody
@@ -206,11 +206,14 @@ describe('the identity surfaces read the name rather than spelling it', () => {
       )
     }
 
-    // The two that cannot import it.
+    /*
+     * The one that cannot import it. extension/popup.html was the second —
+     * a static page outside the bundle, carrying the monogram as a span — and
+     * D95 removed the extension, so the title of this test is now four
+     * places. The rule is unchanged: a surface that cannot import the brand
+     * module is held to it from here, because nothing else can.
+     */
     expect(readFileSync('app/icon.svg', 'utf8')).toContain(`>${PRODUCT_MONOGRAM}</text>`)
-    expect(readFileSync('extension/popup.html', 'utf8')).toContain(
-      `>${PRODUCT_MONOGRAM}</span>`,
-    )
   })
 
   it('the tab icon’s accessible name is the product name', () => {
@@ -224,18 +227,23 @@ describe('the identity surfaces read the name rather than spelling it', () => {
     expect(svg).toContain(`aria-label="${PRODUCT_NAME}"`)
   })
 
-  it('the package and the extension agree with the slug and the name', () => {
+  it('the package name agrees with the slug', () => {
     const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as { name: string }
     expect(pkg.name).toBe(PRODUCT_SLUG)
 
-    for (const manifest of ['extension/manifest.chrome.json', 'extension/manifest.firefox.json']) {
-      const parsed = JSON.parse(readFileSync(manifest, 'utf8')) as {
-        name: string
-        description: string
-      }
-      expect(parsed.name, `${manifest} does not carry the product name`).toContain(PRODUCT_NAME)
-      expect(parsed.description).toContain(PRODUCT_NAME)
-    }
+    /*
+     * It also read extension/manifest.chrome.json and .firefox.json, which
+     * carried the product name and description to a browser's extension
+     * store — two files outside the bundle that a rename would have left
+     * carrying the old name. D95 removed them with the extension.
+     *
+     * Everything the user can now see the product's name on is either a
+     * module that imports lib/brand (asserted above) or app/icon.svg (held
+     * by the two assertions above it). There is no third kind of file left,
+     * which is what this says out loud rather than leaving the next renamer
+     * to find out.
+     */
+    expect(existsSync('extension'), 'the extension is back and nothing holds its name').toBe(false)
   })
 })
 

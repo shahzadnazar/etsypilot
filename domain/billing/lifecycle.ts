@@ -180,11 +180,11 @@ export function downgradeEffects(from: Plan, to: Plan): string[] {
         : `Over ${to.limits.listings.toLocaleString('en-US')} listings, new bulk jobs pause. Every listing stays exactly as it is — you choose what to remove, and nothing is removed for you.`,
     )
   }
-  if (from.limits.aiGenerations > to.limits.aiGenerations) {
-    effects.push(
-      `AI drafting drops to ${to.limits.aiGenerations} generations a month. Drafts you already approved are unaffected.`,
-    )
-  }
+  /*
+   * The AI drafting effect went with the Copilot (D95). It read "AI drafting
+   * drops to N generations a month" on a downgrade, which is no longer an
+   * effect of changing plan because there is no drafting.
+   */
   if ((from.limits.rollbackDays ?? 0) > (to.limits.rollbackDays ?? 0)) {
     effects.push(
       to.limits.rollbackDays === null

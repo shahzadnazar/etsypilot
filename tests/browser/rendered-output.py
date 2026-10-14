@@ -655,7 +655,9 @@ with sync_playwright() as p:
     # already strips error detail, so nothing leaked to the browser — but an
     # unhandled throw in a route handler returned 500 with an EMPTY body and no
     # content-type, so a caller doing `.json()` got a parse error on top of the
-    # original failure. The extension is exactly such a caller.
+    # original failure. Every fetch in the product is such a caller; the one
+    # that made it concrete was the extension's popup, which had no server of
+    # its own to render a fallback in, and which D95 removed.
     probe = pg.request.get(f"{BASE}/api/leakprobe")
     body = probe.text()
     check(probe.status == 500, f"An unhandled route error is a 500 (was {probe.status})")
@@ -937,7 +939,11 @@ with sync_playwright() as p:
     # scrolling table, which is why six routes that did were sideways-scrolling
     # the whole time this check was green. A sweep only ever sees the routes it
     # visits, so every route with a scrolling table is now on it.
-    for route in ["/research/keywords", "/listings/audit", "/listings/ai-copilot",
+    # "/listings/ai-copilot" was on this list until D95 removed it. The list is
+    # the sweep, so a route leaves it when the route goes — and a route ADDED
+    # to the product has to be added here, which is the half that was missing
+    # when six sideways-scrolling routes went unseen.
+    for route in ["/research/keywords", "/listings/audit",
                   "/billing", "/settings/shops", "/tools", "/profit",
                   "/research/opportunities", "/research/niche", "/analytics",
                   "/analytics/sales-map", "/listings", "/listings/change-history",
@@ -994,15 +1000,19 @@ with sync_playwright() as p:
     check("do not add up to this" in audit,
           "The headline says the per-rule figures do not sum to it")
 
-    # AI Copilot: the approval gate is visible before the draft is read.
-    pg.goto(f"{BASE}/listings/ai-copilot", wait_until="domcontentloaded"); pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)
-    ai = pg.locator("main").inner_text()
-    check("nothing publishes without your approval" in ai,
-          "Copilot states the approval rule in the header")
-    check("Send to review" in ai, "Primary action says review, not publish")
-    check("Impact is not predicted" in ai, "Copilot refuses to forecast impact")
-    check("Source:" in ai, "Every drafted element names its source")
-    check("Publish to Etsy" not in ai, "No control on this page publishes directly")
+    # The AI Copilot's approval gate was checked here: the header stated that
+    # nothing publishes without approval, the primary action said "Send to
+    # review" rather than publish, the page refused to forecast impact, every
+    # drafted element named its source, and no control published to Etsy
+    # directly. D95 removed the screen.
+    #
+    # The rule those five assertions served is older and wider than that page,
+    # and it is still checked where it still lives: the bulk editor is now the
+    # only path from this product to a seller's listings, and the diff-then-
+    # confirm gate on it is asserted in the Phase 5 block above and in
+    # tests/unit/operator-write-boundary.test.ts. Nothing in the product
+    # composes listing text at all any more, which is a stronger position than
+    # a gate in front of something that does.
 
     # Billing (Phase 8): the screen is arranged around leaving, not upgrading.
     pg.goto(f"{BASE}/billing", wait_until="domcontentloaded"); pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)
@@ -1128,106 +1138,71 @@ with sync_playwright() as p:
     check("listings_r" in conn, "Etsy's own scope strings are printed so the grant is inspectable")
     check(pg.locator("input[type=password]").count() == 0, "No password field exists on the page")
 
-    # --- Phase 7: AI hardening -------------------------------------------
+    # --- Phase 7: what replaced the AI Copilot ---------------------------
+    #
+    # This block used to open /listings/ai-copilot and assert that the draft
+    # said it had been checked against the guardrails, that it named the three
+    # checks by what they prevent, and that it named the provider that produced
+    # it — plus five phrases it must never contain ("rank higher", "improve
+    # your visibility", and so on).
+    #
+    # D95 removed the Copilot. What is asserted now is the pair of statements
+    # that matters to a seller looking at either screen it fed: the paragraph
+    # is still there, and nothing on it claims a model wrote it.
+    gone = pg.request.get(f"{BASE}/listings/ai-copilot")
+    check(gone.status == 404, f"The AI Copilot route is gone (got {gone.status})")
 
-    pg.goto(f"{BASE}/listings/ai-copilot", wait_until="domcontentloaded")
-    pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)
-    ai = pg.locator("main").inner_text()
-    check("checked against the guardrails" in ai.lower() or "Checked against the guardrails" in ai,
-          "The copilot says the draft was checked before display")
-    check("no invented figures, no ranking claims, no forecasts" in ai,
-          "The copilot names the three checks by what they prevent")
-    check("rule-based draft (demo mode)" in ai,
-          "The copilot names which provider produced the draft")
-    # The guardrails themselves must not appear as claims about ranking.
-    for banned in ["rank higher", "improve your visibility", "Etsy’s algorithm favours",
-                   "expected lift", "you should see more"]:
-        check(banned.lower() not in ai.lower(), f"Copilot page contains no “{banned}”")
-
-    # Assisted prose is badged and traceable.
     pg.goto(f"{BASE}/action-center", wait_until="domcontentloaded")
     pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)
     ac = pg.locator("main").inner_text()
-    check("Where to start" in ac, "The Action Center carries an assistant recommendation")
+    check("Where to start" in ac, "The Action Center still points at one action first")
     check("Advice, not instruction" in ac, "The recommendation is framed as advice")
-    check("given your screen and nothing else" in ac,
-          "The page says what the assistant was allowed to see")
+    # Was "given your screen and nothing else", which described what the model
+    # was allowed to see. There is no model; the sentence now says what the
+    # advice rests on, which is the half a seller can act on.
+    check("on the evidence shown on the card below and on nothing else" in ac,
+          "The page says what the recommendation rests on")
+    for badge in ["AI draft", "AI-assisted", "rule-based draft"]:
+        check(badge.lower() not in ac.lower(),
+              f"The Action Center claims no model wrote it (\u201c{badge}\u201d)")
 
     pg.goto(f"{BASE}/listings/audit", wait_until="domcontentloaded")
     pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(600)
     au = pg.locator("main").inner_text()
-    check("Where to start ·" in au, "The audit carries an assistant explanation for the worst rule")
+    check("Where to start \u00b7" in au, "The audit still names the rule worth doing first")
+    # The text under it is the rule's own `why` and `fix`, which is what the
+    # model used to decorate — so the paragraph a seller reads is unchanged.
+    check(len(au.split("Where to start")[1].strip()) > 80,
+          "The audit's Where to start carries a paragraph, not just a heading")
+    for badge in ["AI draft", "AI-assisted", "withheld"]:
+        check(badge.lower() not in au.lower(),
+              f"The audit claims no model wrote it (\u201c{badge}\u201d)")
 
-    # Settings → Browser Extension. These used to assert two disabled "Coming
-    # soon" buttons, which was the page being a dead end for something that is
-    # finished and installable. The guarantee that matters is unchanged and is
-    # what is checked now: no control claims a store listing that does not
-    # exist, and the thing offered instead is a real file.
-    pg.goto(f"{BASE}/settings/extension", wait_until="domcontentloaded")
-    pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(400)
-    ext = pg.locator("main").inner_text()
-    check("Not in the Web Store yet" in ext and "Not on addons.mozilla.org yet" in ext,
-          "The page says neither store listing is live")
-    check(pg.get_by_role("link", name="Download for Chrome").count() == 1
-          and pg.get_by_role("link", name="Download for Firefox").count() == 1,
-          "Both packages are offered as a real download")
-    for browser in ("chrome", "firefox"):
-        head = pg.request.get(f"{BASE}/api/extension/download/{browser}")
-        check(head.status == 200 and "zip" in head.headers.get("content-type", ""),
-              f"The {browser} download serves a package")
-        # A real archive, not just bytes with a zip content-type. "PK\x03\x04"
-        # is the local file header every reader looks for first.
-        check(head.body()[:4] == b"PK\x03\x04",
-              f"The {browser} package is a readable zip archive")
-
-    # A SELLER CLICKING A LINK IS NEVER SHOWN AN ERROR ENVELOPE.
+    # Settings \u2192 Browser Extension is gone, and so is the download route.
     #
-    # This was reported from the running app: the download answered a top-level
-    # browser navigation with {"error":{"kind":"NOT_FOUND"...}} rendered as raw
-    # text in the window. The route has two audiences and used to serve JSON to
-    # both. Whatever the outcome, a navigation must end in a package or back on
-    # the page — never in an envelope.
-    nav = pg.request.get(f"{BASE}/api/extension/download/chrome",
-                         headers={"Sec-Fetch-Mode": "navigate", "Accept": "text/html"})
-    ok = "zip" in nav.headers.get("content-type", "") or "/settings/extension" in nav.url
-    check(ok, "A browser navigation to the download ends in a file or on the page")
-    check(b'{"error"' not in nav.body()[:200],
-          "A browser navigation never receives a raw error envelope")
-
-    # An unknown browser is the failure path that is reachable without breaking
-    # the build, so it is the one that proves the redirect actually fires.
-    bad = pg.request.get(f"{BASE}/api/extension/download/safari",
-                         headers={"Sec-Fetch-Mode": "navigate", "Accept": "text/html"})
-    check("/settings/extension" in bad.url and "download=" in bad.url,
-          "An unavailable package sends the seller back to the page with a reason")
-    check(b'{"error"' not in bad.body()[:200],
-          "...and not to a JSON blob")
-    # The page must actually render that reason rather than swallow the param.
+    # This block used to assert a great deal about that page: that neither
+    # store listing was live, that both packages were offered as real zips with
+    # a PK header, that a top-level navigation to the download ended in a file
+    # or back on the page rather than in a JSON error envelope, and that the
+    # page listed what the extension could never do. All of it was true and
+    # none of it has a subject now (D95).
     #
-    # Guarded: when this regresses, bad.url is a JSON document with no <main>,
-    # and an unguarded wait_for_selector would abort the whole suite instead of
-    # reporting the failure alongside the others.
-    if "/settings/extension" in bad.url:
-        pg.goto(bad.url, wait_until="domcontentloaded")
-        pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(300)
-        check(pg.locator("main [role=alert]").count() == 1,
-              "The page shows an alert explaining why the download did not happen")
-    else:
-        check(False, "The page shows an alert explaining why the download did not happen "
-                     "(not reached: the download did not redirect)")
-    pg.goto(f"{BASE}/settings/extension", wait_until="domcontentloaded")
+    # Three routes answer 404, which is the whole of what is left to check: the
+    # settings page, and both download routes behind it.
+    for route in ("/settings/extension",
+                  "/api/extension/download/chrome",
+                  "/api/extension/download/firefox"):
+        resp = pg.request.get(f"{BASE}{route}")
+        check(resp.status == 404, f"{route} answers 404 (got {resp.status})")
+        check(b"PK\x03\x04" != resp.body()[:4], f"{route} serves no package")
+
+    # And nothing in the settings rail offers it. The rail is a client
+    # component reading one exported constant, so this is the rendered proof
+    # that settingsNavFor() going away took the entry with it.
+    pg.goto(f"{BASE}/settings/security", wait_until="domcontentloaded")
     pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(300)
-    check(pg.locator("main [role=alert]").count() == 0,
-          "...and shows no alert when nothing failed")
-    check(pg.get_by_role("link", name="Load unpacked").count() == 0,
-          "Nothing on the page pretends a store install is available")
-    check("Ask for your Etsy password" in ext, "The page lists what the extension can never do")
-    check("activeTab" in ext and "https://www.etsy.com/*" in ext,
-          "The page names the exact permissions requested")
-    check("It does not read the Etsy page itself" in ext,
-          "The page says it does not scrape Etsy's markup")
-    check("fails and is never produced" in ext,
-          "The page says the limits are enforced by the build, not by policy")
+    check(pg.get_by_role("link", name=re.compile("extension", re.I)).count() == 0,
+          "No link anywhere on a settings page offers an extension")
 
     # Simple Calculator: the formula is shown with the number, and the tool
     # never claims a basis it does not have.

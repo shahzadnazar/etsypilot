@@ -737,7 +737,9 @@ describe('the server-only marker is still on every module that holds a secret', 
   it.each([
     'lib/etsy/tokens.ts',
     'lib/etsy/live.ts',
-    'lib/ai/claude.ts',
+    // 'lib/ai/claude.ts' was here, holding ANTHROPIC_API_KEY. D95 removed the
+    // AI provider; the rule is the list, so a module leaves it when the module
+    // goes and nothing else about the rule changes.
     'lib/billing/stripe.ts',
     // Holds no secret of its own — the anon key is public — but it builds a
     // client over the REQUEST'S COOKIES, which has no business in a browser

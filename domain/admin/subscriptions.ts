@@ -280,5 +280,13 @@ export function limitsLine(plan: Plan): string {
     plan.limits.listings === 0
       ? 'no shop connection'
       : `${plan.limits.listings.toLocaleString('en-US')} listings`
-  return `${listings} · ${plan.limits.aiGenerations.toLocaleString('en-US')} AI generations / month`
+  /*
+   * Listings and the audit window. The AI generation allowance was the second
+   * half of this line until D95 removed the Copilot.
+   */
+  const audit =
+    plan.limits.auditRetentionDays === null
+      ? 'no audit retention'
+      : `${plan.limits.auditRetentionDays}-day audit history`
+  return `${listings} · ${audit}`
 }

@@ -66,7 +66,10 @@ GATED = [
     "/admin/etsy",
     "/admin/subscriptions",
     "/admin/usage",
-    "/admin/ai",
+    # "/admin/ai" was here. D95 removed the screen, and a 404 in demo mode is
+    # indistinguishable from the gate's own 404 — so a removed route cannot
+    # stand in for a gated one and listing it would make this check pass for
+    # the wrong reason.
     "/admin/operations",
     "/admin/metrics",
 ]

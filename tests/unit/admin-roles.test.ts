@@ -327,8 +327,23 @@ describe('only admin code may read across shops', () => {
       'listings.title',
       'listings.description',
       'listings.tags',
-      'aiGenerations.input',
-      'aiGenerations.output',
+      /*
+       * `schema.aiGenerations` IS BANNED OUTRIGHT, which is the opposite move
+       * to the two above, and deliberately.
+       *
+       * A blanket ban is the weaker rule only while the table is READ: delete
+       * the string and nothing checks how it is read. This table is read
+       * nowhere now — D95 removed the AI screen and the usage count with the
+       * Copilot — so there is no query for an aggregate guard to inspect, and
+       * the aggregate entry for it was asserting about an empty set. It was
+       * `aiGenerations.input` and `aiGenerations.output` here; the table name
+       * subsumes both.
+       *
+       * It stays in the schema because an applied migration is never edited.
+       * Nothing in the operator console may go back to reading it without
+       * this line being deliberately removed.
+       */
+      'schema.aiGenerations',
     ]
     for (const name of forbidden) {
       expect(source, name).not.toContain(name)
@@ -352,29 +367,17 @@ describe('only admin code may read across shops', () => {
   const AGGREGATE_ONLY = [
     { table: 'schema.orders', groupKeys: ['schema.orders.shopId'] },
     { table: 'schema.listings', groupKeys: ['schema.listings.shopId'] },
-    {
-      table: 'schema.aiGenerations',
-      /*
-       * `kind` and `status` are grouping keys, not content: they are the two
-       * enumerations the AI screen counts BY, and neither carries a word the
-       * seller wrote. An ALLOWLIST rather than "any column that is not
-       * content", because the failure mode of getting this wrong should be a
-       * red test naming the column, not a quiet permission.
-       *
-       * Deliberately absent: `listingId`, which would make a count per
-       * listing — a list of listings wearing a count's clothes — and
-       * `actorId`, which would make a record of which teammate used the
-       * feature. Neither is what "what is the AI costing" asks.
-       */
-      groupKeys: [
-        'schema.aiGenerations.shopId',
-        'schema.aiGenerations.kind',
-        'schema.aiGenerations.status',
-      ],
-    },
+    /*
+     * `schema.aiGenerations` was the third entry, with `shopId`, `kind` and
+     * `status` as its grouping keys — the two enumerations the AI screen
+     * counted BY, neither carrying a word the seller wrote, and `listingId`
+     * and `actorId` deliberately absent. D95 removed both readers, so the
+     * entry asserted about an empty set and the positive control below is
+     * what said so. The table is banned outright in the list above instead.
+     */
   ]
 
-  it('READS ORDERS, LISTINGS AND AI GENERATIONS ONLY AS AGGREGATES', () => {
+  it('READS ORDERS AND LISTINGS ONLY AS AGGREGATES', () => {
     const source = code(`lib/repositories/${MODULE}.ts`)
 
     for (const { table, groupKeys } of AGGREGATE_ONLY) {

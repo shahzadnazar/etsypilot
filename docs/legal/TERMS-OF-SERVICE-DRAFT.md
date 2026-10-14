@@ -62,12 +62,13 @@ We obtain your shop data only through Etsy's official API. We do not scrape Etsy
 listing content, prices or stock from Etsy's web pages, and we do not use automated systems to
 collect Etsy data outside the API.
 
-**We do not currently offer a browser extension.** One was built — it would read the address of
-the page you are already looking at on etsy.com, to work out which listing you are viewing, and ask
-our servers for your own figures for it; it would not read the page's content, your Etsy cookies or
-your Etsy session, and would change nothing on the page. It is not published, because Etsy's API
-Terms restrict browser extensions that access Etsy data and we have not asked Etsy about ours yet.
-Nothing in CobaltRank runs inside a page on etsy.com today.
+**We do not offer a browser extension.** One was built and has been removed from the application
+— not left unpublished behind a switch, but taken out. It would have read the address of the page
+you are already looking at on etsy.com, to work out which listing you are viewing, and asked our
+servers for your own figures for it; it would not have read the page's content, your Etsy cookies
+or your Etsy session, and would have changed nothing on the page. Etsy's API Terms restrict
+browser extensions that access Etsy data, that question has not been put to Etsy, and it is not
+one worth answering unilaterally. Nothing in CobaltRank runs inside a page on etsy.com.
 
 ## 5. How you may and may not use CobaltRank
 
@@ -93,16 +94,21 @@ create, edit, publish or promote listings that breach Etsy's:
 
 You are responsible for your listings. We do not review them for compliance with Etsy's rules.
 
-## 6. AI-generated content
+## 6. AI, and generated content
 
-Where CobaltRank drafts listing text for you, that draft is a suggestion. **You decide what to
-publish, and you are responsible for what you publish.**
+**CobaltRank does not generate listing text.** There is no AI feature in this product: no
+drafting, no rewriting, no suggestion written by a language model. Nothing you see on any screen
+was written by one, and every figure is computed from your own shop data by code you can be told
+the method of.
 
-We do not warrant that generated text is original, accurate, or free of third-party trademarks or
-copyrighted material. Check it before you use it — particularly for brand names, character names
-and protected phrases, which Etsy's Intellectual Property Policy prohibits.
+A drafter was built and has been removed. While it existed, this section allocated responsibility
+for publishing generated text — the draft was a suggestion, you decided what to publish, and we
+did not warrant that generated text was original, accurate or free of third-party trademarks. None
+of that is needed now, and it comes back with the feature if the feature comes back.
 
-We do not use your shop data or your content to train artificial intelligence models.
+We do not use your shop data or your content to train artificial intelligence models. That is our
+own commitment and it does not depend on whether the product has an AI feature — it is also why
+nothing of yours is sent to a model provider: there is none to send it to.
 
 ## 7. Your data
 
@@ -241,5 +247,7 @@ Points that need specialist attention:
    provider. §12 above carries it; confirm the exact wording against the current Etsy requirement.
 5. **The liability cap in §13** should be checked against what is enforceable in the chosen
    jurisdiction for consumer contracts.
-6. **§6, AI-generated content.** The exposure here is a seller publishing generated text that
-   infringes a trademark. Confirm the allocation of responsibility is enforceable.
+6. **§6, AI.** The exposure that used to be here — a seller publishing generated text that
+   infringes a trademark — is gone with the drafter; the section now states that there is no AI
+   feature and keeps the no-training commitment. Nothing to confirm unless the feature returns,
+   and then the allocation of responsibility has to be checked for enforceability.

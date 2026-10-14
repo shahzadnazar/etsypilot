@@ -101,10 +101,25 @@ export function demoChangeJobs(listings: EtsyListing[]): ChangeJob[] {
       items: tagItems,
     },
     {
+      /*
+       * WAS `source: 'AI_ASSISTED'`, and the demo is the reason it is not.
+       *
+       * D95 removed the AI Copilot. A demo visitor reading "AI-assisted"
+       * beside a job in the change history learns that this product drafts
+       * listings, which is what the demo is FOR — showing what the product
+       * does — and it does not do this. The same reason the demo lost its
+       * extension session (domain/security/demo.ts).
+       *
+       * `AI_ASSISTED` itself stays in CHANGE_SOURCES and the table still
+       * renders it with its own badge, because a deployment may hold a real
+       * job recorded while the feature existed, and a history that cannot
+       * show how a change was made is not a history. What is gone is the
+       * invented one.
+       */
       id: '4788',
       at: '2026-08-08T14:12:00.000Z',
       actor: 'Maya K.',
-      source: 'AI_ASSISTED',
+      source: 'MANUAL',
       summary: 'Title rewritten',
       items: titleItems,
     },

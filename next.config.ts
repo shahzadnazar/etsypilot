@@ -51,11 +51,14 @@ const nextConfig: NextConfig = {
    * fine, passes every test, and throws ENOENT the first time somebody loads
    * it in production.
    *
-   * extension/manifest.chrome.json for the same reason: /legal/etsy prints the
-   * extension's real permission list rather than a remembered one.
+   * `extension/manifest.chrome.json` was on the /legal/* line for the same
+   * reason: /legal/etsy printed the extension's real permission list rather
+   * than a remembered one. D95 removed the extension, so there is no manifest
+   * to trace — and a traced path that does not exist is a silent no-op, which
+   * is the quietest way for this list to stop being true.
    */
   outputFileTracingIncludes: {
-    '/legal/*': ['docs/legal/*.md', 'extension/manifest.chrome.json'],
+    '/legal/*': ['docs/legal/*.md'],
     // The footer decides whether to link these pages by reading the documents,
     // and the footer is on the landing page and the pricing page.
     '/': ['docs/legal/*.md'],

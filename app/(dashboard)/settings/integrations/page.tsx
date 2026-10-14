@@ -7,7 +7,6 @@ import { Card } from '@/components/ui/card'
 import { dataSources, NOT_RELEASED } from '@/domain/data-sources/service'
 import { getSession } from '@/lib/auth'
 import { isDemoMode } from '@/lib/etsy'
-import { extensionEnabled } from '@/lib/extension/availability'
 
 export const metadata: Metadata = { title: 'Integrations' }
 
@@ -98,20 +97,6 @@ export default async function IntegrationsPage() {
         >
           Shop connections
         </Link>
-        {/*
-          * Only while the extension is offered. Etsy's item 24 covers
-          * promoting a browser extension as well as using one, so a link to
-          * it is part of what comes off the surface — see
-          * lib/extension/availability.ts.
-          */}
-        {extensionEnabled() ? (
-          <Link
-            href="/settings/extension"
-            className="inline-flex h-11 items-center rounded-control border border-line px-3 text-[12px] font-semibold text-ink-2 hover:bg-canvas-soft md:h-[38px]"
-          >
-            Browser extension
-          </Link>
-        ) : null}
         <Link
           href="/data/sources"
           className="inline-flex h-11 items-center rounded-control border border-line px-3 text-[12px] font-semibold text-ink-2 hover:bg-canvas-soft md:h-[38px]"

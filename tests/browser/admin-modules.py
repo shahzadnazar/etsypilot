@@ -57,7 +57,11 @@ MODULES = [
     ("/admin/etsy", "etsy.view", "Etsy connections", "What the seller sees when a reconnection ends"),
     ("/admin/subscriptions", "subscriptions.view", "Subscriptions", "Trials ending within"),
     ("/admin/usage", "usage.view", "Usage & quota", "These figures are counts"),
-    ("/admin/ai", "ai.view", "AI activity", "generated text is deliberately not shown"),
+    # ("/admin/ai", "ai.view", "AI activity", …) was the fourth module. D95
+    # removed it with the Copilot it reported on. The permission key `ai.view`
+    # still exists so that existing role records stay readable, and it now
+    # grants nothing — tests/unit/admin-permissions.test.ts holds that, and
+    # tests/browser/admin-refusal-status.py still exercises a refusal on it.
     ("/admin/operations", "operations.view", "Bulk operations", "Why items failed"),
     ("/admin/metrics", "metrics.view", "Growth metrics", "Trial conversion"),
 ]
@@ -267,25 +271,18 @@ def usage_specifics(page, body, text):
     check(page.locator("main form").count() == 0, "and no form")
 
 
-def ai_specifics(page, body, text):
-    """/admin/ai, for a viewer who can see it."""
-    check("Titles" in text and "Explanations" in text,
-          "every generation kind is counted, including the empty ones")
-    check("Drafted, not yet decided" in text,
-          "a draft is labelled undecided, not 'not accepted'")
-    check("Acceptance rate" in text, "the acceptance rate is shown")
-    check("Calculated" in text, "and carries a provenance badge")
-    # THE SELLER'S OWN WORDS. The fixtures deliberately seed generations whose
-    # output contains this phrase; a sweep for a string the database does not
-    # hold proves nothing.
-    check(
-        "nobody but the seller" not in body.lower(),
-        "NO GENERATED TEXT REACHES THE PAYLOAD",
-    )
-    check("beeswax" not in body.lower(), "and no listing copy either")
-    check("Volume, not money" in text, "the page says there is no cost figure")
-    check_read_only(page)
-    check(page.locator("main form").count() == 0, "and no form")
+# ai_specifics() was here, for /admin/ai: every generation kind counted
+# including the empty ones, a draft labelled "Drafted, not yet decided" rather
+# than "not accepted", the acceptance rate with its provenance badge, "Volume,
+# not money", and — the assertion the whole screen was arranged around — that
+# NO GENERATED TEXT REACHED THE PAYLOAD, swept for a phrase the fixtures
+# deliberately seeded into the generations so that a sweep for a string the
+# database does not hold could not pass vacuously.
+#
+# D95 removed the screen. That last rule is not lost: usage_specifics above
+# makes the same sweep on /admin/usage, and tests/unit/admin-roles.test.ts now
+# bans `schema.aiGenerations` outright in the operator repository, which is
+# stronger than checking the rendered payload of one page.
 
 
 def operations_specifics(page, body, text):
@@ -351,7 +348,6 @@ def metrics_specifics(page, body, text):
 SPECIFICS = {
     "/admin/metrics": metrics_specifics,
     "/admin/operations": operations_specifics,
-    "/admin/ai": ai_specifics,
     "/admin/etsy": etsy_specifics,
     "/admin/subscriptions": subscriptions_specifics,
     "/admin/usage": usage_specifics,

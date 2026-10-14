@@ -6,7 +6,8 @@
  * proration, the plan-change effects. Nothing on this screen is a constant that
  * could drift away from what the seller was actually charged.
  *
- * Two usage meters only, Listings and AI generations (D22 consequence 1).
+ * One usage meter, Listings. D22 consequence 1 said two — the second was AI
+ * generations, removed with the Copilot (D95).
  * Connected shops and Team seats came out with multi-user: a meter for a
  * capacity nobody has is an advertisement dressed as a status.
  */
@@ -41,7 +42,6 @@ import {
   type TrialState,
 } from './lifecycle'
 import { buildMeters, enforce, pressureWarning, type LimitDecision, type MetricKey, type UsageMeter } from './usage'
-import { allowanceResetsOn } from '@/domain/clock'
 
 export interface BillingView {
   /*
@@ -104,8 +104,6 @@ export async function getBillingView(ctx: ShopContext): Promise<BillingView> {
     const meters = buildMeters({
       plan: null,
       activeListings,
-      aiGenerationsUsed: 42,
-      aiResetsOn: allowanceResetsOn(),
     })
     return {
       open: false,
@@ -141,8 +139,6 @@ export async function getBillingView(ctx: ShopContext): Promise<BillingView> {
     plan: subscription.plan,
     // Active listings only — the population the plan limit applies to.
     activeListings,
-    aiGenerationsUsed: 42,
-    aiResetsOn: allowanceResetsOn(),
   })
 
   return {

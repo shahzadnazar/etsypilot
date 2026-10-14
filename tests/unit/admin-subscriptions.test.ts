@@ -111,18 +111,20 @@ describe('plan limits are read from PLANS, never written here (D46)', () => {
      *
      * MATCHED AS A SHAPE, not as a digit run, and the first draft was the
      * digit run: it flagged `DAY_MS = 24 * 60 * 60 * 1000` because Solo's AI
-     * limit happens to be 60. A restated limit is a NUMBER FOLLOWED BY ITS
-     * UNIT — "60 AI generations", "2,000 listings", "$29" — and arithmetic is
-     * not. The ninth time in this build that a guard has matched something it
-     * was never about.
+     * limit happened to be 60. A restated limit is a NUMBER FOLLOWED BY ITS
+     * UNIT — "2,000 listings", "$29" — and arithmetic is not. The ninth time
+     * in this build that a guard has matched something it was never about.
+     * The limit that produced the collision is gone (D95); the lesson is not,
+     * and Growth's 90-day rollback window is the next number waiting to be
+     * mistaken for a quantity of something.
      */
     for (const file of [MODEL, PAGE]) {
       const source = code(file)
       for (const plan of PLANS) {
-        for (const [value, unit] of [
-          [plan.limits.listings, 'listings'],
-          [plan.limits.aiGenerations, 'AI generations|generations'],
-        ] as const) {
+        // `[plan.limits.aiGenerations, 'AI generations|generations']` was the
+        // second pair. D95 removed the limit; the shape of the rule is the
+        // same, and the arithmetic trap below is why it is a shape.
+        for (const [value, unit] of [[plan.limits.listings, 'listings']] as const) {
           if (value === 0) continue // Free's zero is "no shop", tested below.
           const spellings = [String(value), value.toLocaleString('en-US')].join('|')
           const restated = new RegExp(`(${spellings})\\s*(${unit})`, 'i')

@@ -64,7 +64,6 @@ export default async function UsagePage() {
 
   const assessed = rows.map((row) => assessUsage(row, now))
   const listingBands = countByBand(assessed, 'listings')
-  const aiBands = countByBand(assessed, 'aiGenerations')
   const pressing = atOrOverLimit(assessed)
   const unknownPlan = unmeasurable(assessed)
 
@@ -96,7 +95,6 @@ export default async function UsagePage() {
         <>
           <div className="mb-3 grid gap-3 lg:grid-cols-2">
             <BandSummary title="Listings" bands={listingBands} />
-            <BandSummary title="AI generations this month" bands={aiBands} />
           </div>
 
           <OperatorSection
@@ -140,8 +138,7 @@ export default async function UsagePage() {
                   >
                     <span className="text-small font-medium text-ink-1">{entry.row.shopName}</span>
                     <Numeric className="text-caption text-muted-1">
-                      {formatNumber(entry.row.activeListings)} active listings ·{' '}
-                      {formatNumber(entry.row.aiGenerationsThisMonth)} generations this month
+                      {formatNumber(entry.row.activeListings)} active listings
                     </Numeric>
                   </li>
                 ))}
@@ -280,8 +277,7 @@ function ShopMeters({
          */
         <p className="max-w-prose text-caption leading-relaxed text-muted-1">
           No billing record, so there is no limit to measure against. Counted:{' '}
-          {formatNumber(entry.row.activeListings)} active listings and{' '}
-          {formatNumber(entry.row.aiGenerationsThisMonth)} generations this month.
+          {formatNumber(entry.row.activeListings)} active listings.
         </p>
       ) : (
         <ul className="flex flex-col gap-2">

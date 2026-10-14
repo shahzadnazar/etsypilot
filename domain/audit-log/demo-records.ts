@@ -119,20 +119,35 @@ export function demoAuditRecords(): AuditRecord[] {
       id: 'OP-9088',
       at: '2026-08-09T11:20:00.000Z',
       actor: OWNER,
-      action: 'AI draft accepted, then published',
+      /*
+       * WAS AN AI RECORD — "AI draft accepted, then published", source
+       * AI_ASSISTED, with a sequence reading Draft generated → Accepted by
+       * Salman → Applied, and an origin of "Created 11:12 in AI Copilot".
+       *
+       * D95 removed the Copilot, and a demo audit log that shows a seller
+       * accepting an AI draft is telling a visitor the product writes listing
+       * text. It does not. The record is now the same shape of event from the
+       * surface that DOES write to Etsy: a title and tags edited by hand and
+       * sent for one listing.
+       *
+       * `AI_ASSISTED` stays in AUDIT_SOURCES and the table still badges it,
+       * for the same reason the change history does: an append-only record of
+       * what happened may not lose the one column that says how.
+       */
+      action: 'Title and tags edited, then published',
       detail: 'OP-9088 · title and 4 tags',
       target: 'Linen table runner',
-      source: 'AI_ASSISTED',
+      source: 'MANUAL',
       reached: { kind: 'SENT', succeeded: 1, attempted: 1 },
       sequence: [
-        { at: '2026-08-09T11:12:00.000Z', label: 'Draft generated', detail: 'Suggested by the AI copilot, published by nobody yet' },
-        { at: '2026-08-09T11:19:00.000Z', label: 'Accepted by Salman', detail: 'Edited before accepting' },
+        { at: '2026-08-09T11:12:00.000Z', label: 'Edited', detail: 'Title and 4 tags changed, not sent yet' },
+        { at: '2026-08-09T11:19:00.000Z', label: 'Reviewed by Salman', detail: 'Diff confirmed before sending' },
         { at: '2026-08-09T11:20:00.000Z', label: 'Applied', detail: '1 of 1 accepted by Etsy' },
       ],
       wouldHaveChanged: [],
       wouldHaveChangedMore: 0,
-      origin: 'Created 11:12 in AI Copilot',
-      jobHref: '/listings/ai-copilot',
+      origin: 'Edited 11:12 on All Listings',
+      jobHref: '/listings',
     },
     {
       id: 'SY-4410',

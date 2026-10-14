@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { posixJoin } from '../support/paths'
 import { code } from '../support/shop-scoping'
 import { OPERATOR_WRITABLE } from '@/domain/admin/operator-writes'
@@ -299,33 +299,38 @@ describe('what the documents say about data', () => {
     }
   })
 
-  it('§2: what the document says about storing drafts matches what writes them', () => {
+  it('§2 and §5: the document says what happens to drafts, and nothing writes one', () => {
     /*
      * ── A TABLE IS NOT A WRITE, AND THIS GUARD GOT THAT WRONG ─────────────
      *
      * The first version of this assertion read the SCHEMA: if `ai_generations`
      * exists with an `input` and an `output` column, §2 must say drafts are
      * stored. It does exist with exactly those columns, so the document was
-     * made to say so — and NOTHING INSERTS INTO IT. The guard verified one
-     * property and took its neighbour on trust, which is the twelfth recorded
-     * instance of that shape in this repo, and the result was a Privacy Policy
-     * that over-disclosed: it told sellers we keep a record of every AI
-     * suggestion and what they did with it, and no such record exists.
+     * made to say so — and NOTHING EVER INSERTED INTO IT. The guard verified
+     * one property and took its neighbour on trust, which is the twelfth
+     * recorded instance of that shape in this repo, and the result was a
+     * Privacy Policy that over-disclosed: it told sellers we keep a record of
+     * every AI suggestion and what they did with it, and no such record
+     * existed.
      *
-     * So the question is the INSERT, not the table. Both directions fail:
-     * stop writing them while the document says you do, or start writing them
-     * while it says you do not.
+     * D95 removed the Copilot, so there is no draft to keep either. The table
+     * is still in the schema and stays there — an applied migration is never
+     * edited — which is exactly why this guard still asks about the INSERT
+     * rather than the table. Both directions still fail: start writing drafts
+     * while the document says there are none, or say they are stored while
+     * nothing stores them.
      */
     const writes = walk('lib').concat(walk('domain'), walk('app')).map(code).join('\n')
     const storesGenerations = /insert\(schema\.aiGenerations\b/.test(writes)
 
     /*
-     * `[[CONFIRM]]` notes are stripped first. A withdrawn claim is recorded in
-     * one — "this paragraph said we store each draft…" — which is exactly the
-     * phrase being searched for, so leaving them in would let the document
-     * satisfy this assertion with the note that says the opposite. A guard
-     * matched by its own correction note is the same failure as one matched by
-     * its own documentation, and this file has met that eight times.
+     * `[[CONFIRM]]` notes are stripped first. The withdrawn claim is recorded
+     * in one — "it told sellers we kept a record of every suggestion" — which
+     * is close to the phrase being searched for, so leaving them in would let
+     * the document satisfy this assertion with the note that says the
+     * opposite. A guard matched by its own correction note is the same failure
+     * as one matched by its own documentation, and this file has met that
+     * eight times.
      */
     const claims = privacy.replace(/`\[\[CONFIRM:[\s\S]*?\]\]`/g, '')
 
@@ -339,15 +344,21 @@ describe('what the documents say about data', () => {
         /store each draft/i.test(claims),
         '§2 says drafts are stored and nothing inserts into ai_generations',
       ).toBe(false)
-      expect(
-        /do \*\*not\*\* store the draft/i.test(claims),
-        '§2 should say plainly that drafts are not kept, since nothing keeps them',
-      ).toBe(true)
     }
 
-    // Either way the retention section has to account for them rather than
-    // stopping at "shop data".
-    expect(claims).toMatch(/draft/i)
+    /*
+     * And §5 accounts for drafts rather than stopping at "shop data". The
+     * answer it has to give changed with D95 — not "they are not kept" but
+     * "there are none" — and the retention section has to say which, because
+     * a seller asking how long a draft is kept is entitled to be told that
+     * the question no longer arises.
+     */
+    const retention = claims.slice(claims.indexOf('## 5.'), claims.indexOf('## 6.'))
+    expect(retention, '§5 no longer accounts for AI drafts at all').toMatch(/draft/i)
+    expect(
+      retention,
+      '§5 should say there are no drafts, since there is no AI feature to produce one',
+    ).toMatch(/there are none|no AI feature/i)
   })
 
   it('§2 and §9: the Etsy token is encrypted and no plaintext column holds one', () => {
@@ -567,16 +578,23 @@ describe('what the documents say about third parties', () => {
      *   THE DOCUMENT RATHER THAN THE CODE ALONE.
      * ══════════════════════════════════════════════════════════════════════
      *
-     * The AI copilot sends the seller's own listing title and tags to
-     * Anthropic's API (lib/ai/claude.ts, lib/ai/prompt.ts). That is shop
-     * content leaving the service to a named third party, and the
-     * sub-processor table did not mention it — while the section above it
-     * promises "we will tell you before adding a new one that processes your
-     * data".
+     * The AI copilot sent the seller's own listing title and tags to
+     * Anthropic's API. That is shop content leaving the service to a named
+     * third party, and the sub-processor table did not mention it — while the
+     * section above it promises "we will tell you before adding a new one
+     * that processes your data".
      *
-     * So: if an AI SDK is a dependency, the table must name an AI provider.
-     * Remove the dependency and this relaxes; add a different one and it
-     * fails until somebody writes the row.
+     * ── AND NOW IT RUNS THE OTHER WAY TOO ─────────────────────────────────
+     *
+     * D95 removed the Copilot and the dependency, so the first direction is
+     * satisfiable by doing nothing, which is how a guard becomes decoration.
+     * The converse is the live claim: a sub-processor table that names a
+     * provider nothing sends to is also false, and worse in a specific way —
+     * §4 is the GDPR Article 28 notice, so a row in it is a statement that
+     * this provider processes your data today.
+     *
+     * Add any AI SDK and this fails until somebody writes the row. Write a
+     * row with no SDK behind it and it fails until somebody removes it.
      */
     const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as {
       dependencies?: Record<string, string>
@@ -584,30 +602,69 @@ describe('what the documents say about third parties', () => {
     const aiDeps = Object.keys(pkg.dependencies ?? {}).filter((d) =>
       /anthropic|openai|cohere|mistral|google.*generativeai/i.test(d),
     )
+    const table = privacy.slice(privacy.indexOf('## 4.'), privacy.indexOf('## 5.'))
+    const names = /AI_PROVIDER|Anthropic|OpenAI|AI provider|AI model provider|language model/i.test(
+      table,
+    )
 
     if (aiDeps.length > 0) {
-      const table = privacy.slice(privacy.indexOf('## 4.'), privacy.indexOf('## 5.'))
       expect(
-        /AI_PROVIDER|Anthropic|AI provider|AI model provider/i.test(table),
+        names,
         `${aiDeps.join(', ')} receives listing content, and the sub-processor table does not name an AI provider`,
       ).toBe(true)
+    } else {
+      expect(
+        names,
+        'the sub-processor table names an AI provider, and no AI SDK is a dependency of this product',
+      ).toBe(false)
+      // The table is read by lib/legal/subprocessors.ts, which classifies each
+      // unnamed role. A placeholder row would need a classifier, and an AI
+      // role has nothing to classify: there is no adapter to ask.
+      expect(existsSync('lib/ai'), 'lib/ai is back and §4 names no provider').toBe(false)
     }
   })
 
   it('§3 and §6: the no-training promise is about us, and says who does see it', () => {
     /*
+     * ── THE SECOND HALF REVERSED, AND THAT IS WHY IT IS STILL HERE ────────
+     *
      * "We do not use your shop data or your content to train artificial
-     * intelligence models" is true of us. Read quickly it suggests no model
-     * sees the content at all, which is not true — a draft is generated by
-     * one. The documents have to carry both halves or the first is misleading
-     * by omission.
+     * intelligence models" is true of us, and read quickly it suggests no
+     * model sees the content at all. While the Copilot existed that reading
+     * was FALSE — a draft was generated by one — so this required both
+     * documents to say who did receive listing text, or the promise was
+     * misleading by omission.
+     *
+     * With no AI in the product the quick reading is the true one, and the
+     * omission runs the other way: a document that still says a provider
+     * receives listing text describes something that cannot happen. So the
+     * same test now requires the commitment plus an explicit statement that
+     * nothing is sent anywhere — not silence, which would leave a seller to
+     * infer it.
+     *
+     * Scoped to the sections that make the claim, because §2 of the Privacy
+     * Policy records in the past tense what it used to disclose, and a guard
+     * that could only be satisfied by deleting that record would eventually
+     * be satisfied by deleting it.
      */
-    for (const [name, text] of [['privacy', privacy], ['terms', terms]] as const) {
-      expect(text).toContain('to train artificial intelligence models')
+    const sections = [
+      ['privacy §3', privacy.slice(privacy.indexOf('## 3.'), privacy.indexOf('## 4.'))],
+      ['terms §6', terms.slice(terms.indexOf('## 6.'), terms.indexOf('## 7.'))],
+    ] as const
+
+    for (const [name, section] of sections) {
+      expect(section.length, `${name} is empty — check the section numbering`).toBeGreaterThan(400)
+      expect(section, `${name} no longer makes the no-training commitment`).toContain(
+        'to train artificial intelligence models',
+      )
       expect(
-        /sent to|processed by|our AI provider|model provider/i.test(text),
-        `${name} promises no AI training without saying that an AI provider receives listing text`,
+        /no AI (feature|provider)|nothing in CobaltRank sends|none to send it to/i.test(section),
+        `${name} promises no AI training without saying whether anything receives shop content`,
       ).toBe(true)
+      expect(
+        /is sent to our AI provider|does not train on it either/i.test(section),
+        `${name} still describes an AI provider receiving listing text, and there is none`,
+      ).toBe(false)
     }
   })
 })
@@ -769,106 +826,88 @@ describe('what /legal/etsy says about the browser extension', () => {
   /*
    * ██████████████████████████████████████████████████████████████████████
    *
-   *   THE TERMS ONCE DENIED THAT A BROWSER EXTENSION EXISTED. ONE SHIPS IN
-   *   THIS REPOSITORY. ETSY'S PROHIBITED BEHAVIOR LIST NAMES EXTENSIONS
+   *   THE TERMS ONCE DENIED THAT A BROWSER EXTENSION EXISTED. ONE SHIPPED
+   *   IN THIS REPOSITORY. ETSY'S PROHIBITED BEHAVIOR LIST NAMES EXTENSIONS
    *   EXPLICITLY, SO THIS IS THE CLAIM WITH THE MOST AT STAKE: GETTING IT
    *   WRONG RISKS THE API ACCESS THE WHOLE PRODUCT DEPENDS ON.
    *
    * ██████████████████████████████████████████████████████████████████████
    *
-   * The page makes five negative claims — it reads no page content, no
-   * cookies, no storage, changes nothing, and never calls etsy.com. Each one
-   * is checked against the extension's own source here, because each one
-   * stops being true the moment somebody adds a line to a content script, and
-   * nothing else in this repository would notice.
+   * ── THE SAME CLAIM, MEASURED THE OTHER WAY ROUND ──────────────────────
+   *
+   * Six tests here used to read extension/manifest.chrome.json and
+   * extension/src/*.ts at request time, because /legal/etsy made five
+   * negative claims about the extension — it read no page content, no
+   * cookies, no storage, changed nothing, never called etsy.com — and each
+   * one stopped being true the moment somebody added a line to a content
+   * script. Reading the manifest was the fix for a sentence written from
+   * memory, which is how the false denial got into the Terms.
+   *
+   * D95 removed the extension, and the page now makes ONE claim: there is no
+   * browser extension in this product. That claim is not checked against a
+   * manifest — it is checked against the absence of one, which is the only
+   * evidence that can support it. A guard that only read the page's words
+   * would go green on the day an extension came back without the page being
+   * touched, which is exactly the original defect with the sentences swapped.
    */
 
-  const manifest = JSON.parse(
-    readFileSync('extension/manifest.chrome.json', 'utf8'),
-  ) as { permissions?: string[]; host_permissions?: string[]; content_scripts?: unknown[] }
-  const content = code('extension/src/content.ts')
-  const client = code('extension/src/client.ts')
-  /*
-   * Whitespace-normalised: the page is JSX wrapped at 100 columns, so a
-   * sentence a reader sees on one line is three lines in the source and a
-   * literal match against it silently fails.
-   */
   const page = code('app/(public)/legal/etsy/page.tsx').replace(/\s+/g, ' ')
 
-  it('reads the manifest at request time rather than describing it', () => {
+  it('says there is no extension, and the tree agrees', () => {
+    expect(page).toMatch(/does not offer a browser extension/)
+
     /*
-     * The permission list on the page is printed from the manifest. Add
-     * `cookies` or `<all_urls>` and the public legal page says so in the same
-     * deploy, with no author involved — which is the opposite of how the false
-     * sentence got into the Terms.
+     * The five paths the extension occupied. Any one of them returning makes
+     * the sentence above false, and this is the only place that would notice:
+     * nothing else in the repository reads /legal/etsy against the build.
      */
-    const facts = code('lib/legal/etsy.ts')
-    expect(facts).toMatch(/extension\/manifest\.chrome\.json/)
-    expect(facts).toMatch(/readFileSync/)
-    expect(page).toMatch(/extensionFacts\(\)/)
-    expect(page).toMatch(/facts\.permissions/)
-    expect(page).toMatch(/facts\.hostPermissions/)
-  })
-
-  it('still asks for only activeTab, and only on Etsy', () => {
-    expect(manifest.permissions ?? []).toEqual(['activeTab'])
-    for (const host of manifest.host_permissions ?? []) {
-      expect(host, `the extension asks for host access to ${host}`).toMatch(/^https:\/\/(www\.)?etsy\.com\/\*$/)
-    }
-    expect(manifest.host_permissions?.length ?? 0).toBeGreaterThan(0)
-  })
-
-  it('reads the URL and nothing else from the page', () => {
-    // The whole content script: one listener, one response, built from the URL.
-    expect(content).toMatch(/listingIdFromUrl\(location\.href\)/)
-
-    const scrapers = [
-      'querySelector',
-      'querySelectorAll',
-      'getElementsBy',
-      'innerText',
-      'textContent',
-      'document.body',
-    ]
-    for (const api of scrapers) {
-      expect(
-        content.includes(api),
-        `the content script uses ${api} — it is reading page content, and /legal/etsy promises it does not`,
-      ).toBe(false)
+    for (const path of [
+      'extension',
+      'app/(dashboard)/settings/extension',
+      'app/api/extension',
+      'lib/extension',
+      'domain/extension',
+    ]) {
+      expect(existsSync(path), `${path} exists, and /legal/etsy says it does not`).toBe(false)
     }
   })
 
-  it('reads no cookies, storage or headers', () => {
-    for (const api of ['document.cookie', 'localStorage', 'sessionStorage', 'indexedDB', 'chrome.cookies']) {
-      expect(
-        content.includes(api),
-        `the content script touches ${api} — /legal/etsy and the Privacy Policy both promise it does not`,
-      ).toBe(false)
-    }
-    // And the manifest holds no permission that would allow it.
-    for (const permission of manifest.permissions ?? []) {
-      expect(['cookies', 'storage', 'webRequest', 'scripting']).not.toContain(permission)
-    }
-  })
-
-  it('changes nothing on the page', () => {
-    for (const api of ['appendChild', 'insertBefore', 'innerHTML', 'createElement', 'setAttribute', 'classList']) {
-      expect(
-        content.includes(api),
-        `the content script calls ${api} — /legal/etsy promises nothing is injected, rewritten or overlaid`,
-      ).toBe(false)
-    }
-  })
-
-  it('never calls etsy.com, so every figure still comes from the API server-side', () => {
+  it('says removed rather than switched off, because there is no flag left', () => {
     /*
-     * The claim that matters most for Etsy's Prohibited Behavior list: the
-     * extension is not a second route to Etsy data. Its only network
-     * destination is the CobaltRank app.
+     * The distinction a reader of a legal page is entitled to: a feature
+     * behind an environment variable is a feature this deployment could turn
+     * on, and the page would then be false on that deployment only. The page
+     * claims something stronger — the code is gone — so no flag may remain.
      */
-    expect(client).toMatch(/new URL\('\/api\/extension\/listing', APP_ORIGIN\)/)
-    expect(client.includes('etsy.com'), 'the extension client calls etsy.com').toBe(false)
-    expect(content.includes('fetch('), 'the content script makes network requests').toBe(false)
+    expect(page).toMatch(/taken out of the application entirely/)
+    expect(page).toMatch(/no download route, no settings page, no link to one/)
+
+    /*
+     * The FLAG, not the word. .env.example explains at length why the
+     * variable is gone and names it four times doing so, and a guard that
+     * could only be satisfied by deleting that explanation would eventually
+     * be satisfied by deleting it. So: no assignment line in the template,
+     * and nothing in the product that reads it.
+     */
+    expect(readFileSync('.env.example', 'utf8')).not.toMatch(
+      /^\s*(BROWSER_EXTENSION_ENABLED|EXTENSION_IDS|EXTENSION_APP_URL)\s*=/m,
+    )
+    for (const file of ['middleware.ts', 'next.config.ts', 'package.json']) {
+      expect(
+        code(file).includes('BROWSER_EXTENSION_ENABLED'),
+        `${file} still reads BROWSER_EXTENSION_ENABLED`,
+      ).toBe(false)
+    }
+    // And no module anywhere asks the environment about an extension.
+    const readers = ['app', 'components', 'domain', 'lib']
+      .flatMap((root) => walk(root))
+      .concat('middleware.ts')
+      .filter((file) =>
+        /process\.env\.(BROWSER_EXTENSION_ENABLED|EXTENSION_IDS|EXTENSION_APP_URL)/.test(
+          code(file),
+        ),
+      )
+    expect(readers).toEqual([])
   })
 
   it('claims no authorisation from Etsy, because none has been given', () => {
@@ -880,10 +919,10 @@ describe('what /legal/etsy says about the browser extension', () => {
      * last time this product described the extension from memory, the
      * description was false.
      */
-    expect(page).toMatch(/no written authorisation has been given or asked for/)
+    expect(page).toMatch(/No written authorisation has been asked for or given/)
     expect(
       /compliant with|complies with Etsy|approved by Etsy|authorised by Etsy/i.test(page),
-      '/legal/etsy claims Etsy approval for the extension',
+      '/legal/etsy claims Etsy approval',
     ).toBe(false)
   })
 

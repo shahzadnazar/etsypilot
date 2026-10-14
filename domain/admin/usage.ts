@@ -12,10 +12,14 @@
  * that are not usage — stale where rows exist and blank where they do not, and
  * indistinguishable from a shop that has genuinely used nothing.
  *
- * So both meters are COUNTED from the rows that are the usage:
+ * So the meter is COUNTED from the rows that are the usage: the active
+ * listings the shop actually has.
  *
- *   listings          active listings the shop actually has
- *   AI generations    ai_generations rows created in the current month
+ * It was two meters. `AI generations` counted ai_generations rows created in
+ * the current month, and D95 removed the Copilot that wrote them — a meter is
+ * a claim about what a seller is consuming, and this one would have gone on
+ * claiming it for a feature nobody can reach. The table stays in the schema
+ * (an applied migration is never edited); nothing counts it.
  *
  * D34 in its original form: a figure that is measured can be missing; a figure
  * that is stored is wrong the day after nobody updates it. The screen says
@@ -29,12 +33,6 @@
  * stops a limit reading as a punishment. An operator looking at a shop over
  * its cap should be reading the same sentence the seller is: new bulk jobs
  * pause, nothing is deleted, everything else is unaffected.
- *
- * A FAILED GENERATION IS NEVER COUNTED, and here that is structural rather
- * than filtered: `ai_generations.status` is DRAFT | ACCEPTED | REJECTED, with
- * no failure state at all, so a generation that failed leaves no row to count.
- * REJECTED is a seller declining a draft that was produced — it spent the
- * allowance, and excluding it would understate what the seller used.
  */
 
 import { buildMeters, type MetricKey, type UsageMeter } from '@/domain/billing/usage'
@@ -115,8 +113,6 @@ export interface UsageRow {
   plan: string | null
   /** Counted, not stored: active listings the shop actually has. */
   activeListings: number
-  /** Counted: ai_generations rows created in the current month. */
-  aiGenerationsThisMonth: number
 }
 
 export interface AssessedMeter {
@@ -155,12 +151,7 @@ export function assessUsage(row: UsageRow, now: Date): AssessedUsage {
    * keeps an operator reading the same sentence the seller reads rather than a
    * harsher paraphrase of it.
    */
-  const meters = buildMeters({
-    plan,
-    activeListings: row.activeListings,
-    aiGenerationsUsed: row.aiGenerationsThisMonth,
-    aiResetsOn: firstOfNextMonth(now),
-  })
+  const meters = buildMeters({ plan, activeListings: row.activeListings })
 
   return {
     row,
@@ -182,11 +173,19 @@ export function assessUsage(row: UsageRow, now: Date): AssessedUsage {
   }
 }
 
-/** The calendar date the monthly allowance resets. YYYY-MM-DD, never zoned (D24). */
-export function firstOfNextMonth(now: Date): string {
-  const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1))
-  return next.toISOString().slice(0, 10)
-}
+/*
+ * ── firstOfNextMonth() IS GONE WITH THE MONTHLY METER ────────────────────
+ *
+ * It gave the operator screen the date the AI generation allowance reset,
+ * UTC and unzoned (D24), over an injected `now` so a test could pin it. The
+ * one meter left is a standing capacity: active listings reset on no date,
+ * and `UsageMeter.resetsOn` is null for them.
+ *
+ * Nothing else asked for it — the only other reset date in the product was
+ * domain/clock.ts's allowanceResetsOn(), removed in the same change for the
+ * same reason. A monthly allowance arriving again brings both back; the
+ * arithmetic is three lines and is in `with-ai-and-extension`.
+ */
 
 export interface BandCount {
   band: UsageBand
@@ -217,7 +216,13 @@ export function countByBand(
       assessed.filter((entry) =>
         entry.meters.some((m) => m.meter.metric === metric && m.band === band),
       ).length,
-      `Shops whose ${metric === 'listings' ? 'active listing' : 'AI generation'} meter is ${BAND_COPY[band].label.toLowerCase()}.`,
+      /*
+       * One metric, so no ternary. It read `metric === 'listings' ? 'active
+       * listing' : 'AI generation'`, and the second arm would now describe
+       * every future metric as an AI generation — a default that is wrong for
+       * anything but the one thing that no longer exists.
+       */
+      `Shops whose active listing meter is ${BAND_COPY[band].label.toLowerCase()}.`,
     ),
   }))
 }

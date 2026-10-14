@@ -16,11 +16,9 @@
  * whole provenance system a formality.
  */
 
-import { getAiProvider } from '@/lib/ai'
 import { getBillingProvider } from '@/lib/billing'
 import { isDemoMode } from '@/lib/etsy'
 import { marketSignalsMode, signalsAreUnavailable } from '@/lib/signals'
-import { AI_PROVIDER_TERMS, providerTermsNote } from '@/lib/ai/provider-terms'
 import type { ProvenanceType } from '@/lib/provenance/types'
 
 export interface DataSource {
@@ -54,7 +52,6 @@ export const NOT_RELEASED = [
 
 export function dataSources(): DataSource[] {
   const demo = isDemoMode()
-  const ai = getAiProvider().mode
   const signals = marketSignalsMode()
   const signalsUnavailable = signalsAreUnavailable(signals)
   /*
@@ -221,41 +218,37 @@ export function dataSources(): DataSource[] {
     {
       key: 'llm',
       name: 'Language model',
-      via: ai === 'MOCK' ? 'Drafting only' : `Drafting only · ${AI_PROVIDER_TERMS.provider}`,
-      provides: 'Title, tag and description drafts, issue explanations, recommended actions.',
-      class: 'AI_DRAFT',
-      refresh: 'On request',
       /*
-       * ── THE PROVIDER'S TERMS ARE NAMED HERE, AND WHY ────────────────────
+       * ── THE ROW STAYS, AND SAYS THERE IS NO MODEL ────────────────────────
        *
-       * Privacy §3 makes two promises about training. The first is about this
-       * product and is enforced: tests/unit/no-training.test.ts proves shop
-       * content has exactly one egress and no store that could accumulate as
-       * a corpus. The second — "that provider does not train on it either" —
-       * is a claim about somebody else's terms, and no code can check it.
+       * D95 removed the AI Copilot. The easy thing would have been to delete
+       * this row with it, and that would be the wrong thing twice over.
        *
-       * So it is stated here rather than left to a document nobody re-reads.
-       * The note says which provider, which document the sentence rests on,
-       * when that was recorded, and whether a person has actually read the
-       * clause. lib/ai/provider-terms.ts carries it beside the adapter, so a
-       * provider swap fails the guard until the record is rewritten.
+       * This page is the catalogue of what the product reads from, and "there
+       * is no language model in this product" is a FACT WORTH STATING rather
+       * than an absence worth hiding. A seller who has heard that CobaltRank
+       * once drafted listings, or who is deciding whether to trust it with
+       * their shop, is owed that answer on the page built to give it. A
+       * missing row answers nothing; it just looks like a page that forgot.
        *
-       * Only in the live arm. The mock sends nothing anywhere, so there is no
-       * provider whose terms could matter, and naming one would be the same
-       * class of claim this page exists to prevent.
+       * And the pattern already exists. The email provider, the payment
+       * provider and the keyword data provider are each listed as NOT IN USE
+       * with a measured reason on /legal/subprocessors, for exactly this
+       * reason: anything not wired up is marked, not omitted.
+       *
+       * Nothing here is read from an adapter any more, because there is no
+       * adapter to read — which is why this row has no branch. If an AI
+       * feature ever returns, this row goes back to reading
+       * getAiProvider().mode and the guard in tests/unit/source-claims.test.ts
+       * goes back to asserting it does.
        */
-      /*
-       * The mock arm is left exactly as it was, down to the byte. Its status
-       * already reads "Rule-based drafter — nothing leaves this machine", so a
-       * second copy of that sentence in the limitations said nothing new and
-       * moved a demo screen for no reason. Only the live arm gains anything,
-       * because only the live arm has a provider whose terms could matter.
-       */
+      via: 'Nothing connected',
+      provides: 'Nothing. There is no AI feature in this product.',
+      class: 'UNAVAILABLE',
+      refresh: 'Never',
       limitations:
-        ai === 'MOCK'
-          ? 'Never applied without your approval. Produces language, never data — no figure originates here.'
-          : `Never applied without your approval. Produces language, never data — no figure originates here. ${providerTermsNote()}`,
-      status: ai === 'MOCK' ? 'Rule-based drafter — nothing leaves this machine' : 'Live model',
+        'CobaltRank has no AI feature and no AI provider. No listing, order or cost of yours is sent to a language model, because there is nothing to send it to. Nothing on any screen is written by one.',
+      status: 'Not connected — no AI provider in this product',
     },
     {
       key: 'demo',

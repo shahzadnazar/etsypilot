@@ -180,27 +180,26 @@ const KNOWN_REMAINING: { file: string; symbol: string; why: string }[] = [
       'saved search term is scratch data: no money, no security claim, nothing a ' +
       'seller would act on believing it came from their shop.',
   },
-  {
-    file: 'domain/ai/service.ts',
-    symbol: 'demoLists',
-    why:
-      'The same lists, read into the AI copilot as the generation\u2019s keyword ' +
-      'source ("List: Autumn gifting"). The locked terms beside it — the demo ' +
-      'shop\u2019s brand name and a material from its catalogue — WERE fixed in this ' +
-      'sweep, because those reach the model and come back inside generated copy. ' +
-      'The list name is displayed, not generated from, and goes with the research ' +
-      'slice above.',
-  },
-  {
-    file: 'domain/ai/service.ts',
-    symbol: 'DEMO_GENERATIONS_USED',
-    why:
-      'The AI usage counter shown against the plan allowance is a constant, so a ' +
-      'real seller sees a quota partly consumed by generations they never ran. ' +
-      'Needs a usage table to fix, same shape as the keyword lists, and it is a ' +
-      'number about their account rather than about their shop — which is why it ' +
-      'ranks above the lists and below anything financial.',
-  },
+  /*
+   * ── TWO ENTRIES CLOSED BY DELETION RATHER THAN BY A FIX ────────────────
+   *
+   * domain/ai/service.ts had two: `demoLists`, the same keyword lists read in
+   * as the generation's keyword source ("List: Autumn gifting"), and
+   * `DEMO_GENERATIONS_USED`, a constant usage counter shown against the plan
+   * allowance — so a real seller saw a quota partly consumed by generations
+   * they never ran. Each was ranked and reasoned about here rather than
+   * silently left.
+   *
+   * D95 removed the AI Copilot, so both leaks are gone and neither was fixed:
+   * the screen that displayed them does not exist. Recorded because "the leak
+   * went with the feature" is a different fact from "the leak was closed", and
+   * the second entry's reason — a usage counter needs a usage table — comes
+   * back with the feature if the feature comes back.
+   *
+   * The locked terms beside them, the demo shop's brand name and a material
+   * from its catalogue, WERE fixed in the sweep that found them, because
+   * those reached the model and came back inside generated copy.
+   */
   {
     file: 'domain/connect/service.ts',
     symbol: 'demoSyncState',
@@ -324,7 +323,8 @@ describe('nothing asks the Etsy adapter for a catalogue it may not have', () => 
    * ── THE OTHER HALF OF THE SAME SWEEP ──────────────────────────────────
    *
    * Two screens returned HTTP 500 to a live seller — /listings/change-history
-   * and /listings/ai-copilot — because their services called
+   * and the AI Copilot, which D95 has since removed — because their services
+   * called
    * `etsy.getListings(...)` directly, and the live adapter throws
    * ETSY_NOT_CONFIGURED without an API key. It is the same defect wearing
    * different clothes: a path that works only because the mock is answering.

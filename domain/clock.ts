@@ -193,26 +193,31 @@ export function previousWindow(): ReportingWindow {
   return windowEndingOn(startOfDay(period.start) - DAY_MS, REPORTING_DAYS)
 }
 
-/**
- * When a monthly allowance resets: the first of next month, UTC.
+/*
+ * ── allowanceResetsOn() IS GONE WITH THE METER THAT NEEDED IT ────────────
  *
- * Not a mechanism invented here. lib/errors/types.ts already tells a seller who
- * hits a limit that "your allowance resets at the start of next month", and the
- * operator console computes exactly this. The two seller-facing surfaces that
- * state the date — the AI copilot and the billing meters — each had it written
- * out as '2026-09-01', so on 12 October both told a seller their allowance had
+ * It computed the first of next month, UTC, because two seller-facing
+ * surfaces printed that date and each had it written out as a literal
+ * '2026-09-01' — so on 12 October both told a seller their allowance had
  * reset six weeks earlier.
  *
- * domain/admin/usage.ts keeps its own copy of the arithmetic over an injected
- * `now`, and is deliberately left alone: importing an operator module into a
- * seller service would drag the cross-shop repository into every seller screen.
+ * Both callers were the AI side: the AI Copilot's header and the AI
+ * generations meter on /billing. D95 removed the Copilot and the monthly
+ * generation allowance with it, and the one meter left — active listings
+ * against the plan's cap — is not monthly and resets on no date.
+ *
+ * domain/admin/usage.ts had its own copy over an injected `now` — kept
+ * separate so that importing an operator module into a seller service would
+ * not drag the cross-shop repository into every seller screen — and that one
+ * is gone too, for the same reason and in the same change. There is no
+ * monthly allowance anywhere in the product now.
+ *
+ * The arithmetic is three lines and `with-ai-and-extension` has both copies
+ * in its history. lib/errors/types.ts still tells a seller who hits a
+ * monthly limit that "your allowance resets at the start of next month", so
+ * the words survive the mechanism. An exported function nobody calls makes a
+ * reader look for the feature that called it.
  */
-export function allowanceResetsOn(): string {
-  const now = new Date(nowIso())
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1))
-    .toISOString()
-    .slice(0, 10)
-}
 
 /*
  * A sanity check at module load, not a test.

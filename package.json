@@ -3,9 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "node extension/build.mjs --if-missing",
     "dev": "next dev",
-    "prebuild": "node extension/build.mjs",
     "build": "next build --webpack",
     "start": "next start",
     "lint": "next lint",
@@ -15,12 +13,9 @@
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
-    "extension:build": "node extension/build.mjs",
-    "extension:package": "node extension/build.mjs --zip",
     "build:turbopack": "next build"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.120.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.116.0",
     "clsx": "2.1.1",

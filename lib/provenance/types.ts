@@ -9,12 +9,30 @@
  * Canonical one-line definitions come from Methodology artboard 93.
  */
 
+/*
+ * ── AI_DRAFT IS NOT ONE OF THESE ANY MORE ────────────────────────────────
+ *
+ * It was the sixth class: "AI-generated draft requiring review." D95 removed
+ * the AI Copilot, and nothing in the product can produce a figure of that
+ * class now.
+ *
+ * It goes rather than staying as an unproducible option, because this list is
+ * rendered. components/marketing/sections.tsx maps over it to publish the
+ * whole provenance legend on the landing page — so the class would have gone
+ * on advertising "written by the assistant from evidence on your screen" to
+ * every visitor, which is a claim about a capability rather than a gap in a
+ * table. A vocabulary a product renders in full cannot hold a word it has no
+ * use for.
+ *
+ * Every `Record<ProvenanceType, …>` in the repository lost its entry with it,
+ * which the compiler enumerated: the label, the definition, the badge's
+ * colours and the landing page's line.
+ */
 export const PROVENANCE_TYPES = [
   'VERIFIED',
   'CALCULATED',
   'ESTIMATED',
   'SELLER_INPUT',
-  'AI_DRAFT',
   'UNAVAILABLE',
 ] as const
 
@@ -67,7 +85,6 @@ export const PROVENANCE_LABEL: Record<ProvenanceType, string> = {
   CALCULATED: 'Calculated',
   ESTIMATED: 'Estimated',
   SELLER_INPUT: 'Seller input',
-  AI_DRAFT: 'AI draft',
   UNAVAILABLE: 'Unavailable',
 }
 
@@ -77,7 +94,6 @@ export const PROVENANCE_DEFINITION: Record<ProvenanceType, string> = {
   CALCULATED: 'A visible formula over visible inputs. Reproducible.',
   ESTIMATED: 'Modelled from observable signals. Always a range.',
   SELLER_INPUT: 'You or a teammate entered it. We never guess it.',
-  AI_DRAFT: 'AI-generated draft requiring review.',
   UNAVAILABLE: 'Etsy does not expose it. We show nothing, not a guess.',
 }
 

@@ -22,7 +22,10 @@ in every review. What one run found, on a product eleven phases in:
   /listings/audit  "Health score 100 / 100" for a shop with no listings,
                    directly above "Covers 0% of your listings".
   /listings/ai-copilot   HTTP 500. Not "no listings yet" — "Something went
-                   wrong on our side."
+                   wrong on our side." (That screen was removed by D95; the
+                   defect is recorded because it is the clearest example of
+                   the shape — an empty shop reaching a code path that only
+                   ever ran with data in it.)
   /listings/bulk-editor  A wizard on step 3 with two steps ticked, offering to
                    "Validate 0 listings".
 """
@@ -64,7 +67,7 @@ with sync_playwright() as p:
 
     # --- nothing crashes ---------------------------------------------------
     ROUTES = ["/dashboard", "/billing", "/profit", "/shop-pulse", "/listings/audit",
-              "/listings/bulk-editor", "/listings/ai-copilot", "/research/keywords",
+              "/listings/bulk-editor", "/research/keywords",
               "/research/keyword-lists", "/settings/shops", "/settings/export",
               "/settings/costs", "/settings/audit-log", "/settings/profile", "/listings",
               "/settings/security", "/data/sources", "/data/methodology",
@@ -99,11 +102,11 @@ with sync_playwright() as p:
     check("Unavailable" in audit, "...and the badge says Unavailable, not Calculated")
 
     # --- empty states, not errors and not dead wizards ---------------------
-    pg.goto(f"{BASE}/listings/ai-copilot", wait_until="load"); pg.wait_for_timeout(400)
-    copilot = pg.locator("main").inner_text()
-    check("went wrong" not in copilot, "An empty shop is not an error on the Copilot")
-    check("No listings to draft for yet" in copilot, "The Copilot says what is missing")
-
+    # The Copilot's empty state was checked here — "No listings to draft for
+    # yet" rather than "went wrong" — and D95 removed the screen. The bulk
+    # editor below is the same assertion on the surface that still exists, and
+    # it is the one that matters more: it is the only path from this product to
+    # a seller's listings.
     pg.goto(f"{BASE}/listings/bulk-editor", wait_until="load"); pg.wait_for_timeout(400)
     bulk = pg.locator("main").inner_text()
     check("Validate 0 listings" not in bulk, "The bulk editor does not offer to validate nothing")
@@ -182,7 +185,7 @@ with sync_playwright() as p:
     # --- and every empty state points somewhere ----------------------------
     # rules.md section 12: never fail silently. An empty state that does not say
     # what to do next is a dead end with better typography.
-    for route, marker in (("/listings/ai-copilot", "audit"), ("/listings/bulk-editor", "audit")):
+    for route, marker in (("/listings/bulk-editor", "audit"),):
         pg.goto(f"{BASE}{route}", wait_until="load"); pg.wait_for_timeout(300)
         links = pg.evaluate("() => [...document.querySelectorAll('main a')].map(a => a.textContent.trim())")
         check(any(marker in l.lower() for l in links),

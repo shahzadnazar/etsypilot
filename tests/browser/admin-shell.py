@@ -328,7 +328,13 @@ def main():
             "etsy.view": ("/admin/etsy",),
             "subscriptions.view": ("/admin/subscriptions",),
             "usage.view": ("/admin/usage",),
-            "ai.view": ("/admin/ai",),
+            # GRANTS NO SCREEN, and that is the assertion rather than an
+            # omission. D95 removed /admin/ai; the key stays so existing role
+            # records, audit entries and the permission matrix stay readable,
+            # and it now opens nothing. The MANAGER case below holds it — a
+            # manager granted ai.view must see exactly the same rail as one
+            # who was not.
+            "ai.view": (),
             "operations.view": ("/admin/operations",),
             "metrics.view": ("/admin/metrics",),
         }

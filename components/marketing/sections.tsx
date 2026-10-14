@@ -235,7 +235,6 @@ const PROVENANCE_LINES: Record<ProvenanceType, string> = {
   CALCULATED: 'Worked out from verified figures. The arithmetic is shown.',
   ESTIMATED: 'A range with its method and its confidence, never a precise-looking midpoint.',
   SELLER_INPUT: 'A number you entered. Yours, and labelled as yours.',
-  AI_DRAFT: 'Written by the assistant from evidence on your screen, for you to approve or discard.',
   UNAVAILABLE: 'Etsy does not expose it, or it has not been read yet. Shown as absent, never as zero.',
 }
 
@@ -471,8 +470,8 @@ function TierCard({ tier }: { tier: FoundingTier }) {
         ))}
         {limits ? (
           <li className="figure" style={{ color: 'var(--muted-1)' }}>
-            {limits.listings.toLocaleString('en-US')} listings · {limits.aiGenerations} AI drafts /
-            month · {limits.auditRetentionDays}-day audit history
+            {limits.listings.toLocaleString('en-US')} listings ·{' '}
+            {limits.auditRetentionDays}-day audit history
           </li>
         ) : (
           /*

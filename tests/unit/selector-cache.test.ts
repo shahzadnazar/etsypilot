@@ -37,6 +37,11 @@ import { code } from '../support/shop-scoping'
  *                         tried. An unauthenticated path to the owner's AI
  *                         spend, with no plan limit in front of it.
  *
+ * The second of those selectors no longer exists — D95 removed the AI
+ * provider — and the incident is kept rather than the module: it is the
+ * clearest statement of what the defect COSTS, and the three selectors still
+ * in lib/ have the same shape. The rule below names none of them.
+ *
  * ── WHAT WAS DECIDED: CACHE PER MODE, NOT GLOBALLY ───────────────────────
  *
  * Three options were on the table.
@@ -53,7 +58,7 @@ import { code } from '../support/shop-scoping'
  *   override for the test seam, one instance per kind, and the decision made
  *   on every call. The cost is one extra object per process and a constraint
  *   on providers — they must hold nothing request-scoped — which is already
- *   true of all five and is the property this rule leans on.
+ *   true of all of them and is the property this rule leans on.
  *
  * ── THE RULE IS ABOUT ORDER, NOT ABOUT ANY PARTICULAR ADAPTER ────────────
  *
@@ -189,10 +194,16 @@ describe('a selector decides before it caches', () => {
       REQUEST_SCOPED.some((p) => new RegExp(`\\b${p}\\b`).test(code(f))),
     )
     expect(libFiles.length).toBeGreaterThan(50)
-    expect(modeAware.length).toBeGreaterThanOrEqual(4)
+    /*
+     * Four, and it was five: 'lib/ai/index.ts' is gone with the AI provider
+     * (D95). The defect this file is named after was FOUND in that selector —
+     * it cached the instance before asking which mode the request was in, so
+     * the first caller's answer was served to everybody — and the other three
+     * are the same shape, which is why the rule outlives the example.
+     */
+    expect(modeAware.length).toBeGreaterThanOrEqual(3)
     for (const selector of [
       'lib/etsy/index.ts',
-      'lib/ai/index.ts',
       'lib/billing/index.ts',
       'lib/signals/index.ts',
     ]) {

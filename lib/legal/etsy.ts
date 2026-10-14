@@ -3,67 +3,35 @@ import 'server-only'
 /*
  * ██████████████████████████████████████████████████████████████████████████
  *
- *   WHAT /legal/etsy IS ALLOWED TO SAY ABOUT THE EXTENSION IS READ OUT OF
- *   THE EXTENSION.
+ *   THE WARRANTY DISCLAIMER /legal/etsy SHOWS IS QUOTED OUT OF THE TERMS.
  *
  * ██████████████████████████████████████████████████████████████████████████
  *
- * The Terms of Service used to contain this sentence:
+ * ── WHAT THIS FILE USED TO DO, AND WHY IT MATTERED ───────────────────────
+ *
+ * It also built the extension section of /legal/etsy, reading the permission
+ * list out of extension/manifest.chrome.json at request time. That existed
+ * because the Terms of Service had once contained this sentence:
  *
  *     "We do not scrape Etsy, and we do not use browser extensions or
  *      automated systems to collect Etsy data outside the API."
  *
- * It was false. A browser extension ships in extension/ and is downloadable
- * from Settings. The sentence was not written dishonestly — it was written
- * from memory of what the product was, by somebody who was not looking at the
- * manifest.
+ * which was false — an extension shipped in extension/ — and had been written
+ * from memory by somebody who was not looking at the manifest. The fix was to
+ * stop describing the extension from memory: add `cookies` or `<all_urls>` to
+ * that manifest and the permission appeared on the public legal page in the
+ * same deploy, with no author involved.
  *
- * So this page does not describe the extension from memory either. The
- * permission list it prints is read out of extension/manifest.chrome.json at
- * request time: if somebody adds `cookies`, `storage`, `scripting` or
- * `<all_urls>` to that manifest, the permission appears on the public legal
- * page describing the extension, in the same deploy, with no author involved.
+ * D95 removed the extension, so there is no manifest to read and no section to
+ * build. `extensionFacts()` is gone with it, and /legal/etsy now states the
+ * simpler fact: there is no browser extension in this product.
  *
- * `tests/unit/legal-claims.test.ts` holds the other half: the page's claims
- * about what the content script READS are asserted against the content
- * script's source, so a scraper added to it turns the suite red rather than
- * leaving a legal page making a promise the code broke.
+ * The lesson is kept rather than the code. If an extension ever returns from
+ * `with-ai-and-extension`, its description on a public legal page must be read
+ * out of its manifest again and not retyped.
  */
 
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
-
 import { legalDocument } from './documents'
-
-export interface ExtensionFacts {
-  /** `permissions` from the manifest, verbatim. */
-  permissions: string[]
-  /** `host_permissions` from the manifest, verbatim. */
-  hostPermissions: string[]
-  /** Where the content script is allowed to run, verbatim. */
-  contentScriptMatches: string[]
-  /** The one endpoint on the CobaltRank origin the extension calls. */
-  appEndpoint: string
-}
-
-interface ChromeManifest {
-  permissions?: string[]
-  host_permissions?: string[]
-  content_scripts?: { matches?: string[] }[]
-}
-
-export function extensionFacts(): ExtensionFacts {
-  const manifest = JSON.parse(
-    readFileSync(join(process.cwd(), 'extension/manifest.chrome.json'), 'utf8'),
-  ) as ChromeManifest
-
-  return {
-    permissions: manifest.permissions ?? [],
-    hostPermissions: manifest.host_permissions ?? [],
-    contentScriptMatches: manifest.content_scripts?.flatMap((entry) => entry.matches ?? []) ?? [],
-    appEndpoint: '/api/extension/listing',
-  }
-}
 
 /**
  * The warranty disclaimer, quoted out of the Terms rather than retyped.

@@ -4,12 +4,11 @@ import { redirect } from 'next/navigation'
 import { PageHeader } from '@/components/layout/page-header'
 import { ProvenanceButton } from '@/components/provenance/provenance-button'
 import { RuleGroup } from '@/components/audit/rule-group'
+import { WhereToStart } from '@/components/ui/where-to-start'
 import { NotYet } from '@/components/settings/not-yet'
 import { Card } from '@/components/ui/card'
 import { Money, Numeric } from '@/components/ui/numeric'
-import { AssistedNote } from '@/components/ai/assisted-note'
 import { getAuditView } from '@/domain/audit/service'
-import { explainRule } from '@/domain/ai/explain'
 import { getSession } from '@/lib/auth'
 import { shopHeader, withheldReason } from '@/domain/sync/source'
 import { DataWithheld } from '@/components/sync/data-withheld'
@@ -53,15 +52,24 @@ export default async function ListingAuditPage() {
   const [view, shop] = await Promise.all([getAuditView(ctx), shopHeader(ctx)])
 
   /*
-   * One explanation, for the worst rule — not one per rule.
+   * ── WHERE TO START: THE DOMAIN'S OWN WORDS, UNDECORATED ────────────────
    *
-   * With a live provider, explaining every rule would be a dozen API calls on
-   * every page load, spending the seller's allowance on text they may not read.
-   * The rules explain themselves already; this adds a sentence where it is worth
-   * the most.
+   * This block used to call a model. domain/ai/explain.ts handed the rule and
+   * its evidence to the assistant, validated what came back, and — whenever
+   * the model was unavailable or its answer was withheld — rendered
+   * `${rule.why} ${rule.fix}`, which is the rule's own text.
+   *
+   * So the model was decorating a sentence the domain already had, and
+   * components/ai/assisted-note.tsx said so in its own header: "AI is
+   * decoration on an explanation the domain already computed, never the
+   * explanation itself." With the Copilot removed (D95) this page reads that
+   * sentence directly. What is lost is the AI_DRAFT badge and the line saying
+   * a version was withheld. The paragraph a seller reads is unchanged.
+   *
+   * Still the worst rule only, and for the same reason it always was: the
+   * rules explain themselves, and this points at the one worth doing first.
    */
   const worst = view.results[0]
-  const explanation = worst ? await explainRule(worst) : null
 
   /*
    * This page keeps rendering when its catalogue is withheld — every card
@@ -245,12 +253,11 @@ export default async function ListingAuditPage() {
         </div>
 
         <div className="flex flex-col gap-4">
-          {explanation && worst ? (
+          {worst ? (
             <Card className="p-[18px]">
-              <AssistedNote
-                explanation={explanation}
-                demo={demoData}
+              <WhereToStart
                 label={`Where to start · ${worst.rule.label}`}
+                text={`${worst.rule.why} ${worst.rule.fix}`}
               />
             </Card>
           ) : null}

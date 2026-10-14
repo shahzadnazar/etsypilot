@@ -20,6 +20,11 @@ import 'server-only'
  *     Aug 9,  11:20  Salman  AI draft accepted,  OP-9088 · title and 4 tags
  *                            then published      Linen table runner · Yes · 1 of 1
  *
+ * (That second record read "AI draft accepted" when this was measured. D95
+ * removed the Copilot, and the demo record is a manual edit now. The
+ * transcript is left as taken: a measurement is not rewritten to match the
+ * present.)
+ *
  * An immutable record, under that seller's own shop, asserting that CobaltRank
  * published changes to their Etsy listings. In a dispute this log is the
  * evidence, and it was somebody else's.
