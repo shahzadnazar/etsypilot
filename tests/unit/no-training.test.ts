@@ -92,6 +92,34 @@ function walk(dir: string, out: string[] = []): string[] {
 
 const files = ROOTS.flatMap((root) => walk(root)).sort()
 
+/**
+ * `code()`, read once per file.
+ *
+ * ── A GUARD THAT CAN TIME OUT IS A GUARD THAT GETS DELETED ───────────────
+ *
+ * Seven of the assertions below sweep the whole tree, and each called `code()`
+ * again — about 1,250 reads of some 250 files per run. That is fine on a warm
+ * cache and it is not fine on a cold one: one full-suite run took 6.4 seconds
+ * on the first sweep and tripped vitest's 5-second default, which reports as a
+ * failing test rather than as a slow one. It passed alone and on three
+ * re-runs, so nothing was wrong with the rule — but a rule that goes red for
+ * reasons unrelated to what it checks is a rule somebody switches off, which
+ * is a lesson this repository has already recorded about Windows path
+ * failures.
+ *
+ * One read per file, memoised for the run. The sweeps are unchanged.
+ */
+const sources = new Map<string, string>()
+
+function source(file: string): string {
+  let text = sources.get(file)
+  if (text === undefined) {
+    text = code(file)
+    sources.set(file, text)
+  }
+  return text
+}
+
 /* ────────────────────────────── the egress ─────────────────────────────── */
 
 /**
@@ -198,13 +226,13 @@ function onlyCallsOwnApi(text: string): boolean {
 }
 
 function transmits(file: string): boolean {
-  const text = code(file)
+  const text = source(file)
   if (!TRANSMITS.some((pattern) => pattern.test(text))) return false
   return !onlyCallsOwnApi(text)
 }
 
 function carriesShopContent(file: string): boolean {
-  const text = code(file)
+  const text = source(file)
   return SHOP_CONTENT.some((name) => new RegExp(`\\b${name}\\b`).test(text))
 }
 
@@ -258,7 +286,7 @@ describe('shop content has exactly one egress', () => {
      * the tighter half of the rule above.
      */
     const callers = files.filter(
-      (f) => f !== 'lib/ai/prompt.ts' && /\brenderRequest\s*\(/.test(code(f)),
+      (f) => f !== 'lib/ai/prompt.ts' && /\brenderRequest\s*\(/.test(source(f)),
     )
     expect(callers).toEqual(['lib/ai/claude.ts'])
   })
@@ -299,7 +327,7 @@ describe('shop content has exactly one egress', () => {
 
   it('and no module outside lib/ai imports the provider SDK', () => {
     const importers = files.filter((f) =>
-      new RegExp(`from '${AI_PROVIDER_SDK.replace('/', '\\/')}'`).test(code(f)),
+      new RegExp(`from '${AI_PROVIDER_SDK.replace('/', '\\/')}'`).test(source(f)),
     )
     expect(importers).toEqual(['lib/ai/claude.ts'])
   })
@@ -414,7 +442,7 @@ describe('nothing stores shop content where it could accumulate', () => {
      * it was created. Privacy §2 and §5 were corrected to say drafts are not
      * kept; tests/unit/legal-claims.test.ts holds the document side.
      */
-    const writers = files.filter((f) => /insert\(schema\.aiGenerations\b/.test(code(f)))
+    const writers = files.filter((f) => /insert\(schema\.aiGenerations\b/.test(source(f)))
     expect(
       writers,
       'something now inserts into ai_generations. That is a store of prompts and model ' +
@@ -468,7 +496,7 @@ describe('nothing stores shop content where it could accumulate', () => {
 
     const offenders: string[] = []
     for (const file of files) {
-      const text = code(file)
+      const text = source(file)
       for (const match of text.matchAll(/\b\w*(?:log|logger)\.(?:debug|info|warn|error)\(/gi)) {
         const call = argumentsAt(text, match.index + match[0].length - 1)
         for (const field of CONTENT_FIELDS) {
@@ -493,7 +521,7 @@ describe('nothing stores shop content where it could accumulate', () => {
      */
     const offenders: string[] = []
     for (const file of files) {
-      const text = code(file)
+      const text = source(file)
       for (const match of text.matchAll(/\b(?:track|capture|identify)\(([\s\S]{0,300}?)\)/g)) {
         const call = match[1] ?? ''
         for (const field of ['title', 'description', 'tags', 'prompt', 'completion']) {
