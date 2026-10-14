@@ -208,48 +208,35 @@ export function dataSources(): DataSource[] {
       name: 'CobaltRank event log',
       via: 'Immutable, generated here',
       provides:
-        'Every change made through CobaltRank — price, title, tags, state, bulk jobs, AI applications — with actor and operation ID.',
+        'Every change made through CobaltRank — price, title, tags, state, bulk jobs — with actor and operation ID.',
       class: 'VERIFIED',
       refresh: 'Immediate',
       limitations:
         'Records changes made here. Changes you make directly on Etsy appear only at the next sync.',
       status: null,
     },
-    {
-      key: 'llm',
-      name: 'Language model',
-      /*
-       * ── THE ROW STAYS, AND SAYS THERE IS NO MODEL ────────────────────────
-       *
-       * D95 removed the AI Copilot. The easy thing would have been to delete
-       * this row with it, and that would be the wrong thing twice over.
-       *
-       * This page is the catalogue of what the product reads from, and "there
-       * is no language model in this product" is a FACT WORTH STATING rather
-       * than an absence worth hiding. A seller who has heard that CobaltRank
-       * once drafted listings, or who is deciding whether to trust it with
-       * their shop, is owed that answer on the page built to give it. A
-       * missing row answers nothing; it just looks like a page that forgot.
-       *
-       * And the pattern already exists. The email provider, the payment
-       * provider and the keyword data provider are each listed as NOT IN USE
-       * with a measured reason on /legal/subprocessors, for exactly this
-       * reason: anything not wired up is marked, not omitted.
-       *
-       * Nothing here is read from an adapter any more, because there is no
-       * adapter to read — which is why this row has no branch. If an AI
-       * feature ever returns, this row goes back to reading
-       * getAiProvider().mode and the guard in tests/unit/source-claims.test.ts
-       * goes back to asserting it does.
-       */
-      via: 'Nothing connected',
-      provides: 'Nothing. There is no AI feature in this product.',
-      class: 'UNAVAILABLE',
-      refresh: 'Never',
-      limitations:
-        'CobaltRank has no AI feature and no AI provider. No listing, order or cost of yours is sent to a language model, because there is nothing to send it to. Nothing on any screen is written by one.',
-      status: 'Not connected — no AI provider in this product',
-    },
+    /*
+     * ── THERE IS NO LANGUAGE-MODEL ROW, AND THAT IS THE SECOND DECISION ──
+     *
+     * The first was to keep one: this page is the catalogue of what the
+     * product reads from, so "there is no language model here" read as a fact
+     * worth stating, following the email, payment and keyword-provider rows
+     * that resolve to nothing.
+     *
+     * The owner decided otherwise, and the sub-processor table settled it the
+     * same way: with nothing sent to a model, the honest table has no model
+     * row at all. A row stating an absence is still a sentence about a feature
+     * this product does not have, on a page a seller reads to find out what it
+     * does — and the catalogue's own rule is that every row names something
+     * the product actually reads from.
+     *
+     * The unnamed-role rows are not the same case and stay: an email sender, a
+     * payment provider and a keyword data provider are roles this product has
+     * code for and intends to fill, each measured from the running
+     * configuration. tests/unit/legal-claims.test.ts sweeps every surface,
+     * including this file, and fails if a sentence about either removed
+     * feature comes back.
+     */
     {
       key: 'demo',
       name: 'Demo dataset',

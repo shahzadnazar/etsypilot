@@ -150,7 +150,7 @@ export const PERMISSION_LABELS: Record<Permission, { title: string; detail: stri
    */
   'ai.view': {
     title: 'AI',
-    detail: 'Granted nothing since the AI Copilot was removed. Kept so existing role records stay readable.',
+    detail: 'Grants access to nothing today. Kept so that existing role records, the audit entries that name it and this matrix stay readable.',
   },
   'etsy.view': { title: 'Etsy', detail: 'See Etsy connection health and sync state.' },
   'operations.view': {

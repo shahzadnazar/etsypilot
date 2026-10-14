@@ -5135,16 +5135,20 @@ either screen is unchanged. What is gone is the AI_DRAFT badge and the line
 saying a version was withheld. `components/ui/where-to-start.tsx` replaces
 `AssistedNote` and renders the same text with no provenance claim on it.
 
-**The `llm` row on `/data/sources` stayed.** The catalogue is what this product
-reads from, and "there is no language model here" is a fact a seller came to
-that page to learn — the same reason the email, payment and keyword-provider
-rows are listed while resolving to nothing. The row no longer reads an adapter,
-because there is none to read: it is permanently `UNAVAILABLE`, its status is
-"Not connected — no AI provider in this product", and its limitations say what
-is *not* sent — no listing, order or cost — rather than only that the feature
-is off. `tests/unit/source-claims.test.ts` checks the claim against the
-filesystem: the row is a lie the day `lib/ai/` or `domain/ai/` comes back, and
-that is what the assertion fails on.
+**The `llm` row on `/data/sources` stayed — and then did not. See D96.** The
+catalogue is what this product reads from, so "there is no language model here"
+read as a fact a seller came to that page to learn, following the email,
+payment and keyword-provider rows that resolve to nothing. The row was made
+permanently `UNAVAILABLE` with a status of "Not connected — no AI provider in
+this product" and a limitation naming what is *not* sent, and
+`tests/unit/source-claims.test.ts` checked that claim against the absence of
+`lib/ai/` and `domain/ai/`.
+
+> The owner's decision in D96 is that no seller-facing surface mentions either
+> removed feature at all, not even to state its absence, so the row is gone and
+> the catalogue has no language-model entry. The reasoning above is kept
+> because it is the argument that was overruled, and because the same argument
+> will be made again the next time something is removed.
 
 **The no-training guard kept the half that is not about AI.** Renamed
 `tests/unit/no-training.test.ts` → `tests/unit/egress-boundary.test.ts`,
@@ -5190,25 +5194,30 @@ etsy.com — which was the one entry in that fixture advertising a feature. The
 real extension session granted before the removal, and hiding access that
 exists is the opposite of what a security page is for.
 
-**The legal documents.** Privacy §3 lost both halves of "the listing text is
-sent to our AI provider to produce it; that provider does not train on it
-either" and gained the positive statement that nothing is sent to a model at
-all. §2 and §5 say there is no AI feature and no draft, and §2 records in the
-past tense what it used to disclose — a privacy policy that drops a disclosure
-silently leaves the reader unable to tell whether the practice stopped or the
-sentence did. §4 lost the Anthropic, PBC row, and `/legal/subprocessors` says
-why in a sentence rather than going quiet. Terms §6 keeps its number and its
-no-training commitment and now states that the product generates no listing
-text. `docs/legal/VERIFICATION.md` marks the affected rows **SUPERSEDED** with
-the date rather than deleting them: "this was checked and then its subject went"
-is a different fact from "this was never true".
+**The legal documents — this half was superseded within the day; see D96.**
+Privacy §3 lost both halves of "the listing text is sent to our AI provider to
+produce it; that provider does not train on it either" and gained a positive
+statement that nothing is sent to a model at all. §2 and §5 said there was no
+AI feature and no draft, §2 recorded in the past tense what it used to
+disclose, §4 lost the Anthropic, PBC row with `/legal/subprocessors` saying why
+in a sentence, and Terms §6 kept its number while stating that the product
+generates no listing text. `docs/legal/VERIFICATION.md` marks the affected rows
+**SUPERSEDED** with the date rather than deleting them: "this was checked and
+then its subject went" is a different fact from "this was never true".
+
+> Every statement of absence listed in that paragraph is gone in D96. What
+> survives of it is the §4 row removal, the VERIFICATION treatment, and the
+> no-training commitment in Terms §6 and Privacy §3 — which is the one sentence
+> that was never a feature reference.
 
 **Guards flipped rather than relaxed.** Three were satisfiable by doing nothing
 after the removal, which is how a guard becomes decoration, so each gained its
 converse: `legal-claims` now fails if the sub-processor table names an AI
-provider with no SDK behind it (as well as the reverse), if either document
-promises no training without saying whether anything receives shop content, and
-if `.env.example` carries an extension variable or any module reads one.
+provider with no SDK behind it (as well as the reverse), if the no-training
+commitment stops standing on its own, and if `.env.example` carries an
+extension variable or any module reads one. (The middle one was "without
+saying whether anything receives shop content" until D96 made the documents
+silent.)
 `admin-roles` bans `schema.aiGenerations` outright in the operator repository,
 which is the stronger rule now that no query reads it — a blanket ban is the
 weaker rule only while the table is read.
@@ -5220,3 +5229,152 @@ accounted for: six files deleted (`ai-copilot` 22, `ai-hardening` 33,
 −4, `etsy-live` −1, `billing` +1. Integration: 12 files / 213 tests, unchanged.
 `npm run build` compiles and type-checks clean; `tests/browser/etsy-application.py`
 passes 88 checks, up from 86, having been rewritten to assert the absences.
+
+---
+
+## D96 — Neither removed feature is mentioned on any seller-facing surface — DECIDED, 14 October 2026
+
+D95 removed the browser extension and the AI Copilot and left a set of
+sentences describing their absence: Terms §4's "We do not offer a browser
+extension" paragraph, Privacy §2's "A listing drafter was built for this
+product and has been removed from it", the extension section on `/legal/etsy`,
+the sub-processor page's note about the row that came off, the `llm` row on
+`/data/sources`, and a `NotYet` control on Research whose reason named the
+Copilot.
+
+**The owner wants none of it.** No reference to either feature on any
+seller-facing page or in any published legal document — not a positive
+statement of absence, not a historical note, nothing.
+
+### The argument, since it runs against the instinct this repository was built on
+
+Every other removal in this file was recorded in place: a comment saying what
+was here and why it went, so the next reader finds a decision rather than a
+gap. That is right for CODE, which is read by people who need to know what was
+tried. It is wrong for a published agreement, and the distinction is the one
+this decision turns on:
+
+- **The documents must be ACCURATE, not complete.** With no extension and no AI
+  feature, silence about both is accurate. A paragraph explaining that
+  something does not exist is not more accurate than its absence; it is longer.
+- **Etsy's API Terms Section 4 is a disclosure duty about what the application
+  DOES** — what it collects, how it is used, stored, secured and disclosed, and
+  what controls the seller has. Nothing in it asks for an inventory of what the
+  application does not do.
+- **A statement of absence is still a sentence about the feature.** A seller
+  reading "CobaltRank does not offer a browser extension" learns that browser
+  extensions are a thing this product has a position on, and a reader who was
+  not looking for one now is. `/data/sources` was the clearest case: a
+  catalogue of what the product reads from, carrying a row for a thing it does
+  not read from.
+- **And every such sentence is a maintenance liability.** It has to stay true
+  through the next change, and nothing in the product can check prose about an
+  absence except a guard that asserts the prose — which is what D95 wrote, and
+  which is satisfiable by one sentence in one file.
+
+### What stays, and it is not a feature reference
+
+Terms §6 and Privacy §3:
+
+> We do not use your shop data or your content to train artificial intelligence
+> models.
+
+The owner asked for it explicitly. It is the commitment Etsy's Prohibited
+Behavior item 25 keys on, it is a promise about CONDUCT rather than a
+description of the service, and it is true whether or not this product ever has
+an AI feature.
+
+Its surroundings were rewritten, because both documents had come to explain it
+by referring to the deleted feature — "nothing in CobaltRank sends your shop
+content to a language model: there is no AI feature in this product". A promise
+that reads as being about a feature is weaker than one that reads as a standing
+rule, and it expires with the feature in the reader's mind. Both now frame it
+the same way: a standing limit on what may be done with the data, covering
+everything held for the seller, binding anyone who processes it on our behalf,
+holding however the product changes. Terms §6 is titled "Training artificial
+intelligence models" so the section's subject is the commitment rather than a
+capability, and §3 points at §6 so neither can quietly drop it.
+
+### The three that were settled rather than guessed
+
+**The sub-processor table has no model row, and the page explains nothing.** §4
+is the GDPR Article 28 notice: a row in it states that this company processes
+your data today. There is no AI provider, so there is no row — which is what
+`tests/unit/legal-claims.test.ts` already asserted in both directions against
+`package.json` (an AI SDK requires a row; a row requires an SDK), and that
+guard needed no change. What went is the sentence on `/legal/subprocessors`
+that named the removed provider and explained why it was no longer listed. The
+table now reads: one named row, Etsy, Inc., as the source of shop data; five
+unnamed roles (database, hosting, email, keyword data, payment) each classified
+from the running configuration as in-use-unnamed or not-in-use with a measured
+reason.
+
+**`ai_generations` stays in the database and the guard stays in code.** An
+applied migration is never edited, and `tests/unit/egress-boundary.test.ts`
+asserts that nothing inserts into it. That assertion reads the source of every
+module under `app/`, `domain/` and `lib/` — it does not read the Privacy
+Policy, so removing the `[[CONFIRM]]` note that explained the empty table to
+the reviewing lawyer cannot weaken it. Confirmed by running the suite with the
+note gone. The note itself had no audience left: a seller does not need telling
+about an empty table nothing writes to.
+
+**`lib/observability/redact.ts` keeps its `sk-ant-` pattern.** It redacts a
+credential shape from log lines. Nothing seller-facing mentions it, deleting it
+would make logs less safe for no gain, and a deployment whose environment still
+carries the variable can still put a key in front of the redactor. The file
+says so in a comment, so the next sweep does not take it.
+
+### The guard is the converse, and it is stronger
+
+D95's guard asserted that the documents SAID there was no extension. This one
+asserts that nothing says anything about either feature:
+`tests/unit/legal-claims.test.ts` sweeps every `.ts`/`.tsx` file under `app/`,
+`components/`, `domain/` and `lib/` with comments stripped, plus both published
+documents with the one commitment sentence and Terms §6 exempted, for the
+vocabulary of either feature. The old rule was satisfiable by one sentence in
+one file; this one is satisfiable only by every surface at once.
+
+The sweep also caught what a view-layer sweep would have missed: the
+`/data/sources` row lives in `domain/`, and `domain/billing/webhooks.ts` held
+an email body promising "Bulk jobs and AI drafting keep working in the
+meantime". Both are gone.
+
+**One exemption**, written in the KNOWN_REMAINING shape so it cannot rot: the
+`ai.view` operator permission key and its label in the permission matrix. It
+grants access to nothing and says so without naming anything; the key stays
+because removing it would rewrite stored role records, the audit entries that
+name it and the matrix itself, all to delete a string. An operator permission
+key is not a page telling a seller about a feature.
+
+### What else came off, now that the rule is silence rather than disclosure
+
+Each of these was a word on a screen for something no code can produce:
+
+- `AI_ASSISTED`, from `CHANGE_SOURCES`, `AUDIT_SOURCES` and `EventSource`, with
+  the violet "AI-assisted" badge on Change History and the audit log, and
+  `outcomeLabel`'s fourth answer "Approved" with it. Nothing ever wrote that
+  source: every writer in the product sets `BULK_EDIT`, `SCHEDULED`, `MANUAL`,
+  `BULK_JOB`, `SYNC` or `SYSTEM`.
+- `AI_CHANGE_APPLIED` from `EVENT_TYPES`, its label "AI change applied", and
+  its membership of Shop Pulse's `MUTATING_EVENTS`. Nothing emitted it.
+- `operatorAiAcceptance` from the methodology registry — accepted ÷ decided,
+  with drafts deliberately out of the denominator. No metric key reached it,
+  and `ProvenanceButton` renders a static badge for a key with no entry rather
+  than the reverse, so an unused entry is invisible until somebody reads the
+  file.
+- `'copilot'` from the telemetry `surface` union.
+- `domain/admin/ai-activity.ts`, which survived D95 with no importers at all.
+- The `EXTENSION` session kind in `domain/security/service.ts`, now that
+  nothing can produce such a session: in live mode the session list is empty,
+  because this product records no sessions yet.
+
+### What a reader who wants the history does
+
+It is all here, in D95 and in this entry, and the code is on
+`with-ai-and-extension` at `0be86ba`. `docs/legal/VERIFICATION.md` keeps its
+rows and marks them **SUPERSEDED** with the date, because that file is the
+record of what was checked rather than a document anybody is shown — a
+verification table that deleted its own history would have nothing to verify
+against next time. `docs/ETSY-COMPLIANCE.md` still answers item 24 in full,
+because a reviewer asking about browser extensions is entitled to the answer;
+it is an internal position paper, not a seller-facing page.

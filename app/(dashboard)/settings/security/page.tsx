@@ -256,7 +256,7 @@ export default async function SecurityPage() {
                   <span className="text-caption text-muted-1">Signed in now</span>
                 ) : (
                   <NotYet
-                    label={s.kind === 'EXTENSION' ? 'Revoke' : 'Sign out'}
+                    label="Sign out"
                     reason="Arrives with accounts."
                   />
                 )}
@@ -264,28 +264,6 @@ export default async function SecurityPage() {
             ))}
           </ul>
           )}
-          {/*
-            * ── THE EXTENSION NOTE IS GONE; THE SESSION ROW IS NOT ────────
-            *
-            * The note explained what the extension could and could not do and
-            * linked to its page. D95 removed both, so the note links nowhere
-            * and describes nothing.
-            *
-            * The session ROW is deliberately left in place, including its
-            * EXTENSION kind. If a deployment still holds an extension session
-            * from before the removal, hiding the row would hide access that
-            * exists — the opposite of what a security page is for — and the
-            * Revoke control beside it still works. No new one can be created:
-            * /api/extension does not exist.
-            */}
-          {view.sessions.some((s) => s.kind === 'EXTENSION') ? (
-          <p className="max-w-prose text-caption leading-relaxed text-muted-1">
-            A browser extension session is listed here because it has access, even though it
-            holds no Etsy credential and cannot write anything. CobaltRank no longer offers an
-            extension, so no new session of this kind can be created — revoke this one when you
-            are ready.
-          </p>
-          ) : null}
         </Card>
 
         <Card className="flex flex-col gap-3 p-[18px]">

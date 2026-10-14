@@ -65,7 +65,8 @@ export interface AnalyticsProps {
   durationMs?: number
   succeeded?: boolean
   plan?: 'FREE' | 'SOLO' | 'GROWTH' | 'PRO'
-  surface?: 'dashboard' | 'audit' | 'bulk-editor' | 'copilot' | 'profit' | 'research' | 'tools'
+  /* 'copilot' was one of these surfaces, and that screen no longer exists. */
+  surface?: 'dashboard' | 'audit' | 'bulk-editor' | 'profit' | 'research' | 'tools'
 }
 
 export interface Analytics {

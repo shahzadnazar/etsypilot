@@ -7,28 +7,24 @@ import 'server-only'
  *
  * ██████████████████████████████████████████████████████████████████████████
  *
- * ── WHAT THIS FILE USED TO DO, AND WHY IT MATTERED ───────────────────────
+ * Etsy's API Terms require an application to carry a disclaimer naming its
+ * developer as the sole provider. It is in §12 of the Terms of Service, and
+ * /legal/etsy shows it by reading that section rather than keeping a second
+ * copy of the words.
  *
- * It also built the extension section of /legal/etsy, reading the permission
- * list out of extension/manifest.chrome.json at request time. That existed
- * because the Terms of Service had once contained this sentence:
+ * ── THE RULE THIS FILE EXISTS FOR ────────────────────────────────────────
  *
- *     "We do not scrape Etsy, and we do not use browser extensions or
- *      automated systems to collect Etsy data outside the API."
+ * A public legal page may not describe the product, or quote an agreement,
+ * from memory. Two copies of a required disclaimer is how one of them ends up
+ * out of date, and a sentence somebody retyped is a sentence nobody will
+ * re-read when the thing it describes changes. So anything on that page that
+ * is a fact about this repository is READ from its source at request time, and
+ * `tests/unit/legal-claims.test.ts` fails if a surface starts restating one
+ * instead.
  *
- * which was false — an extension shipped in extension/ — and had been written
- * from memory by somebody who was not looking at the manifest. The fix was to
- * stop describing the extension from memory: add `cookies` or `<all_urls>` to
- * that manifest and the permission appeared on the public legal page in the
- * same deploy, with no author involved.
- *
- * D95 removed the extension, so there is no manifest to read and no section to
- * build. `extensionFacts()` is gone with it, and /legal/etsy now states the
- * simpler fact: there is no browser extension in this product.
- *
- * The lesson is kept rather than the code. If an extension ever returns from
- * `with-ai-and-extension`, its description on a public legal page must be read
- * out of its manifest again and not retyped.
+ * That rule was learned the expensive way: a paragraph in the Terms once
+ * described this product's own behaviour, accurately as the author remembered
+ * it and falsely as the code was, and nothing in the repository could tell.
  */
 
 import { legalDocument } from './documents'

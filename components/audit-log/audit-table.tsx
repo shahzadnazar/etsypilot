@@ -144,18 +144,10 @@ export function AuditTable({ view }: { view: AuditLogView }) {
                     </td>
                     <td className="px-3 py-3 text-small text-ink-2">{record.target}</td>
                     <td className="px-3 py-3">
-                      {record.source === 'AI_ASSISTED' ? (
-                        <span
-                          className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[9.5px] font-semibold"
-                          style={{ background: '#F5F3FF', borderColor: '#DDD6FE', color: '#6D28D9', borderWidth: 1 }}
-                        >
-                          {SOURCE_LABEL[record.source]}
-                        </span>
-                      ) : (
-                        <span className="text-[11.5px] font-medium text-muted-1">
-                          {SOURCE_LABEL[record.source]}
-                        </span>
-                      )}
+                      {/* One rendering for every source; see history-table. */}
+                      <span className="text-[11.5px] font-medium text-muted-1">
+                        {SOURCE_LABEL[record.source]}
+                      </span>
                     </td>
                     <td className="px-4 py-3">
                       <ReachedChip reached={record.reached} />

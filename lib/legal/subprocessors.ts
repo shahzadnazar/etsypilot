@@ -19,17 +19,18 @@ import 'server-only'
  *      was the notice.
  *
  *   2. `tests/unit/legal-claims.test.ts` already checks §4 against
- *      package.json: an AI SDK in the dependencies requires an AI provider in
- *      the table. That guard reads the Privacy Policy. Moving the table out
- *      from under it would have quietly disarmed the one check that caught
- *      Anthropic's absence.
+ *      package.json, in both directions: a dependency that would receive shop
+ *      content requires a named row, and a named row requires something in the
+ *      product that actually sends to it. That guard reads the Privacy Policy,
+ *      so moving the table out from under it would quietly disarm the check
+ *      that once caught a processor missing from the table altogether.
  *
  *   3. One source means one correction. Adding a provider is an edit to the
  *      policy, and the page follows.
  *
  * ── AND WHAT THE PAGE ADDS THAT THE TABLE CANNOT ──────────────────────────
  *
- * Four of the six rows name a `[[PLACEHOLDER]]` because the provider has not
+ * Five of the six rows name a `[[PLACEHOLDER]]` because the provider has not
  * been chosen. In the middle of the policy that reads as an unfinished
  * sentence. On a page headed "who else processes your data" it would read as a
  * fact — "a payment provider takes payment" — about something that does not

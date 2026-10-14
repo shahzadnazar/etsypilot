@@ -80,10 +80,10 @@ export default async function UsagePage() {
         className="mb-3 p-[14px] text-caption leading-relaxed text-muted-1"
       >
         <strong className="font-semibold text-ink-2">These figures are counts.</strong> Active
-        listings are counted from the shop; AI generations are counted from the generations
-        recorded this calendar month. The <code>usage_records</code> table has a
-        stored counter and nothing in the product writes it, so reading that would have reported a
-        number that is not usage — stale where rows exist and blank where they do not.
+        listings are counted from the shop itself, now, on this request. The{' '}
+        <code>usage_records</code> table has a stored counter and nothing in the product writes it,
+        so reading that would have reported a number that is not usage — stale where rows exist and
+        blank where they do not.
       </Card>
 
       {rows.length === 0 ? (
@@ -162,16 +162,15 @@ export default async function UsagePage() {
         <CardBody>
           <h2 className="text-small font-semibold text-ink-1">What this screen cannot do</h2>
           <p className="mt-1 max-w-prose text-caption leading-relaxed text-muted-1">
-            No quota reset, no top-up, no grant of extra generations and no exemption.{' '}
+            No quota reset, no top-up, no raising of a cap and no exemption.{' '}
             <code>usage_records</code> and <code>subscriptions</code>{' '}
             are not on the operator write allowlist, so any of those from here is refused by
             construction rather than by policy.
           </p>
           <p className="mt-2 max-w-prose text-caption leading-relaxed text-muted-1">
-            A failed AI generation is never counted, and that is structural rather than filtered:
-            the generation record has no failure state, so a generation that failed leaves no row.
-            A rejected draft does count — the seller declined something that was produced, and it
-            spent the allowance.
+            A shop over its cap is not a shop in trouble: new bulk jobs pause, nothing is deleted,
+            and every other screen keeps working. The sentence a seller reads about it is the one
+            shown here, read from the same model rather than paraphrased.
           </p>
         </CardBody>
       </Card>

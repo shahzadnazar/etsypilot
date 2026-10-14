@@ -350,21 +350,15 @@ export const METHODOLOGIES: Record<string, Methodology> = {
     ],
   },
 
-  operatorAiAcceptance: {
-    metric: 'AI acceptance rate',
-    type: 'CALCULATED',
-    definition:
-      'A share of the generations a seller has actually DECIDED on, computed from CobaltRank\u2019s own rows. Reproducible, and it is not a verdict on the AI where few have been decided.',
-    source: 'CobaltRank database · ai_generations',
-    method:
-      'Accepted divided by decided, where decided is accepted plus rejected. Drafts are NOT in the denominator: a draft is undecided, and counting it as "not accepted" would report a shop that generated fifty drafts this morning as having a 0% acceptance rate — a claim about the AI made out of the seller not having got to them yet.',
-    coverageLabel: 'of generations have been decided',
-    limitations: [
-      'Unavailable, not zero, when nothing has been decided. A shop with only drafts has no acceptance rate, and 0% would be the most misleading number this screen could carry.',
-      'The generated text itself is never read to produce this. Only the status is.',
-    ],
-  },
-
+  /*
+   * `operatorAiAcceptance` was here: accepted ÷ decided, with drafts
+   * deliberately out of the denominator because a shop that generated fifty
+   * drafts this morning is not a shop with a 0% acceptance rate. The screen
+   * that asked the question is gone and no metricKey reaches this entry, so
+   * it is an answer to a question nothing asks — and `ProvenanceButton`
+   * renders a static badge for a key with no entry, never the reverse, so an
+   * unused entry is invisible until somebody reads the file.
+   */
   operatorShopMix: {
     metric: 'Shops by what is behind them',
     type: 'VERIFIED',

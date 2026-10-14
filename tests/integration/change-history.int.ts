@@ -427,7 +427,15 @@ describe('demo mode is unchanged, and reads no database rows', () => {
     expect(audit.records.length).toBeGreaterThan(0)
     expect(audit.records.some((r: AuditRecord) => r.actor.name === 'Salman')).toBe(true)
     expect(security.googleConnectedAs).toBe('salman@willowandfern.com')
-    expect(security.sessions).toHaveLength(3)
+    /*
+     * Two, and it was three. The third was an authored `EXTENSION` session —
+     * the one row in that fixture advertising a capability — and D95/D96
+     * removed the capability, the row and the session kind. The point of this
+     * assertion is unchanged: the demo view is served whole without a
+     * database read, so the count is pinned rather than left loose.
+     */
+    expect(security.sessions).toHaveLength(2)
+    expect(security.sessions.every((s) => s.kind === 'BROWSER')).toBe(true)
 
     /*
      * THE POSITIVE CONTROL, on the same spy. "Zero calls" is a measurement

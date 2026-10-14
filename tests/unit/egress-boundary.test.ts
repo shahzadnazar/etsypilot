@@ -581,11 +581,24 @@ describe('the no-training commitment, with no AI in the product', () => {
       section3,
       'Privacy §3 still says listing text is sent to an AI provider',
     ).not.toMatch(/sent to our AI provider/)
-    // And it still answers the question that sentence used to answer.
+    /*
+     * ── AND IT STANDS ON ITS OWN, WHICH IS A THIRD POSITION ───────────────
+     *
+     * This line first required §3 to name the provider that received listing
+     * text (true while the Copilot existed), then to say there was none.
+     * Neither document mentions the feature at all now — the owner's
+     * decision, recorded in D95 — so what is checked is that the commitment
+     * is framed as a standing rule rather than left bare: a promise with no
+     * scope reads as being about whatever the reader last heard of, and this
+     * one is about every piece of data held for the seller.
+     *
+     * tests/unit/legal-claims.test.ts owns the rest of this rule, including
+     * the sweep that fails if either document mentions the feature again.
+     */
     expect(
-      section3,
-      'Privacy §3 makes the no-training promise without saying who, if anyone, receives shop content',
-    ).toMatch(/no AI provider|nothing in CobaltRank sends/i)
+      section3.replace(/\s+/g, ' '),
+      'Privacy §3 makes the no-training promise without saying what it covers',
+    ).toMatch(/standing limit on what we may do with your data/i)
   })
 
   it('and there is nothing in the product that could break it', () => {

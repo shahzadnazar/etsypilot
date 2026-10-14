@@ -43,10 +43,7 @@ export default function SubProcessorsPage() {
       <p>
         These receive data now, and the Privacy Policy names them.
         &ldquo;Receives&rdquo; means exactly what the row says, and nothing more: a company
-        listed here for one purpose is sent what that purpose needs and is sent nothing else.
-        Anthropic, PBC was on this list — it received a listing&rsquo;s title and tags when you
-        asked for a draft — and it is not any more, because CobaltRank no longer has an AI
-        feature and nothing of yours is sent to a language model.
+        listed here for one purpose is sent what that purpose needs, and is sent nothing else.
       </p>
       <div className="legal-table-scroll">
         <table>

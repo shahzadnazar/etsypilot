@@ -22,14 +22,20 @@
  * the defect that makes a log unusable in the dispute it exists for.
  */
 
-export const AUDIT_SOURCES = ['MANUAL', 'BULK_JOB', 'SYNC', 'AI_ASSISTED'] as const
+/*
+ * 'AI_ASSISTED' was the fourth, labelled "AI-assisted" and badged on
+ * /settings/audit-log. Nothing wrote it — the writers set MANUAL, BULK_JOB or
+ * SYNC — so the member's only remaining effect was to print those words on a
+ * seller's screen for a record no code can create. Same reasoning as
+ * domain/change-history/types.ts, which has the long version.
+ */
+export const AUDIT_SOURCES = ['MANUAL', 'BULK_JOB', 'SYNC'] as const
 export type AuditSource = (typeof AUDIT_SOURCES)[number]
 
 export const SOURCE_LABEL: Record<AuditSource, string> = {
   MANUAL: 'Manual',
   BULK_JOB: 'Bulk job',
   SYNC: 'Sync',
-  AI_ASSISTED: 'AI-assisted',
 }
 
 /** Why an action never intended to reach Etsy. */

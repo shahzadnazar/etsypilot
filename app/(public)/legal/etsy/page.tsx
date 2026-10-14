@@ -32,7 +32,7 @@ export default function EtsyRelationshipPage() {
             * Both documents, because this page draws on both: section 12 of
             * the Terms for the disclaimer, and sections 5 and 7 of the Privacy
             * Policy for the OAuth connection and how long Etsy content is
-            * kept. It used to be section 2, for what the extension collected.
+            * kept.
             */}
           <DocumentDate documents={[terms, privacy]} />
         </p>
@@ -88,48 +88,18 @@ export default function EtsyRelationshipPage() {
         </li>
       </ul>
 
-      {/*
-        * ── ONE BRANCH NOW, AND IT IS THE PERMANENT ONE ───────────────────
-        *
-        * This section used to have two arms: a long description of the
-        * extension read out of its own manifest at request time, and a short
-        * "we do not offer one" for when it was switched off. D95 removed the
-        * extension from the working tree, so there is nothing to read a
-        * manifest from and nothing to describe. The remaining arm is no longer
-        * conditional, and it no longer says "switched off" — the code is gone,
-        * which is a different and simpler fact to state.
-        */}
-      <h2 id="extension">Browser extensions</h2>
-      <p>
-        <strong>CobaltRank does not offer a browser extension.</strong> There is nothing to
-        install, nothing to download, and no part of this product runs inside a page on etsy.com.
-      </p>
-      <p>
-        Item 24 of Etsy&rsquo;s Prohibited Behavior list names browser extensions, and covers
-        promoting their use as well as using one. An extension was built for this product and has
-        been removed from it: not switched off behind a flag, but taken out of the application
-        entirely. There is no download route, no settings page, no link to one, and nothing in the
-        build that could serve one.
-      </p>
-
-      <h2 id="scraping">Scraping, and Etsy&rsquo;s rules about extensions</h2>
+      <h2 id="scraping">Scraping</h2>
       <p>
         Etsy&rsquo;s API Terms of Use restrict the use of automated systems to access, analyse or
-        scrape Etsy data other than through the API, and item 24 of their Prohibited Behavior list
-        names browser extensions explicitly. The provision&rsquo;s own wording governs; the sentence
-        above is a summary of it and not a quotation.
+        scrape Etsy data other than through the API. The provision&rsquo;s own wording governs; the
+        sentence above is a summary of it and not a quotation.
       </p>
       <p>
         CobaltRank obtains <strong>every piece of Etsy data through Etsy&rsquo;s official API</strong>,
         server-side, under the OAuth token the seller granted. Nothing in this product reads a page
-        on etsy.com, and no part of it runs in your browser against Etsy&rsquo;s site.
-      </p>
-      <p>
-        No written authorisation has been asked for or given, and none is needed: there is no
-        extension and no automated system in this product to authorise. Whether reading a listing
-        id out of a URL would count as &ldquo;accessing Etsy data&rdquo; under item 24 is
-        Etsy&rsquo;s call rather than ours, and it is not a question worth answering unilaterally
-        — so the extension that once asked it has been removed rather than argued for.
+        on etsy.com, nothing of it runs against Etsy&rsquo;s site, and there is no crawler, no
+        sampler and no scheduler: a read that finds its copy outside Etsy&rsquo;s display window is
+        the only thing that causes a request, so a shop nobody opens costs no Etsy requests at all.
       </p>
 
       <h2 id="elsewhere">Where the rest of this is written down</h2>

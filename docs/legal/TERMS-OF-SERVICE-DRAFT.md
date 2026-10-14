@@ -62,14 +62,6 @@ We obtain your shop data only through Etsy's official API. We do not scrape Etsy
 listing content, prices or stock from Etsy's web pages, and we do not use automated systems to
 collect Etsy data outside the API.
 
-**We do not offer a browser extension.** One was built and has been removed from the application
-— not left unpublished behind a switch, but taken out. It would have read the address of the page
-you are already looking at on etsy.com, to work out which listing you are viewing, and asked our
-servers for your own figures for it; it would not have read the page's content, your Etsy cookies
-or your Etsy session, and would have changed nothing on the page. Etsy's API Terms restrict
-browser extensions that access Etsy data, that question has not been put to Etsy, and it is not
-one worth answering unilaterally. Nothing in CobaltRank runs inside a page on etsy.com.
-
 ## 5. How you may and may not use CobaltRank
 
 You may use CobaltRank to manage shops you own or are authorised to manage. You may not:
@@ -94,21 +86,15 @@ create, edit, publish or promote listings that breach Etsy's:
 
 You are responsible for your listings. We do not review them for compliance with Etsy's rules.
 
-## 6. AI, and generated content
+## 6. Training artificial intelligence models
 
-**CobaltRank does not generate listing text.** There is no AI feature in this product: no
-drafting, no rewriting, no suggestion written by a language model. Nothing you see on any screen
-was written by one, and every figure is computed from your own shop data by code you can be told
-the method of.
+We do not use your shop data or your content to train artificial intelligence models.
 
-A drafter was built and has been removed. While it existed, this section allocated responsibility
-for publishing generated text — the draft was a suggestion, you decided what to publish, and we
-did not warrant that generated text was original, accurate or free of third-party trademarks. None
-of that is needed now, and it comes back with the feature if the feature comes back.
-
-We do not use your shop data or your content to train artificial intelligence models. That is our
-own commitment and it does not depend on whether the product has an AI feature — it is also why
-nothing of yours is sent to a model provider: there is none to send it to.
+That is a standing limit on what we may do with your data, not a description of any one feature of
+CobaltRank. It covers everything we hold for you — your listings, your orders, your costs, your
+audit records and anything you type into the product — it applies however the product changes, and
+we do not permit anyone who processes your data on our behalf to do it either. If it ever stops
+being true, this section changes before anything else does, and we tell you under section 14.
 
 ## 7. Your data
 
@@ -247,7 +233,7 @@ Points that need specialist attention:
    provider. §12 above carries it; confirm the exact wording against the current Etsy requirement.
 5. **The liability cap in §13** should be checked against what is enforceable in the chosen
    jurisdiction for consumer contracts.
-6. **§6, AI.** The exposure that used to be here — a seller publishing generated text that
-   infringes a trademark — is gone with the drafter; the section now states that there is no AI
-   feature and keeps the no-training commitment. Nothing to confirm unless the feature returns,
-   and then the allocation of responsibility has to be checked for enforceability.
+6. **§6, the no-training commitment.** It is a promise about conduct rather than a description of
+   the service, and it is the one Etsy's API Terms key on in Section 5 — confirm that a promise in
+   this form binds us and binds our processors, and that the notice route in §14 is an adequate way
+   to change it.

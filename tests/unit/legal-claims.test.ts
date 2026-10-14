@@ -299,66 +299,59 @@ describe('what the documents say about data', () => {
     }
   })
 
-  it('§2 and §5: the document says what happens to drafts, and nothing writes one', () => {
+  it('§2 and §5: nothing writes a draft, and no document mentions one', () => {
     /*
      * ── A TABLE IS NOT A WRITE, AND THIS GUARD GOT THAT WRONG ─────────────
      *
-     * The first version of this assertion read the SCHEMA: if `ai_generations`
-     * exists with an `input` and an `output` column, §2 must say drafts are
-     * stored. It does exist with exactly those columns, so the document was
-     * made to say so — and NOTHING EVER INSERTED INTO IT. The guard verified
-     * one property and took its neighbour on trust, which is the twelfth
-     * recorded instance of that shape in this repo, and the result was a
-     * Privacy Policy that over-disclosed: it told sellers we keep a record of
-     * every AI suggestion and what they did with it, and no such record
-     * existed.
+     * The first version read the SCHEMA: if `ai_generations` exists with an
+     * `input` and an `output` column, §2 must say drafts are stored. It does
+     * exist with exactly those columns, and NOTHING EVER INSERTED INTO IT.
+     * The guard verified one property and took its neighbour on trust —
+     * the twelfth recorded instance of that shape in this repo — and the
+     * result was a Privacy Policy that over-disclosed: it told sellers we
+     * keep a record of every AI suggestion and what they did with it, and no
+     * such record existed.
      *
-     * D95 removed the Copilot, so there is no draft to keep either. The table
-     * is still in the schema and stays there — an applied migration is never
-     * edited — which is exactly why this guard still asks about the INSERT
-     * rather than the table. Both directions still fail: start writing drafts
-     * while the document says there are none, or say they are stored while
-     * nothing stores them.
+     * ── AND NOW THE DISCLOSURE DIRECTION HAS FLIPPED ──────────────────────
+     *
+     * The feature is gone and the documents say nothing about it, so the
+     * question is no longer "does §5 account for drafts" — it is "could
+     * anything produce one that the documents would then have to account
+     * for". The INSERT is still the thing to ask about, because the table is
+     * still in the schema (an applied migration is never edited) and a future
+     * writer would make the documents incomplete the day it lands.
+     *
+     * Both directions fail: start writing drafts while the documents are
+     * silent, or describe drafts while nothing writes one.
      */
     const writes = walk('lib').concat(walk('domain'), walk('app')).map(code).join('\n')
     const storesGenerations = /insert\(schema\.aiGenerations\b/.test(writes)
 
-    /*
-     * `[[CONFIRM]]` notes are stripped first. The withdrawn claim is recorded
-     * in one — "it told sellers we kept a record of every suggestion" — which
-     * is close to the phrase being searched for, so leaving them in would let
-     * the document satisfy this assertion with the note that says the
-     * opposite. A guard matched by its own correction note is the same failure
-     * as one matched by its own documentation, and this file has met that
-     * eight times.
-     */
-    const claims = privacy.replace(/`\[\[CONFIRM:[\s\S]*?\]\]`/g, '')
-
-    if (storesGenerations) {
-      expect(
-        /store each draft/i.test(claims),
-        'something inserts into ai_generations and §2 does not say drafts are stored',
-      ).toBe(true)
-    } else {
-      expect(
-        /store each draft/i.test(claims),
-        '§2 says drafts are stored and nothing inserts into ai_generations',
-      ).toBe(false)
-    }
-
-    /*
-     * And §5 accounts for drafts rather than stopping at "shop data". The
-     * answer it has to give changed with D95 — not "they are not kept" but
-     * "there are none" — and the retention section has to say which, because
-     * a seller asking how long a draft is kept is entitled to be told that
-     * the question no longer arises.
-     */
-    const retention = claims.slice(claims.indexOf('## 5.'), claims.indexOf('## 6.'))
-    expect(retention, '§5 no longer accounts for AI drafts at all').toMatch(/draft/i)
     expect(
-      retention,
-      '§5 should say there are no drafts, since there is no AI feature to produce one',
-    ).toMatch(/there are none|no AI feature/i)
+      storesGenerations,
+      'something inserts into ai_generations, so §2 and §5 have a disclosure to make',
+    ).toBe(false)
+
+    /*
+     * And the documents are silent about drafts in every form of the word.
+     * `[[CONFIRM]]` notes are included rather than stripped this time: the one
+     * that explained the empty table to the reviewing lawyer was removed with
+     * the rest, because an empty table nothing writes to is not something a
+     * seller needs told about.
+     */
+    for (const [name, text] of [['privacy', privacy], ['terms', terms]] as const) {
+      expect(text, `${name} mentions a draft`).not.toMatch(/\bdrafts?\b/)
+    }
+    /*
+     * "DRAFT FOR LEGAL REVIEW" is a different word in the same spelling, and
+     * it is why the assertion above reads the documents rather than their
+     * banners: both carry that heading in capitals, and the matcher is
+     * case-sensitive on purpose... which is a trap for the next reader, so it
+     * is asserted rather than left implicit.
+     */
+    expect(privacy, 'the draft banner has gone from the Privacy Policy').toContain(
+      'DRAFT FOR LEGAL REVIEW',
+    )
   })
 
   it('§2 and §9: the Etsy token is encrypted and no plaintext column holds one', () => {
@@ -624,32 +617,42 @@ describe('what the documents say about third parties', () => {
     }
   })
 
-  it('§3 and §6: the no-training promise is about us, and says who does see it', () => {
+  it('§3 and §6: the no-training commitment stands on its own', () => {
     /*
-     * ── THE SECOND HALF REVERSED, AND THAT IS WHY IT IS STILL HERE ────────
+     * ── THE ONE SENTENCE THAT IS NOT A FEATURE REFERENCE, AND ITS THIRD
+     *    VERSION OF THIS GUARD ───────────────────────────────────────────
      *
      * "We do not use your shop data or your content to train artificial
-     * intelligence models" is true of us, and read quickly it suggests no
-     * model sees the content at all. While the Copilot existed that reading
-     * was FALSE — a draft was generated by one — so this required both
-     * documents to say who did receive listing text, or the promise was
-     * misleading by omission.
+     * intelligence models" is the owner's commitment under Etsy's Prohibited
+     * Behavior item 25. It is a promise about CONDUCT, it is true whether or
+     * not this product ever has an AI feature, and it stays.
      *
-     * With no AI in the product the quick reading is the true one, and the
-     * omission runs the other way: a document that still says a provider
-     * receives listing text describes something that cannot happen. So the
-     * same test now requires the commitment plus an explicit statement that
-     * nothing is sent anywhere — not silence, which would leave a seller to
-     * infer it.
+     * What this test has asked about it has changed twice:
      *
-     * Scoped to the sections that make the claim, because §2 of the Privacy
-     * Policy records in the past tense what it used to disclose, and a guard
-     * that could only be satisfied by deleting that record would eventually
-     * be satisfied by deleting it.
+     *   1. While the Copilot existed, the promise read quickly as "no model
+     *      sees your content at all", which was FALSE — a draft was generated
+     *      by one. So both documents had to say who did receive listing text,
+     *      or the promise was misleading by omission.
+     *   2. With the feature removed but described, the test required that
+     *      explanation to say there was no provider.
+     *   3. Now both documents are silent about the feature, so the promise
+     *      can no longer be explained by anything about it — and an
+     *      explanation that referred to a deleted feature would read as a
+     *      promise about that feature rather than a standing rule, which is
+     *      weaker. So: the commitment is present, it is framed as a limit on
+     *      what may be done with the data, and NOTHING around it describes a
+     *      drafter, a provider or an egress.
      */
+    /*
+     * Whitespace-normalised. Both documents wrap at 100 columns, so a phrase a
+     * reader sees on one line is two lines in the source and a literal match
+     * against it silently fails — which it did, on the first run of this
+     * version, for a sentence that was there.
+     */
+    const flat = (markdown: string) => markdown.replace(/\s+/g, ' ')
     const sections = [
-      ['privacy §3', privacy.slice(privacy.indexOf('## 3.'), privacy.indexOf('## 4.'))],
-      ['terms §6', terms.slice(terms.indexOf('## 6.'), terms.indexOf('## 7.'))],
+      ['privacy §3', flat(privacy.slice(privacy.indexOf('## 3.'), privacy.indexOf('## 4.')))],
+      ['terms §6', flat(terms.slice(terms.indexOf('## 6.'), terms.indexOf('## 7.')))],
     ] as const
 
     for (const [name, section] of sections) {
@@ -657,15 +660,31 @@ describe('what the documents say about third parties', () => {
       expect(section, `${name} no longer makes the no-training commitment`).toContain(
         'to train artificial intelligence models',
       )
+
+      /*
+       * A standing rule rather than a description. Both sections say so in
+       * the same words — "a standing limit on what we may do with your data"
+       * — and both say the two things that make it a rule: it covers
+       * everything held for the seller, and it binds our processors too.
+       */
       expect(
-        /no AI (feature|provider)|nothing in CobaltRank sends|none to send it to/i.test(section),
-        `${name} promises no AI training without saying whether anything receives shop content`,
-      ).toBe(true)
+        section,
+        `${name} states the commitment without saying it is a standing rule`,
+      ).toMatch(/standing limit on what we may do with your data/i)
+      expect(section, `${name} does not extend the commitment to our processors`).toMatch(
+        /processes your data on our behalf/i,
+      )
+
+      // And nothing in either section explains it by a feature.
+      const explained = /drafter|draft|AI provider|language model|AI feature|copilot|extension|\bsent to\b/i
       expect(
-        /is sent to our AI provider|does not train on it either/i.test(section),
-        `${name} still describes an AI provider receiving listing text, and there is none`,
+        explained.test(section),
+        `${name} explains the commitment by referring to a feature that does not exist`,
       ).toBe(false)
     }
+
+    /* The two sections point at each other, so neither can quietly drop it. */
+    expect(sections[0][1]).toMatch(/Section 6 of the Terms of Service makes the same commitment/i)
   })
 })
 
@@ -822,44 +841,214 @@ describe('the placeholder gate: an unfinished agreement is not presented as one'
   })
 })
 
-describe('what /legal/etsy says about the browser extension', () => {
+/* ─────────── silence, and the sweep that holds it ─────────────────────── */
+
+/*
+ * The vocabulary of two removed features, in the forms a surface could use.
+ *
+ * `\bextension\b` rather than "browser extension": "the extension" on its own
+ * is how a page refers to one once the first sentence has named it, and that
+ * is the sentence a later edit drops.
+ */
+const REMOVED_FEATURE_WORDS =
+  /\bextensions?\b|copilot|\bAI\b|AI[- ]assisted|AI_ASSISTED|language model|artificial intelligence|drafter|listing draft/i
+
+/** The sentence that is allowed to say "artificial intelligence models". */
+const NO_TRAINING = 'We do not use your shop data or your content to train artificial intelligence models.'
+
+/**
+ * The document text with the two places the commitment is allowed to live
+ * removed: section 6 of the Terms, whose entire subject is the commitment, and
+ * the sentence itself wherever else it appears.
+ *
+ * Normalised first — the sentence is wrapped in `**` and wraps across two
+ * lines in both documents, so a literal split against raw markdown exempts
+ * nothing and the sweep then fires on the one sentence that is allowed.
+ */
+function withoutTheCommitment(text: string): string {
+  const flat = text.replace(/\*\*/g, '').replace(/\s+/g, ' ')
+  const start = flat.indexOf('## 6. Training artificial intelligence models')
+  const section =
+    start === -1 ? '' : flat.slice(start, flat.indexOf('## 7.', start === -1 ? 0 : start))
+  return (section ? flat.split(section).join(' … ') : flat).split(NO_TRAINING).join(' … ')
+}
+
+describe('no surface a seller can reach mentions the extension or an AI feature', () => {
   /*
    * ██████████████████████████████████████████████████████████████████████
    *
-   *   THE TERMS ONCE DENIED THAT A BROWSER EXTENSION EXISTED. ONE SHIPPED
-   *   IN THIS REPOSITORY. ETSY'S PROHIBITED BEHAVIOR LIST NAMES EXTENSIONS
-   *   EXPLICITLY, SO THIS IS THE CLAIM WITH THE MOST AT STAKE: GETTING IT
-   *   WRONG RISKS THE API ACCESS THE WHOLE PRODUCT DEPENDS ON.
+   *   THE RULE IS NOW SILENCE, AND SILENCE IS THE STRONGER CLAIM.
    *
    * ██████████████████████████████████████████████████████████████████████
    *
-   * ── THE SAME CLAIM, MEASURED THE OTHER WAY ROUND ──────────────────────
+   * ── WHAT WAS HERE, AND WHY IT IS INVERTED ─────────────────────────────
    *
-   * Six tests here used to read extension/manifest.chrome.json and
-   * extension/src/*.ts at request time, because /legal/etsy made five
-   * negative claims about the extension — it read no page content, no
-   * cookies, no storage, changed nothing, never called etsy.com — and each
-   * one stopped being true the moment somebody added a line to a content
-   * script. Reading the manifest was the fix for a sentence written from
-   * memory, which is how the false denial got into the Terms.
+   * Three generations of this block:
    *
-   * D95 removed the extension, and the page now makes ONE claim: there is no
-   * browser extension in this product. That claim is not checked against a
-   * manifest — it is checked against the absence of one, which is the only
-   * evidence that can support it. A guard that only read the page's words
-   * would go green on the day an extension came back without the page being
-   * touched, which is exactly the original defect with the sentences swapped.
+   *   1. Six tests read extension/manifest.chrome.json and extension/src/*.ts
+   *      at request time, because /legal/etsy made five negative claims about
+   *      the extension — no page content, no cookies, no storage, changes
+   *      nothing, never calls etsy.com — and each stopped being true the
+   *      moment somebody added a line to a content script. Reading the
+   *      manifest was the fix for a sentence written from memory, which is
+   *      how a false denial got into the Terms in the first place.
+   *
+   *   2. Three tests asserted that the documents and /legal/etsy SAID there
+   *      was no extension and said it had been removed rather than switched
+   *      off, checked against the absence of the five paths it occupied.
+   *
+   *   3. This. The owner's decision is that no seller-facing surface and no
+   *      legal document mentions either removed feature at all — not a
+   *      historical note, not a positive statement of absence. The documents
+   *      must be ACCURATE, not complete: with no extension and no AI feature,
+   *      silence about both is accurate, and Etsy's API Terms Section 4 duty
+   *      is about what the product does rather than what it does not.
+   *
+   * Generation 2 was satisfiable by one sentence in one file. This one is
+   * satisfiable only by every seller-facing file at once, which is why it is
+   * the stronger rule: a sentence re-added anywhere — a page, a component, a
+   * button's reason, either document — fails it, and so does a feature that
+   * comes back without its disclosure.
    */
 
-  const page = code('app/(public)/legal/etsy/page.tsx').replace(/\s+/g, ' ')
+  /*
+   * EVERY module that can put words on a screen, not only app/ and
+   * components/. The first version of this swept those two, and the sentence
+   * that mattered most was in neither: `domain/data-sources/service.ts` held
+   * the /data/sources catalogue row that stated the absence, and
+   * `domain/billing/webhooks.ts` held an email body promising the feature
+   * would keep working. A sweep that stops at the view layer stops short of
+   * where this product keeps its copy.
+   */
+  const surfaces = () =>
+    walk('app').concat(walk('components'), walk('domain'), walk('lib'))
 
-  it('says there is no extension, and the tree agrees', () => {
-    expect(page).toMatch(/does not offer a browser extension/)
+  /*
+   * The one exemption, and it is a KEY rather than a sentence.
+   *
+   * `ai.view` is an operator permission that grants access to nothing. It
+   * stays because removing it would rewrite stored role records, the audit
+   * entries that name it and the permission matrix — all to delete a string —
+   * and because a key that has stopped granting anything is a different thing
+   * from a page telling a seller about a feature.
+   *
+   * Written as the repo's KNOWN_REMAINING shape: each entry has to still
+   * match, so a reader finds a decision rather than an omission, and deleting
+   * the key means deleting the entry.
+   */
+  const EXEMPT: { file: string; matcher: RegExp; why: string }[] = [
+    {
+      file: 'domain/admin/permissions.ts',
+      matcher: /'ai\.view'|title: 'AI'/,
+      why:
+        'The permission key and its label in the operator matrix. It grants nothing, and its own ' +
+        'detail says so without naming anything; the key is kept so stored role records stay readable.',
+    },
+    {
+      file: 'domain/admin/roles.ts',
+      matcher: /'ai\.view'/,
+      why:
+        'The same key in a role\u2019s default permission set. A key in a list, not a sentence a ' +
+        'reader could mistake for a description of the product.',
+    },
+  ]
 
+  it('finds the surfaces it is sweeping, and can see the words when they are there', () => {
     /*
-     * The five paths the extension occupied. Any one of them returning makes
-     * the sentence above false, and this is the only place that would notice:
-     * nothing else in the repository reads /legal/etsy against the build.
+     * Anti-vacuity, in both halves. A sweep over an empty file list passes
+     * every assertion below perfectly, and a matcher that matches nothing
+     * passes them twice as fast.
+     */
+    expect(surfaces().length, 'the sweep found no seller-facing surfaces').toBeGreaterThan(350)
+
+    // Every exemption is still real. One that stopped matching would be a
+    // decision recorded about something that is no longer there.
+    for (const exempt of EXEMPT) {
+      expect(
+        exempt.matcher.test(code(exempt.file)),
+        `${exempt.file} no longer matches its exemption; delete the EXEMPT entry`,
+      ).toBe(true)
+      expect(exempt.why.length, `${exempt.file} has no reason recorded`).toBeGreaterThan(60)
+    }
+
+    for (const sentence of [
+      'CobaltRank does not offer a browser extension.',
+      'There is no AI feature in this product.',
+      'the listing text is sent to our AI provider',
+      'A listing drafter was built and has been removed.',
+      'AI-assisted',
+    ]) {
+      expect(REMOVED_FEATURE_WORDS.test(sentence), `the matcher misses: ${sentence}`).toBe(true)
+    }
+
+    // And it does not fire on the ordinary vocabulary of this product.
+    for (const innocent of [
+      'Every figure on this screen is modelled sample data.',
+      'Your Etsy password is never asked for, received or stored.',
+      'Bulk edits, scheduled jobs and manual edits land in the same trail.',
+    ]) {
+      expect(REMOVED_FEATURE_WORDS.test(innocent), innocent).toBe(false)
+    }
+  })
+
+  it('says nothing about either feature anywhere in the product', () => {
+    /*
+     * Comments are stripped. The history is kept where it belongs — D95 in
+     * docs/DECISIONS.md, the headers in components/layout/navigation.ts and
+     * components/ui/where-to-start.tsx, this test's own preamble — and a guard
+     * that could only be satisfied by deleting those explanations would
+     * eventually be satisfied by deleting them. What a seller reads is the
+     * code with the comments taken out.
+     */
+    const offenders: string[] = []
+    for (const file of surfaces()) {
+      const exempt = EXEMPT.filter((e) => e.file === file)
+      for (const line of code(file).split('\n')) {
+        if (!REMOVED_FEATURE_WORDS.test(line)) continue
+        if (exempt.some((e) => e.matcher.test(line))) continue
+        offenders.push(`${file}: ${line.trim().slice(0, 90)}`)
+      }
+    }
+    expect(offenders, 'a seller-facing surface names a feature this product does not have').toEqual(
+      [],
+    )
+  })
+
+  it('says nothing about either feature in either document, bar the one commitment', () => {
+    /*
+     * The no-training sentence is the exception and the only one: it is a
+     * promise about conduct, not a description of a feature, it is the
+     * owner's commitment under Etsy's Prohibited Behavior item 25, and it is
+     * true whether or not this product ever has an AI feature. It is removed
+     * from the text here so that the rest of the document is swept, and
+     * asserted separately below.
+     */
+    const finder = new RegExp(REMOVED_FEATURE_WORDS.source, 'gi')
+    for (const [name, text] of [['privacy', privacy], ['terms', terms]] as const) {
+      const flat = text.replace(/\*\*/g, '').replace(/\s+/g, ' ')
+      expect(
+        flat.split(NO_TRAINING).length - 1,
+        `${name} does not carry the no-training commitment exactly once`,
+      ).toBe(1)
+
+      const rest = withoutTheCommitment(text)
+      expect(rest.length, `${name} is empty`).toBeGreaterThan(4000)
+      const hits = [...rest.matchAll(finder)].map((m) =>
+        rest.slice(Math.max(0, m.index - 50), m.index + 50),
+      )
+      expect(hits, `${name} still mentions a feature this product does not have`).toEqual([])
+    }
+  })
+
+  it('is silent because the features are gone, not because a flag hides them', () => {
+    /*
+     * Silence is only accurate while there is nothing to disclose. A
+     * deployment that could switch either feature on would make every
+     * document false on that deployment alone, and nothing in them would say
+     * so — which is the state this block existed to prevent in generation 1.
+     *
+     * So: the paths stay absent, and no module may read an environment
+     * variable that would bring one back.
      */
     for (const path of [
       'extension',
@@ -867,66 +1056,49 @@ describe('what /legal/etsy says about the browser extension', () => {
       'app/api/extension',
       'lib/extension',
       'domain/extension',
+      'lib/ai',
+      'domain/ai',
+      'app/(dashboard)/listings/ai-copilot',
     ]) {
-      expect(existsSync(path), `${path} exists, and /legal/etsy says it does not`).toBe(false)
+      expect(existsSync(path), `${path} exists, and no document discloses it`).toBe(false)
     }
-  })
 
-  it('says removed rather than switched off, because there is no flag left', () => {
-    /*
-     * The distinction a reader of a legal page is entitled to: a feature
-     * behind an environment variable is a feature this deployment could turn
-     * on, and the page would then be false on that deployment only. The page
-     * claims something stronger — the code is gone — so no flag may remain.
-     */
-    expect(page).toMatch(/taken out of the application entirely/)
-    expect(page).toMatch(/no download route, no settings page, no link to one/)
-
-    /*
-     * The FLAG, not the word. .env.example explains at length why the
-     * variable is gone and names it four times doing so, and a guard that
-     * could only be satisfied by deleting that explanation would eventually
-     * be satisfied by deleting it. So: no assignment line in the template,
-     * and nothing in the product that reads it.
-     */
     expect(readFileSync('.env.example', 'utf8')).not.toMatch(
-      /^\s*(BROWSER_EXTENSION_ENABLED|EXTENSION_IDS|EXTENSION_APP_URL)\s*=/m,
+      /^\s*(BROWSER_EXTENSION_ENABLED|EXTENSION_IDS|EXTENSION_APP_URL|AI_MODE|ANTHROPIC_API_KEY)\s*=/m,
     )
-    for (const file of ['middleware.ts', 'next.config.ts', 'package.json']) {
-      expect(
-        code(file).includes('BROWSER_EXTENSION_ENABLED'),
-        `${file} still reads BROWSER_EXTENSION_ENABLED`,
-      ).toBe(false)
-    }
-    // And no module anywhere asks the environment about an extension.
     const readers = ['app', 'components', 'domain', 'lib']
       .flatMap((root) => walk(root))
       .concat('middleware.ts')
       .filter((file) =>
-        /process\.env\.(BROWSER_EXTENSION_ENABLED|EXTENSION_IDS|EXTENSION_APP_URL)/.test(
+        /process\.env\.(BROWSER_EXTENSION_ENABLED|EXTENSION_IDS|EXTENSION_APP_URL|AI_MODE|ANTHROPIC_API_KEY)/.test(
           code(file),
         ),
       )
     expect(readers).toEqual([])
   })
 
-  it('claims no authorisation from Etsy, because none has been given', () => {
+  it('and /legal/etsy still claims no authorisation it has not been given', () => {
     /*
-     * The page describes behaviour and does not assert a conclusion about
-     * whether that behaviour satisfies item 24 of Etsy's Prohibited Behavior
-     * list. That is Etsy's call. A page that claimed compliance would be
-     * making a representation nobody here is in a position to make — and the
-     * last time this product described the extension from memory, the
-     * description was false.
+     * The half of the old assertion that survives the silence. The page says
+     * what CobaltRank does — every piece of Etsy data through the official
+     * API, nothing read from an Etsy page — and it may not go on to assert a
+     * conclusion about whether that satisfies Etsy's rules. That is Etsy's
+     * call, and a page claiming compliance would be making a representation
+     * nobody here is in a position to make.
      */
-    expect(page).toMatch(/No written authorisation has been asked for or given/)
+    const page = code('app/(public)/legal/etsy/page.tsx').replace(/\s+/g, ' ')
+    expect(page).toMatch(/every piece of Etsy data through Etsy&rsquo;s official API/)
+    expect(page).toMatch(/Nothing in this product reads a page on etsy\.com/)
     expect(
-      /compliant with|complies with Etsy|approved by Etsy|authorised by Etsy/i.test(page),
+      /compliant with|complies with Etsy|approved by Etsy|authorised by Etsy|certified by Etsy/i.test(
+        page,
+      ),
       '/legal/etsy claims Etsy approval',
     ).toBe(false)
   })
 
   it('carries the warranty disclaimer from the Terms rather than a second copy', () => {
+    const page = code('app/(public)/legal/etsy/page.tsx')
     const facts = code('lib/legal/etsy.ts')
     expect(facts).toMatch(/legalDocument\('terms'\)/)
     expect(facts).toMatch(/## 12\./)

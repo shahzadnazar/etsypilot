@@ -62,24 +62,17 @@ export function demoSecurity(): DemoSecurity | null {
         readOnly: false,
       },
       /*
-       * ── THE DEMO NO LONGER HAS AN EXTENSION SESSION ──────────────────────
+       * ── A THIRD SESSION ROW WAS HERE, AND IT ADVERTISED A FEATURE ────────
        *
-       * There was a third row here: `ext-chrome`, "CobaltRank extension ·
-       * Chrome", read-only, last seen on etsy.com. It was the one entry in
-       * this fixture that advertised a feature — a demo visitor reading the
-       * security page would conclude an extension exists and that they could
-       * install one.
+       * `ext-chrome`, read-only, last seen on etsy.com. It was the one entry
+       * in this fixture that told a demo visitor the product had a capability
+       * it does not have — and a demo exists to show what the product does.
        *
-       * D95 removed the extension, so the row is an authored claim about
-       * something that is not there, which is exactly what a demo fixture may
-       * not be. The CODE PATH stays: `SessionKind` still has 'EXTENSION',
-       * /settings/security still renders such a row with its read-only note
-       * and a working Revoke, and the page explains it — because a live
-       * deployment may still hold a real extension session granted before the
-       * removal, and hiding access that exists is the opposite of what a
-       * security page is for.
-       *
-       * So: nothing invented in the demo, nothing hidden in live.
+       * D95 removed the capability; the fixture row went with it, and the
+       * type that described it has one member now (../security/service.ts).
+       * In live mode this list is empty anyway: nothing in this product
+       * records a session yet, which is what the page says rather than
+       * filling the space.
        */
     ],
     events: [

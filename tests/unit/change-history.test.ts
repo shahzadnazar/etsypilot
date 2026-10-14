@@ -63,26 +63,35 @@ describe('outcome', () => {
     expect(outcomeLabel(job)).toBe('1 failed')
   })
 
-  it('never says Approved over a job with a failure in it', async () => {
+  it('names a skip when there is one, and otherwise says Complete', async () => {
     /*
-     * The AI_ASSISTED job is BUILT here now, and that is the point of the
-     * change rather than a workaround. It used to be demo job 4788, which was
-     * seeded `AI_ASSISTED`; D95 removed the Copilot, so the demo no longer
-     * invents a job of a kind the product cannot produce (see
-     * domain/change-history/demo-jobs.ts).
+     * ── THIS TEST WAS ABOUT A FOURTH OUTCOME THAT NO LONGER EXISTS ────────
      *
-     * The RULE is unchanged and still has to hold: 'Approved' is what
-     * outcomeLabel says over an AI-assisted job with nothing wrong in it, a
-     * deployment may still hold such a job from before the removal, and a
-     * failure inside one must be named ahead of the approval either way.
+     * It read "never says Approved over a job with a failure in it":
+     * outcomeLabel answered 'Approved' for a job whose source was
+     * AI_ASSISTED, and the rule was that a failure inside such a job had to
+     * be named ahead of the approval. Nothing in this product ever wrote that
+     * source — every writer sets BULK_EDIT, SCHEDULED or MANUAL — so the
+     * member, the label and the branch are gone
+     * (domain/change-history/types.ts).
+     *
+     * The precedence rule is what mattered, and it is asserted here on the
+     * answers that remain: a failure outranks a skip, a skip outranks
+     * Complete, and "Complete" is never said over a job with either in it.
      */
-    const base = jobFor('4788')
-    const ai: ChangeJob = { ...base, source: 'AI_ASSISTED', items: [...base.items] }
-    expect(outcomeLabel(ai)).toBe('Approved')
-    expect(outcomeLabel(base)).toBe('Complete')
+    const clean = jobFor('4788')
+    expect(outcomeOf(clean).failed).toBe(0)
+    expect(outcomeLabel(clean)).toBe('Complete')
+
+    const skipped: ChangeJob = {
+      ...clean,
+      items: [{ ...clean.items[0]!, status: 'SKIPPED' as const }, ...clean.items.slice(1)],
+    }
+    expect(outcomeLabel(skipped)).toBe('1 skipped')
+
     const broken: ChangeJob = {
-      ...ai,
-      items: [{ ...ai.items[0]!, status: 'FAILED' as const }],
+      ...skipped,
+      items: [{ ...skipped.items[0]!, status: 'FAILED' as const }, ...skipped.items.slice(1)],
     }
     expect(outcomeLabel(broken)).toBe('1 failed')
   })

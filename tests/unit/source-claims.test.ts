@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { existsSync, readdirSync, statSync } from 'node:fs'
+import { readdirSync, statSync } from 'node:fs'
 
 import { posixJoin } from '../support/paths'
 import { code } from '../support/shop-scoping'
@@ -116,7 +116,6 @@ describe('the catalogue of sources is read from the adapters, not written down',
       'seasonality',
       'stats-import',
       'event-log',
-      'llm',
       'demo',
     ])
     for (const row of dataSources()) {
@@ -150,41 +149,23 @@ describe('the catalogue of sources is read from the adapters, not written down',
     expect(rowFor('payments').class).toBe('UNAVAILABLE')
   })
 
-  it('and the language-model row says there is no language model', () => {
-    /*
-     * ── THE ROW THAT READS NOTHING, BECAUSE THERE IS NOTHING TO READ ──────
-     *
-     * This assertion used to call getAiProvider().mode and expect the status
-     * to follow it: 'Rule-based drafter — nothing leaves this machine' or
-     * 'Live model'. D95 removed the AI Copilot and the provider with it, so
-     * there is no adapter to ask.
-     *
-     * The row did NOT go with it. /data/sources is the catalogue of what this
-     * product reads from, and "there is no language model here" is a fact a
-     * seller came to that page to learn — the same reason the email, payment
-     * and keyword-provider rows are listed while resolving to nothing. So the
-     * row stays and states the absence, and this guard checks the statement
-     * against the filesystem rather than against another string: the claim
-     * "no AI provider in this product" is true only while no provider module
-     * exists, and `lib/ai/` coming back would make the row a lie on the day
-     * it is re-created.
-     */
-    for (const mode of ['live', 'mock']) {
-      process.env.ETSY_MODE = mode
-      const row = rowFor('llm')
-      expect(row.status, `llm status under ETSY_MODE=${mode}`).toBe(
-        'Not connected — no AI provider in this product',
-      )
-      expect(row.class).toBe('UNAVAILABLE')
-      expect(row.refresh).toBe('Never')
-      /* The row has to say what is NOT sent, not merely that nothing is on. */
-      expect(row.limitations).toMatch(/no listing, order or cost of yours is sent/i)
-    }
-
-    /* And the claim measured against the product, not against itself. */
-    expect(existsSync(posixJoin(process.cwd(), 'lib/ai'))).toBe(false)
-    expect(existsSync(posixJoin(process.cwd(), 'domain/ai'))).toBe(false)
-  })
+  /*
+   * ── THE LANGUAGE-MODEL ROW HAD A TEST HERE, AND THEN HAD NO ROW ────────
+   *
+   * Three versions. It first asserted the status followed `getAiProvider()
+   * .mode` — "Rule-based drafter — nothing leaves this machine" or "Live
+   * model". It then asserted the row stated the absence identically on every
+   * deployment, checked against `existsSync('lib/ai')` so the claim could not
+   * outlive the thing it described.
+   *
+   * The owner's decision is that no seller-facing surface mentions the
+   * removed features at all, so the row is gone: a catalogue row stating an
+   * absence is still a sentence about a feature, on the page a seller opens to
+   * find out what the product reads from. The key list above is the guard now
+   * — a row reappearing fails it — and
+   * tests/unit/legal-claims.test.ts sweeps this file along with every other
+   * surface for the vocabulary of either feature.
+   */
 
   it('every unavailable row says so in its status, not only in its class', () => {
     /*

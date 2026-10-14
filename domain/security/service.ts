@@ -7,11 +7,10 @@
  * more anxiously and less safely — than one who knows it holds a token they can
  * revoke from either end.
  *
- * The extension appears in Active sessions as a READ-ONLY entry that can be
- * revoked. It is a session in the sense that matters to the person reading the
- * list — something with access, in a place, that can be taken away — and
- * leaving it out of the list because it is a different kind of credential would
- * hide the one entry most people forget they granted.
+ * Active sessions lists anything with access — something in a place that can
+ * be taken away — rather than only the thing a reader would think to look for.
+ * A credential that is left out of that list because it is a different kind of
+ * credential is the one somebody forgets they granted.
  */
 
 import { getEtsyService } from '@/lib/etsy'
@@ -19,18 +18,23 @@ import { nowIso } from '@/domain/clock'
 import { demoSecurity } from './demo'
 import type { ShopContext } from '@/lib/permissions'
 
-export type SessionKind = 'BROWSER' | 'EXTENSION'
+/*
+ * One kind, and the union stays a union on purpose: a second kind of thing
+ * with access to an account is a change this type should make visible at every
+ * call site rather than absorb.
+ */
+export type SessionKind = 'BROWSER'
 
 export interface ActiveSession {
   id: string
   kind: SessionKind
   label: string
-  /** Masked session reference, or the scope for the extension. */
+  /** Masked session reference, or the scope the session holds. */
   detail: string
   location: string
   lastSeen: string
   current: boolean
-  /** True for the extension. Named, not implied by the kind. */
+  /** A session that can read and cannot change anything. Named, never implied. */
   readOnly: boolean
 }
 

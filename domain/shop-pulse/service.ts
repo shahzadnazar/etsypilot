@@ -509,7 +509,7 @@ const MUTATING_EVENTS = new Set([
   'STOCKOUT',
   'RESTOCKED',
   'BULK_EDIT_COMPLETED',
-  'AI_CHANGE_APPLIED',
+  // 'AI_CHANGE_APPLIED' was the twelfth. Nothing emits it; see lib/events/types.ts.
 ])
 
 function unexplainedDeviations(

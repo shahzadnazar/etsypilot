@@ -162,46 +162,48 @@ with sync_playwright() as p:
     for invented in ["eRank", "Semrush", "Keyword Tool", "Marmalade"]:
         check(invented not in subs,
               f"live /legal/subprocessors: names no unconnected provider ({invented!r})")
-    # Anthropic, PBC was the one named provider in use, and D95 removed the
-    # feature that sent to it. A sub-processor row is an Article 28 statement
-    # that this company processes your data TODAY, so the row came off with the
-    # feature — and both directions are checked, because a table that names a
-    # company nothing sends to is false in the same way as a missing row.
-    # Asserted on the ROW rather than on the word. The page names Anthropic in
-    # one sentence — saying a sub-processor has been removed is the same kind
-    # of notice as saying one has been added, and a guard satisfiable only by
-    # deleting that sentence would eventually be satisfied by deleting it. What
-    # must be gone is the row: the "what they do" cell that said a provider
-    # receives listing content.
-    check("AI provider. Receives listing title and tags" not in subs,
-          "live /legal/subprocessors: no row says an AI provider receives listing content")
-    check("Anthropic, PBC was on this list" in subs,
-          "live /legal/subprocessors: the removal is stated rather than silent")
+    # ── THE PAGE IS SILENT ABOUT THE REMOVED FEATURES, AND THAT IS THE RULE ─
+    #
+    # Anthropic, PBC was the one named provider in use. The feature that sent
+    # to it is gone, so the row went with it — a sub-processor row is an
+    # Article 28 statement that this company processes your data TODAY — and
+    # for one revision the page explained the removal in a sentence.
+    #
+    # The owner's decision is that it explains nothing: no mention of either
+    # removed feature on any seller-facing surface, not even a statement of
+    # absence. The documents must be accurate rather than complete, and with
+    # nothing sent to a model, silence is accurate. So this is asserted as
+    # silence, in every form the words could take.
+    # "draft" on its own is a different word in the same spelling: every legal
+    # page carries the banner "Draft. Not in force…", and a check that banned
+    # it would be satisfied by deleting the banner. The feature's own phrasings
+    # are what is banned.
+    for word in ["Anthropic", "AI provider", "language model", "AI feature",
+                 "AI draft", "listing draft", "drafter", "copilot"]:
+        check(word.lower() not in subs.lower(),
+              f"live /legal/subprocessors: says nothing about a model provider ({word!r})")
     # Still not a blank page: the one named row left is the source of the data.
     check("Etsy, Inc." in subs,
           "live /legal/subprocessors: the named section still carries Etsy, Inc.")
-    check("CobaltRank no longer has an AI feature" in subs,
-          "live /legal/subprocessors: says why the AI provider is not listed")
+    check("A sub-processor is a company that processes your data" in subs,
+          "live /legal/subprocessors: still explains what the list is")
 
-    # ── 4. /data/sources REPORTS THE EMPTY SEAM, AND THE ABSENT MODEL ──────
+    # ── 4. /data/sources REPORTS THE EMPTY SEAM, AND NAMES NO MODEL AT ALL ──
     sources = body(LIVE, "/data/sources")
     check("Not built yet — no source" in sources,
           "live /data/sources: market signals report no source")
     check("Bought keyword data" not in sources,
           "live /data/sources: does not describe a source it does not have")
-    # The language-model row did NOT disappear with the Copilot. This page is
-    # the catalogue of what the product reads from, and "there is no language
-    # model here" is a fact a seller came to it to learn — the same reason the
-    # email, payment and keyword-provider rows are listed while resolving to
-    # nothing. It used to read "Rule-based drafter — nothing leaves this
-    # machine" or "Live model", whichever the adapter answered.
-    check("Not connected — no AI provider in this product" in sources,
-          "live /data/sources: the language-model row says there is no model")
-    check("no listing, order or cost of yours is sent to a language model" in sources.lower(),
-          "live /data/sources: the row says what is not sent, not only that it is off")
-    for gone in ["Rule-based drafter", "Live model", "Anthropic"]:
-        check(gone not in sources,
-              f"live /data/sources: no longer claims a drafter ({gone!r})")
+    # The catalogue had a language-model row for one revision, stating the
+    # absence. It has none now: a row about a feature the product does not
+    # have is still a sentence about that feature, on the page a seller opens
+    # to find out what it reads from. Every row here names something real.
+    for word in ["Language model", "AI provider", "Rule-based drafter", "Live model", "Anthropic"]:
+        check(word.lower() not in sources.lower(),
+              f"live /data/sources: names no model, in any form ({word!r})")
+    # Anti-vacuity: the page is the catalogue, and it is still there.
+    for real in ["Etsy Open API", "Your cost setup", "Demo dataset"]:
+        check(real in sources, f"live /data/sources: still lists {real!r}")
 
     # ── 5. THE SEAM REPORTS ITSELF WHEN A PROVIDER IS CONFIGURED ───────────
     configured_subs = body(CONFIGURED, "/legal/subprocessors")

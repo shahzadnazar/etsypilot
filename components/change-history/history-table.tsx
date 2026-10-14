@@ -102,18 +102,16 @@ export function HistoryTable({ view }: { view: ChangeHistoryView }) {
                   </span>
                 </td>
                 <td className="px-3 py-3">
-                  {row.job.source === 'AI_ASSISTED' ? (
-                    <span
-                      className="inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9.5px] font-semibold"
-                      style={{ background: '#F5F3FF', borderColor: '#DDD6FE', color: '#6D28D9' }}
-                    >
-                      {SOURCE_LABEL[row.job.source]}
-                    </span>
-                  ) : (
-                    <span className="text-[11.5px] font-medium text-muted-1">
-                      {SOURCE_LABEL[row.job.source]}
-                    </span>
-                  )}
+                  {/*
+                    * One rendering for every source. The violet pill beside
+                    * this was for a source nothing writes, which went with the
+                    * word it displayed (domain/change-history/types.ts), and a
+                    * badge shape kept for an unreachable branch is a shape the
+                    * next reader has to go and account for.
+                    */}
+                  <span className="text-[11.5px] font-medium text-muted-1">
+                    {SOURCE_LABEL[row.job.source]}
+                  </span>
                 </td>
                 <td className="px-3 py-3">
                   <span

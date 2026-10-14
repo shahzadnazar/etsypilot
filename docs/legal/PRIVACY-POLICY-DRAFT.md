@@ -36,32 +36,6 @@ order sync stores a two-letter country code only, for aggregate reporting — ne
 buyer. **This is enforced by an automated test that fails if buyer-identifying data appears in our
 tables.**
 
-**Listing text — nothing is sent to a language model**
-No title, description, tag, order or cost of yours is sent to an AI provider, because CobaltRank
-has no AI feature and no AI provider. Nothing on any screen is written by a language model, there
-is no drafting or rewriting tool, and the sub-processor table in §4 names no model provider.
-
-A listing drafter was built for this product and has been removed from it. While it existed, this
-section disclosed that a listing's current title and tags were sent to our AI provider when you
-asked for a draft. That no longer happens and cannot: there is nothing in the application that
-could send it.
-`[[CONFIRM: there is still an ai_generations table in the database, with input, output and status
-columns, and nothing writes to it — an applied migration is never edited, so it stays. It held no
-rows while the feature existed either, which is why an earlier version of this section
-over-disclosed: it told sellers we kept a record of every suggestion and what they did with it,
-and no such record was ever written. Nothing needs to be said to a seller about an empty table
-nothing writes to; this note is here so the next reader of the schema does not conclude the
-document is incomplete.]]`
-
-**There is no browser extension**
-CobaltRank does not offer one, so nothing in this section applies to you and there is nothing to
-install. One was built and has been removed from the application — not left unpublished behind a
-switch, but taken out. It would have read the address of the Etsy page you were looking at and
-sent the listing id to us, so we could show you your own figures for that listing; it read nothing
-else from the page — not prices, not titles, not your Etsy cookies or session — and changed
-nothing on it. Etsy's API Terms restrict browser extensions that access Etsy data, that question
-has not been put to Etsy, and it is not one worth answering unilaterally.
-
 **Costs you enter**
 The product costs, shipping costs, labour rates and other figures you type in. These are yours; we
 use them only to compute your figures.
@@ -88,9 +62,11 @@ Your email address, your shop URL if you give it, and which part of the page you
 | Waitlist email | To tell you when we launch | Consent |
 
 We do not use your data for advertising. We do not sell it. **We do not use your shop data or your
-content to train artificial intelligence models.** Nobody else does either, because nothing in
-CobaltRank sends your shop content to a language model: there is no AI feature in this product and
-no AI provider in the sub-processor table below.
+content to train artificial intelligence models.** That last one is a standing limit on what we may
+do with your data rather than a statement about any one feature: it covers everything we hold for
+you — your listings, your orders, your costs, your audit records and anything you type here — it
+holds however the product changes, and we do not permit anyone who processes your data on our
+behalf to do it either. Section 6 of the Terms of Service makes the same commitment.
 
 We do not currently collect payment data, because no payment provider is connected yet. The row
 above describes how it will be handled when one is.
@@ -136,10 +112,6 @@ appears to have no listings — a false statement in place of a true one. And yo
 calculated from that copy every time you open a screen rather than stored as a separate record, so
 the copy IS the historical reporting you are paying for. Closing your account deletes it; so does
 asking us.
-
-**AI drafts** — there are none. CobaltRank has no AI feature, so no draft is produced, shown or
-kept, and nothing of yours is sent to a language model to produce one. This paragraph used to say
-that a draft existed only on the screen you asked for it on; the screen is gone.
 
 **Figures we calculate** — your profit history, margins, cost allocations and the findings on your
 Action Center are not kept. They are recalculated from your own orders, listings and costs every

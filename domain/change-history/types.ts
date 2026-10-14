@@ -17,13 +17,29 @@
  *             discard somebody's later edit.
  */
 
-export const CHANGE_SOURCES = ['BULK_EDIT', 'SCHEDULED', 'AI_ASSISTED', 'MANUAL'] as const
+/*
+ * ── 'AI_ASSISTED' IS NOT ONE OF THESE ────────────────────────────────────
+ *
+ * It was the third source, labelled "AI-assisted" and badged in violet on
+ * /listings/change-history. Nothing ever wrote it: every writer in the product
+ * sets BULK_EDIT, SCHEDULED or MANUAL (domain/bulk-editor, rollback.ts), and
+ * the Copilot that was meant to is gone.
+ *
+ * So the only thing the member could still do was put those words on a
+ * seller's screen for a row that cannot exist. A vocabulary this product
+ * renders is not a place to keep a word it has no use for.
+ *
+ * A row in an older database carrying that string is read through a cast and
+ * finds no label, so its badge renders empty rather than naming a feature
+ * nobody can reach. Nothing else about the job — what it changed, when, by
+ * whom, and the rollback — depends on the source.
+ */
+export const CHANGE_SOURCES = ['BULK_EDIT', 'SCHEDULED', 'MANUAL'] as const
 export type ChangeSource = (typeof CHANGE_SOURCES)[number]
 
 export const SOURCE_LABEL: Record<ChangeSource, string> = {
   BULK_EDIT: 'Bulk edit',
   SCHEDULED: 'Scheduled',
-  AI_ASSISTED: 'AI-assisted',
   MANUAL: 'Manual',
 }
 
@@ -70,11 +86,15 @@ export function outcomeOf(job: ChangeJob): ChangeOutcome {
 }
 
 /**
- * "1 failed", "Approved", "Complete" — in that order of precedence.
+ * "1 failed", "1 skipped", "Complete" — in that order of precedence.
  *
- * A failure is named first whatever the source. An AI-assisted job that partly
- * failed is a partly failed job, and reading "Approved" beside it would answer
- * a question nobody asked while hiding the one they did.
+ * A failure is named first whatever the source: a job that partly failed is a
+ * partly failed job, and an outcome that answered some other question first
+ * would hide the one the reader actually asked.
+ *
+ * There was a fourth answer, "Approved", for a job whose source was
+ * AI_ASSISTED. Nothing writes that source (see CHANGE_SOURCES above), so the
+ * branch could only ever have been reached by a row no code can create.
  */
 export function outcomeLabel(job: ChangeJob): string {
   const outcome = outcomeOf(job)
@@ -82,7 +102,7 @@ export function outcomeLabel(job: ChangeJob): string {
     return `${outcome.failed} failed`
   }
   if (outcome.skipped > 0) return `${outcome.skipped} skipped`
-  return job.source === 'AI_ASSISTED' ? 'Approved' : 'Complete'
+  return 'Complete'
 }
 
 export function isFailure(job: ChangeJob): boolean {

@@ -6,8 +6,8 @@ import { UserMenu } from '@/components/layout/user-menu'
  *
  * ── WHAT IT DOES NOT CARRY, AND WHY ───────────────────────────────────────
  *
- * The seller bar holds a shop chip, a command palette and an extension link.
- * None of the three belongs here:
+ * The seller bar holds a shop chip and a command palette. Neither belongs
+ * here:
  *
  *   the shop chip       there is no "your shop" on an operator screen. A chip
  *                       showing the operator's OWN shop beside another
@@ -17,7 +17,6 @@ import { UserMenu } from '@/components/layout/user-menu'
  *                       renders disabled with the reason on it. Carrying a
  *                       disabled control across to a new surface would be
  *                       copying a debt.
- *   the extension       a seller's tool. An operator has no listings to edit.
  *
  * So what is left is the two things an operator genuinely needs in that
  * corner: the theme, and the way out. Both are the seller app's own

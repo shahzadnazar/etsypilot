@@ -6,6 +6,12 @@
  * Center (PRD section 4.9, architecture.md section 6).
  */
 
+/*
+ * 'AI_CHANGE_APPLIED' was one of these, with the label "AI change applied".
+ * Nothing ever emitted it, and the feature that would have is gone — so the
+ * only thing it could still do was put those words on a seller's Shop Pulse
+ * for an event no code can write.
+ */
 export const EVENT_TYPES = [
   'PRICE_CHANGED',
   'TITLE_CHANGED',
@@ -20,7 +26,6 @@ export const EVENT_TYPES = [
   'BULK_EDIT_COMPLETED',
   'BULK_EDIT_FAILED',
   'BULK_EDIT_ROLLED_BACK',
-  'AI_CHANGE_APPLIED',
   'COST_RULE_CHANGED',
   'SHOP_CONNECTED',
   'SHOP_DISCONNECTED',
@@ -30,8 +35,13 @@ export const EVENT_TYPES = [
 
 export type EventType = (typeof EVENT_TYPES)[number]
 
-/** How the change reached the shop. Surfaced in Change History. */
-export type EventSource = 'MANUAL' | 'BULK_EDIT' | 'SCHEDULED' | 'AI_ASSISTED' | 'SYNC' | 'SYSTEM'
+/**
+ * How the change reached the shop. Surfaced in Change History.
+ *
+ * 'AI_ASSISTED' was a member and nothing ever emitted it; it is gone with the
+ * two vocabularies that rendered it (domain/change-history/types.ts).
+ */
+export type EventSource = 'MANUAL' | 'BULK_EDIT' | 'SCHEDULED' | 'SYNC' | 'SYSTEM'
 
 export interface DomainEvent {
   eventId: string
@@ -75,7 +85,6 @@ export const EVENT_LABEL: Record<EventType, string> = {
   BULK_EDIT_COMPLETED: 'Bulk edit completed',
   BULK_EDIT_FAILED: 'Bulk edit failed',
   BULK_EDIT_ROLLED_BACK: 'Bulk edit rolled back',
-  AI_CHANGE_APPLIED: 'AI change applied',
   COST_RULE_CHANGED: 'Cost rule changed',
   SHOP_CONNECTED: 'Shop connected',
   SHOP_DISCONNECTED: 'Shop disconnected',
@@ -87,7 +96,6 @@ export const EVENT_SOURCE_LABEL: Record<EventSource, string> = {
   MANUAL: 'Manual',
   BULK_EDIT: 'Bulk edit',
   SCHEDULED: 'Scheduled',
-  AI_ASSISTED: 'AI-assisted',
   SYNC: 'Sync',
   SYSTEM: 'System',
 }

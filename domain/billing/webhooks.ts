@@ -100,7 +100,7 @@ function apply(type: HandledEvent, payload: Record<string, unknown>, shopId: str
         notify: {
           severity: 'ACTION_NEEDED',
           title: 'Your card was declined',
-          body: 'Nothing has been cancelled and nothing was deleted. Your plan stays active while we retry, and updating your card fixes it. Bulk jobs and AI drafting keep working in the meantime.',
+          body: 'Nothing has been cancelled and nothing was deleted. Your plan stays active while we retry, and updating your card fixes it. Bulk jobs, audits and every figure on your screens keep working in the meantime.',
           action: { label: 'Update payment method', href: '/billing' },
         },
       }

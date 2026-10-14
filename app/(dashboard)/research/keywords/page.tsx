@@ -170,17 +170,20 @@ export default async function KeywordsPage({
               reason="Keyword Lists is read-only until saving is built."
             />
             {/*
-              * "Optimize a listing with selected" pointed at the AI Copilot,
-              * which D95 removed. It is not replaced by a link to the bulk
-              * editor: that applies a change the seller specifies, and this
-              * button promised a draft written from the selected terms. A
-              * button that does something adjacent to what it says is worse
-              * than no button.
+              * ── "OPTIMIZE A LISTING WITH SELECTED" IS NOT HERE ANY MORE ──
+              *
+              * It pointed at a screen D95 removed, and then at a NotYet whose
+              * reason named the removed feature — which is a seller-facing
+              * reference to something that does not exist, on a research
+              * screen, where nobody came to read about it.
+              *
+              * Not replaced by a link to the bulk editor: that applies a
+              * change the seller specifies, while this button promised text
+              * written from the selected terms. A control that does something
+              * adjacent to what it says is worse than no control, and a
+              * control that explains an absence is worse than silence. "Save
+              * to list" beside it is the honest unbuilt one and stays.
               */}
-            <NotYet
-              label="Optimize a listing with selected"
-              reason="Writing a listing from selected terms was the AI Copilot's job, and CobaltRank no longer has one. Edit the listing yourself from All Listings."
-            />
           </div>
         </div>
         <RelatedTermsTable terms={view.related} demo={demoData} />
