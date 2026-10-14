@@ -68,6 +68,24 @@ const HISTORY = [
   'docs/SECURITY-REVIEW.md', // a dated review, closed
   'docs/source/handoff/', // artefacts received from the designer
   'db/migrations/', // applied migrations are never edited
+  /*
+   * The compliance document names every predecessor project, and has to.
+   *
+   * Section 5, item 11 of Etsy's API Terms is about building multiple apps
+   * that offer the same services, and the owner's answer to it is that the
+   * earlier names are earlier REBUILDS of this product rather than separate
+   * applications, none of which ever held an Etsy API key. That answer cannot
+   * be given without naming them: "there was never a second app" is an
+   * assertion, and "these four names are the same product" is a statement a
+   * reviewer can check against the record.
+   *
+   * So this is the same judgement as the four above it — a document whose job
+   * is to say what was true in the past may not be rewritten to say it was
+   * always the present name. The alternative was to drop the names from the
+   * row, which would have satisfied this guard by deleting the evidence, and
+   * this file's own header is about not doing that.
+   */
+  'docs/ETSY-COMPLIANCE.md',
 ]
 
 function walk(dir: string, out: string[] = []): string[] {

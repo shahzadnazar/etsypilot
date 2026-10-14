@@ -95,10 +95,20 @@ export const NAV_GROUPS: NavGroup[] = [
     /*
      * ── "YOUR SHOP", NOT "ANALYTICS" ───────────────────────────────────
      *
-     * Etsy's API Terms, Prohibited Behavior item 25, forbids using the Etsy
-     * API to "collect, scan, or otherwise request Etsy content for purposes
-     * of analytics, machine learning, training artificial intelligence
-     * models, licensing, or content removal" without written authorisation.
+     * Etsy's API Terms, Section 5, Prohibited Behavior item 25, in full:
+     *
+     *     "Use the Etsy API to collect, scan, or otherwise request Etsy
+     *      content for purposes of analytics, machine learning, training
+     *      artificial intelligence models, licensing, or content removal,
+     *      unless expressly authorized in writing by Etsy."
+     *
+     * The tail was a paraphrase here — "without written authorisation" — and
+     * it is the half that makes this a CONDITIONAL rather than a ban. A
+     * partial quotation that reads as a flat prohibition is the same defect
+     * as a summary presented as a quotation, which is what
+     * tests/unit/etsy-compliance.test.ts exists to stop in the document.
+     * Confirmed word for word against https://www.etsy.com/legal/api/ on
+     * 14 October 2026.
      *
      * This group holds the one part of the product that genuinely requests
      * Etsy content through the API — the seller's own orders, payments and

@@ -288,14 +288,102 @@ describe('the compliance document names things that exist', () => {
       'a clause cell is neither marked as a summary nor as a quotation. Say which it is.',
     ).toEqual([])
 
+    /*
+     * ── THREE, AND WHICH THREE ───────────────────────────────────────────
+     *
+     * It was two until item 25's wording was confirmed word for word against
+     * Etsy's own page on 14 October 2026 — and this assertion is what stopped
+     * the promotion until it had been. That is the rule working rather than a
+     * rule being relaxed: the count only moves when somebody has read the
+     * clause, and raising it is a deliberate edit here.
+     *
+     * The clauses are named, not just counted. A count alone would let a
+     * different row take a quotation's place while the total stayed right,
+     * which is the same defect wearing a different number.
+     */
     const verbatim = clauseRows.filter((r) => r.clause.includes('**Verbatim.**'))
     expect(
       verbatim.length,
-      'more rows claim to quote Etsy than the repository holds quotations for. ' +
+      'more rows claim to quote Etsy than have been confirmed against its own page. ' +
         'A summary promoted to a quotation is the defect this rule exists for.',
-    ).toBe(2)
+    ).toBe(3)
+    const quoted = verbatim.map((r) => r.clause.slice(0, r.clause.indexOf(' —')))
+    expect(quoted.sort()).toEqual([
+      '**Item 24**',
+      '**Item 25**',
+      '**Section 5**, Display of Data',
+    ])
     for (const row of verbatim) {
       expect(row.clause, 'a Verbatim row carries no quotation marks').toMatch(/"/)
+    }
+
+    /*
+     * Item 25's quotation must carry the conditional tail. The clause is "…
+     * unless expressly authorized in writing by Etsy", and components/layout/
+     * navigation.ts quotes from "collect" onward and paraphrases that tail —
+     * which turns a conditional into what reads as a flat ban. The row is the
+     * place the whole sentence lives.
+     */
+    const item25 = verbatim.find((r) => r.clause.startsWith('**Item 25**'))
+    expect(item25, 'item 25 is no longer a verbatim row').toBeDefined()
+    expect(
+      item25?.clause,
+      'item 25 quotes the clause without the "unless expressly authorized" tail, which ' +
+        'is the part that makes it a conditional rather than a ban',
+    ).toContain('unless expressly authorized in writing by Etsy')
+  })
+
+  it('and tells what the code shows apart from what the owner states', () => {
+    /*
+     * ══════════════════════════════════════════════════════════════════════
+     *   AN OWNER STATEMENT IS NEVER THE WHOLE OF A ROW'S ANSWER.
+     * ══════════════════════════════════════════════════════════════════════
+     *
+     * Some positions are not properties of a repository. "There has never been
+     * a second Etsy application" is a fact about the developer; no test can
+     * reach it. Those sentences are marked, because a reviewer should be able
+     * to tell which claims a guard stands behind and which the owner does —
+     * and because the marked list is the part the owner has to stand behind
+     * personally in the application itself.
+     *
+     * Two rules. The set is closed, so a fourth cannot appear quietly. And
+     * every such row must ALSO carry code evidence: the marker is for the half
+     * of a row that code cannot reach, never a way to answer a clause with an
+     * assertion instead of a mechanism.
+     */
+    /*
+     * Keyed on a distinguishing fragment rather than on the clause number,
+     * because three rows are headed "Section 5, Display of Data" and only one
+     * of them rests on the owner. A key that could not tell them apart would
+     * let the marker move between them unnoticed.
+     */
+    const OWNER_STATED = ['**Item 11**', '**Item 20**', 'The same retention requirement']
+
+    const stated = rows().filter((r) => r.position.includes("**Owner's statement:**"))
+    const keyed = stated.map((r) => OWNER_STATED.find((k) => r.clause.includes(k)) ?? r.clause)
+    expect(
+      [...keyed].sort(),
+      'a row rests on an owner statement and is not in the declared set. Add it there ' +
+        'and to the table at the top, so the owner knows what they are standing behind.',
+    ).toEqual([...OWNER_STATED].sort())
+
+    for (const row of stated) {
+      expect(
+        tokens(row.evidence).length > 0 || row.evidence.includes(NO_MECHANISM),
+        `${row.clause.slice(0, 40)} answers a clause with an owner statement and nothing else`,
+      ).toBe(true)
+      // The code half has to come first: the marker splits a row, not replaces it.
+      expect(
+        row.position.indexOf("**Owner's statement:**"),
+        `${row.clause.slice(0, 40)} opens with the owner statement rather than with what the code shows`,
+      ).toBeGreaterThan(40)
+    }
+
+    // And the top of the document lists them, so the set is readable without
+    // grepping the table.
+    expect(doc).toContain('## What the code shows, and what the owner states')
+    for (const where of ['item 11', 'item 20']) {
+      expect(doc, `the owner-statement table does not list ${where}`).toContain(where)
     }
   })
 
