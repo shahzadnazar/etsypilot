@@ -163,17 +163,24 @@ describe('a SHOP role grants no PLATFORM access', () => {
 })
 
 describe('permissions', () => {
-  it('COUNTS NINE PERMISSIONS, and adding a tenth is a decision', () => {
+  it('COUNTS EIGHT PERMISSIONS, and changing the number is a decision', () => {
     /*
      * The one place the number is written down. Every other test derives from
-     * PERMISSIONS.length, so adding a key goes red HERE — in the test whose
-     * whole subject is how many there are — rather than in four unrelated
-     * tests that happened to mention a literal. A6 added the eighth,
-     * `financials.view`, and the four it went red in are the reason this
-     * test exists. Part 6 added the ninth, `metrics.view`, and this was the
-     * only place that needed touching — which is the test doing its job.
+     * PERMISSIONS.length, so changing the list goes red HERE — in the test
+     * whose whole subject is how many there are — rather than in four
+     * unrelated tests that happened to mention a literal. A6 added the
+     * eighth, `financials.view`, and the four it went red in are the reason
+     * this test exists. Part 6 added the ninth, `metrics.view`, and this was
+     * the only place that needed touching.
+     *
+     * D97 is the first REMOVAL, and it was the only place again — which is
+     * the test doing its job in the other direction. Two things came with it
+     * that an addition never needs: db/migrations/0016, so a freshly migrated
+     * database does not seed a key the code no longer has, and a reader on
+     * the audit log that renders a retired key rather than dropping it from a
+     * historical record (domain/admin/audit.ts).
      */
-    expect(PERMISSIONS).toHaveLength(9)
+    expect(PERMISSIONS).toHaveLength(8)
     expect(PERMISSIONS).toContain('financials.view')
     expect(PERMISSIONS).toContain('metrics.view')
   })

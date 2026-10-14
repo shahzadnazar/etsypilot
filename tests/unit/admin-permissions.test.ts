@@ -8,6 +8,7 @@ import {
   PERMISSION_LABELS,
   isEditableRole,
   parsePermissionKeys,
+  recordedPermissionTitle,
   resolvePermissions,
   sortPermissions,
 } from '@/domain/admin/permissions'
@@ -46,7 +47,7 @@ function code(file: string): string {
 /* ─────────────────── the seeded defaults match A1 exactly ────────────────── */
 
 /**
- * Every permission key each migration grants to each role.
+ * Every permission key each migration GRANTS to, or REMOVES from, each role.
  *
  * A6 turned this from "read 0005" into "read them all", because a permission
  * added later is granted by a LATER migration and a guard pinned to the first
@@ -59,24 +60,49 @@ function code(file: string): string {
  * row and the MANAGER guard would stop meaning anything. Within a statement,
  * each role literal owns the text up to the next one; a statement naming a
  * single role owns all of it, which is how 0006's UPDATE is read.
+ *
+ * ── REMOVALS, WHICH THIS READ AS GRANTS UNTIL 0016 ───────────────────────
+ *
+ * PERMISSIONS shrank for the first time in D97, and 0016 takes the retired key
+ * out of the stored rows with `array_remove`. Read as a grant, that statement
+ * said the migrations grant a key the code no longer has — the exact failure
+ * the ADMIN guard below is for, reported against the file that FIXES it.
+ *
+ * So a statement is classified before its keys are read: `array_remove` is a
+ * removal, everything else is a grant, and the union is grants minus removals
+ * — which is what a freshly migrated database actually ends at. A statement
+ * naming NO role (0016 updates every row that holds the key) applies to every
+ * role the migrations have granted to, which is how a removal reaches ADMIN's
+ * row without the file having to name ADMIN.
  */
-function grantsByRole(sql: string): Map<string, Set<string>> {
-  const grants = new Map<string, Set<string>>()
+function permissionMovesByRole(sql: string): {
+  granted: Map<string, Set<string>>
+  removed: Set<string>
+} {
+  const granted = new Map<string, Set<string>>()
+  const removed = new Set<string>()
   const statements = sql.replace(/--.*$/gm, '').split(';')
 
   for (const statement of statements) {
+    const keys = (text: string) =>
+      (text.match(/'[a-z]+(?:\.[a-z]+)+'/g) ?? []).map((key) => key.replaceAll("'", ''))
+
+    if (/array_remove/.test(statement)) {
+      for (const key of keys(statement)) removed.add(key)
+      continue
+    }
+
     const marks = [...statement.matchAll(/'(SUPER_ADMIN|ADMIN|MANAGER|USER)'/g)]
     marks.forEach((mark, index) => {
       const from = index === 0 ? 0 : (mark.index ?? 0)
       const to = marks[index + 1]?.index ?? statement.length
       const role = mark[1] as string
-      const keys = statement.slice(from, to).match(/'[a-z]+(?:\.[a-z]+)+'/g) ?? []
-      const set = grants.get(role) ?? new Set<string>()
-      for (const key of keys) set.add(key.replaceAll("'", ''))
-      grants.set(role, set)
+      const set = granted.get(role) ?? new Set<string>()
+      for (const key of keys(statement.slice(from, to))) set.add(key)
+      granted.set(role, set)
     })
   }
-  return grants
+  return { granted, removed }
 }
 
 describe('the seeded matrix grants exactly what the code knows about', () => {
@@ -119,13 +145,20 @@ describe('the seeded matrix grants exactly what the code knows about', () => {
 
   /** The union across every migration, which is what a fresh database ends at. */
   const granted = new Map<string, Set<string>>()
+  const retired = new Set<string>()
   for (const file of touching) {
-    for (const [role, keys] of grantsByRole(file.sql)) {
+    const moves = permissionMovesByRole(file.sql)
+    for (const [role, keys] of moves.granted) {
       const set = granted.get(role) ?? new Set<string>()
       for (const key of keys) set.add(key)
       granted.set(role, set)
     }
+    for (const key of moves.removed) retired.add(key)
   }
+  // Grants minus removals, per role. Migration order does not matter here: a
+  // key is either still granted at the end or it is not, and no migration
+  // re-grants one it removed.
+  for (const set of granted.values()) for (const key of retired) set.delete(key)
 
   it('finds the migrations it is meant to be reading', () => {
     // A sweep over an empty file list passes perfectly.
@@ -187,21 +220,57 @@ describe('the seeded matrix grants exactly what the code knows about', () => {
     const sql = readFileSync('db/migrations/0005_low_captain_universe.sql', 'utf8')
     expect(sql).toContain(`('ADMIN', ARRAY[${a1.map((key) => `'${key}'`).join(',')}])`)
     expect(sql).toContain("('MANAGER', ARRAY['users.view'])")
-    // And they are still the first seven of PERMISSIONS, in the same order.
-    expect([...PERMISSIONS].slice(0, a1.length)).toEqual(a1)
+
+    /*
+     * ── THEY WERE "THE FIRST SEVEN OF PERMISSIONS". ONE OF THEM IS GONE ───
+     *
+     * This line read `expect([...PERMISSIONS].slice(0, 7)).toEqual(a1)`, which
+     * held while PERMISSIONS only ever grew. D97 retired a key that 0005
+     * seeded, so the seed and the code no longer line up position by position
+     * — and that is the migration being a record rather than a mirror.
+     *
+     * What is still true, and is the part worth guarding: every seeded key
+     * that is STILL a permission appears in PERMISSIONS in the same relative
+     * order the seed used, so the matrix's columns and this row read the same
+     * way; and at least one seeded key is no longer a permission, which is the
+     * fact that makes a stored row able to hold a retired key at all — the
+     * case db/migrations/0016 tidies and the audit log has to render.
+     */
+    const stillLive = a1.filter((key) => (PERMISSIONS as readonly string[]).includes(key))
+    expect(PERMISSIONS.filter((key) => stillLive.includes(key))).toEqual(stillLive)
+    expect(
+      a1.length - stillLive.length,
+      '0005 seeds nothing that has since been retired — check what else changed',
+    ).toBeGreaterThan(0)
   })
 
   it('cannot overwrite a matrix an operator has since edited', () => {
     /*
      * A migration that reset permissions on every deploy would be a permission
      * screen that changes nothing, slowly. Every file that touches the table
-     * has to say how it avoids that: the seed by ON CONFLICT DO NOTHING, a
-     * later grant by refusing to append a key the row already holds.
+     * has to say how it avoids that, and the three shapes are not
+     * interchangeable:
+     *
+     *   the seed           ON CONFLICT ("role") DO NOTHING — a row that exists
+     *                      is left alone entirely.
+     *   a grant            NOT (<key> = ANY(permissions)) — append only where
+     *                      the key is absent, so a re-run adds no duplicate.
+     *   a removal          <key> = ANY(permissions) — the converse, and 0016
+     *                      is the first of these. array_remove on a row
+     *                      without the key is already a no-op, so the WHERE is
+     *                      not what makes it safe; what it buys is that the
+     *                      statement does not rewrite rows it has nothing to
+     *                      change.
+     *
+     * A removal written with a grant's guard would be a removal that only runs
+     * where the key is already gone, which is why the shapes are listed by
+     * what they do rather than collapsed into "has a WHERE clause".
      */
     for (const file of touching) {
       const guarded =
         file.sql.includes('ON CONFLICT ("role") DO NOTHING') ||
-        /NOT \('[a-z.]+' = ANY\("permissions"\)\)/.test(file.sql)
+        /NOT \('[a-z.]+' = ANY\("permissions"\)\)/.test(file.sql) ||
+        (/array_remove/.test(file.sql) && /WHERE '[a-z.]+' = ANY\("permissions"\)/.test(file.sql))
       expect(guarded, file.name).toBe(true)
     }
   })
@@ -391,8 +460,8 @@ describe('no row and an empty set are different answers', () => {
 
 describe('the single door from a form to a permission set', () => {
   it('accepts every known key, in canonical order whatever order they arrive in', () => {
-    const scrambled = ['operations.view', 'users.view', 'ai.view']
-    expect(parsePermissionKeys(scrambled)).toEqual(['users.view', 'ai.view', 'operations.view'])
+    const scrambled = ['operations.view', 'users.view', 'etsy.view']
+    expect(parsePermissionKeys(scrambled)).toEqual(['users.view', 'etsy.view', 'operations.view'])
   })
 
   it('accepts an empty submission, because revoking everything is a real thing to say', () => {
@@ -435,14 +504,103 @@ describe('a permission record carries its own before and after', () => {
     const flat = flattenPermissionOutcome({
       kind: 'APPLIED',
       from: ['users.view'],
-      to: ['users.view', 'ai.view'],
+      to: ['users.view', 'etsy.view'],
     })
     expect(flat.outcomeKind).toBe('APPLIED')
     expect(rebuildPermissionOutcome(flat)).toEqual({
       kind: 'APPLIED',
       from: ['users.view'],
-      to: ['users.view', 'ai.view'],
+      to: ['users.view', 'etsy.view'],
     })
+  })
+
+  it('KEEPS A RETIRED KEY IN A HISTORICAL RECORD, as the raw key', () => {
+    /*
+     * ══════════════════════════════════════════════════════════════════════
+     *   AN AUDIT RECORD MAY NOT GET SHORTER BECAUSE THE PRODUCT CHANGED.
+     * ══════════════════════════════════════════════════════════════════════
+     *
+     * Measured on a real row in this database before the key was retired: an
+     * APPLIED record holding nine keys in `from` and one in `to` rendered
+     * "Revoked 8 permissions" and named all eight. Retire one of those keys
+     * and the old reader — `PERMISSIONS.filter(p => recorded.includes(p))` —
+     * made the same row read "Revoked 7", with the eighth gone from the list,
+     * the row untouched in the table and nothing on the screen saying so.
+     *
+     * That is worse than a crash. A crash gets fixed; a quietly shorter audit
+     * trail is the failure mode that makes an audit trail worthless, because
+     * nobody can tell it from a complete one.
+     *
+     * So a key that is merely RETIRED survives the read, and the screen shows
+     * the raw key because the product has no name for it any more. `ai.view`
+     * is used here deliberately: it is the key 0005 seeded, D97 retired, and
+     * three APPLIED rows in this database still name.
+     */
+    const row = {
+      outcomeKind: 'APPLIED',
+      fromPermissions: ['users.view', 'ai.view', 'metrics.view'],
+      toPermissions: ['users.view'],
+      refusalReason: null,
+    }
+    const outcome = rebuildPermissionOutcome(row)!
+    expect(outcome.kind).toBe('APPLIED')
+    if (outcome.kind !== 'APPLIED') throw new Error('unreachable')
+
+    // All three, with the live ones in PERMISSIONS order and the retired one
+    // appended — deterministic, so a record does not reshuffle itself.
+    expect(outcome.from).toEqual(['users.view', 'metrics.view', 'ai.view'])
+    expect(describePermissionOutcome(outcome)).toBe('Revoked 2 permissions')
+    expect(outcome.from.map(recordedPermissionTitle)).toEqual([
+      'Accounts',
+      'Growth metrics',
+      'ai.view',
+    ])
+
+    /*
+     * And the negative control for the resolver: a key with a label resolves
+     * to the label, so the fallback is not quietly swallowing everything.
+     */
+    expect(recordedPermissionTitle('users.view')).toBe('Accounts')
+  })
+
+  it('STILL DROPS A KEY THAT COULD NEVER HAVE BEEN GRANTED', () => {
+    /*
+     * The other half, and the reason this is not "preserve every unknown key".
+     * `audit.view` and `roles.write` are not delegatable at all: no path in
+     * the product can grant one, so a row naming one is tampering or a bug,
+     * and rendering it would put "Read the operator audit log" on the audit
+     * screen as though somebody had been given it.
+     *
+     * Retired-but-once-grantable and never-grantable are different facts and
+     * the reader now tells them apart. Asserted together so neither rule can
+     * be loosened into the other.
+     */
+    const outcome = rebuildPermissionOutcome({
+      outcomeKind: 'APPLIED',
+      fromPermissions: [],
+      toPermissions: ['users.view', 'roles.write', 'audit.view', 'ai.view'],
+      refusalReason: null,
+    })!
+    if (outcome.kind !== 'APPLIED') throw new Error('unreachable')
+    expect(outcome.to).toEqual(['users.view', 'ai.view'])
+    for (const capability of SUPER_ADMIN_ONLY) {
+      expect(outcome.to, capability).not.toContain(capability)
+    }
+  })
+
+  it('and the matrix itself has a label for every permission, with no fallback', () => {
+    /*
+     * The fallback is for the audit log and nowhere else. The matrix and
+     * /settings/data-permissions both render `PERMISSION_LABELS[key].title`
+     * over PERMISSIONS directly, which is what makes a missing label a build
+     * error rather than a raw key on a seller's screen — and a raw key on a
+     * seller's screen is exactly how an operator permission's title reached
+     * one (D97).
+     */
+    for (const permission of PERMISSIONS) {
+      expect(PERMISSION_LABELS[permission], permission).toBeDefined()
+      expect(recordedPermissionTitle(permission)).toBe(PERMISSION_LABELS[permission].title)
+    }
   })
 
   it('round-trips a refusal, keeping what was attempted', () => {
@@ -499,7 +657,7 @@ describe('a permission record carries its own before and after', () => {
       'Revoked 1 permission',
     )
     expect(
-      describePermissionOutcome({ kind: 'APPLIED', from: ['users.view'], to: ['ai.view'] }),
+      describePermissionOutcome({ kind: 'APPLIED', from: ['users.view'], to: ['etsy.view'] }),
     ).toBe('Granted 1, revoked 1')
     expect(
       describePermissionOutcome({ kind: 'APPLIED', from: ['users.view'], to: ['users.view'] }),
@@ -625,7 +783,7 @@ function fresh(): void {
   calls.access = { userId: 'u-actor', email: 'actor@x.com', role: 'SUPER_ADMIN' }
 }
 
-const SAVE = { role: 'MANAGER', permissions: ['users.view', 'ai.view'], password: 'correct' }
+const SAVE = { role: 'MANAGER', permissions: ['users.view', 'metrics.view'], password: 'correct' }
 
 describe('who may change permissions', () => {
   beforeEach(fresh)
@@ -637,12 +795,12 @@ describe('who may change permissions', () => {
       ok: true,
       role: 'MANAGER',
       from: ['users.view'],
-      to: ['users.view', 'ai.view'],
+      to: ['users.view', 'metrics.view'],
     })
-    expect(calls.writes).toEqual([{ role: 'MANAGER', permissions: ['users.view', 'ai.view'] }])
+    expect(calls.writes).toEqual([{ role: 'MANAGER', permissions: ['users.view', 'metrics.view'] }])
     expect(calls.audit[0]).toMatchObject({
       subjectRole: 'MANAGER',
-      outcome: { kind: 'APPLIED', from: ['users.view'], to: ['users.view', 'ai.view'] },
+      outcome: { kind: 'APPLIED', from: ['users.view'], to: ['users.view', 'metrics.view'] },
     })
     // Verified, then written and recorded together.
     expect(calls.order).toEqual(['verify', 'write', 'audit'])
@@ -719,7 +877,7 @@ describe('a wrong password changes no permission and is recorded', () => {
       outcome: {
         kind: 'REFUSED',
         reason: 'WRONG_PASSWORD',
-        attempted: ['users.view', 'ai.view'],
+        attempted: ['users.view', 'metrics.view'],
       },
     })
   })

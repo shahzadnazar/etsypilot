@@ -328,13 +328,10 @@ def main():
             "etsy.view": ("/admin/etsy",),
             "subscriptions.view": ("/admin/subscriptions",),
             "usage.view": ("/admin/usage",),
-            # GRANTS NO SCREEN, and that is the assertion rather than an
-            # omission. D95 removed /admin/ai; the key stays so existing role
-            # records, audit entries and the permission matrix stay readable,
-            # and it now opens nothing. The MANAGER case below holds it — a
-            # manager granted ai.view must see exactly the same rail as one
-            # who was not.
-            "ai.view": (),
+            # The ninth key that used to be here granted no screen at all,
+            # which this file asserted with an empty tuple. D97 removed the
+            # key: nothing gated on it, so the honest matrix has eight
+            # columns rather than nine with one that opens nothing.
             "operations.view": ("/admin/operations",),
             "metrics.view": ("/admin/metrics",),
         }
@@ -371,7 +368,7 @@ def main():
 
         # MANAGER: exactly what the matrix grants, changed twice so the rail is
         # measured against two different grants rather than one lucky one.
-        for grant in (["users.view"], ["users.view", "metrics.view", "ai.view"]):
+        for grant in (["users.view"], ["users.view", "metrics.view", "etsy.view"]):
             set_manager_permissions(grant)
             manager_page.goto(f"{BASE}/admin/users", wait_until="load")
             wanted = expected_rail(grant)

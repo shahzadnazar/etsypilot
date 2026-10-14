@@ -140,18 +140,6 @@ export const PERMISSION_LABELS: Record<Permission, { title: string; detail: stri
     detail: 'See who is on which plan and what they are billed.',
   },
   'usage.view': { title: 'Usage', detail: 'See how much of their plan each account is using.' },
-  /*
-   * The screen this gated was removed with the AI Copilot (D95), and the key
-   * is kept rather than deleted: it is stored against roles in
-   * `admin_role_permissions`, it appears in permission-change audit records
-   * that must keep saying what they said, and an applied migration is never
-   * edited. It now grants access to nothing, which is why the detail says so
-   * instead of describing drafting activity that does not happen.
-   */
-  'ai.view': {
-    title: 'AI',
-    detail: 'Grants access to nothing today. Kept so that existing role records, the audit entries that name it and this matrix stay readable.',
-  },
   'etsy.view': { title: 'Etsy', detail: 'See Etsy connection health and sync state.' },
   'operations.view': {
     title: 'Operations',
@@ -167,6 +155,35 @@ export const PERMISSION_LABELS: Record<Permission, { title: string; detail: stri
     detail:
       'See a seller’s revenue, profit, order count and fees. The most sensitive figures in the product — and read-only, like everything else here.',
   },
+}
+
+/**
+ * The title for a permission key AS RECORDED, which may no longer be one.
+ *
+ * ── WHY THIS EXISTS, AND WHY IT RETURNS THE RAW KEY ──────────────────────
+ *
+ * `PERMISSION_LABELS[key].title` on a key that has left PERMISSIONS does not
+ * print `undefined` — it THROWS, because the lookup is undefined and the
+ * property access is on nothing. Measured: "Cannot read properties of
+ * undefined (reading 'title')". On /admin/audit, which is a server component,
+ * that is the whole screen rather than one cell.
+ *
+ * The audit log is the one place that can be handed such a key, because it
+ * renders what WAS granted rather than what can be. A record from August
+ * naming a permission retired in October is not a defect in the record; it is
+ * the record being right. So this falls back to the key itself: a reader sees
+ * `some.key` instead of a friendly title, which is honest about the fact that
+ * the product no longer has a name for it, and the record keeps all of its
+ * items instead of quietly losing one.
+ *
+ * Deliberately NOT used by the matrix. That screen renders PERMISSIONS, every
+ * one of which has a label, and a fallback there would let a key with no label
+ * reach a seller-facing list through /settings/data-permissions — which is
+ * exactly how an "AI" row reached one (D97). A missing label there should fail
+ * the build, and it does.
+ */
+export function recordedPermissionTitle(key: string): string {
+  return PERMISSION_LABELS[key as Permission]?.title ?? key
 }
 
 /**

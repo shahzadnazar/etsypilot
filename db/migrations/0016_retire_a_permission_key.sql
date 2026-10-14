@@ -1,0 +1,38 @@
+-- Retire a permission key from the stored matrix.
+--
+-- The mirror image of 0006 and 0007, which appended a new key to ADMIN's row
+-- when PERMISSIONS grew. PERMISSIONS has shrunk: the key removed here gated an
+-- operator screen that no longer exists, nothing reads it, and it granted
+-- access to nothing. See D97.
+--
+-- ── WHAT THIS DOES NOT FIX, BECAUSE NOTHING IS BROKEN ────────────────────
+--
+-- A stored row naming a key that is no longer in PERMISSIONS is already
+-- harmless at runtime: resolvePermissions() returns
+-- `PERMISSIONS.filter(p => stored.includes(p))`, so an unrecognised key is
+-- dropped on the way out and grants nothing. That filter is deliberate and
+-- documented as the last of three independent barriers — it is what makes a
+-- bad migration or a direct UPDATE unable to hand out `roles.write`.
+--
+-- So this migration is not required to keep the product correct. It is
+-- required to keep a FRESHLY MIGRATED database equal to the code: the guard
+-- 'GRANTS ADMIN EVERY KEY THE CODE KNOWS ABOUT' in
+-- tests/unit/admin-permissions.test.ts compares the union of every migration's
+-- grants against PERMISSIONS by equality, in both directions, precisely so
+-- that a key the code has dropped cannot be left behind in the seed.
+--
+-- ── AND WHAT IT MUST NOT TOUCH ───────────────────────────────────────────
+--
+-- admin_permission_audit_events IS DELIBERATELY NOT INCLUDED. Those rows
+-- record what was granted and revoked on a date, and a record of August must
+-- keep saying what was granted in August. Rewriting history to match today's
+-- permission list is the one edit an audit log may never take — and the audit
+-- screen now renders a retired key faithfully, as the raw key, rather than
+-- silently dropping it from the record (domain/admin/audit.ts).
+--
+-- array_remove with a guard rather than a rewrite, the same shape as 0006: an
+-- operator may have edited any row, and a migration that reset the matrix on
+-- deploy would be a permission screen that changes nothing.
+UPDATE "admin_role_permissions"
+SET "permissions" = array_remove("permissions", 'ai.view')
+WHERE 'ai.view' = ANY("permissions");

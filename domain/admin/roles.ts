@@ -136,7 +136,19 @@ export const PERMISSIONS = [
   'users.detail',
   'subscriptions.view',
   'usage.view',
-  'ai.view',
+  /*
+   * There were nine. The key that sat here gated an operator screen that has
+   * since been removed, and it was kept for a while on the argument that
+   * stored rows and audit records name it — see D97, which takes that argument
+   * apart: the stored row is filtered through this list on the way out, so a
+   * retired key grants nothing, and an audit record is history that the audit
+   * page now renders faithfully whether or not the key is still here.
+   *
+   * Removing a key from this list is therefore safe and is the right move the
+   * moment nothing gates on it. What it must NOT do is quietly shorten a
+   * historical record: db/migrations/0016 tidies the stored rows and leaves
+   * admin_permission_audit_events exactly as it is.
+   */
   'etsy.view',
   'operations.view',
   /*

@@ -100,11 +100,6 @@ DELEGATABLE = [
     "users.detail",
     "subscriptions.view",
     "usage.view",
-    # Still delegatable, still grantable, and since D95 it opens no screen —
-    # so it never appears in the route sweep below. Kept in this list because
-    # "every delegatable permission" has to mean every one of them, including
-    # the one that currently grants nothing.
-    "ai.view",
     "etsy.view",
     "operations.view",
     "metrics.view",

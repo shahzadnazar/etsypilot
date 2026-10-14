@@ -25,7 +25,13 @@
  *    role in it, because there is nowhere to write it.
  */
 
-import { PERMISSIONS, type AssignableRole, type Permission, type PlatformRole } from './roles'
+import {
+  PERMISSIONS,
+  SUPER_ADMIN_ONLY,
+  type AssignableRole,
+  type Permission,
+  type PlatformRole,
+} from './roles'
 import type { EditableRole } from './permissions'
 
 /* --------------------------------------------------------------- refusals */
@@ -142,6 +148,36 @@ export type PermissionOutcome =
   | { kind: 'APPLIED'; from: readonly Permission[]; to: readonly Permission[] }
   | { kind: 'REFUSED'; reason: RefusalReason; attempted: readonly Permission[] | null }
 
+/**
+ * A permission key AS RECORDED, which is not the same thing as one that can be
+ * granted today.
+ *
+ * Two types, on purpose, in opposite directions:
+ *
+ *   PermissionOutcome            what is WRITTEN. `Permission[]`, so the only
+ *                                door from `string[]` remains
+ *                                parsePermissionKeys() and nothing can record
+ *                                a grant of a key that does not exist.
+ *   RecordedPermissionOutcome    what is READ BACK. Strings, because a record
+ *                                written in August may name a permission the
+ *                                product retired in October, and that record
+ *                                is not wrong — the product changed, the
+ *                                history did not.
+ *
+ * Widening the write type instead would have been one line and the wrong line:
+ * it would let any caller put any string in the audit table, which is the
+ * guarantee this file exists to keep.
+ */
+export type RecordedPermission = string
+
+export type RecordedPermissionOutcome =
+  | { kind: 'APPLIED'; from: readonly RecordedPermission[]; to: readonly RecordedPermission[] }
+  | {
+      kind: 'REFUSED'
+      reason: RefusalReason
+      attempted: readonly RecordedPermission[] | null
+    }
+
 export interface AdminPermissionAuditEvent {
   id: string
   at: Date
@@ -150,7 +186,8 @@ export interface AdminPermissionAuditEvent {
   actorRole: PlatformRole
   /** Whose permissions. A role, never a person. */
   subjectRole: EditableRole
-  outcome: PermissionOutcome
+  /** As recorded. See RecordedPermissionOutcome. */
+  outcome: RecordedPermissionOutcome
 }
 
 export function flattenPermissionOutcome(outcome: PermissionOutcome): {
@@ -178,19 +215,55 @@ export function flattenPermissionOutcome(outcome: PermissionOutcome): {
 /**
  * Rebuild a permission outcome, or null when the row cannot be one.
  *
- * Unknown keys are DROPPED on the way out, not preserved and not fatal. A row
- * listing a capability that is not a Permission describes something that could
- * not have been granted, and rendering it would put "roles.write" on the audit
- * screen as though it had been. The row is still shown; that key is not.
+ * ── WHICH UNKNOWN KEYS SURVIVE, AND WHY IT IS NOT ALL OF THEM ────────────
+ *
+ * This used to drop every key that is not a current Permission, with the
+ * reasoning that "a row listing a capability that is not a Permission
+ * describes something that could not have been granted, and rendering it would
+ * put `roles.write` on the audit screen as though it had been". That reasoning
+ * is right about `roles.write` and wrong about a RETIRED permission, and the
+ * difference was invisible until a permission was actually retired (D97).
+ *
+ * Measured before it was changed: a real APPLIED record in this database held
+ * nine keys in `from` and one in `to`, and rendered "Revoked 8 permissions"
+ * naming all eight. Remove one of those keys from PERMISSIONS and the same
+ * record reads "Revoked 7", with the eighth gone from the list — the row
+ * untouched in the table and the history quietly shorter on the screen. That
+ * is the defect this function would otherwise introduce, and it is worse than
+ * a crash, because nothing says it happened.
+ *
+ * So the rule is by KIND of unknown:
+ *
+ *   SUPER_ADMIN_ONLY        still dropped. `audit.view` and `roles.write`
+ *                           cannot be granted through this path at all, so a
+ *                           row naming one is tampering or a bug, and showing
+ *                           it would assert a grant that never happened.
+ *   anything else unknown   KEPT, and rendered as the raw key by
+ *                           recordedPermissionTitle(). It was grantable once
+ *                           or it would not be in the row.
+ *
+ * No list of retired keys anywhere: the rule is about the shape of the
+ * question, so the next retirement needs no edit here.
+ *
+ * Order is deterministic — current permissions in PERMISSIONS order, then
+ * anything retired in the order the row holds it — so a record does not
+ * reshuffle itself when a key is retired.
  */
 export function rebuildPermissionOutcome(row: {
   outcomeKind: string
   fromPermissions: string[] | null
   toPermissions: string[] | null
   refusalReason: string | null
-}): PermissionOutcome | null {
-  const keep = (values: string[] | null): readonly Permission[] =>
-    PERMISSIONS.filter((permission) => (values ?? []).includes(permission))
+}): RecordedPermissionOutcome | null {
+  const neverGrantable = new Set<string>(SUPER_ADMIN_ONLY)
+  const current = new Set<string>(PERMISSIONS)
+  const keep = (values: string[] | null): readonly RecordedPermission[] => {
+    const recorded = values ?? []
+    const live = PERMISSIONS.filter((permission) => recorded.includes(permission))
+    const retired = recorded.filter((key) => !current.has(key) && !neverGrantable.has(key))
+    // Duplicates collapsed, because a row is data and may hold one.
+    return [...live, ...retired.filter((key, at) => retired.indexOf(key) === at)]
+  }
 
   if (row.outcomeKind === 'APPLIED') {
     if (row.fromPermissions === null || row.toPermissions === null) return null
@@ -208,7 +281,7 @@ export function rebuildPermissionOutcome(row: {
 }
 
 /** How a permission record reads. Derived from the sets, never stored. */
-export function describePermissionOutcome(outcome: PermissionOutcome): string {
+export function describePermissionOutcome(outcome: RecordedPermissionOutcome): string {
   if (outcome.kind === 'REFUSED') return REFUSAL_COPY[outcome.reason]
   const added = outcome.to.filter((p) => !outcome.from.includes(p)).length
   const removed = outcome.from.filter((p) => !outcome.to.includes(p)).length

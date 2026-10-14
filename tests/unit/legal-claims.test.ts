@@ -924,34 +924,29 @@ describe('no surface a seller can reach mentions the extension or an AI feature'
     walk('app').concat(walk('components'), walk('domain'), walk('lib'))
 
   /*
-   * The one exemption, and it is a KEY rather than a sentence.
+   * ── NO EXEMPTIONS. THERE WAS ONE, AND IT WAS HIDING SOMETHING ──────────
    *
-   * `ai.view` is an operator permission that grants access to nothing. It
-   * stays because removing it would rewrite stored role records, the audit
-   * entries that name it and the permission matrix — all to delete a string —
-   * and because a key that has stopped granting anything is a different thing
-   * from a page telling a seller about a feature.
+   * `ai.view` was exempted here — an operator permission key that granted
+   * access to nothing, kept on the argument that removing it would rewrite
+   * stored role records and audit entries. Two things were wrong with that.
    *
-   * Written as the repo's KNOWN_REMAINING shape: each entry has to still
-   * match, so a reader finds a decision rather than an omission, and deleting
-   * the key means deleting the entry.
+   * The argument did not hold: the whole footprint was three lines, nothing
+   * gated on it, `resolvePermissions()` filters a stored row through
+   * PERMISSIONS so a retired key grants nothing, and the audit log is history
+   * that is rendered rather than enforced.
+   *
+   * And the exemption hid a real breach of the rule it was carved out of. The
+   * key's LABEL was "AI", and `/settings/data-permissions` — a seller-facing
+   * page — renders every entry of PERMISSION_LABELS under the heading "What
+   * CobaltRank staff can see". So a seller was shown an "AI" row, with a
+   * detail about keeping role records readable, by a sweep that had been told
+   * to look away from the file holding the string.
+   *
+   * The lesson is the shape of the thing rather than this instance: an
+   * exemption is a hole in a sweep, and a hole in a sweep is where the next
+   * breach lives. D97 removed the key; the list is gone with it, and this
+   * block now has no exemptions at all.
    */
-  const EXEMPT: { file: string; matcher: RegExp; why: string }[] = [
-    {
-      file: 'domain/admin/permissions.ts',
-      matcher: /'ai\.view'|title: 'AI'/,
-      why:
-        'The permission key and its label in the operator matrix. It grants nothing, and its own ' +
-        'detail says so without naming anything; the key is kept so stored role records stay readable.',
-    },
-    {
-      file: 'domain/admin/roles.ts',
-      matcher: /'ai\.view'/,
-      why:
-        'The same key in a role\u2019s default permission set. A key in a list, not a sentence a ' +
-        'reader could mistake for a description of the product.',
-    },
-  ]
 
   it('finds the surfaces it is sweeping, and can see the words when they are there', () => {
     /*
@@ -961,15 +956,7 @@ describe('no surface a seller can reach mentions the extension or an AI feature'
      */
     expect(surfaces().length, 'the sweep found no seller-facing surfaces').toBeGreaterThan(350)
 
-    // Every exemption is still real. One that stopped matching would be a
-    // decision recorded about something that is no longer there.
-    for (const exempt of EXEMPT) {
-      expect(
-        exempt.matcher.test(code(exempt.file)),
-        `${exempt.file} no longer matches its exemption; delete the EXEMPT entry`,
-      ).toBe(true)
-      expect(exempt.why.length, `${exempt.file} has no reason recorded`).toBeGreaterThan(60)
-    }
+
 
     for (const sentence of [
       'CobaltRank does not offer a browser extension.',
@@ -1002,11 +989,8 @@ describe('no surface a seller can reach mentions the extension or an AI feature'
      */
     const offenders: string[] = []
     for (const file of surfaces()) {
-      const exempt = EXEMPT.filter((e) => e.file === file)
       for (const line of code(file).split('\n')) {
-        if (!REMOVED_FEATURE_WORDS.test(line)) continue
-        if (exempt.some((e) => e.matcher.test(line))) continue
-        offenders.push(`${file}: ${line.trim().slice(0, 90)}`)
+        if (REMOVED_FEATURE_WORDS.test(line)) offenders.push(`${file}: ${line.trim().slice(0, 90)}`)
       }
     }
     expect(offenders, 'a seller-facing surface names a feature this product does not have').toEqual(

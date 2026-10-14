@@ -5378,3 +5378,122 @@ verification table that deleted its own history would have nothing to verify
 against next time. `docs/ETSY-COMPLIANCE.md` still answers item 24 in full,
 because a reviewer asking about browser extensions is entitled to the answer;
 it is an internal position paper, not a seller-facing page.
+
+---
+
+## D97 — The retired permission key goes, and a historical record keeps its length — DECIDED, 14 October 2026
+
+D96 swept every surface for the two removed features and carved out exactly
+one exemption: the `ai.view` operator permission, on the argument that
+"removing the key rewrites stored role records, the audit entries that name it
+and the matrix". The owner opened `/admin/permissions`, saw a column headed
+**AI**, and asked the obvious question. No mention on any page was the
+instruction; that is a page, and that was a mention.
+
+### The argument for keeping it was wrong, and the exemption hid a worse case
+
+The footprint was three lines: the key in `PERMISSIONS`, its entry in
+`PERMISSION_LABELS`, and its title. Nothing read it, nothing gated on it, and
+it granted access to nothing — the kept entry said so itself. Each clause of
+the reason fails on inspection:
+
+- **"Stored role records."** `resolvePermissions()` returns
+  `PERMISSIONS.filter(p => stored.includes(p))`. A row naming a key the code no
+  longer has grants nothing, silently, by a filter that is documented as the
+  last of three independent barriers. Nothing errors.
+- **"The audit entries."** Those are history, rendered rather than enforced —
+  and the renderer needed fixing for a different reason, below.
+- **"The matrix."** It is generated from `PERMISSIONS`; a shorter list is a
+  shorter matrix.
+
+And the exemption was doing real damage. The key's label was `AI`, and
+`/settings/data-permissions` — **a seller-facing page** — renders every entry
+of `PERMISSION_LABELS` under the heading "What CobaltRank staff can see". So a
+seller was shown:
+
+> **AI** — Grants access to nothing today. Kept so that existing role records,
+> the audit entries that name it and this matrix stay readable.
+
+An internal note about role records, on a seller's privacy screen, placed there
+by a sweep that had been told to look away from the file holding the string. An
+exemption is a hole in a sweep, and a hole in a sweep is where the next breach
+lives. **The sweep now has no exemptions at all.**
+
+### What the read path does with an unrecognised key — measured, before anything changed
+
+| Path | Behaviour |
+|---|---|
+| `resolvePermissions()` (enforcement) | Filters it out. Grants nothing. No error. |
+| `parsePermissionKeys()` (the form) | REFUSES the whole submission — but the matrix renders checkboxes from `PERMISSIONS`, so a browser never submits one. |
+| `rebuildPermissionOutcome()` (audit read) | **Dropped it from the record**, which is the defect this change had to fix. |
+| `PERMISSION_LABELS[key].title` | **Throws.** "Cannot read properties of undefined (reading 'title')" — not `undefined`, because the property access is on nothing. On `/admin/audit`, a server component, that is the whole screen. |
+
+So the crash the removal looked like it would introduce could not happen: the
+read path dropped the key before the page saw it. What it would have done
+instead is worse, and nothing would have said so.
+
+Measured on a real row in this database, before the change: an APPLIED record
+holding nine keys in `from` and one in `to` rendered **"Revoked 8 permissions"**
+and named all eight. Retire one of those keys and the same row reads **"Revoked
+7"**, with the eighth gone from the list, the row untouched in the table. A
+crash gets fixed; a quietly shorter audit trail is the failure mode that makes
+an audit trail worthless, because nobody can tell it from a complete one.
+
+### So the reader now distinguishes two kinds of unknown key
+
+|  | |
+|---|---|
+| `SUPER_ADMIN_ONLY` (`audit.view`, `roles.write`) | Still dropped. No path can grant one, so a row naming one is tampering or a bug, and rendering it would assert a grant that never happened. |
+| anything else unknown | **Kept**, and rendered as the raw key. It was grantable once or it would not be in the row. |
+
+There is no list of retired keys anywhere — the rule is about the shape of the
+question, so the next retirement needs no edit. Two types now, in opposite
+directions: `PermissionOutcome` (`Permission[]`) is what is WRITTEN, so
+`parsePermissionKeys()` remains the only door from `string[]`;
+`RecordedPermissionOutcome` (strings) is what is READ BACK, because a record
+written in August may name a permission retired in October and that record is
+not wrong. Widening the write type instead would have been one line and the
+wrong line.
+
+`recordedPermissionTitle()` falls back to the raw key, and is deliberately NOT
+used by the matrix or by `/settings/data-permissions`: those render
+`PERMISSIONS` directly, so a missing label is a build error there rather than a
+raw key on a seller's screen.
+
+### The migration, and what it must not touch
+
+`db/migrations/0016_retire_a_permission_key.sql` — `array_remove` with a
+`WHERE <key> = ANY(permissions)` guard, the mirror of 0006 and 0007 which
+appended when `PERMISSIONS` grew.
+
+It is **not required for correctness**, because the read path already filters.
+It IS required for consistency between the code and a freshly migrated
+database: the guard `GRANTS ADMIN EVERY KEY THE CODE KNOWS ABOUT` compares the
+union of every migration's grants against `PERMISSIONS` **by equality, in both
+directions**, precisely so a key the code has dropped cannot be left behind in
+the seed. That guard went red on this change and is what proved the migration
+was owed. Its reader now classifies a statement before reading its keys —
+`array_remove` is a removal, everything else a grant — since read as a grant,
+0016 said the migrations grant a key the code does not have, reported against
+the file that fixes it.
+
+`admin_permission_audit_events` is deliberately untouched. Three rows in this
+database name the retired key, and they still say what they said.
+
+### Verified in a browser
+
+- `/admin/permissions`: eight columns, `['Role', 'Accounts', 'Account detail', 'Subscriptions', 'Usage', 'Etsy', 'Operations', 'Financials', 'Growth metrics', 'Actions']`, no column headed AI, and the super-admin row reads **"Always all 8"**.
+- `/admin/audit`: the historical record renders **"+ granted Accounts, Account detail, Subscriptions, Usage, Etsy, Operations, Financials, Growth metrics, ai.view"** with the chip **"Granted 9 permissions"**, and the row measured before the change still reads **"Revoked 8 permissions"**. Nine named, nine counted, the ninth as the raw key.
+- `/settings/data-permissions`: eight rows, no AI row, no internal note.
+
+### The fixture repair that made those checks possible
+
+The four operator browser checks had been unrunnable since the rename: the
+seeded operator accounts were `@etsypilot.app` while the scripts expect
+`@cobaltrank.app`, and `promoted@example.com` held a row whose id the fake
+GoTrue no longer mints, so sign-in ended at `/login?outcome=setup_failed` on a
+unique-violation. Repaired in one transaction — new row, dependents repointed,
+old row dropped — and `tests/browser/admin-modules.py` now runs: **128 passed,
+2 failed**, both data-dependent and unrelated (`bulk_operation_items` and
+`subscriptions` are empty in this database, so a per-item failure reason and a
+trial-conversion figure have nothing to render).

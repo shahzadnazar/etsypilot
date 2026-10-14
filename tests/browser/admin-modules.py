@@ -57,11 +57,9 @@ MODULES = [
     ("/admin/etsy", "etsy.view", "Etsy connections", "What the seller sees when a reconnection ends"),
     ("/admin/subscriptions", "subscriptions.view", "Subscriptions", "Trials ending within"),
     ("/admin/usage", "usage.view", "Usage & quota", "These figures are counts"),
-    # ("/admin/ai", "ai.view", "AI activity", …) was the fourth module. D95
-    # removed it with the Copilot it reported on. The permission key `ai.view`
-    # still exists so that existing role records stay readable, and it now
-    # grants nothing — tests/unit/admin-permissions.test.ts holds that, and
-    # tests/browser/admin-refusal-status.py still exercises a refusal on it.
+    # A fourth module was here, with its own permission key. D95 removed the
+    # screen and D97 removed the key — nothing gated on it, so the matrix has
+    # eight columns rather than nine with one that opens nothing.
     ("/admin/operations", "operations.view", "Bulk operations", "Why items failed"),
     ("/admin/metrics", "metrics.view", "Growth metrics", "Trial conversion"),
 ]
@@ -256,9 +254,14 @@ def usage_specifics(page, body, text):
         "the page says the figures are counted, not read from the stored counter",
     )
     check("No quota reset, no top-up" in text, "and names what it cannot do")
+    # D37's rule, in the words the screen uses now. It used to be stated about
+    # a failed generation — "a generation that failed leaves no row to count" —
+    # and the feature that produced those rows is gone (D96), so the screen
+    # states the rule about the meter it still has: a shop over its cap is not
+    # a shop in trouble.
     check(
-        "failed AI generation is never counted" in text,
-        "and states D37's rule about failed generations",
+        "not a shop in trouble" in text and "nothing is deleted" in text,
+        "and states D37's rule: a quota is a boundary, not a penalty",
     )
     # NO SELLER CONTENT, measured against text the fixtures deliberately put
     # in the database. A sweep for a string the database does not hold proves

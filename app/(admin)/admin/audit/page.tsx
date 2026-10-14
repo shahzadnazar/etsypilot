@@ -15,7 +15,7 @@ import {
   type AdminAuditEvent,
   type AdminPermissionAuditEvent,
 } from '@/domain/admin/audit'
-import { PERMISSION_LABELS } from '@/domain/admin/permissions'
+import { recordedPermissionTitle } from '@/domain/admin/permissions'
 import { readAdminAuditLog, readPermissionAuditLog } from '@/lib/repositories/admin-audit-log'
 
 /*
@@ -227,6 +227,14 @@ function OutcomeChip({ entry }: { entry: AdminAuditEntry }) {
  * Named rather than counted, because "granted 2" tells an investigator nothing
  * about which two — and which two is the entire question a permission audit is
  * asked. The counted form is the chip; this is the detail beside it.
+ *
+ * Through recordedPermissionTitle(), not PERMISSION_LABELS directly, and that
+ * is the only screen where the difference matters: this one renders what WAS
+ * granted, so it can be handed a key the product has since retired. The
+ * labels record has no entry for one, and the property access on the missing
+ * entry throws rather than printing `undefined` — a server component, so the
+ * whole screen. The fallback shows the raw key, which keeps the record's count
+ * honest and says plainly that the product no longer has a name for it.
  */
 function PermissionChange({ event }: { event: AdminPermissionAuditEvent }) {
   // Bound once: narrowing a property does not survive into the closures below.
@@ -238,7 +246,7 @@ function PermissionChange({ event }: { event: AdminPermissionAuditEvent }) {
         attempted{' '}
         {outcome.attempted.length === 0
           ? 'none'
-          : outcome.attempted.map((p) => PERMISSION_LABELS[p].title).join(', ')}
+          : outcome.attempted.map(recordedPermissionTitle).join(', ')}
       </span>
     )
   }
@@ -254,14 +262,14 @@ function PermissionChange({ event }: { event: AdminPermissionAuditEvent }) {
         <span>
           <span aria-hidden className="text-brand">+</span>
           <span className="sr-only">granted</span>{' '}
-          {added.map((p) => PERMISSION_LABELS[p].title).join(', ')}
+          {added.map(recordedPermissionTitle).join(', ')}
         </span>
       ) : null}
       {removed.length > 0 ? (
         <span className="text-muted-1">
           <span aria-hidden>−</span>
           <span className="sr-only">revoked</span>{' '}
-          {removed.map((p) => PERMISSION_LABELS[p].title).join(', ')}
+          {removed.map(recordedPermissionTitle).join(', ')}
         </span>
       ) : null}
     </span>
