@@ -3,6 +3,8 @@ import { MarketingNav } from '@/components/marketing/nav'
 import { Hero } from '@/components/marketing/hero'
 import { HeroLedger } from '@/components/marketing/hero-ledger'
 import { ProfitCalculator } from '@/components/marketing/profit-calculator'
+import { PricingSection } from '@/components/marketing/pricing-cards'
+import { ContactCta } from '@/components/marketing/contact-cta'
 import {
   Benefits,
   BulkUpdates,
@@ -16,12 +18,12 @@ import { WaitlistForm } from '@/components/marketing/waitlist-form'
 import {
   Faq,
   MarketingFooter,
-  Pricing,
   ProvenanceSystem,
   Trust,
   WhatItDoes,
   WhyProfitIsHard,
 } from '@/components/marketing/sections'
+import { intervalFromParam } from '@/domain/billing/public-plans'
 import { canonical } from '@/lib/seo/site'
 
 /*
@@ -101,9 +103,15 @@ export const metadata: Metadata = {
 export default async function LandingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ waitlist?: string }>
+  searchParams: Promise<{ waitlist?: string; billing?: string }>
 }) {
-  const { waitlist } = await searchParams
+  const { waitlist, billing } = await searchParams
+  /*
+   * The same interval the /pricing toggle uses, read from the same param, so
+   * a link that carries `?billing=annual` lands on the right basis wherever
+   * it points.
+   */
+  const interval = intervalFromParam(billing)
 
   return (
     <div style={{ background: 'var(--page-bg)' }}>
@@ -209,13 +217,16 @@ export default async function LandingPage({
       <Trust />
 
       {/* ───────────────────────────────────────────── J. pricing ── */}
-      <Pricing />
+      <PricingSection interval={interval} />
 
       {/* ───────────────────────────────────────────────── K. FAQ ── */}
       <Faq />
 
       {/* The waitlist, because nothing here can take money yet. */}
       <WaitlistForm state={waitlist} />
+
+      {/* Somewhere to ask, before the final call to action. */}
+      <ContactCta />
 
       {/* ─────────────────────────────────────────── L. final CTA ── */}
       <FinalCta />

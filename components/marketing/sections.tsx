@@ -1,15 +1,6 @@
 import Link from 'next/link'
 import { ProvenanceBadge } from '@/components/provenance/provenance-badge'
 import { PROVENANCE_TYPES, type ProvenanceType } from '@/lib/provenance/types'
-import {
-  FOUNDING_NOTE,
-  FOUNDING_TIERS,
-  includesFor,
-  limitsFor,
-  perMonth,
-  type FoundingTier,
-} from '@/domain/billing/founding-pricing'
-import { TRIAL_TERMS } from '@/domain/billing/plans'
 import { LegalLinks } from '@/components/legal/legal-links'
 import { contactAddress, hasContactAddress } from '@/lib/brand'
 import {
@@ -349,129 +340,32 @@ export function Trust() {
   )
 }
 
-/* ────────────────────────────────────────────────────────────── 8. pricing */
-
-export function Pricing({ heading = true }: { heading?: boolean }) {
-  return (
-    <section
-      id="pricing"
-      className="border-t"
-      style={{ borderColor: 'var(--border)', background: 'var(--canvas-soft)' }}
-    >
-      <div className="mx-auto max-w-[1180px] px-5 py-16 md:py-20">
-        {heading ? (
-          <h2 className="display text-[28px] leading-[1.15] md:text-[36px]" style={{ color: 'var(--ink-1)' }}>
-            Pricing
-          </h2>
-        ) : null}
-        <p className="mt-3 max-w-[60ch] text-[14.5px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
-          {FOUNDING_NOTE} Six months is 15% off, paid once.
-        </p>
-
-        <div className="mt-10 grid gap-px border md:grid-cols-2 lg:grid-cols-4" style={{ borderColor: 'var(--border)', background: 'var(--border)', borderRadius: 'var(--paper-radius)' }}>
-          {FOUNDING_TIERS.map((tier) => (
-            <TierCard key={tier.name} tier={tier} />
-          ))}
-        </div>
-
-        {/*
-          * The trial terms, verbatim as the owner set them. The DAYS come from
-          * TRIAL_TERMS so the page cannot say seven while the flow does
-          * something else, and domain/billing/trial.ts refuses to start that
-          * flow at all until an email sender is configured — because
-          * "we'll email you before it ends" is a promise this deployment
-          * cannot yet keep.
-          */}
-        <p
-          className="mt-8 max-w-[70ch] border-l-2 pl-4 text-[13.5px] leading-relaxed"
-          style={{ borderColor: 'var(--brand)', color: 'var(--ink-2)' }}
-        >
-          {TRIAL_TERMS.terms}
-        </p>
-      </div>
-    </section>
-  )
-}
-
-function TierCard({ tier }: { tier: FoundingTier }) {
-  const includes = includesFor(tier)
-  const limits = limitsFor(tier)
-
-  return (
-    <div className="flex flex-col gap-3 p-5" style={{ background: 'var(--surface)' }}>
-      <div className="flex items-baseline justify-between gap-2">
-        <h3 className="display text-[19px]" style={{ color: 'var(--ink-1)' }}>
-          {tier.name}
-        </h3>
-        {tier.popular ? (
-          <span
-            className="mono px-1.5 py-0.5 text-[9.5px] uppercase tracking-[0.06em]"
-            style={{ background: 'var(--brand-tint)', color: 'var(--brand-strong)', borderRadius: '2px' }}
-          >
-            Most popular
-          </span>
-        ) : null}
-      </div>
-
-      <p className="text-[12.5px] leading-snug" style={{ color: 'var(--muted-1)' }}>
-        {tier.positioning}
-      </p>
-
-      <p className="flex items-baseline gap-1.5">
-        <span className="figure text-[30px] font-semibold" style={{ color: 'var(--ink-1)' }}>
-          ${tier.monthly}
-        </span>
-        <span className="text-[12.5px]" style={{ color: 'var(--muted-1)' }}>
-          / month
-        </span>
-      </p>
-      <p className="figure text-[12.5px]" style={{ color: 'var(--ink-2)' }}>
-        or ${tier.sixMonth} for six months
-        <span style={{ color: 'var(--muted-1)' }}> · ${perMonth(tier)}/mo</span>
-      </p>
-
-      <ul className="mt-1 flex flex-col gap-1.5 border-t pt-3 text-[13px]" style={{ borderColor: 'var(--border)', color: 'var(--ink-2)' }}>
-        {includes.map((line) => (
-          <li key={line}>{line}</li>
-        ))}
-        {limits ? (
-          <li className="figure" style={{ color: 'var(--muted-1)' }}>
-            {limits.listings.toLocaleString('en-US')} listings ·{' '}
-            {limits.auditRetentionDays}-day audit history
-          </li>
-        ) : (
-          /*
-            * No invented caps. ./plans.ts holds three plans and this tier maps
-            * to none of them, so its price is decided and its limits are not.
-            * Saying so is the only honest thing a pre-launch pricing table can
-            * do — a made-up listing cap is a promise about capability.
-            */
-          <li style={{ color: 'var(--muted-1)' }}>
-            Limits are still being set. The price is fixed; what it includes is not published yet,
-            and will be before anybody is charged.
-          </li>
-        )}
-      </ul>
-
-      {/*
-        * "Join the waitlist", never "Subscribe". There is no payment provider
-        * wired up, and a button that cannot take money must not pretend it can.
-        */}
-      <Link
-        href="#waitlist"
-        className="mt-auto px-3 py-2 text-center text-[13px] font-semibold"
-        style={{
-          background: tier.popular ? 'var(--brand)' : 'var(--surface)',
-          color: tier.popular ? 'var(--on-brand)' : 'var(--brand-strong)',
-          border: tier.popular ? '1px solid var(--brand)' : '1px solid var(--border)',
-          borderRadius: 'var(--paper-radius)',
-        }}
-      >
-        Join the waitlist
-      </Link>
-    </div>
-  )
-}
+/*
+ * ██████████████████████████████████████████████████████████████████████████
+ *
+ *   THE PRICING SECTION MOVED, AND THE FOUR FOUNDING TIERS CAME OFF THE
+ *   PUBLIC PAGES.
+ *
+ * ██████████████████████████████████████████████████████████████████████████
+ *
+ * `Pricing` and `TierCard` were here. They rendered the four founding tiers
+ * from domain/billing/founding-pricing.ts — Starter $20, Growth $27, Pro $35,
+ * Studio $45 — on `/` and on `/pricing`.
+ *
+ * The public plan structure is now exactly Free, Basic and Pro, so both pages
+ * render components/marketing/pricing-cards.tsx instead, and the landing
+ * page's block is `PricingSection` in that same file: the SAME cards as
+ * /pricing rather than a second table tuned for a narrower column, because two
+ * pricing tables in one product is two sets of numbers to keep in step.
+ *
+ * ── WHAT WAS KEPT ────────────────────────────────────────────────────────
+ *
+ * The trial terms, verbatim, moved with the section. domain/billing/founding-
+ * pricing.ts is untouched: its four prices are the only ones anybody has ever
+ * approved for anything, and deleting a commercial decision to tidy a page is
+ * not this file's call. Nothing renders them publicly today, and that file
+ * says so.
+ */
 
 /* ────────────────────────────────────────────────────────────────── 9. FAQ */
 
