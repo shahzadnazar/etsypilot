@@ -29,70 +29,20 @@ import {
  * three equal cards in it is the shape this page is trying not to be.
  */
 
-/* ───────────────────────────────────────────────────────────── navigation */
-
-export function MarketingNav() {
-  return (
-    <header
-      className="border-b"
-      style={{ borderColor: 'var(--border)', background: 'var(--page-bg)' }}
-    >
-      <nav
-        className="mx-auto flex max-w-[1180px] flex-wrap items-center gap-x-5 gap-y-2 px-5 py-3.5"
-        aria-label="Main"
-      >
-        <Link href="/" className="display mr-2 text-[17px]" style={{ color: 'var(--ink-1)' }}>
-          CobaltRank
-        </Link>
-        <Link href="#what" className="text-[13px]" style={{ color: 'var(--ink-2)' }}>
-          Features
-        </Link>
-        <Link href="/pricing" className="text-[13px]" style={{ color: 'var(--ink-2)' }}>
-          Pricing
-        </Link>
-        {/*
-          * Through the demo door, because /tools is inside the dashboard shell
-          * and a visitor with no account is redirected to /login by it. A nav
-          * item that bounces a stranger to a sign-in form is the defect this
-          * whole page exists to fix, one link smaller.
-          */}
-        <a href="/api/demo/enter?to=/tools"
-          className="text-[13px]"
-          style={{ color: 'var(--ink-2)' }}
-        >
-          Free tools
-        </a>
-        <span className="ml-auto flex items-center gap-2.5">
-          {/*
-            * prefetch={false} on the demo door: Next prefetches a <Link> on
-            * sight, and prefetching a route handler would set the demo cookie
-            * for anybody who merely scrolled past the nav.
-            */}
-          <a href="/api/demo/enter"
-            className="text-[13px] font-semibold"
-            style={{ color: 'var(--brand-strong)' }}
-          >
-            See the demo
-          </a>
-          <Link href="/login" className="text-[13px]" style={{ color: 'var(--ink-2)' }}>
-            Log in
-          </Link>
-          <Link
-            href="#waitlist"
-            className="px-3 py-1.5 text-[13px] font-semibold"
-            style={{
-              background: 'var(--brand)',
-              color: 'var(--on-brand)',
-              borderRadius: 'var(--paper-radius)',
-            }}
-          >
-            Join the waitlist
-          </Link>
-        </span>
-      </nav>
-    </header>
-  )
-}
+/*
+ * ── THE NAVIGATION MOVED TO components/marketing/nav.tsx ─────────────────
+ *
+ * It was here, as a server component: a flat row of links with no dropdowns,
+ * so there was nothing to open and nothing to announce. The approved design
+ * has a Features menu and a Resources menu, and a menu needs state — which
+ * means a client component, which means its own file rather than a `'use
+ * client'` directive at the top of this one. Marking this module client would
+ * ship the pricing table, the FAQ and the trust section's prose to the browser
+ * as JavaScript to do it.
+ *
+ * Nothing else about this file changed shape, and both pages import the nav
+ * from its new home.
+ */
 
 /* ────────────────────────────────────────────────── 4. why profit is hard */
 
@@ -367,13 +317,29 @@ export function Trust() {
           ))}
         </dl>
 
+        {/*
+          * ── THESE TWO WENT THROUGH THE DEMO DOOR ────────────────────────
+          *
+          * They were plain <Link>s to /data/methodology and /data/sources.
+          * Both pages are real and both live in app/(dashboard), whose layout
+          * redirects a visitor with no session to /login — so a stranger who
+          * followed "How every figure is produced" from the trust section
+          * landed on a sign-in form. The route existed, the link worked, and
+          * the destination was a door.
+          *
+          * A plain <a> with no prefetch, for the reasons the hero's button
+          * records: <Link> client-side navigates and cannot apply a route
+          * handler's 303 + Set-Cookie, and Next prefetches a <Link> on sight,
+          * which would open a demo session for anybody who merely scrolled
+          * past.
+          */}
         <p className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-[13.5px]">
-          <Link href="/data/methodology" className="font-semibold underline underline-offset-2" style={{ color: 'var(--brand-strong)' }}>
+          <a href="/api/demo/enter?to=/data/methodology" className="font-semibold underline underline-offset-2" style={{ color: 'var(--brand-strong)' }}>
             How every figure is produced
-          </Link>
-          <Link href="/data/sources" className="font-semibold underline underline-offset-2" style={{ color: 'var(--brand-strong)' }}>
+          </a>
+          <a href="/api/demo/enter?to=/data/sources" className="font-semibold underline underline-offset-2" style={{ color: 'var(--brand-strong)' }}>
             Where every figure comes from
-          </Link>
+          </a>
           <span style={{ color: 'var(--muted-1)' }}>
             Both pages are in the product. No competitor publishes an equivalent.
           </span>
@@ -588,13 +554,132 @@ function deletionRoute(): string {
 
 /* ───────────────────────────────────────────────────────────────── footer */
 
+/*
+ * ██████████████████████████████████████████████████████████████████████████
+ *
+ *   THE FOOTER. FOUR COLUMNS, AND A YEAR NOBODY HAS TO REMEMBER.
+ *
+ * ██████████████████████████████████████████████████████████████████████████
+ *
+ * ── THE COPYRIGHT YEAR IS COMPUTED, NOT TYPED ────────────────────────────
+ *
+ * The approved design had "© 2026" written into the markup. It is correct
+ * today and wrong on the first of January, and the failure mode is the worst
+ * kind: nothing breaks, nobody is paged, and the site quietly advertises that
+ * it has not been touched in a year. `new Date()` on a server component is
+ * evaluated per request — every page in this product already renders on
+ * demand for the CSP nonce (see app/layout.tsx) — so this is the real year,
+ * forever, at no cost.
+ *
+ * ── AND NO COMPANY NAME ──────────────────────────────────────────────────
+ *
+ * The line reads "© <year> CobaltRank" and stops there. There is no
+ * registered entity yet: the legal documents carry `[[LEGAL_ENTITY]]` as a
+ * marked blank for exactly this reason, and a footer that invented "CobaltRank
+ * Ltd" or "CobaltRank, Inc." would be the one false claim on this page that a
+ * reader could check in a public register.
+ */
 export function MarketingFooter() {
+  const year = new Date().getFullYear()
+
   return (
     <footer className="border-t" style={{ borderColor: 'var(--border)', background: 'var(--canvas-soft)' }}>
-      <div className="mx-auto flex max-w-[1180px] flex-wrap items-start gap-x-8 gap-y-4 px-5 py-10">
-        <span className="display text-[16px]" style={{ color: 'var(--ink-1)' }}>
-          CobaltRank
-        </span>
+      <div className="mx-auto max-w-[1180px] px-5 py-12">
+        <div className="grid gap-8 md:grid-cols-[minmax(0,1.3fr)_repeat(3,minmax(0,1fr))]">
+          {/* ── the mark, and what this is ──────────────────────────── */}
+          <div>
+            <span className="display text-[17px]" style={{ color: 'var(--ink-1)' }}>
+              CobaltRank
+            </span>
+            <p
+              className="mt-2 max-w-[34ch] text-[12.5px] leading-relaxed"
+              style={{ color: 'var(--muted-1)' }}
+            >
+              Etsy keyword research, real profit arithmetic, evidence-based listing checks and
+              safer bulk updates. Every figure says where it came from.
+            </p>
+            <Link
+              href="/signup"
+              className="mt-3.5 inline-flex items-center px-3.5 text-[13px] font-semibold"
+              style={{
+                background: 'var(--brand)',
+                color: 'var(--on-brand)',
+                borderRadius: 'var(--paper-radius)',
+                minHeight: '40px',
+              }}
+            >
+              Start for Free
+            </Link>
+          </div>
+
+          <FooterColumn
+            title="Product"
+            links={[
+              { label: 'Keyword research', href: '/#keywords' },
+              { label: 'Profit calculator', href: '/#calculator' },
+              { label: 'Listing checks', href: '/#listings' },
+              { label: 'Shop performance', href: '/#performance' },
+              { label: 'Bulk updates', href: '/#bulk' },
+              { label: 'Pricing', href: '/pricing' },
+            ]}
+          />
+
+          <FooterColumn
+            title="How it works"
+            links={[
+              { label: 'How the figures are made', href: '/#provenance' },
+              { label: 'What you can check', href: '/#trust' },
+              { label: 'Common questions', href: '/#faq' },
+              /* Through the demo door, for the reason the trust section
+                 above records: both pages are inside the dashboard shell. */
+              { label: 'Methodology', href: '/api/demo/enter?to=/data/methodology' },
+              { label: 'Data sources', href: '/api/demo/enter?to=/data/sources' },
+            ]}
+          />
+
+          <div>
+            <h2
+              className="mono text-[10.5px] uppercase tracking-[0.07em]"
+              style={{ color: 'var(--muted-1)' }}
+            >
+              Account
+            </h2>
+            <ul className="mt-2.5 flex flex-col gap-0.5 text-[13px]">
+              <li>
+                <Link href="/login" className="footer-link">
+                  Log in
+                </Link>
+              </li>
+              <li>
+                <Link href="/signup" className="footer-link">
+                  Create an account
+                </Link>
+              </li>
+              <li>
+                {/*
+                  * A plain <a>, and no prefetch. <Link> client-side navigates,
+                  * and a route handler's 303 + Set-Cookie cannot be applied by
+                  * the router — measured on the hero's own button. Next also
+                  * prefetches a <Link> on sight, which would set the demo
+                  * cookie for anybody who merely scrolled to the footer.
+                  */}
+                <a href="/api/demo/enter" className="footer-link">
+                  See the live demo
+                </a>
+              </li>
+              <li>
+                <Link href="/#waitlist" className="footer-link">
+                  Join the waitlist
+                </Link>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div
+          className="mt-10 flex flex-wrap items-start gap-x-8 gap-y-4 border-t pt-6"
+          style={{ borderColor: 'var(--border)' }}
+        >
         <nav className="flex flex-wrap gap-x-5 gap-y-2 text-[13px]" aria-label="Footer">
           {/*
             * The legal pages now exist — /legal/terms, /legal/privacy,
@@ -612,8 +697,6 @@ export function MarketingFooter() {
             * and the signup form and the acceptance gate cannot disagree.
             */}
           <LegalLinks variant="footer" />
-          <Link href="/data/methodology" style={{ color: 'var(--ink-2)' }}>Methodology</Link>
-          <Link href="/data/sources" style={{ color: 'var(--ink-2)' }}>Data sources</Link>
           {/*
             * The Contact link renders only when there is an address to send
             * people to. No domain has been bought, so today there is not, and
@@ -628,13 +711,74 @@ export function MarketingFooter() {
             </a>
           ) : null}
         </nav>
-        <p className="w-full max-w-[72ch] text-[12px] leading-relaxed" style={{ color: 'var(--muted-1)' }}>
+
+        <p
+          className="min-w-[32ch] max-w-[72ch] flex-1 text-[12px] leading-relaxed"
+          style={{ color: 'var(--muted-1)' }}
+        >
           {/* The same disclaimer the app already carries. */}
           CobaltRank is not affiliated with, endorsed by, or sponsored by Etsy, Inc. Etsy is a
           trademark of Etsy, Inc. CobaltRank uses the Etsy API but is not endorsed or certified by
           Etsy.
         </p>
+
+        {/*
+          * Last in the row and last in the DOM. The legal links above it are
+          * conditional — they render nothing at all while the documents are
+          * drafts — so anything anchored with `ml-auto` BEFORE the disclaimer
+          * ends up floating in the middle of an otherwise empty line. Reading
+          * order and visual order agree this way in both states.
+          */}
+        <p className="figure whitespace-nowrap text-[12px]" style={{ color: 'var(--muted-1)' }}>
+          © {year} CobaltRank
+        </p>
+        </div>
       </div>
     </footer>
+  )
+}
+
+function FooterColumn({
+  title,
+  links,
+}: {
+  title: string
+  links: { label: string; href: string }[]
+}) {
+  return (
+    <div>
+      {/*
+        * An <h2>, not a styled <span>. A footer with four unlabelled lists in
+        * it is four undifferentiated link piles to anyone navigating by
+        * heading — and there is exactly one <h1> on this page, so these sit at
+        * the right level under it.
+        */}
+      <h2 className="mono text-[10.5px] uppercase tracking-[0.07em]" style={{ color: 'var(--muted-1)' }}>
+        {title}
+      </h2>
+      <ul className="mt-2.5 flex flex-col gap-0.5 text-[13px]">
+        {links.map((link) => (
+          <li key={link.href}>
+            {/*
+              * A route handler gets a plain <a>, and a page gets <Link>. The
+              * distinction is not cosmetic: <Link> client-side navigates, and
+              * the router cannot apply the 303 + Set-Cookie that the demo door
+              * answers with — measured, the click left the browser where it
+              * was with no cookie. It also stops Next prefetching the demo
+              * door for anybody who scrolls to the footer.
+              */}
+            {link.href.startsWith('/api/') ? (
+              <a href={link.href} className="footer-link">
+                {link.label}
+              </a>
+            ) : (
+              <Link href={link.href} className="footer-link">
+                {link.label}
+              </Link>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }

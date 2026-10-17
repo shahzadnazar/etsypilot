@@ -1,26 +1,26 @@
 import type { Metadata } from 'next'
-import {
-  Faq,
-  MarketingFooter,
-  MarketingNav,
-  Pricing,
-} from '@/components/marketing/sections'
+import { MarketingNav } from '@/components/marketing/nav'
+import { Faq, MarketingFooter, Pricing } from '@/components/marketing/sections'
+import { FinalCta } from '@/components/marketing/previews'
 import { WaitlistForm } from '@/components/marketing/waitlist-form'
+import { canonical } from '@/lib/seo/site'
 
 export const metadata: Metadata = {
   title: 'Pricing',
   description:
-    'Four founding tiers, a 7-day trial, and no payment provider wired up yet — so every button joins the waitlist rather than pretending to take money.',
+    'Founding prices, a 7-day trial, and no payment provider wired up yet — so every button joins the waitlist rather than pretending to take money.',
+  ...canonical('/pricing'),
 }
 
 /*
  * Pricing, as its own URL.
  *
  * The argument lives on `/` and is cumulative — the price only lands after the
- * ledger and the trust section — so this is not a second pitch. It exists
- * because the nav links to it and because "send me the pricing page" is a real
- * thing people say, and it renders the SAME components rather than a copy of
- * them. A second table would be a second set of numbers to keep in step.
+ * product sections and the trust section — so this is not a second pitch. It
+ * exists because the nav links to it and because "send me the pricing page" is
+ * a real thing people say, and it renders the SAME components rather than a
+ * copy of them. A second table would be a second set of numbers to keep in
+ * step.
  */
 export default async function PricingPage({
   searchParams,
@@ -44,6 +44,7 @@ export default async function PricingPage({
       <Pricing heading={false} />
       <Faq />
       <WaitlistForm state={waitlist} />
+      <FinalCta />
       <MarketingFooter />
     </div>
   )
