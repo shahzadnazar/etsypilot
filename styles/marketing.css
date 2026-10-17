@@ -244,59 +244,22 @@
   font-feature-settings: 'tnum' 1;
 }
 
-/* ─────────────────────────────────────────────────────────── the one moment */
+/* ───────────────────────────────────────── the ledger animation, retired */
 
 /*
- * THE HERO LEDGER FILLS IN, ROW BY ROW, AND THEN VISIBLY STOPS.
+ * `@keyframes ledger-row-in` and `.marketing .ledger-row` were here.
  *
- * The page's argument performed rather than stated: the rows arrive in order,
- * the three fee lines resolve to "Not known" rather than to a number, and net
- * profit never arrives at all.
+ * They staggered the hero ledger's rows and held a deliberate pause before
+ * the three lines that could not be filled, so the statement visibly stalled
+ * where the data did. The ledger came off the homepage with the section that
+ * framed it, and components/marketing/hero-ledger.tsx went with it — so the
+ * rules are gone rather than left as selectors matching nothing.
  *
- * A stagger is `animation-delay` on each row and nothing more. There is no
- * animation library on this page and no runtime dependency was added for it —
- * every effect here is a CSS property or a browser API.
- *
- * Only `transform` and `opacity` are animated. Those are compositor
- * properties; animating width, height, top, margin or box-shadow forces layout
- * or paint on every frame, and that is what makes a page feel slow — far more
- * than the size of a library.
+ * The rule they were written to demonstrate survives them, and the sections
+ * below still obey it: AN EFFECT MAY ONLY ANIMATE TOWARDS WHAT IS ALREADY
+ * PAINTED. Remove this stylesheet entirely and every page is complete and
+ * legible, merely still.
  */
-@keyframes ledger-row-in {
-  from {
-    opacity: 0;
-    transform: translate3d(0, 6px, 0);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-.marketing .ledger-row {
-  /*
-   * The final state IS the default. Everything below only animates TOWARDS
-   * what is already painted, so a browser with no support, a blocked
-   * stylesheet or reduced motion shows a complete, legible ledger.
-   */
-  opacity: 1;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .marketing .ledger-row {
-    animation: ledger-row-in 420ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
-    animation-delay: calc(var(--row) * 90ms);
-  }
-
-  /*
-   * The pause before the three lines that cannot be filled. Not a different
-   * effect — the same one, held back, so the ledger visibly stalls where the
-   * data does.
-   */
-  .marketing .ledger-row[data-gap='true'] {
-    animation-delay: calc(var(--row) * 90ms + 420ms);
-  }
-}
 
 /* ─────────────────────────────────────── what is NOT animated, and why */
 
@@ -325,9 +288,13 @@
 /* ────────────────────────────────────────────────────────── entry transition */
 
 /*
- * @starting-style plus allow-discrete, for the calculator's result rows when a
- * price changes. A plain transition cannot animate from "not in the DOM";
- * this can, with no JavaScript beyond the state change itself.
+ * @starting-style plus allow-discrete, for an element that ARRIVES in the DOM
+ * rather than merely changing. A plain transition cannot animate from "not
+ * there"; this can, with no JavaScript beyond the state change itself.
+ *
+ * Written for the homepage calculator's result rows and outliving it: the
+ * nav's dropdown panels and its mobile sheet are unmounted when closed, which
+ * is the same case.
  */
 @media (prefers-reduced-motion: no-preference) {
   .marketing .fade-in {
@@ -602,4 +569,28 @@
 
 .marketing .faq-row summary:hover {
   color: var(--brand-strong);
+}
+
+/* ─────────────────────────────── the why-choose tiles and step cards */
+
+/*
+ * The same restraint the pricing cards follow, in one line each: a border
+ * that warms on hover and a 2px lift, both inside a reduced-motion query,
+ * neither carrying any information. Every label, description and marker on
+ * these cards is painted before a pointer goes near them.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .marketing .why-tile,
+  .marketing .step-card {
+    transition: transform 200ms cubic-bezier(0.2, 0.7, 0.3, 1), border-color 200ms ease,
+      box-shadow 200ms ease;
+  }
+
+  .marketing .why-tile:hover,
+  .marketing .why-tile:focus-within,
+  .marketing .step-card:hover {
+    transform: translate3d(0, -2px, 0);
+    border-color: var(--brand);
+    box-shadow: 0 6px 14px -6px rgba(15, 23, 42, 0.1);
+  }
 }

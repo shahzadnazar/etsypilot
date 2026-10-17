@@ -1,6 +1,4 @@
 import Link from 'next/link'
-import { ProvenanceBadge } from '@/components/provenance/provenance-badge'
-import { PROVENANCE_TYPES, type ProvenanceType } from '@/lib/provenance/types'
 import { LegalLinks } from '@/components/legal/legal-links'
 import { contactAddress, hasContactAddress } from '@/lib/brand'
 import {
@@ -35,336 +33,39 @@ import {
  * from its new home.
  */
 
-/* ────────────────────────────────────────────────── 4. why profit is hard */
-
-/**
- * Three facts, and they are checkable.
- *
- * No outrage and no competitor named. Each is a property of Etsy's API or
- * Etsy's own dashboard, which is why this product exists and why its headline
- * number is sometimes withheld.
- */
-const HARD_FACTS = [
-  {
-    heading: 'Etsy Ads spend is not in the API',
-    body: 'Etsy exposes no endpoint for what you spend on Etsy Ads. Any tool showing you an ads figure per listing got it from somewhere other than Etsy, or worked it out. CobaltRank shows the shop-level figure Etsy does report, and says the per-listing one is unavailable.',
-  },
-  {
-    heading: 'Offsite Ads fees arrive with no link back to the order',
-    body: 'They land in the payment-account ledger, which is a separate read from your order receipts and carries no reference to the sale that caused them. Per-order margin cannot be computed from them — not slowly, not approximately. It cannot be computed.',
-  },
-  {
-    heading: 'Etsy’s own dashboard shows gross, not net',
-    body: 'The number on your Etsy homepage is revenue before fees, before discounts, before refunds and before anything you spent making the thing. Most sellers are reading it as income because it is the only number in front of them.',
-  },
-]
-
-export function WhyProfitIsHard() {
-  return (
-    <section
-      id="why"
-      className="border-t"
-      style={{ borderColor: 'var(--border)', background: 'var(--canvas-soft)' }}
-    >
-      <div className="mx-auto max-w-[1180px] px-5 py-16 md:py-20">
-        <h2 className="display max-w-[22ch] text-[28px] leading-[1.15] md:text-[36px]" style={{ color: 'var(--ink-1)' }}>
-          Profit is hard on Etsy for three specific reasons.
-        </h2>
-        <p className="mt-3 max-w-[62ch] text-[14.5px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
-          None of them are anybody&rsquo;s fault, and none of them can be fixed by a prettier
-          dashboard. They are why this product withholds a number instead of estimating one.
-        </p>
-
-        {/*
-          * A ruled list, not three cards of equal height. The dividing rules do
-          * the structural work and the widths differ, which is what makes it
-          * read as a document rather than a feature grid.
-          */}
-        <dl className="mt-10 border-t" style={{ borderColor: 'var(--border)' }}>
-          {HARD_FACTS.map((fact) => (
-            <div
-              key={fact.heading}
-              className="grid gap-x-10 gap-y-2 border-b py-6 md:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]"
-              style={{ borderColor: 'var(--border)' }}
-            >
-              <dt className="display text-[18px] leading-snug md:text-[20px]" style={{ color: 'var(--ink-1)' }}>
-                {fact.heading}
-              </dt>
-              <dd className="max-w-[62ch] text-[14px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
-                {fact.body}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </div>
-    </section>
-  )
-}
-
-/* ───────────────────────────────────────────── 5. what CobaltRank does */
-
-const SURFACES = [
-  {
-    name: 'Profit Reality',
-    href: '/profit',
-    line: 'The waterfall at the top of this page, over your own receipts — with every line labelled by where it came from, and withheld where it cannot be known.',
-  },
-  {
-    name: 'Listing Audit',
-    href: '/listings/audit',
-    line: 'Fourteen rules, each one a documented Etsy requirement or a threshold you set. Nothing in it guesses at Etsy’s ranking algorithm.',
-  },
-  {
-    name: 'Shop Pulse',
-    href: '/shop-pulse',
-    line: 'Measures your orders against your own 90-day baseline and tests each recorded change against it. Three verdicts: correlated, ruled out, unknown. Never a cause it cannot show you.',
-  },
-  {
-    name: 'Action Center',
-    href: '/action-center',
-    line: 'What needs attention, ranked by measured impact, each card carrying its evidence and a destination. Nothing to act on means an empty queue, not filler.',
-  },
-  {
-    name: 'Bulk Editor with undo',
-    href: '/listings/bulk-editor',
-    line: 'Select, configure, validate, then the exact diff. Nothing reaches Etsy until you confirm that diff, and the change history can put it back.',
-  },
-]
-
-export function WhatItDoes() {
-  return (
-    <section id="what" className="border-t" style={{ borderColor: 'var(--border)' }}>
-      <div className="mx-auto max-w-[1180px] px-5 py-16 md:py-20">
-        <h2 className="display max-w-[20ch] text-[28px] leading-[1.15] md:text-[36px]" style={{ color: 'var(--ink-1)' }}>
-          Five surfaces, and the demo is the screenshot.
-        </h2>
-        <p className="mt-3 max-w-[58ch] text-[14.5px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
-          Each link opens that screen in the live demo. No account, no email, nothing to install.
-        </p>
-
-        <ul className="mt-10 border-t" style={{ borderColor: 'var(--border)' }}>
-          {SURFACES.map((surface) => (
-            <li
-              key={surface.name}
-              className="grid items-baseline gap-x-10 gap-y-1.5 border-b py-5 md:grid-cols-[minmax(0,16rem)_minmax(0,1fr)_auto]"
-              style={{ borderColor: 'var(--border)' }}
-            >
-              <h3 className="display text-[18px]" style={{ color: 'var(--ink-1)' }}>
-                {surface.name}
-              </h3>
-              <p className="max-w-[64ch] text-[14px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
-                {surface.line}
-              </p>
-              <a href={`/api/demo/enter?to=${encodeURIComponent(surface.href)}`}
-                className="mono whitespace-nowrap text-[12px] font-semibold"
-                style={{ color: 'var(--brand-strong)' }}
-              >
-                Open in the demo →
-              </a>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
-  )
-}
-
-/* ─────────────────────────────────────────────── 6. the provenance system */
-
-const PROVENANCE_LINES: Record<ProvenanceType, string> = {
-  VERIFIED: 'Read from your own Etsy receipts. Not adjusted, not derived.',
-  CALCULATED: 'Worked out from verified figures. The arithmetic is shown.',
-  ESTIMATED: 'A range with its method and its confidence, never a precise-looking midpoint.',
-  SELLER_INPUT: 'A number you entered. Yours, and labelled as yours.',
-  UNAVAILABLE: 'Etsy does not expose it, or it has not been read yet. Shown as absent, never as zero.',
-}
-
-export function ProvenanceSystem() {
-  return (
-    <section
-      id="provenance"
-      className="border-t"
-      style={{ borderColor: 'var(--border)', background: 'var(--canvas-soft)' }}
-    >
-      <div className="mx-auto max-w-[900px] px-5 py-16 md:py-20">
-        <h2 className="display text-[28px] leading-[1.15] md:text-[36px]" style={{ color: 'var(--ink-1)' }}>
-          Every number says where it came from.
-        </h2>
-
-        <dl className="mt-9 border-t" style={{ borderColor: 'var(--border)' }}>
-          {PROVENANCE_TYPES.map((type) => (
-            <div
-              key={type}
-              className="grid items-baseline gap-x-6 gap-y-1 border-b py-3.5 sm:grid-cols-[10.5rem_minmax(0,1fr)]"
-              style={{ borderColor: 'var(--border)' }}
-            >
-              <dt>
-                {/* The real badge, so this page cannot describe a system it has reimplemented. */}
-                <ProvenanceBadge type={type} demo={false} />
-              </dt>
-              <dd className="text-[14px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
-                {PROVENANCE_LINES[type]}
-              </dd>
-            </div>
-          ))}
-        </dl>
-
-        <p
-          className="display mt-9 max-w-[26ch] text-[24px] leading-[1.25] md:text-[30px]"
-          style={{ color: 'var(--ink-1)' }}
-        >
-          When CobaltRank cannot verify a number, it says so instead of estimating one.
-        </p>
-      </div>
-    </section>
-  )
-}
-
-/* ──────────────────────────────────────────────────────────────── 7. trust */
-
-/**
- * Each line is a fact the product can be checked against.
- *
- * ── THESE WERE VERIFIED AGAINST THE CODE, NOT AGAINST MEMORY ──────────────
- *
- * The owner's original list had seven. Three of them described intent rather
- * than current behaviour and are not printed as claims here — the report that
- * accompanied this page says which and why. A trust section is the worst place
- * in a product for a sentence that is almost true.
- *
- * "Not even we can" is the strongest sentence on the page and the one most
- * likely to be wrong, so it was checked against domain/admin/operator-writes.ts
- * itself. That file's allowlist is four entries: `users.platform_role` and
- * three operator-only audit and permission tables. No seller table is on it,
- * and the Etsy-write allowlist for the operator area is empty. The guard that
- * enforces it walks the operator closure transitively through imports, so a
- * module that merely IMPORTS something that can write fails it.
- */
-const TRUST = [
-  {
-    claim: 'It never holds your Etsy password.',
-    detail:
-      'The connection is an OAuth token, stored encrypted. Revoke it from your Etsy account and CobaltRank stops reading and writing immediately — there is nothing it can do with a revoked token.',
-  },
-  {
-    claim: 'Only you can change your shop.',
-    detail:
-      'Every write shows you the exact before-and-after first, fingerprinted so the set you approved is the set that is sent. Nothing goes to Etsy until you confirm that diff, and if the catalogue moved in between, CobaltRank refuses rather than applying to whatever is left.',
-  },
-  {
-    claim: 'Not even we can.',
-    detail:
-      'CobaltRank staff can read your shop to support you, and cannot write to it — enforced in code, not by policy. The operator area may change four things, none of them yours: a person’s platform role and three of its own audit tables. It has no way to write a listing, an order, a cost or anything on Etsy.',
-  },
-  {
-    claim: 'Refusals are recorded, not just writes.',
-    detail:
-      'The audit log is append-only and exportable, and it keeps what CobaltRank would not do as well as what it did — "Write refused — demo mode · nothing sent" is a record, with the reason and what would have changed.',
-  },
-  {
-    claim: 'A rollback is planned against your shop as it is now.',
-    detail:
-      'Not as it was when the job ran. A listing somebody edited on Etsy since is excluded and named, rather than silently overwritten — restoring it would discard work CobaltRank did not do.',
-  },
-  {
-    claim: 'Export what the figures are built on, any time.',
-    /*
-     * The nouns come from domain/export/datasets.ts, not from this file. The
-     * first version of this line was written from memory and named four
-     * datasets, two of which have no exporter. A sentence about what the
-     * software does is now rendered from the software.
-     */
-    detail: `As CSV, from Settings: ${exportableNouns()}. Each file carries a provenance column beside every value and a header saying what it leaves out. ${notExportableNouns().charAt(0).toUpperCase()}${notExportableNouns().slice(1)} have no exporter yet, so "everything" would be the wrong word. ${deletionRoute()} There is no self-serve delete button yet, and a button that looked like one would be worse than saying so.`,
-  },
-  {
-    claim: 'Two-factor authentication is available on every account.',
-    detail:
-      'An authenticator app, with recovery codes. Required for anyone operating CobaltRank itself.',
-  },
-  {
-    claim: 'Cancel in one click.',
-    detail: 'No email required, no retention call, no survey. Access continues to the end of the period you have paid for.',
-  },
-]
-
-export function Trust() {
-  return (
-    <section id="trust" className="border-t" style={{ borderColor: 'var(--border)' }}>
-      <div className="mx-auto max-w-[1180px] px-5 py-16 md:py-20">
-        <h2 className="display max-w-[24ch] text-[28px] leading-[1.15] md:text-[36px]" style={{ color: 'var(--ink-1)' }}>
-          Eight things you can check, rather than take our word for.
-        </h2>
-
-        <dl className="mt-10 grid gap-x-12 border-t md:grid-cols-2" style={{ borderColor: 'var(--border)' }}>
-          {TRUST.map((item) => (
-            <div key={item.claim} className="border-b py-5" style={{ borderColor: 'var(--border)' }}>
-              <dt className="display text-[17px] leading-snug" style={{ color: 'var(--ink-1)' }}>
-                {item.claim}
-              </dt>
-              <dd className="mt-1.5 max-w-[58ch] text-[13.5px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
-                {item.detail}
-              </dd>
-            </div>
-          ))}
-        </dl>
-
-        {/*
-          * ── THESE TWO WENT THROUGH THE DEMO DOOR ────────────────────────
-          *
-          * They were plain <Link>s to /data/methodology and /data/sources.
-          * Both pages are real and both live in app/(dashboard), whose layout
-          * redirects a visitor with no session to /login — so a stranger who
-          * followed "How every figure is produced" from the trust section
-          * landed on a sign-in form. The route existed, the link worked, and
-          * the destination was a door.
-          *
-          * A plain <a> with no prefetch, for the reasons the hero's button
-          * records: <Link> client-side navigates and cannot apply a route
-          * handler's 303 + Set-Cookie, and Next prefetches a <Link> on sight,
-          * which would open a demo session for anybody who merely scrolled
-          * past.
-          */}
-        <p className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-[13.5px]">
-          <a href="/api/demo/enter?to=/data/methodology" className="font-semibold underline underline-offset-2" style={{ color: 'var(--brand-strong)' }}>
-            How every figure is produced
-          </a>
-          <a href="/api/demo/enter?to=/data/sources" className="font-semibold underline underline-offset-2" style={{ color: 'var(--brand-strong)' }}>
-            Where every figure comes from
-          </a>
-          <span style={{ color: 'var(--muted-1)' }}>
-            Both pages are in the product. No competitor publishes an equivalent.
-          </span>
-        </p>
-      </div>
-    </section>
-  )
-}
-
 /*
  * ██████████████████████████████████████████████████████████████████████████
  *
- *   THE PRICING SECTION MOVED, AND THE FOUR FOUNDING TIERS CAME OFF THE
- *   PUBLIC PAGES.
+ *   FIVE SECTIONS CAME OFF THIS FILE, AND NONE OF THE BEHAVIOUR DID.
  *
  * ██████████████████████████████████████████████████████████████████████████
  *
- * `Pricing` and `TierCard` were here. They rendered the four founding tiers
- * from domain/billing/founding-pricing.ts — Starter $20, Growth $27, Pro $35,
- * Studio $45 — on `/` and on `/pricing`.
+ * `WhyProfitIsHard`, `WhatItDoes`, `ProvenanceSystem` and `Trust` were here,
+ * and `Pricing` before them. The owner removed all of them from the homepage;
+ * nothing else rendered them, so the components are gone rather than left as
+ * exports nobody calls.
  *
- * The public plan structure is now exactly Free, Basic and Pro, so both pages
- * render components/marketing/pricing-cards.tsx instead, and the landing
- * page's block is `PricingSection` in that same file: the SAME cards as
- * /pricing rather than a second table tuned for a narrower column, because two
- * pricing tables in one product is two sets of numbers to keep in step.
+ * WHAT THEY SAID IS STILL TRUE AND STILL ENFORCED. They were copy ABOUT the
+ * product, and the product is unchanged:
  *
- * ── WHAT WAS KEPT ────────────────────────────────────────────────────────
+ *   The provenance system      lib/provenance/types.ts, rendered by
+ *                              components/provenance/provenance-badge.tsx on
+ *                              every figure in the application.
+ *   "Not even we can"          domain/admin/operator-writes.ts and its
+ *                              transitive guard in
+ *                              tests/unit/operator-write-boundary.test.ts.
+ *   Export as a right          tests/unit/export-ungated.test.ts, which holds
+ *                              both directions: no plan may advertise it and
+ *                              no code may gate it.
+ *   The three Etsy facts       Still the reason domain/ads and the profit
+ *                              waterfall withhold figures rather than
+ *                              estimating them.
  *
- * The trial terms, verbatim, moved with the section. domain/billing/founding-
- * pricing.ts is untouched: its four prices are the only ones anybody has ever
- * approved for anything, and deleting a commercial decision to tidy a page is
- * not this file's call. Nothing renders them publicly today, and that file
- * says so.
+ * `deletionRoute()` below survived the deletion of `Trust`, which used it,
+ * because the FAQ uses it too — and tests/unit/brand.test.ts asserts this
+ * file still names `contactAddress('privacy')` and still explains that
+ * deletion has no published address yet. A sentence about a right may not
+ * disappear because a marketing section did.
  */
 
 /* ────────────────────────────────────────────────────────────────── 9. FAQ */
@@ -510,7 +211,14 @@ export function MarketingFooter() {
             title="Product"
             links={[
               { label: 'Keyword research', href: '/#keywords' },
-              { label: 'Profit calculator', href: '/#calculator' },
+              /*
+                * The homepage calculator section is gone, so this points at
+                * the calculator that has a URL of its own — a real public
+                * route in app/(public), reachable with no account. A footer
+                * link to `/#calculator` after that section was removed would
+                * be the dead fragment this product's own guards forbid.
+                */
+              { label: 'Profit calculator', href: '/tools/etsy-seller-calculator' },
               { label: 'Listing checks', href: '/#listings' },
               { label: 'Shop performance', href: '/#performance' },
               { label: 'Bulk updates', href: '/#bulk' },
@@ -521,13 +229,17 @@ export function MarketingFooter() {
           <FooterColumn
             title="How it works"
             links={[
-              { label: 'How the figures are made', href: '/#provenance' },
-              { label: 'What you can check', href: '/#trust' },
+              /*
+                * `/#provenance` and `/#trust` were these two, and both
+                * sections came off the homepage. The pages they summarised
+                * are still in the product and say it at greater length, so
+                * the links follow the content through the demo door rather
+                * than pointing at anchors nothing answers to.
+                */
+              { label: 'How the figures are made', href: '/api/demo/enter?to=/data/methodology' },
+              { label: 'What you can check', href: '/api/demo/enter?to=/data/sources' },
               { label: 'Common questions', href: '/#faq' },
-              /* Through the demo door, for the reason the trust section
-                 above records: both pages are inside the dashboard shell. */
-              { label: 'Methodology', href: '/api/demo/enter?to=/data/methodology' },
-              { label: 'Data sources', href: '/api/demo/enter?to=/data/sources' },
+              { label: 'Pricing comparison', href: '/pricing/compare' },
             ]}
           />
 

@@ -86,10 +86,18 @@ const FEATURES: NavLink[] = [
 ]
 
 const RESOURCES: NavLink[] = [
-  { label: 'How the figures are made', href: '/#provenance', description: 'Every number says where it came from.' },
+  /*
+   * `/#provenance` was this, and the provenance section came off the
+   * homepage. The methodology page in the product is where that answer
+   * actually lives, at greater length — so the link follows the content
+   * rather than pointing at an anchor nothing answers to. A plain href,
+   * because the demo door is a route handler whose 303 the client router
+   * cannot apply.
+   */
+  { label: 'How the figures are made', href: '/api/demo/enter?to=/data/methodology', description: 'How each figure is produced, and what is withheld.' },
   { label: 'Common questions', href: '/#faq', description: 'What this is, what it is not, and what it costs.' },
   { label: 'Data sources', href: '/api/demo/enter?to=/data/sources', description: 'The catalogue of what this product reads from.' },
-  { label: 'Methodology', href: '/api/demo/enter?to=/data/methodology', description: 'How each figure is calculated, in full.' },
+  { label: 'Pricing comparison', href: '/pricing/compare', description: 'Every limit on Free, Basic and Pro, side by side.' },
 ]
 
 export function MarketingNav() {
@@ -138,7 +146,13 @@ export function MarketingNav() {
 
         <div className="ml-2 hidden items-center gap-1 lg:flex">
           <NavMenu label="Features" items={FEATURES} />
-          <Link href="/#calculator" className="nav-link inline-flex">
+          {/*
+            * `/#calculator` until the homepage calculator section was
+            * removed. This is the calculator that has a URL of its own — a
+            * real public route in app/(public), no account needed — so the
+            * nav item still leads somewhere that divides two numbers.
+            */}
+          <Link href="/tools/etsy-seller-calculator" className="nav-link inline-flex">
             Free tools
           </Link>
           <NavMenu label="Resources" items={RESOURCES} />
@@ -198,7 +212,11 @@ export function MarketingNav() {
         >
           <MobileGroup label="Features" items={FEATURES} onNavigate={() => setMobileOpen(false)} />
           <MobileGroup label="Resources" items={RESOURCES} onNavigate={() => setMobileOpen(false)} />
-          <Link href="/#calculator" className="mobile-link" onClick={() => setMobileOpen(false)}>
+          <Link
+            href="/tools/etsy-seller-calculator"
+            className="mobile-link"
+            onClick={() => setMobileOpen(false)}
+          >
             Free tools
           </Link>
           <Link href="/pricing" className="mobile-link" onClick={() => setMobileOpen(false)}>

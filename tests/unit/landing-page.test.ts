@@ -64,7 +64,6 @@ const SURFACE = [...walk('app/(marketing)'), ...walk('components/marketing')]
 const PAGE = code('app/(marketing)/page.tsx')
 const NAV = code('components/marketing/nav.tsx')
 const HERO = code('components/marketing/hero.tsx')
-const CALCULATOR = code('components/marketing/profit-calculator.tsx')
 const SECTIONS = code('components/marketing/sections.tsx')
 
 describe('the public surface this file is sweeping', () => {
@@ -74,7 +73,7 @@ describe('the public surface this file is sweeping', () => {
     expect(SURFACE).toContain('app/(marketing)/page.tsx')
     expect(SURFACE).toContain('app/(marketing)/pricing/page.tsx')
     expect(SURFACE).toContain('components/marketing/nav.tsx')
-    expect(SURFACE).toContain('components/marketing/profit-calculator.tsx')
+    expect(SURFACE).toContain('components/marketing/previews.tsx')
   })
 })
 
@@ -161,7 +160,13 @@ describe('ISSUE 1 — every call to action goes somewhere that exists', () => {
     for (const file of SURFACE) {
       for (const match of code(file).matchAll(/id="([a-z0-9-]+)"/g)) ids.add(match[1]!)
     }
-    for (const anchor of ['features', 'keywords', 'calculator', 'profit', 'listings', 'faq']) {
+    /*
+     * `calculator` was in this list and is not any more: the homepage
+     * calculator section was removed and the nav item that pointed at it now
+     * goes to /tools/etsy-seller-calculator, a route rather than a fragment.
+     * `how-it-works` takes its place as a new section with an id.
+     */
+    for (const anchor of ['features', 'keywords', 'profit', 'listings', 'how-it-works', 'faq']) {
       expect(ids, `#${anchor} is linked from the nav`).toContain(anchor)
     }
   })
@@ -194,100 +199,63 @@ describe('ISSUE 1 — every call to action goes somewhere that exists', () => {
 
 /* ════════════════════════ ISSUE 2 — the fee arithmetic ═══════════════════ */
 
-describe('ISSUE 2 — the calculator owns no arithmetic and no rates', () => {
-  it('runs the product’s own domain function rather than a second copy', () => {
-    expect(CALCULATOR).toContain("from '@/domain/product-profit/calculate'")
-    expect(CALCULATOR).toContain('calculateProductProfit(')
+/*
+ * ── THE CALCULATOR CAME OFF THE HOMEPAGE, AND THESE TESTS FOLLOWED IT ────
+ *
+ * This block used to read components/marketing/profit-calculator.tsx and
+ * assert that the component owned no arithmetic, no rates and no clamp. The
+ * owner removed the calculator section from the homepage; nothing else
+ * rendered that component, so it is gone, and there is a public calculator
+ * with a URL of its own at /tools/etsy-seller-calculator.
+ *
+ * THE DOMAIN ASSERTIONS DID NOT GO WITH IT. The defect ISSUE 2 named was
+ * never really in the markup — `Math.max(0, netProfit)` renders a product
+ * losing $6 a sale as "$0.00", which reads as break-even, and a seller acting
+ * on that keeps selling it. That rule belongs to the arithmetic, and the
+ * arithmetic is still here, still used by /tools and still covered by the ten
+ * cases in tests/unit/product-profit.test.ts. So the no-clamp guard is kept
+ * and pointed at the domain, which is where it should always have been.
+ *
+ * What is NOT kept is anything that only described the component: the dated
+ * rate table on screen, the editable fee fields, the red-on-loss styling.
+ * Those were properties of a surface that no longer exists, and a test that
+ * asserts them against nothing is a test that passes for the wrong reason.
+ */
+describe('ISSUE 2 — a loss is never clamped to zero', () => {
+  const DOMAIN = code('domain/product-profit/calculate.ts')
+
+  it('has the domain function it is meant to be checking', () => {
+    // A sweep over an empty string passes every assertion below perfectly.
+    expect(DOMAIN.length).toBeGreaterThan(1000)
+    expect(DOMAIN).toContain('export function calculateProductProfit')
   })
 
-  it('reads every fee rate from the dated table instead of literals', () => {
-    expect(CALCULATOR).toContain("from '@/domain/fees/rules'")
-    expect(CALCULATOR).toContain('DEFAULT_FEE_RATES')
-    // The date the rates were recorded, and the country they were recorded
-    // for, are both on screen — a rate with neither is a figure that was true
-    // once.
-    expect(CALCULATOR).toContain('FEE_RULES_EFFECTIVE')
-    expect(CALCULATOR).toContain('FEE_RULES_SOURCE')
-  })
-
-  it('carries no hardcoded Etsy fee percentage or flat amount', () => {
+  it('never clamps a profit, a margin or a total', () => {
     /*
-     * The defect, exactly: the export printed "6.5%", "$0.20" and
-     * "3% + $0.25" into the markup beside fee inputs that were bound to
-     * nothing. Someone outside the US could correct a rate, watch the field
-     * accept it, and read a total that had ignored them.
-     *
-     * The published values are matched specifically rather than "any number",
-     * because this component legitimately contains sizes, widths and the
-     * rounding of a percentage.
-     */
-    const offenders = ['6.5%', '$0.20', '$0.25', '0.065', '12%', '15%'].filter((literal) =>
-      CALCULATOR.includes(literal),
-    )
-    expect(offenders, 'a published fee rate is written into the component').toEqual([])
-  })
-
-  it('never clamps a loss to zero, in the component or in the domain', () => {
-    /*
-     * `Math.max(0, netProfit)` renders a product losing $6 a sale as "$0.00",
-     * which reads as break-even. A seller acting on that keeps selling it.
-     *
      * The domain clamps INPUTS — a negative materials cost is a typo — and
      * that is a different operation on a different value, so the check is
-     * specific about which: nothing may clamp a profit, a margin or a total.
+     * specific about which: nothing may clamp an output.
      */
-    const domain = code('domain/product-profit/calculate.ts')
-    for (const source of [CALCULATOR, domain]) {
-      expect(source).not.toMatch(/Math\.max\(\s*0\s*,\s*[^)]*(profit|margin|net|total)/i)
-    }
+    expect(DOMAIN).not.toMatch(/Math\.max\(\s*0\s*,\s*[^)]*(profit|margin|net|total)/i)
   })
 
-  it('paints a loss in the danger token and a gain in the success one', () => {
-    expect(CALCULATOR).toMatch(/var\(--danger\)/)
-    expect(CALCULATOR).toMatch(/var\(--success\)/)
-    // And the sign is rendered, not implied by colour alone — SC 1.4.1.
-    expect(CALCULATOR).toContain('signedMoney')
+  it('returns a negative profit and a negative margin rather than withholding them', () => {
+    expect(DOMAIN).toContain('marginPercent: revenue === 0 ? null')
+    expect(DOMAIN).toContain('profit < 0')
   })
 
-  it('labels its output as an estimate rather than as the seller’s profit', () => {
-    expect(CALCULATOR).toContain('Estimated net profit')
-    // The provenance badge the product uses for arithmetic over entered
-    // numbers. Not VERIFIED: nothing here was read from Etsy.
-    expect(CALCULATOR).toMatch(/type="CALCULATED"/)
-    expect(CALCULATOR).not.toMatch(/type="VERIFIED"/)
-  })
-
-  it('shows the cost breakdown, the margin, the total and the break-even', () => {
-    for (const line of [
-      'What the buyer pays',
-      'Total fees and costs',
-      'Break-even price',
-      'result.marginPercent',
-      'result.limitations',
-    ]) {
-      expect(CALCULATOR, line).toContain(line)
-    }
-  })
-
-  it('says no margin rather than 0% when there is no revenue', () => {
-    expect(CALCULATOR).toContain('result.marginPercent === null')
-  })
-
-  it('opens the fee row into one line per rate, with each rate’s own arithmetic', () => {
+  it('still reaches a calculator a visitor can use, on a route of its own', () => {
     /*
-     * "Etsy fees" as a single figure is the one line a seller cannot check.
-     * It is three or four rates on three different bases, which is why the
-     * sum sellers do by hand — "6.5% of the price" — is always too low.
-     *
-     * The rows come from the same result as the total (`feeLines`), not from
-     * a second call to the fee engine: two calls with the same inputs agree
-     * today and are two things to keep in step tomorrow.
+     * The homepage section is gone; the public calculator is not. This is the
+     * assertion that would fail if removing the section had quietly left the
+     * product with no public calculator at all.
      */
-    expect(CALCULATOR).toContain('result.feeLines.map')
-    expect(CALCULATOR).toContain('fee.formula')
-    const domain = code('domain/product-profit/calculate.ts')
-    expect(domain).toContain('feeLines: fees.lines')
-    expect(CALCULATOR).not.toContain('calculateFees(')
+    expect(() =>
+      readFileSync('app/(public)/tools/etsy-seller-calculator/page.tsx', 'utf8'),
+    ).not.toThrow()
+    // And the nav still points at it, rather than at the fragment it used to.
+    expect(NAV).toContain('href="/tools/etsy-seller-calculator"')
+    expect(NAV).not.toContain('#calculator')
   })
 })
 
@@ -308,8 +276,6 @@ describe('ISSUE 4 — the menus open for a keyboard and tell the truth about it'
 
     expect(NAV).toContain('aria-expanded={open}')
     expect(NAV).toContain('aria-expanded={mobileOpen}')
-    // The calculator's own disclosure is held to the same rule.
-    expect(CALCULATOR).toContain('aria-expanded={showRates}')
   })
 
   it('opens every menu from a real button, not a hover target', () => {
@@ -398,19 +364,24 @@ describe('the page’s structure', () => {
   })
 
   it('renders the approved sections in the approved order', () => {
+    /*
+     * The owner's order, and it is checked as an ORDER rather than as a set:
+     * every one of these is somewhere on the page is a weaker claim than the
+     * page reads in this sequence, and the sequence is the thing a
+     * restructure breaks by accident.
+     */
     const order = [
       'MarketingNav',
       'Hero',
+      'WhyChoose',
       'Benefits',
-      'KeywordResearch',
-      'ProfitCalculator',
       'ProfitIntelligence',
       'ListingIntelligence',
       'ShopPerformance',
       'BulkUpdates',
-      'Pricing',
+      'HowItWorks',
+      'PricingSection',
       'Faq',
-      'FinalCta',
       'MarketingFooter',
     ]
     const positions = order.map((name) => PAGE.indexOf(`<${name}`))
@@ -420,32 +391,112 @@ describe('the page’s structure', () => {
     expect(positions, 'the sections are out of order').toEqual([...positions].sort((a, b) => a - b))
   })
 
-  it('keeps the four sections the approved design did not have', () => {
+  it('carries exactly one Three Questions section, with its three steps', () => {
     /*
-     * They carry the honest part of the argument: why a figure is sometimes
-     * withheld, how to check the claims, what each provenance badge means,
-     * and the one-click door into the live demo. Deleting them to match a
-     * visual comp would be deleting the reason the product is defensible.
+     * The section was UPDATED rather than replaced, so the thing most likely
+     * to go wrong is a second copy of it appearing beside the first. The
+     * heading is asserted once, across the whole public surface.
      */
-    for (const section of ['WhyProfitIsHard', 'WhatItDoes', 'ProvenanceSystem', 'Trust']) {
-      expect(PAGE, section).toContain(`<${section}`)
+    const headings = SURFACE.map((file) => code(file))
+      .join('\n')
+      .match(/Three questions, answered with your own numbers\./g)
+    expect(headings?.length ?? 0).toBe(1)
+
+    const previews = code('components/marketing/previews.tsx')
+    for (const step of ['1 · Discover', '2 · Understand', '3 · Improve']) {
+      expect(previews, step).toContain(step)
     }
   })
 
-  it('keeps the ledger with holes in it, next to the argument it evidences', () => {
+  it('gives the Discover row the keyword panel that used to be its own section', () => {
     /*
-     * It was the old page's hero. The approved design's hero is a confident
-     * dashboard, so it moved rather than being deleted — between the three
-     * reasons profit is hard and the provenance system, where it is the
-     * worked example of "absent is not zero" rather than a claim a reader has
-     * not yet been given a reason to believe.
+     * MOVED, not rebuilt. `KeywordExplorerPanel` is the same markup, the same
+     * four sample rows and the same note about Etsy publishing no search
+     * volume; the standalone section that framed it is gone. If somebody ever
+     * retypes the table into the Discover row instead, there are two sets of
+     * sample figures and two chances to word that position differently — so
+     * the component is asserted, and the old section's heading is asserted
+     * absent.
      */
-    expect(PAGE).toContain('<HeroLedger')
-    const ledger = code('components/marketing/hero-ledger.tsx')
-    expect(ledger).toContain('Not known')
-    // Between those two sections, in that order.
-    expect(PAGE.indexOf('<HeroLedger')).toBeGreaterThan(PAGE.indexOf('<WhyProfitIsHard'))
-    expect(PAGE.indexOf('<HeroLedger')).toBeLessThan(PAGE.indexOf('<ProvenanceSystem'))
+    const previews = code('components/marketing/previews.tsx')
+    expect(previews).toContain('export function KeywordExplorerPanel')
+    expect(previews).toContain('<KeywordExplorerPanel />')
+    expect(previews).toContain('Find better keywords')
+    expect(previews).not.toContain('Find keywords worth targeting')
+    expect(previews).not.toContain('export function KeywordResearch')
+
+    // One keyword table on the page, not two.
+    const tables = previews.match(/Keyword explorer/g)
+    expect(tables?.length ?? 0).toBe(1)
+  })
+
+  it('carries exactly one How It Works section, and it was genuinely absent before', () => {
+    const headings = SURFACE.map((file) => code(file))
+      .join('\n')
+      .match(/From Connection to Growth/g)
+    expect(headings?.length ?? 0).toBe(1)
+    expect(PAGE).toContain('<HowItWorks')
+    /*
+     * The footer has a column called "How it works". It is a list of links
+     * and not a section, which is why adding this one duplicated nothing —
+     * and this is the line that would catch somebody later mistaking the two.
+     */
+    expect(SECTIONS).toContain('title="How it works"')
+  })
+
+  it('does not reintroduce the sections the owner removed', () => {
+    /*
+     * Five marketing sections came off the homepage. What they DESCRIBED is
+     * untouched — the provenance system, the operator write boundary and the
+     * export rules all still run, with their own guards — but the copy about
+     * them is not to come back without somebody deciding it should.
+     */
+    for (const gone of [
+      'Profit is hard on Etsy for three specific reasons',
+      'Five surfaces, and the demo is the screenshot',
+      'Every number says where it came from',
+      'Eight things you can check',
+      'Try the arithmetic on a price of your own',
+    ]) {
+      const offenders = SURFACE.filter((file) => code(file).includes(gone))
+      expect(offenders, `${gone} is back on a public page`).toEqual([])
+    }
+    for (const component of ['WhyProfitIsHard', 'WhatItDoes', 'ProvenanceSystem', 'Trust']) {
+      expect(PAGE, component).not.toContain(`<${component}`)
+    }
+  })
+
+  it('kept the behaviour those sections described', () => {
+    /*
+     * The point of the removals is that they were COPY. This is the assertion
+     * that fails if somebody reads "remove the provenance section" as "remove
+     * provenance" — the badge component, its five types and the guard that
+     * holds the product to them are all still here.
+     */
+    expect(() => readFileSync('components/provenance/provenance-badge.tsx', 'utf8')).not.toThrow()
+    expect(() => readFileSync('lib/provenance/types.ts', 'utf8')).not.toThrow()
+    expect(() => readFileSync('domain/admin/operator-writes.ts', 'utf8')).not.toThrow()
+    expect(() => readFileSync('tests/unit/export-ungated.test.ts', 'utf8')).not.toThrow()
+    // And the deletion sentence survived the Trust section that used it.
+    expect(SECTIONS).toMatch(/not published yet/)
+  })
+
+  it('gives every Start for Free button the real signup route', () => {
+    /*
+     * Six sections carry one now. They are rendered by a single `StartFree`
+     * helper rather than six copies of a <Link>, because six destinations is
+     * five chances for one to drift — which is precisely how the approved
+     * export ended up with five buttons pointing at a `#signup` anchor that
+     * did not exist.
+     */
+    const previews = code('components/marketing/previews.tsx')
+    expect(previews).toContain('function StartFree(')
+    expect(previews).toContain('href="/signup"')
+    const uses = previews.match(/<StartFree/g)
+    expect(uses?.length ?? 0).toBeGreaterThanOrEqual(6)
+    // One destination, written once — including the final call to action,
+    // which had its own copy of the same button until this was asserted.
+    expect(previews.match(/href="\/signup"/g)?.length ?? 0).toBe(1)
   })
 
   it('labels the dashboard preview as a sample, inside the picture', () => {

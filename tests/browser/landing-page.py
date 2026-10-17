@@ -216,75 +216,93 @@ with sync_playwright() as p:
         "a click outside the menu closes it",
     )
 
-    # ── ISSUE 2: the calculator, used ──────────────────────────────────────
-    page.locator("#calculator").scroll_into_view_if_needed()
-    price = page.get_by_label("Item price")
-    check(price.count() == 1, "the price field has one accessible label")
+    # ── the revised structure, in the owner's order ───────────────────────
+    #
+    # The calculator checks that used to sit here are gone with the section
+    # they drove: the homepage no longer carries a calculator, and the public
+    # one at /tools/etsy-seller-calculator is a page of its own with its own
+    # component. What is checked instead is the thing a restructure actually
+    # breaks — a section appearing twice, a section not appearing at all, or
+    # the sequence quietly rearranging.
+    headings = [h.strip() for h in page.locator("main h2, h2").all_inner_texts()]
+    joined = " | ".join(headings)
 
-    def outcome():
-        node = page.locator("[data-outcome]").first
-        return node.get_attribute("data-outcome"), money(node.inner_text())
+    for once in [
+        "Built to Help Etsy Sellers Grow Smarter",
+        "Three questions, answered with your own numbers.",
+        "From Connection to Growth",
+    ]:
+        check(headings.count(once) == 1, f"exactly one {once!r} section (found {headings.count(once)})")
 
-    state, profit = outcome()
-    check(state == "profit" and profit is not None and profit > 0, f"a $42 sale is a profit ({profit})")
+    for gone in [
+        "Profit is hard on Etsy",
+        "Five surfaces",
+        "Every number says where it came from",
+        "Eight things you can check",
+        "Try the arithmetic",
+        "Find keywords worth targeting",
+    ]:
+        check(gone not in joined, f"the {gone!r} section is gone")
 
-    # The defect, reproduced and then not reproduced: a price below cost.
-    price.fill("8")
-    page.wait_for_timeout(120)
-    state, profit = outcome()
-    check(state == "loss", "a price below cost is reported as a loss")
+    # The order, read off the page rather than off the source.
+    def position(fragment):
+        for index, heading in enumerate(headings):
+            if fragment in heading:
+                return index
+        return -1
+
+    sequence = [
+        position("Built to Help Etsy Sellers"),
+        position("Three questions"),
+        position("Revenue is not profit"),
+        position("A finding, a reason"),
+        position("What changed, and what nobody"),
+        position("Make bulk changes"),
+        position("From Connection to Growth"),
+    ]
+    check(all(p >= 0 for p in sequence), f"every required section is on the page ({sequence})")
+    check(sequence == sorted(sequence), f"the sections are in the owner's order ({sequence})")
+
+    # ── the Discover row carries the keyword panel ────────────────────────
+    #
+    # Moved, not rebuilt. One keyword table on the page, inside the Three
+    # Questions section, with the same note it always carried.
+    explorers = page.get_by_text("Keyword explorer", exact=True)
+    check(explorers.count() == 1, f"one keyword explorer panel (found {explorers.count()})")
+    discover = page.locator("#features")
     check(
-        profit is not None and profit < 0,
-        f"the loss is shown as a NEGATIVE amount rather than clamped to $0.00 ({profit})",
+        "Keyword explorer" in discover.inner_text(),
+        "and it sits inside the Three Questions section",
     )
-
-    # Colour is the second signal, not the only one — but it must be the right
-    # one, because this page's whole argument is about financial clarity.
-    colour = page.evaluate(
-        "() => getComputedStyle(document.querySelector('[data-outcome]')).color"
-    )
-    check(colour.startswith("rgb(185, 28, 28"), f"the loss is painted in --danger ({colour})")
-
-    price.fill("42")
-    page.wait_for_timeout(120)
-    state, back = outcome()
-    check(state == "profit", "raising the price back makes it a profit again")
-
-    # An unparseable keystroke is refused rather than turning the panel to NaN.
-    price.fill("42")
-    price.type("abc")
-    page.wait_for_timeout(120)
-    panel = page.locator("[data-outcome]").first.inner_text()
-    check("NaN" not in page.locator("#calculator").inner_text(), "no NaN reaches the panel")
-    check(money(panel) == back, "a refused keystroke leaves the figures alone")
-
-    # THE FEE FIELDS ARE BOUND. This is the one the export rendered and ignored.
-    page.get_by_role("button", name=re.compile("Fee assumptions")).click()
-    transaction = page.get_by_label("Transaction fee percentage")
-    check(transaction.count() == 1, "the transaction fee rate is an editable field")
-    before = money(page.locator("[data-outcome]").first.inner_text())
-    transaction.fill("20")
-    page.wait_for_timeout(150)
-    after = money(page.locator("[data-outcome]").first.inner_text())
+    check("Find better keywords" in discover.inner_text(), "beside the Discover heading")
     check(
-        after is not None and before is not None and after < before,
-        f"raising a fee rate lowers the profit ({before} → {after})",
+        "Etsy publishes no search volume" in discover.inner_text(),
+        "with the search-volume position that came with it",
+    )
+    check(
+        page.locator("#keywords").count() == 1,
+        "the #keywords anchor still resolves, on the row that now holds it",
     )
 
-    page.get_by_role("button", name="Reset to the published rates").click()
-    page.wait_for_timeout(150)
-    check(
-        money(page.locator("[data-outcome]").first.inner_text()) == before,
-        "resetting the rates restores the original figure",
-    )
+    # ── every section that should have one has a Start for Free ───────────
+    for section_id in ["why", "features", "profit", "listings", "performance", "bulk", "how-it-works"]:
+        section = page.locator(f"#{section_id}")
+        links = section.get_by_role("link", name=re.compile(r"^Start for Free"))
+        check(links.count() >= 1, f"#{section_id} has a Start for Free button")
+        if links.count() >= 1:
+            check(
+                links.first.get_attribute("href") == "/signup",
+                f"#{section_id}'s button goes to /signup",
+            )
 
-    # The rates carry the date they were recorded. A fee with no date is a fee
-    # that was true once.
-    rates_text = page.locator("#calculator").inner_text()
-    check(
-        re.search(r"Recorded 20\d\d-\d\d-\d\d", rates_text) is not None,
-        "the fee assumptions state the date they were recorded",
-    )
+    # The two secondary links the owner asked to keep, pointing at the
+    # sections they name.
+    for label, target in [("#profit", "profit"), ("#listings", "listings")]:
+        check(
+            page.locator(f"#features a[href='{label}']").count() == 1,
+            f"the Understand/Improve card still links to {label}",
+        )
+        check(page.locator(f"#{target}").count() == 1, f"and #{target} is on the page")
 
     # ── the sample data says it is sample data ─────────────────────────────
     #
@@ -391,14 +409,21 @@ with sync_playwright() as p:
     )
     check(not small, f"every mobile nav row is at least 44px tall ({small})")
 
-    # The calculator is usable at phone width, which is where most of these
-    # visitors are.
-    mobile.locator("#calculator").scroll_into_view_if_needed()
-    mobile_overflow = mobile.evaluate(
-        "() => { const e = document.querySelector('#calculator');"
-        " return e.scrollWidth - e.clientWidth }"
+    # Every section fits at phone width, rather than only the page as a whole.
+    # A section that overflows inside a page that does not is a section whose
+    # own content is clipped — which the document-level check cannot see.
+    wide = mobile.eval_on_selector_all(
+        "section[id]",
+        "els => els.filter(e => e.scrollWidth > e.clientWidth + 1).map(e => e.id)",
     )
-    check(mobile_overflow <= 1, f"the calculator fits at 390px (overflow {mobile_overflow}px)")
+    check(not wide, f"no section clips its own content at 390px ({wide})")
+
+    # And the How-it-works cards stack rather than squeezing four across.
+    columns = mobile.evaluate(
+        "() => { const grid = document.querySelector('#how-it-works ol');"
+        " return grid ? getComputedStyle(grid).gridTemplateColumns.split(' ').length : 0 }"
+    )
+    check(columns == 1, f"the How It Works cards stack at 390px ({columns} columns)")
 
     # ── the console is clean ──────────────────────────────────────────────
     #
