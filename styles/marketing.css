@@ -44,7 +44,27 @@
   /* ── Ink ───────────────────────────────────────────────────────────── */
   --ink-1: #1e1b1b;
   --ink-2: #334155;
-  --muted-1: #64748b;
+  /*
+   * ── #64748B FAILED AA ON THE SOFT BAND, AND ONLY THERE ────────────────
+   *
+   * Slate-500 measures 4.76:1 on white and 4.34:1 on --canvas-soft (#F1F5F9),
+   * against the 4.5:1 AA needs for small text. So every piece of secondary
+   * copy on an alternating section — the footer's whole left column, the
+   * pricing page's supporting lines, every row note in the comparison table —
+   * was below AA, while the identical text one section up passed.
+   *
+   * That is the hardest kind of contrast bug to see by eye and the easiest to
+   * ship: the colour is "the same grey" everywhere, and it is only the
+   * background underneath it that moved. axe found 17 instances on one page.
+   *
+   * Slate-600 clears it on both: 6.7:1 on the soft band, 7.6:1 on white. It
+   * is darker than the design's slate-500 and that is the trade — a secondary
+   * grey that is legible everywhere beats one that is correctly weighted on
+   * half the page. tests/browser/pricing.py runs axe over the public pages in
+   * both themes and at phone width, which is what caught this; nothing had
+   * ever audited them before.
+   */
+  --muted-1: #475569;
   --muted-2: #94a3b8;
 
   /* ── Surfaces ──────────────────────────────────────────────────────── */
@@ -358,8 +378,23 @@
  * than inline because they carry a 44px minimum height on touch, which is the
  * kind of rule that gets dropped from one call site out of six.
  */
+/*
+ * ── NO `display` HERE, AND THAT IS THE FIX FOR A REAL BUG ────────────────
+ *
+ * This rule used to set `display: inline-flex`, and `.marketing .nav-link` is
+ * specificity (0,2,0) against Tailwind's `.hidden` at (0,1,0). So the "Log in"
+ * link, marked `hidden sm:inline-flex`, was VISIBLE at every width — it showed
+ * up wrapped onto two lines in a 390px header, beside a "Start for Free"
+ * button doing the same, in exactly the place the mobile menu button exists to
+ * avoid. Caught in a screenshot.
+ *
+ * The lesson generalises past this one rule: a hand-written stylesheet that
+ * sets a property Tailwind also sets wins by specificity every time, silently,
+ * and only at the breakpoints nobody was looking at. So the display mode stays
+ * in the markup with the responsive variants that modify it, and this rule
+ * keeps only what Tailwind is not also saying.
+ */
 .marketing .nav-link {
-  display: inline-flex;
   align-items: center;
   min-height: 40px;
   padding: 0 0.625rem;
@@ -426,4 +461,145 @@
 .marketing section[id],
 .marketing [id='waitlist'] {
   scroll-margin-top: 5.5rem;
+}
+
+/* ──────────────────────────────────────────────────── the pricing cards */
+
+/*
+ * ── HOVER IS DECORATION HERE, AND NOTHING DEPENDS ON IT ──────────────────
+ *
+ * A pricing card that reveals its price, its features or its disabled reason
+ * on hover is a pricing card that is blank on every touch device and to every
+ * keyboard user. Everything on these cards is painted before a pointer is
+ * anywhere near them; what follows adds lift, a shadow and a brand-coloured
+ * edge, and moves a small arrow in the call to action.
+ *
+ * Only `transform`, `box-shadow` and `border-color` are animated, and the
+ * transform is a 3px translate rather than a scale: scaling a card reflows
+ * nothing but makes its text resample, which reads as a blur, and a card that
+ * grows on hover pushes its neighbours' hit areas around under the pointer.
+ *
+ * The whole block sits inside `prefers-reduced-motion: no-preference`. The
+ * resting state is the complete state, so with motion reduced — or with this
+ * stylesheet gone — the cards are entirely legible and merely still.
+ */
+.marketing .plan-card {
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.02);
+}
+
+.marketing .plan-card-featured {
+  box-shadow: 0 4px 6px -1px rgba(67, 56, 202, 0.1), 0 2px 4px -2px rgba(67, 56, 202, 0.06);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .marketing .plan-card {
+    transition: transform 200ms cubic-bezier(0.2, 0.7, 0.3, 1), box-shadow 200ms ease,
+      border-color 200ms ease;
+  }
+
+  .marketing .plan-card:hover {
+    transform: translate3d(0, -3px, 0);
+    border-color: var(--brand);
+    box-shadow: 0 10px 20px -6px rgba(15, 23, 42, 0.1), 0 4px 8px -4px rgba(67, 56, 202, 0.08);
+  }
+
+  /*
+   * The same treatment when focus is anywhere inside the card, so a keyboard
+   * user gets the emphasis a mouse user gets rather than only the focus ring.
+   */
+  .marketing .plan-card:focus-within {
+    border-color: var(--brand);
+    box-shadow: 0 10px 20px -6px rgba(15, 23, 42, 0.1), 0 4px 8px -4px rgba(67, 56, 202, 0.08);
+  }
+
+  .marketing .plan-cta-arrow {
+    display: inline-block;
+    transition: transform 180ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+
+  .marketing .plan-card:hover .plan-cta-arrow,
+  .marketing .plan-cta:focus-visible .plan-cta-arrow {
+    transform: translate3d(3px, 0, 0);
+  }
+}
+
+/* ────────────────────────────────────────────── the comparison table */
+
+/*
+ * The plan names stay on screen while the rows scroll past them. Without this
+ * a reader forty rows down a comparison table is looking at three unlabelled
+ * columns, and the usual fix — repeating the header every few rows — is worse
+ * because it interrupts the thing being scanned.
+ *
+ * `position: sticky` on the <th>s rather than on the <thead>, because a
+ * sticky thead is not implemented consistently across browsers; sticky cells
+ * are. The offset clears the site header above it.
+ */
+@media (min-width: 768px) {
+  .marketing .compare-table thead th {
+    position: sticky;
+    top: 64px;
+    z-index: 2;
+    background: var(--surface);
+  }
+}
+
+/*
+ * Both parities get an OPAQUE background, and the odd one is not left
+ * transparent to "show the page through". The sticky label column below takes
+ * its background from its row with `inherit`, so a transparent row means a
+ * transparent sticky cell — and the rows scrolling sideways underneath it
+ * then show through the labels, which is worse than having no sticky column
+ * at all.
+ */
+.marketing .compare-table tbody tr {
+  background: var(--surface);
+}
+
+.marketing .compare-table tbody tr:nth-child(even) {
+  background: var(--canvas-soft);
+}
+
+/*
+ * The row label column stays put while the table scrolls sideways on a phone.
+ * A horizontally scrolled comparison table whose first column has gone is
+ * three columns of ticks with nothing to say what they are about.
+ */
+.marketing .compare-table th[scope='row'] {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: inherit;
+}
+
+/* ─────────────────────────────────────────────────────────── the FAQ rows */
+
+/*
+ * The default disclosure triangle is removed and replaced with a glyph that
+ * rotates, so the indicator reads as one control changing state rather than
+ * two characters swapping. `list-style: none` plus the WebKit pseudo-element
+ * is both spellings of "remove the marker"; neither alone covers every
+ * browser.
+ */
+.marketing .faq-row summary::-webkit-details-marker {
+  display: none;
+}
+
+.marketing .faq-row summary::marker {
+  content: '';
+}
+
+.marketing .faq-row[open] .faq-marker {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .marketing .faq-marker {
+    display: inline-block;
+    transition: transform 180ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+}
+
+.marketing .faq-row summary:hover {
+  color: var(--brand-strong);
 }

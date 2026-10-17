@@ -404,6 +404,45 @@ with sync_playwright() as p:
     #
     # A red line on every page load trains whoever is looking at it to stop
     # looking, which is how a real error comes to be missed.
+    # ── axe, on the page a stranger actually lands on ────────────────────
+    #
+    # tests/browser/rendered-output.py audits 104 surfaces and every one of
+    # them is behind the login. This page had no accessibility sweep at all,
+    # and the gap was not theoretical: the marketing palette's secondary grey
+    # measured 4.34:1 on the alternating section bands — below AA for small
+    # text, on roughly half the page — and nothing was looking.
+    #
+    # Light and dark, because the root layout's theme toggle applies here too.
+    axe_source = open("node_modules/axe-core/axe.min.js").read()
+    AXE_RUN = (
+        "async () => await axe.run(document, {"
+        " resultTypes: ['violations'],"
+        " runOnly: {type: 'tag', values: ['wcag2a','wcag2aa','wcag21a','wcag21aa']}"
+        " })"
+    )
+
+    #
+    # AUDITED WITH REDUCED MOTION, and that is a correctness choice rather
+    # than a speed one. The hero ledger's rows fade in on a stagger, so a
+    # sweep that runs while they are mid-animation samples text at partial
+    # opacity and reports contrast failures for colours that exist for 200ms.
+    # It reported three. With motion reduced the rows land on their final
+    # state immediately — and the final state is the one the stylesheet
+    # already guarantees is complete, so nothing real is skipped.
+    #
+    for theme in ["light", "dark"]:
+        audited = browser.new_page(
+            viewport={"width": 1440, "height": 1000}, reduced_motion="reduce"
+        )
+        audited.goto(BASE, wait_until="load")
+        audited.evaluate("(t) => document.documentElement.setAttribute('data-theme', t)", theme)
+        audited.wait_for_timeout(300)
+        audited.evaluate(axe_source)
+        report = audited.evaluate(AXE_RUN)
+        ids = [f"{v['id']}({len(v['nodes'])})" for v in report["violations"]]
+        check(not ids, f"no WCAG A/AA violation on the landing page in {theme} ({ids})")
+        audited.close()
+
     noise = [t for kind, t in console if kind in ("error", "warning")]
     check(not noise, f"no console errors or warnings on load ({noise[:3]})")
 

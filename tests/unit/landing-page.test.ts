@@ -358,6 +358,18 @@ describe('ISSUE 4 — the menus open for a keyboard and tell the truth about it'
     const css = readFileSync('styles/marketing.css', 'utf8')
     expect(css).toMatch(/\.marketing \.mobile-link\s*\{[^}]*min-height:\s*44px/)
     expect(css).toMatch(/\.marketing \.nav-link\s*\{[^}]*min-height:\s*40px/)
+    /*
+     * And this stylesheet sets no `display` on a nav link.
+     *
+     * `.marketing .nav-link` is specificity (0,2,0) against Tailwind's
+     * `.hidden` at (0,1,0), so a `display` here silently defeated
+     * `hidden sm:inline-flex` on the "Log in" link — which then appeared,
+     * wrapped onto two lines, in a 390px header beside the mobile menu button
+     * that exists to prevent exactly that. The display mode belongs in the
+     * markup, with the responsive variants that modify it.
+     */
+    const navRule = css.slice(css.indexOf('.marketing .nav-link {'))
+    expect(navRule.slice(0, navRule.indexOf('}'))).not.toMatch(/display:/)
   })
 
   it('makes focus visible on every interactive element of the public pages', () => {
@@ -495,13 +507,21 @@ describe('the page’s structure', () => {
     expect(founding).toContain("name: 'Studio'")
   })
 
-  it('still says the price is set and the limits are not, where that is true', () => {
-    // Two founding tiers map to no plan. A pricing table with invented caps is
-    // a promise about capability, and this product's rules forbid selling one
-    // that does not exist.
-    expect(SECTIONS).toContain('Limits are still being set')
-    expect(SECTIONS).toContain('Join the waitlist')
-    expect(SECTIONS).not.toMatch(/>\s*Subscribe\s*</)
+  it('renders the three public plans rather than the four founding tiers', () => {
+    /*
+     * The public structure is exactly Free, Basic and Pro. The four founding
+     * tiers — Starter, Growth, Pro, Studio — came off both public pages when
+     * that was decided; their data stays in domain/billing/founding-pricing.ts
+     * because four approved prices are not a thing to delete while tidying a
+     * page, and that file says nothing renders them.
+     *
+     * tests/unit/pricing.test.ts owns the detail of what the cards may say.
+     * This asserts only that the landing page is on the new component and
+     * that the old table has not come back beside it.
+     */
+    expect(PAGE).toContain('<PricingSection')
+    expect(SECTIONS).not.toContain('FOUNDING_TIERS')
+    expect(SECTIONS).not.toMatch(/export function Pricing\b/)
   })
 })
 

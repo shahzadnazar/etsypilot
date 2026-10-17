@@ -138,11 +138,11 @@ export function MarketingNav() {
 
         <div className="ml-2 hidden items-center gap-1 lg:flex">
           <NavMenu label="Features" items={FEATURES} />
-          <Link href="/#calculator" className="nav-link">
+          <Link href="/#calculator" className="nav-link inline-flex">
             Free tools
           </Link>
           <NavMenu label="Resources" items={RESOURCES} />
-          <Link href="/pricing" className="nav-link">
+          <Link href="/pricing" className="nav-link inline-flex">
             Pricing
           </Link>
         </div>

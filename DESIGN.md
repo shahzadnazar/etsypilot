@@ -34,7 +34,7 @@ back**.
 | `--on-brand` | `#FFFFFF` | Text and icons on a `--brand` fill. 8.6:1. |
 | `--ink-1` | `#1E1B1B` | Charcoal. Headings and key metrics. |
 | `--ink-2` | `#334155` | Body copy. |
-| `--muted-1` | `#64748B` | Secondary metrics, column headings, metadata. |
+| `--muted-1` | `#475569` | Secondary metrics, column headings, metadata. |
 | `--muted-2` | `#94A3B8` | Placeholder text, disabled labels. |
 | `--page-bg` | `#F8FAFC` | The page. Cool slate. |
 | `--canvas-soft` | `#F1F5F9` | Alternating section bands, table headers. |
@@ -54,6 +54,14 @@ distinction is not cosmetic:
 | `--danger-mark` | `#EF4444` | Chart lines, fills, indicators. |
 | `--danger` / `--danger-ink` | `#B91C1C` | **Any loss or error text.** |
 | `--warning` | `#C65D24` | Burnt orange. Opportunity flags and high-priority notices only. |
+
+**`--muted-1` is slate-600, not the slate-500 the design called for.** Slate-500
+(`#64748B`) measures 4.76:1 on `--surface` and **4.34:1 on `--canvas-soft`** —
+so every piece of secondary copy on an alternating section band was below the
+4.5:1 AA needs for small text, while the same text one section up passed. axe
+found 17 instances on `/pricing/compare` alone. Slate-600 clears both surfaces
+(6.7:1 and 7.6:1). A secondary grey that is legible everywhere beats one that is
+correctly weighted on half the page.
 
 `#10B981` measures 2.5:1 on white and `#EF4444` measures 3.8:1 — both below the
 4.5:1 WCAG AA needs for body text. Using them for words would put profit and

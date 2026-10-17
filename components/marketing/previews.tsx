@@ -34,11 +34,27 @@ import { AUDIT_RULES } from '@/domain/audit/rules'
 const SECTION = 'px-4 py-14 md:px-6 md:py-20'
 const WRAP = 'mx-auto max-w-[1180px]'
 
-function Eyebrow({ children }: { children: React.ReactNode }) {
+/*
+ * ── `onTint` EXISTS BECAUSE --brand HAS NO HEADROOM IN DARK MODE ─────────
+ *
+ * On `--surface` or `--page-bg`, `--brand` measures 4.90:1 in dark — over the
+ * 4.5:1 line, and only just. Put the same colour on `--brand-tint`, which is
+ * the brand at 16% over the surface, and it drops to 3.81:1.
+ *
+ * So an eyebrow on a tinted panel uses `--brand-strong` instead: #A5B4FC in
+ * dark, which measures 5.6:1 on the same tint, and the darker #3730A3 in
+ * light, where it is stronger still. One prop rather than a second component,
+ * because the distinction is "what is behind it" and nothing else.
+ *
+ * Found by axe, which had never been run against this page: the public site
+ * had no accessibility sweep at all until tests/browser/landing-page.py got
+ * one, and the dashboard's 104-surface audit is entirely behind the login.
+ */
+function Eyebrow({ children, onTint = false }: { children: React.ReactNode; onTint?: boolean }) {
   return (
     <span
       className="mono block text-[10.5px] font-semibold uppercase tracking-[0.1em]"
-      style={{ color: 'var(--brand)' }}
+      style={{ color: onTint ? 'var(--brand-strong)' : 'var(--brand)' }}
     >
       {children}
     </span>
@@ -628,7 +644,7 @@ export function FinalCta() {
           borderRadius: 'var(--card-radius)',
         }}
       >
-        <Eyebrow>Getting started</Eyebrow>
+        <Eyebrow onTint>Getting started</Eyebrow>
         <h2
           className="display mt-2 text-[27px] leading-[1.15] md:text-[34px]"
           style={{ color: 'var(--ink-1)' }}
@@ -669,7 +685,12 @@ export function FinalCta() {
             See the live demo
           </a>
         </div>
-        <p className="mt-4 text-[12.5px]" style={{ color: 'var(--muted-1)' }}>
+        {/*
+          * `--ink-2`, not `--muted-1`. The muted grey is 4.43:1 on this tint
+          * in dark mode — the one place on the page where a secondary line
+          * sits on a coloured panel rather than on a surface.
+          */}
+        <p className="mt-4 text-[12.5px]" style={{ color: 'var(--ink-2)' }}>
           Prefer to hear when the paid tiers open?{' '}
           <Link href="#waitlist" style={{ color: 'var(--brand-strong)', fontWeight: 600 }}>
             Join the waitlist
