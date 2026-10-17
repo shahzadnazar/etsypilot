@@ -957,6 +957,37 @@ export const termsAcceptances = pgTable(
   }),
 )
 
+/*
+ * Contact messages. The second table a person with no account may write to.
+ *
+ * The same posture as `waitlistSignups` below it — no read path, random ids,
+ * RLS on — and one deliberate difference: no unique index on the address. One
+ * person may ask two questions, and collapsing the second onto the first would
+ * discard it silently.
+ *
+ * `handledAt` is null on arrival and is never used to delete a row. Nothing
+ * emails any of this: there is no email sender in this product, so the table
+ * IS the delivery mechanism, and the page says so.
+ */
+export const contactMessages = pgTable(
+  'contact_messages',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    email: text('email').notNull(),
+    subject: text('subject').notNull(),
+    message: text('message').notNull(),
+    /** Which page the question came from. No cookies, no third party. */
+    source: text('source'),
+    createdAt: createdAt(),
+    /** Null until somebody has dealt with it. */
+    handledAt: timestamp('handled_at', { withTimezone: true }),
+  },
+  (t) => ({
+    unhandled: index('contact_messages_unhandled_idx').on(t.createdAt),
+  }),
+)
+
 export const waitlistSignups = pgTable(
   'waitlist_signups',
   {

@@ -115,6 +115,15 @@ describe('every mutation reaches a write gate', () => {
     'app/api/billing/webhook/route.ts':
       'Called by the payment provider, not by a browser. It has no session and ' +
       'no ShopContext, and is authenticated by signature.',
+    'app/api/contact/route.ts':
+      'The same shape as the waitlist below, and for the same reason: somebody ' +
+      'asking which plan to buy has no shop and no user, so there is no ' +
+      'ShopContext to gate. What protects it instead is that the table has no ' +
+      'read path — lib/repositories/contact.ts exports one write and one count, ' +
+      'no find-by-email and no list — the route echoes none of the submitted ' +
+      'text back, RLS is on it (migration 0017), and it sits in the ' +
+      'five-per-minute publicForm rate-limit budget rather than the general ' +
+      'API one.',
     'app/api/waitlist/route.ts':
       'Pre-account data: a waitlist row has no shop and no user, so there is no ' +
       'ShopContext to gate and shop scoping is unavailable by construction. What ' +

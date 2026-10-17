@@ -75,7 +75,26 @@ export const LIMITS = {
    * confirmation prompt is meant to slow down anyway.
    */
   stepUp: { limit: 10, windowMs: 15 * 60_000 },
+  /*
+   * The two forms a stranger can post to: the waitlist and the contact page.
+   *
+   * THE ONLY BUDGET SIZED BY WHO IS CALLING RATHER THAN BY WHAT IT COSTS.
+   * Writing one row is the cheapest work in this product, so by load alone
+   * these would sit in the general `api` bucket at 60 a minute. But they are
+   * also the only two endpoints reachable with no account, which makes them
+   * the only two an automated submitter can reach — and sixty rows a minute
+   * per address is a support table nobody can read any more and a waitlist
+   * whose first impression is a thousand junk rows.
+   *
+   * Five a minute is far beyond a person filling in a form twice because the
+   * first one had a typo, and far below the rate at which filling a table is
+   * worth anybody's while.
+   */
+  publicForm: { limit: 5, windowMs: 60_000 },
 } as const
+
+/** The two routes a person with no account can post to. */
+export const PUBLIC_FORM_PATHS = ['/api/contact', '/api/waitlist'] as const
 
 /**
  * The pseudo-path for step-up, so this extends the existing mechanism rather
@@ -93,6 +112,7 @@ export const STEP_UP_PATH = '/admin/step-up'
 
 export function limitFor(path: string): { limit: number; windowMs: number } {
   if (path === STEP_UP_PATH) return LIMITS.stepUp
+  if ((PUBLIC_FORM_PATHS as readonly string[]).includes(path)) return LIMITS.publicForm
   return path.startsWith('/api/export/') ? LIMITS.export : LIMITS.api
 }
 
