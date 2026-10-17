@@ -1,23 +1,209 @@
 /*
  * ══════════════════════════════════════════════════════════════════════════
- *   LEDGER STATIONERY. / AND /pricing ONLY.
+ *   THE PUBLIC FACE. / AND /pricing ONLY.
  * ══════════════════════════════════════════════════════════════════════════
  *
  * Scoped under `.marketing`, which only app/(marketing)/layout.tsx applies, so
- * nothing here can reach the dashboard. No token in styles/globals.css changes
- * value — the palette is the app's, exactly as it is, and the work is in
- * composition, typography and rule-work.
+ * nothing here can reach the dashboard.
  *
- * The idiom is a ruled ledger: hairlines in --border doing the structural
- * work, tonal shifts between --page-bg, --canvas-soft and --surface for depth,
- * and no shadow on anything that is not genuinely floating. Radius stays
- * between 2 and 6px because a ledger's boxes are not pills.
+ * ── THIS FILE NOW REDEFINES THE PALETTE, AND IT USED TO SAY IT DID NOT ────
+ *
+ * The line that stood here read "No token in styles/globals.css changes value
+ * — the palette is the app's, exactly as it is". That was true of the ledger
+ * stationery it described and is not true of this file any more, so it is
+ * replaced rather than left to mislead the next reader.
+ *
+ * The approved brand for the public pages is the cool indigo system in
+ * DESIGN.md: #4338CA on #F8FAFC, charcoal #1E1B1B, burnt orange reserved for
+ * alerts. The product behind the login keeps the warm terracotta system in
+ * styles/globals.css. Two palettes, one set of token NAMES — so every shared
+ * component (Card, ProvenanceBadge, the fee table) renders in whichever
+ * palette the subtree it lands in defines, with no component knowing which.
+ *
+ * That is the whole mechanism, and it is why the override lives on `.marketing`
+ * rather than in the components: a value here reaches everything inside it,
+ * including components written for the dashboard, and nothing outside it.
+ *
+ * tests/unit/design-tokens.test.ts holds this file and DESIGN.md to the same
+ * hex values, in both directions, so the document cannot drift from the code
+ * again — which is exactly what it had done when this work started.
  */
 
 .marketing {
   --rule: 1px solid var(--border);
-  /* The one radius on this page. Paper, not a pill. */
-  --paper-radius: 4px;
+  /* 8px base for controls, 12px for cards (DESIGN.md → Shapes). */
+  --paper-radius: 8px;
+  --card-radius: 12px;
+
+  /* ── Brand ─────────────────────────────────────────────────────────── */
+  --brand: #4338ca;
+  --brand-strong: #3730a3;
+  --brand-tint: #eef2ff;
+  --on-brand: #ffffff;
+
+  /* ── Ink ───────────────────────────────────────────────────────────── */
+  --ink-1: #1e1b1b;
+  --ink-2: #334155;
+  --muted-1: #64748b;
+  --muted-2: #94a3b8;
+
+  /* ── Surfaces ──────────────────────────────────────────────────────── */
+  --page-bg: #f8fafc;
+  --canvas-soft: #f1f5f9;
+  --surface: #ffffff;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+
+  /*
+   * ── SEMANTIC PAIRS, AND WHY THE TEXT COLOURS ARE NOT THE CHART ONES ──
+   *
+   * DESIGN.md names #10B981 for gains and #EF4444 for losses, and both are
+   * right for a 2px line on a chart or a 10px fill. Neither is legible as
+   * TEXT on white: #10B981 measures 2.5:1 and #EF4444 3.8:1, against the 4.5:1
+   * WCAG AA needs for body copy. Shipping them as text colours would put the
+   * product's two most consequential numbers — profit and loss — in the two
+   * least readable colours on the page.
+   *
+   * So each has two tokens: the bright one for marks, the dark one for words.
+   * DESIGN.md's own component specs already use the dark pair on tinted chips
+   * (#047857 on #ECFDF5, #B91C1C on #FEF2F2), so this is the document being
+   * followed rather than overruled.
+   */
+  --success: #047857;
+  --success-strong: #065f46;
+  --success-mark: #10b981;
+  --success-surface: #ecfdf5;
+  --success-border: #a7f3d0;
+  --success-ink: #047857;
+  --on-success: #ffffff;
+
+  --danger: #b91c1c;
+  --danger-strong: #991b1b;
+  --danger-mark: #ef4444;
+  --danger-surface: #fef2f2;
+  --danger-border: #fecaca;
+  --danger-ink: #b91c1c;
+
+  /*
+   * Burnt orange. "Reserved strictly for strategic highlights, opportunity
+   * flags and high-priority notices. Never used decoratively in massive
+   * fields" (DESIGN.md), which is why it is the warning token and not an
+   * accent anybody can reach for.
+   */
+  --warning: #c65d24;
+  --warning-strong: #9a4518;
+  --warning-surface: #fff7ed;
+  --warning-border: #fdba74;
+  --warning-ink: #9a4518;
+}
+
+/*
+ * ── DARK, BECAUSE THE TOGGLE ALREADY EXISTS ──────────────────────────────
+ *
+ * The approved landing page is light and the brief asks for no new dark-mode
+ * work. But the product ships a theme toggle in the root layout and it applies
+ * to every page, so a visitor who has chosen dark gets dark here whether or
+ * not this file has an opinion — and with only the light block above, they
+ * would get #1E1B1B text on a #0F172A page, which is unreadable.
+ *
+ * This is therefore not a new feature; it is the light design holding up under
+ * a switch that already existed. Same hues, raised for contrast on slate.
+ */
+:root[data-theme='dark'] .marketing {
+  --brand: #818cf8;
+  --brand-strong: #a5b4fc;
+  --brand-tint: rgba(129, 140, 248, 0.16);
+  /* Indigo at this lightness needs dark text on it, not white. */
+  --on-brand: #11143a;
+
+  --ink-1: #f1f5f9;
+  --ink-2: #cbd5e1;
+  --muted-1: #94a3b8;
+  --muted-2: #8b9aae;
+
+  --page-bg: #0f172a;
+  --canvas-soft: #16213a;
+  --surface: #1e293b;
+  --border: #2b3444;
+  --border-strong: #3b4657;
+
+  --success: #6ee7b7;
+  --success-strong: #a7f3d0;
+  --success-mark: #34d399;
+  --success-surface: rgba(16, 185, 129, 0.14);
+  --success-border: rgba(110, 231, 183, 0.4);
+  --success-ink: #6ee7b7;
+  --on-success: #06281e;
+
+  --danger: #fca5a5;
+  --danger-strong: #fecaca;
+  --danger-mark: #f87171;
+  --danger-surface: rgba(239, 68, 68, 0.14);
+  --danger-border: rgba(252, 165, 165, 0.4);
+  --danger-ink: #fca5a5;
+
+  --warning: #fdba74;
+  --warning-strong: #fed7aa;
+  --warning-surface: rgba(198, 93, 36, 0.18);
+  --warning-border: rgba(253, 186, 116, 0.4);
+  --warning-ink: #fdba74;
+}
+
+/*
+ * The same block again, for a visitor whose SYSTEM is dark and who has made no
+ * choice in the product.
+ *
+ * CSS has no way to share a declaration block between two selectors with
+ * different specificity contexts, so this is a copy — and a copy is a thing
+ * that drifts. styles/globals.css has carried the same duplication since the
+ * theme toggle shipped, and tests/unit/tokens.test.ts exists because a token
+ * defined in one dark block and not the other produces no build error and an
+ * unreadable page. tests/unit/design-tokens.test.ts now holds these two to the
+ * same text, character for character, for the same reason.
+ *
+ * Guarded by :root:not([data-theme='light']) so an explicit light choice still
+ * wins over a dark system preference — matching globals.css exactly.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .marketing {
+    --brand: #818cf8;
+    --brand-strong: #a5b4fc;
+    --brand-tint: rgba(129, 140, 248, 0.16);
+    /* Indigo at this lightness needs dark text on it, not white. */
+    --on-brand: #11143a;
+
+    --ink-1: #f1f5f9;
+    --ink-2: #cbd5e1;
+    --muted-1: #94a3b8;
+    --muted-2: #8b9aae;
+
+    --page-bg: #0f172a;
+    --canvas-soft: #16213a;
+    --surface: #1e293b;
+    --border: #2b3444;
+    --border-strong: #3b4657;
+
+    --success: #6ee7b7;
+    --success-strong: #a7f3d0;
+    --success-mark: #34d399;
+    --success-surface: rgba(16, 185, 129, 0.14);
+    --success-border: rgba(110, 231, 183, 0.4);
+    --success-ink: #6ee7b7;
+    --on-success: #06281e;
+
+    --danger: #fca5a5;
+    --danger-strong: #fecaca;
+    --danger-mark: #f87171;
+    --danger-surface: rgba(239, 68, 68, 0.14);
+    --danger-border: rgba(252, 165, 165, 0.4);
+    --danger-ink: #fca5a5;
+
+    --warning: #fdba74;
+    --warning-strong: #fed7aa;
+    --warning-surface: rgba(198, 93, 36, 0.18);
+    --warning-border: rgba(253, 186, 116, 0.4);
+    --warning-ink: #fdba74;
+  }
 }
 
 .marketing .display {
@@ -163,4 +349,81 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+/* ───────────────────────────────────────────────────────────── navigation */
+
+/*
+ * The two classes components/marketing/nav.tsx repeats. Written here rather
+ * than inline because they carry a 44px minimum height on touch, which is the
+ * kind of rule that gets dropped from one call site out of six.
+ */
+.marketing .nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 0.625rem;
+  border-radius: var(--paper-radius);
+  font-size: 13.5px;
+  color: var(--ink-2);
+  background: transparent;
+}
+
+.marketing .nav-link:hover {
+  background: var(--canvas-soft);
+  color: var(--brand-strong);
+}
+
+.marketing .mobile-link {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 0.25rem;
+  font-size: 14.5px;
+  color: var(--ink-2);
+}
+
+.marketing .mobile-link:hover {
+  color: var(--brand-strong);
+}
+
+/* A row inside a dropdown panel. A link, not a .nav-link button. */
+.marketing .menu-row:hover {
+  background: var(--canvas-soft);
+}
+
+/*
+ * A footer link. Dense by design — four columns of them — but still a target:
+ * 28px of height on a 13px line gives a hit area that clears WCAG 2.2
+ * SC 2.5.8's 24px minimum without opening the footer out to twice its height.
+ */
+.marketing .footer-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  color: var(--ink-2);
+}
+
+.marketing .footer-link:hover {
+  color: var(--brand-strong);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/*
+ * ── THE STICKY HEADER WOULD OTHERWISE EAT EVERY ANCHOR ───────────────────
+ *
+ * The nav is `position: sticky`, and the nav links are fragments into this
+ * same page. Without this, following "Keyword research" scrolls the section's
+ * heading to y=0 — underneath the header that is sitting there — so the first
+ * thing a visitor sees after clicking is the second paragraph of a section
+ * whose title they never saw.
+ *
+ * `scroll-margin-top` is the whole fix, it costs nothing, and it also applies
+ * to a keyboard user's `:target` jump and to a reload with a fragment in the
+ * address. 5.5rem clears the 64px header with a little air.
+ */
+.marketing section[id],
+.marketing [id='waitlist'] {
+  scroll-margin-top: 5.5rem;
 }
