@@ -22,8 +22,17 @@ Two rules for anything added here:
 
 Run against a production build:
 
-    npx next build && npx next start -p 3111 &
+    npx next build
+    ALLOW_ERROR_PROBE=1 npx next start -p 3111 &
     python3 tests/browser/rendered-output.py
+
+ALLOW_ERROR_PROBE=1 IS NOT OPTIONAL, and this line was missing. /api/leakprobe
+refuses to run in a production build without it — correctly, because a route
+that throws a credential-shaped string on purpose must not be reachable on a
+deployment. Started without it the route 404s, and the five checks that exist
+to prove an unhandled throw returns a usable JSON body all report a failure
+that is really a missing environment variable. Five red lines that are nobody's
+bug are how a check stops being read.
 
 BASE and CHROME can be overridden by environment variable.
 """
@@ -1105,11 +1114,11 @@ with sync_playwright() as p:
 
     pg.goto(f"{BASE}/billing", wait_until="domcontentloaded")
     pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(300)
-    upgrade = pg.get_by_role("button", name=re.compile("Upgrade to Growth"))
+    upgrade = pg.get_by_role("button", name=re.compile("Upgrade to Pro"))
     check(upgrade.count() >= 1, "An upgrade is offered from the demo plan")
     if upgrade.count() >= 1:
         upgrade.first.click()
-        wait_for_text(pg, "Growth · $29 per month")
+        wait_for_text(pg, "Pro · $29 per month")
 
         on_billing = shell_usage("/billing")
         on_dashboard = shell_usage("/dashboard")
@@ -1123,10 +1132,10 @@ with sync_playwright() as p:
         # Put the demo shop back, so the run is repeatable.
         pg.goto(f"{BASE}/billing", wait_until="domcontentloaded")
         pg.wait_for_selector("main", timeout=15000); pg.wait_for_timeout(300)
-        back = pg.get_by_role("button", name=re.compile("Move to Solo"))
+        back = pg.get_by_role("button", name=re.compile("Move to Basic"))
         if back.count() >= 1:
             back.first.click()
-            wait_for_text(pg, "Solo · $15 per month")
+            wait_for_text(pg, "Basic · $15 per month")
 
 
     # Connect: the password disclosure and the revoke path.

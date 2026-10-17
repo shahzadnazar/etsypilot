@@ -9,9 +9,9 @@ Two servers, because the whole question is what the MODE changes:
 lib/billing/index.ts fell back to MockBillingProvider whenever no payment
 provider was configured, which is every deployment — the owner is applying for
 the Etsy API key before wiring payments. So a live seller was shown an authored
-subscription: Solo, renewing 12 September, a Visa ending 4242 they never gave
+subscription: the Basic plan, renewing 12 September, a Visa ending 4242 they never gave
 us, four invoices from May to August, and "$10.39 today, for the 23 days left in
-this period". The sidebar chip said "Solo plan" on every screen, which is the
+this period". The sidebar chip said the plan's name on every screen, which is the
 most-rendered claim in the product.
 
 None of it was visible to the unit suite, because every test runs in demo mode
@@ -44,7 +44,7 @@ FABRICATED = [
     "YOUR PLAN",
     "Billing history",
     "23 days left in this period",
-    "Solo · $15 per month",
+    "Basic · $15 per month",
 ]
 
 # Sources that do not exist, named in copy.
@@ -109,7 +109,7 @@ with sync_playwright() as p:
     for ghost in FABRICATED:
         check(ghost not in billing, f"live /billing: nothing fabricated ({ghost!r})")
     # The plans themselves are real and still listed — this is not a blank page.
-    for plan in ["Free", "Solo", "Growth", "$15", "$29"]:
+    for plan in ["Free", "Basic", "Pro", "$15", "$29"]:
         check(plan in billing, f"live /billing: the real plans are still listed ({plan!r})")
     check(
         billing.count("Not available to buy yet.") == 3,
@@ -127,7 +127,7 @@ with sync_playwright() as p:
     for route in CHIP_SCREENS:
         text = body(LIVE, route)
         check("No plan yet" in text, f"live {route}: the chip says no plan")
-        check("Solo plan" not in text, f"live {route}: the chip does not claim a paid plan")
+        check("Basic plan" not in text, f"live {route}: the chip does not claim a paid plan")
         check(
             "Over your plan limit" not in text,
             f"live {route}: no limit from a plan nobody bought",
@@ -162,7 +162,7 @@ with sync_playwright() as p:
 
     # ── DEMO: the subscription and the calendar are both still there ───────
     demo_billing = body(DEMO, "/billing")
-    check("Solo · $15 per month" in demo_billing, "demo /billing: the subscription is present")
+    check("Basic · $15 per month" in demo_billing, "demo /billing: the subscription is present")
     check("Billing history" in demo_billing, "demo /billing: the ledger is present")
     check(
         "This is a demo subscription." in demo_billing,
@@ -176,7 +176,7 @@ with sync_playwright() as p:
 
     for route in CHIP_SCREENS:
         text = body(DEMO, route)
-        check("Solo plan" in text, f"demo {route}: the demo plan chip is present")
+        check("Basic plan" in text, f"demo {route}: the demo plan chip is present")
         check(pg.locator(BANNER).count() > 0, f"demo {route}: the demo banner is on the page")
 
     demo_seasonal = body(DEMO, "/tools/seasonal-calendar")

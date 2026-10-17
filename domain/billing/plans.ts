@@ -111,7 +111,20 @@ export const PLANS: Plan[] = [
   },
   {
     key: 'SOLO',
-    name: 'Solo',
+    /*
+     * ── THE KEY AND THE NAME ARE DIFFERENT THINGS, AND ONLY ONE MOVED ────
+     *
+     * The owner renamed the tiers to Free, Basic and Pro. `name` is what a
+     * seller reads; `key` is what the database, the subscriptions table, the
+     * migrations and every audit record hold. Renaming the key would be a
+     * migration and a rewrite of stored rows to change a label, so it stays
+     * SOLO — the same reason `ai.view` kept its key in D97, read the other way
+     * round.
+     *
+     * Nothing else about this tier moved: same price, same limits, same
+     * "not available to buy yet" state.
+     */
+    name: 'Basic',
     priceMonthly: 15,
     positioning: 'One shop, up to 200 listings',
     includes: [
@@ -127,11 +140,12 @@ export const PLANS: Plan[] = [
   },
   {
     key: 'GROWTH',
-    name: 'Growth',
+    /** Renamed with the tier above. The key is what the database holds. */
+    name: 'Pro',
     priceMonthly: 29,
     positioning: 'One shop, up to 2,000 listings',
     includes: [
-      'Everything in Solo',
+      'Everything in Basic',
       'Up to 2,000 listings',
       '90-day rollback window',
       '12-month Shop Pulse history',

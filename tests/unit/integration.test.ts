@@ -136,7 +136,9 @@ describe('plans describe what exists', () => {
   it('points a blocked limit at a real ceiling and says what pauses', () => {
     const decision = enforce({ plan: 'SOLO', metric: 'listings', used: 200 })
     expect(decision.allowed).toBe(false)
-    expect(decision.blocked?.title).toContain('200 listings on Solo')
+    // "Basic" since the owner's rename; the KEY is still SOLO, which is the
+    // distinction this line is now the only place to see in one view.
+    expect(decision.blocked?.title).toContain('200 listings on Basic')
     expect(decision.blocked?.upgrade?.raisesTo).toBe(2000)
     expect(decision.blocked?.pauses).toContain('pause')
     expect(decision.blocked?.pauses).not.toContain('automation')

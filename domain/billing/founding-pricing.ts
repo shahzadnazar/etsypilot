@@ -105,6 +105,51 @@ export const FOUNDING_TIERS: readonly FoundingTier[] = [
   },
 ] as const
 
+/*
+ * ██████████████████████████████████████████████████████████████████████████
+ *
+ *   THE RENAME STOPS AT THIS FILE, AND THAT IS A DECISION FOR THE OWNER.
+ *
+ * ██████████████████████████████████████████████████████████████████████████
+ *
+ * The plans in ./plans.ts were renamed to Free, Basic and Pro. The four
+ * founding tiers here were NOT, and the reason is arithmetic rather than
+ * caution: there are four paid tiers and three plan names, and the tier
+ * already called `Pro` here is $35 while the plan now called Pro is $29.
+ * Renaming Growth → Pro would put two different things called Pro on one
+ * table at two different prices.
+ *
+ *     PLANS (./plans.ts)          FOUNDING TIERS (this file)
+ *     Free     $0                 —
+ *     Basic    $15                Starter  $20
+ *     Pro      $29                Growth   $27
+ *     —                           Pro      $35
+ *     —                           Studio   $45
+ *
+ * Every way out of that invents something the owner has not decided: a price,
+ * a set of limits for Pro and Studio, or the removal of a tier whose price
+ * was set deliberately. So nothing here moved.
+ *
+ * ── WHAT THE PUBLIC PAGE THEREFORE SAYS ──────────────────────────────────
+ *
+ * /pricing still reads Starter, Growth, Pro, Studio. Two of those cards take
+ * their feature list from the plan they map to, so Starter's list opens
+ * "Everything in Free" and Growth's opens "Everything in Basic" — names that
+ * are correct on /billing, where those tiers are cards, and dangle here,
+ * where they are not.
+ *
+ * That is visible and it is the smallest wrong thing available. The card is
+ * NOT labelled with its plan's name to patch it: a visitor reading "Growth"
+ * above "Pro plan", one column away from a different card called "Pro", is
+ * worse served than one reading a feature list that mentions a tier they
+ * cannot see.
+ *
+ * Resolving it is a pricing decision. The shape of the fix is already written
+ * at the top of this file: amend ./plans.ts to carry all four tiers with the
+ * capabilities that justify them, and this translation layer collapses into a
+ * price table.
+ */
+
 /** What a tier includes, from the plan it maps to. Empty where none does. */
 export function includesFor(tier: FoundingTier): string[] {
   if (!tier.planKey) return []

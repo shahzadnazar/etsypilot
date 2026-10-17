@@ -85,18 +85,29 @@ with sync_playwright() as p:
     # ── 1. THE PRICING PAGE AND THE PLAN CARDS ─────────────────────────────
     #
     # TWO SURFACES, AND THEY ARE NOT THE SAME PAGE. /billing renders PLANS —
-    # Free, Solo, Growth — and is where the Free card exists at all. The public
+    # Free, Basic, Pro — and is where the Free card exists at all. The public
     # /pricing page renders FOUNDING_TIERS (Starter, Growth, Pro, Studio) and
     # has NO Free card, taking each tier's contents from the plan it maps to
     # through includesFor(). So the absence assertions belong on both and the
     # Free-card content assertions belong only on /billing. The first draft of
     # this check asserted "All six calculators" on /pricing and failed, which
     # is how the second surface was found.
+    #
+    # THE TWO SURFACES NOW USE DIFFERENT NAMES, and that is the point of the
+    # per-route expectation below. The owner renamed the PLANS to Free, Basic
+    # and Pro; the four founding TIERS on /pricing keep the names and prices
+    # they were set with (Starter, Growth, Pro, Studio), because mapping four
+    # paid tiers onto three plan names needs a pricing decision nobody has
+    # made. A single "Growth is on the page" assertion passed on /pricing and
+    # would have gone red on /billing for the right reason, which is not a
+    # reason to loosen it — each surface is checked for the vocabulary it
+    # actually renders.
+    #
     for base, label in [(LIVE, "live"), (DEMO, "demo")]:
-        for route in ["/pricing", "/billing"]:
+        for route, named_tier in [("/pricing", "Growth"), ("/billing", "Pro")]:
             text = body(base, route)
             # The page is really a plan surface and not an error page.
-            check("Growth" in text and "$" in text,
+            check(named_tier in text and "$" in text,
                   f"{label} {route}: tiers and prices are on the page")
             for free in ETSY_FREE:
                 check(free not in text,
@@ -109,7 +120,7 @@ with sync_playwright() as p:
                   f"{label} {route}: no tier claims a file format as a feature")
 
         billing_text = body(base, "/billing")
-        check("Free" in billing_text and "Solo" in billing_text,
+        check("Free" in billing_text and "Basic" in billing_text,
               f"{label} /billing: the three PLANS tiers are listed")
         check("Calculators and methodology, no shop connection" in billing_text,
               f"{label} /billing: the Free tier is positioned on what it has")
@@ -123,15 +134,17 @@ with sync_playwright() as p:
         check("No shop connection, profit or bulk editing" in billing_text,
               f"{label} /billing: the Free tier still states what it excludes")
 
-    # And Growth still has reasons to exist, on both surfaces.
+    # And the top plan still has reasons to exist, on both surfaces. It is
+    # called Pro on /billing and its contents reach /pricing through
+    # includesFor(), so the CAPABILITIES are checked rather than the label.
     for route in ["/pricing", "/billing"]:
-        growth = body(LIVE, route)
+        top = body(LIVE, route)
         for real in ["2,000 listings", "90-day rollback", "Priority sync"]:
-            check(real in growth, f"live {route}: Growth still lists {real!r}")
-        # "500 AI generations" was here. Growth is thinner for it, which is the
-        # true position rather than a gap to fill with a replacement line.
-        check("AI generations" not in growth,
-              f"live {route}: Growth advertises no AI allowance")
+            check(real in top, f"live {route}: the top plan still lists {real!r}")
+        # "500 AI generations" was here. The tier is thinner for it, which is
+        # the true position rather than a gap to fill with a replacement line.
+        check("AI generations" not in top,
+              f"live {route}: the top plan advertises no AI allowance")
 
     # ── 2. EXPORT, ON NO PLAN AT ALL ───────────────────────────────────────
     #
