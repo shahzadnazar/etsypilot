@@ -60,7 +60,7 @@ export interface NavLink {
 const FEATURES: NavLink[] = [
   {
     label: 'Keyword research',
-    href: '/#keywords',
+    href: '/#discover',
     description: 'Demand bands, competition and seasonality, from modelled sample data.',
   },
   {

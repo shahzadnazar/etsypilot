@@ -53,7 +53,7 @@ export function Hero() {
     <section className="px-4 pt-10 pb-6 md:px-6 md:pt-16">
       <div className="mx-auto flex max-w-[1180px] flex-col items-center text-center">
         <span
-          className="mono inline-flex items-center gap-1.5 px-3 py-1 text-[10.5px] font-semibold uppercase tracking-[0.08em]"
+          className="mono t-eyebrow inline-flex items-center gap-1.5 px-3.5 py-1.5 font-semibold"
           style={{
             background: 'var(--warning-surface)',
             color: 'var(--warning-ink)',
@@ -69,27 +69,21 @@ export function Hero() {
           * a <br> rather than two elements, so a screen reader announces one
           * heading and not two fragments.
           */}
-        <h1
-          className="display mt-5 max-w-[20ch] text-[34px] leading-[1.08] md:text-[52px]"
-          style={{ color: 'var(--ink-1)' }}
-        >
+        <h1 className="display t-h1 mt-6 max-w-[20ch]" style={{ color: 'var(--ink-1)' }}>
           Find Better Keywords.
           <br />
           <span style={{ color: 'var(--brand)' }}>Know Your Real Profit.</span>
         </h1>
 
-        <p
-          className="mt-5 max-w-[58ch] text-[15.5px] leading-relaxed"
-          style={{ color: 'var(--ink-2)' }}
-        >
+        <p className="t-lead mt-6 max-w-[58ch]" style={{ color: 'var(--ink-2)' }}>
           Research Etsy keywords, check listings with evidence, monitor shop performance, and make
           safer bulk updates — all in one place.
         </p>
 
-        <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+        <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
           <Link
             href="/signup"
-            className="inline-flex h-11 items-center px-5 text-[14px] font-semibold"
+            className="plan-cta inline-flex h-12 items-center gap-1.5 px-6 text-[15.5px] font-semibold"
             style={{
               background: 'var(--brand)',
               color: 'var(--on-brand)',
@@ -97,10 +91,13 @@ export function Hero() {
             }}
           >
             Start for Free
+            <span aria-hidden className="plan-cta-arrow">
+              →
+            </span>
           </Link>
           <Link
             href="#features"
-            className="inline-flex h-11 items-center border px-5 text-[14px] font-semibold"
+            className="inline-flex h-12 items-center border px-6 text-[15.5px] font-semibold"
             style={{
               borderColor: 'var(--border-strong)',
               color: 'var(--ink-1)',
@@ -112,7 +109,7 @@ export function Hero() {
           </Link>
         </div>
 
-        <p className="mt-4 text-[12.5px]" style={{ color: 'var(--muted-1)' }}>
+        <p className="t-note mt-5" style={{ color: 'var(--muted-1)' }}>
           Free plan, no card. Connecting a shop is optional and separate.
         </p>
       </div>
@@ -309,7 +306,7 @@ export function DashboardPreview() {
         </div>
       </div>
 
-      <figcaption className="mt-2.5 text-center text-[12px]" style={{ color: 'var(--muted-1)' }}>
+      <figcaption className="t-note mt-3 text-center" style={{ color: 'var(--muted-1)' }}>
         A sample shop, not a real one. Connect your own and every figure here is replaced by yours —
         each one labelled with where it came from.
       </figcaption>

@@ -226,6 +226,87 @@
   }
 }
 
+/* ══════════════════════════════════════════════════════════════════════
+ *   THE MARKETING TYPE SCALE
+ * ══════════════════════════════════════════════════════════════════════
+ *
+ * Six classes, and they exist because the page was built out of arbitrary
+ * Tailwind sizes — `text-[27px] md:text-[34px]` on one heading, `text-[28px]
+ * md:text-[36px]` on the next — which is a scale nobody can see, enforce or
+ * change. Set side by side the page read as organised and understated: a
+ * section heading at 34px with a 14.5px paragraph under it is correct
+ * typography for a dense application and too quiet for a page whose job is to
+ * be scanned in six seconds.
+ *
+ * ── clamp(), SO THERE IS ONE DECLARATION PER ROLE AND NO BREAKPOINT ──────
+ *
+ * Each size interpolates with the viewport between a mobile floor and a
+ * desktop ceiling, so a heading is never caught at a size nobody chose — the
+ * failure mode of `text-[27px] md:text-[34px]`, which jumps from one to the
+ * other at exactly 768px and is wrong on both sides of it for a 900px window.
+ *
+ * ── THE RATIOS ARE NOT UNIFORM, DELIBERATELY ─────────────────────────────
+ *
+ * Headings grew by about a quarter and body copy by about a fifth, so the
+ * distance between them WIDENED. Scaling everything by the same percentage
+ * makes a page bigger and no easier to scan; what makes it scannable is the
+ * gap between levels, and that is the thing this scale is for.
+ *
+ *     h1    34 → 56     h2   28 → 42     h3   25 → 32
+ *     lead  16 → 19     body 16 → 17.5   eyebrow 12 → 13.5
+ *
+ * ── AND NOT ONE OF THEM REACHES A DASHBOARD PANEL ───────────────────────
+ *
+ * Every number, table label and metric inside the product previews keeps its
+ * own explicit size. A 17px table cell is not denser typography, it is a
+ * different product — the previews are meant to read as the application, and
+ * the application is dense on purpose. These classes are applied to marketing
+ * copy only, and tests/unit/landing-page.test.ts holds that boundary.
+ */
+
+.marketing .t-h1 {
+  font-size: clamp(2.125rem, 1.15rem + 3.6vw, 3.5rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+}
+
+.marketing .t-h2 {
+  font-size: clamp(1.75rem, 1.15rem + 2.1vw, 2.625rem);
+  line-height: 1.14;
+  letter-spacing: -0.018em;
+}
+
+.marketing .t-h3 {
+  font-size: clamp(1.5625rem, 1.25rem + 1.1vw, 2rem);
+  line-height: 1.18;
+  letter-spacing: -0.015em;
+}
+
+/* The one paragraph under a section heading. */
+.marketing .t-lead {
+  font-size: clamp(1rem, 0.9rem + 0.42vw, 1.1875rem);
+  line-height: 1.6;
+}
+
+/* Everything else a visitor reads as prose. */
+.marketing .t-body {
+  font-size: clamp(1rem, 0.95rem + 0.22vw, 1.09375rem);
+  line-height: 1.62;
+}
+
+.marketing .t-eyebrow {
+  font-size: clamp(0.75rem, 0.72rem + 0.12vw, 0.84375rem);
+  line-height: 1.3;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* A caveat, a sample-data note, a figure caption. Below body, never below 13. */
+.marketing .t-note {
+  font-size: clamp(0.8125rem, 0.78rem + 0.14vw, 0.875rem);
+  line-height: 1.55;
+}
+
 .marketing .display {
   font-family: var(--font-display), Georgia, 'Times New Roman', serif;
   font-weight: 600;
@@ -379,9 +460,9 @@
 .marketing .mobile-link {
   display: flex;
   align-items: center;
-  min-height: 44px;
+  min-height: 46px;
   padding: 0 0.25rem;
-  font-size: 14.5px;
+  font-size: 15.5px;
   color: var(--ink-2);
 }
 
@@ -592,5 +673,36 @@
     transform: translate3d(0, -2px, 0);
     border-color: var(--brand);
     box-shadow: 0 6px 14px -6px rgba(15, 23, 42, 0.1);
+  }
+}
+
+/* ─────────────────────────────────── the how-it-works connectors */
+
+/*
+ * A hairline between the step cards, drawn with a pseudo-element on the card
+ * rather than with elements in the markup — four extra <span>s would be four
+ * things a screen reader walks past to learn nothing.
+ *
+ * Only at `lg`, where the four cards are genuinely in a row. Below that they
+ * stack, and a line pointing sideways would be describing a layout that is
+ * not on the screen.
+ */
+@media (min-width: 1024px) {
+  .marketing .step-grid {
+    position: relative;
+  }
+
+  .marketing .step-grid > li {
+    position: relative;
+  }
+
+  .marketing .step-grid > li:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 66px;
+    right: -1rem;
+    width: 1rem;
+    height: 1px;
+    background: var(--border-strong);
   }
 }

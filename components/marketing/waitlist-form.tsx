@@ -18,10 +18,10 @@ export function WaitlistForm({ state }: { state?: string }) {
   return (
     <section id="waitlist" className="border-t" style={{ borderColor: 'var(--border)' }}>
       <div className="mx-auto max-w-[760px] px-5 py-16 md:py-20">
-        <h2 className="display text-[28px] leading-[1.15] md:text-[36px]" style={{ color: 'var(--ink-1)' }}>
+        <h2 className="display t-h2" style={{ color: 'var(--ink-1)' }}>
           Be told when it opens.
         </h2>
-        <p className="mt-3 max-w-[58ch] text-[14.5px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
+        <p className="t-lead mt-4 max-w-[58ch]" style={{ color: 'var(--ink-2)' }}>
           One email when billing is live, and nothing else. No sequence, no newsletter, no
           partners. You can walk through the whole product today without giving us anything.
         </p>

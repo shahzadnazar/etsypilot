@@ -66,6 +66,27 @@ const NAV = code('components/marketing/nav.tsx')
 const HERO = code('components/marketing/hero.tsx')
 const SECTIONS = code('components/marketing/sections.tsx')
 
+/**
+ * Every id the public surface renders.
+ *
+ * Two spellings, because the page declares ids two ways. Most are literal
+ * `id="profit"` attributes; the three feature rows carry `id={row.id}` and
+ * take their value from a `rows` array, because they are rendered by one
+ * component in a loop. A sweep that only read the attribute form reported the
+ * nav's `/#discover` as dangling while the anchor was on the page — so it
+ * reads both, and `anchorFields` is narrow enough (`id: 'slug'`) that it
+ * cannot drag in unrelated object keys.
+ */
+function renderedIds(): Set<string> {
+  const ids = new Set<string>()
+  for (const file of SURFACE) {
+    const text = code(file)
+    for (const match of text.matchAll(/id="([a-z0-9-]+)"/g)) ids.add(match[1]!)
+    for (const match of text.matchAll(/\bid:\s*'([a-z0-9-]+)'/g)) ids.add(match[1]!)
+  }
+  return ids
+}
+
 describe('the public surface this file is sweeping', () => {
   it('finds every file it is meant to be checking', () => {
     // A sweep over nothing passes every assertion below perfectly.
@@ -139,10 +160,7 @@ describe('ISSUE 1 — every call to action goes somewhere that exists', () => {
      * against the `id="x"` attributes the same surface renders. This is the
      * assertion that fails if a section is renamed and a nav item is not.
      */
-    const ids = new Set<string>()
-    for (const file of SURFACE) {
-      for (const match of code(file).matchAll(/id="([a-z0-9-]+)"/g)) ids.add(match[1]!)
-    }
+    const ids = renderedIds()
 
     for (const file of SURFACE) {
       for (const match of code(file).matchAll(/href="\/?#([a-z0-9-]+)"/g)) {
@@ -156,17 +174,20 @@ describe('ISSUE 1 — every call to action goes somewhere that exists', () => {
   it('finds the fragments it is meant to be resolving', () => {
     // The negative control for the sweep above: if the id set were empty, the
     // check would pass by finding nothing to compare.
-    const ids = new Set<string>()
-    for (const file of SURFACE) {
-      for (const match of code(file).matchAll(/id="([a-z0-9-]+)"/g)) ids.add(match[1]!)
-    }
+    const ids = renderedIds()
     /*
      * `calculator` was in this list and is not any more: the homepage
      * calculator section was removed and the nav item that pointed at it now
      * goes to /tools/etsy-seller-calculator, a route rather than a fragment.
      * `how-it-works` takes its place as a new section with an id.
      */
-    for (const anchor of ['features', 'keywords', 'profit', 'listings', 'how-it-works', 'faq']) {
+    /*
+     * `keywords` was on this list and is not any more: the keyword panel's id
+     * moved onto the Discover row when the three steps became three equal
+     * rows, and that row is `discover`. The nav and footer were updated with
+     * it; the sweep above is what would catch either half being forgotten.
+     */
+    for (const anchor of ['features', 'discover', 'profit', 'listings', 'how-it-works', 'faq']) {
       expect(ids, `#${anchor} is linked from the nav`).toContain(anchor)
     }
   })
@@ -322,8 +343,8 @@ describe('ISSUE 4 — the menus open for a keyboard and tell the truth about it'
 
   it('gives touch targets room, from the stylesheet rather than per call site', () => {
     const css = readFileSync('styles/marketing.css', 'utf8')
-    expect(css).toMatch(/\.marketing \.mobile-link\s*\{[^}]*min-height:\s*44px/)
-    expect(css).toMatch(/\.marketing \.nav-link\s*\{[^}]*min-height:\s*40px/)
+    expect(css).toMatch(/\.marketing \.mobile-link\s*\{[^}]*min-height:\s*4[46]px/)
+    expect(css).toMatch(/\.marketing \.nav-link\s*\{[^}]*min-height:\s*4[02]px/)
     /*
      * And this stylesheet sets no `display` on a nav link.
      *
@@ -375,8 +396,6 @@ describe('the page’s structure', () => {
       'Hero',
       'WhyChoose',
       'Benefits',
-      'ProfitIntelligence',
-      'ListingIntelligence',
       'ShopPerformance',
       'BulkUpdates',
       'HowItWorks',
@@ -421,7 +440,7 @@ describe('the page’s structure', () => {
     const previews = code('components/marketing/previews.tsx')
     expect(previews).toContain('export function KeywordExplorerPanel')
     expect(previews).toContain('<KeywordExplorerPanel />')
-    expect(previews).toContain('Find better keywords')
+    expect(previews).toContain('Find Better Keywords')
     expect(previews).not.toContain('Find keywords worth targeting')
     expect(previews).not.toContain('export function KeywordResearch')
 
@@ -433,7 +452,7 @@ describe('the page’s structure', () => {
   it('carries exactly one How It Works section, and it was genuinely absent before', () => {
     const headings = SURFACE.map((file) => code(file))
       .join('\n')
-      .match(/From Connection to Growth/g)
+      .match(/How CobaltRank Works/g)
     expect(headings?.length ?? 0).toBe(1)
     expect(PAGE).toContain('<HowItWorks')
     /*

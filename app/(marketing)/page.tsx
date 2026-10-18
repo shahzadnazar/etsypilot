@@ -8,8 +8,6 @@ import {
   BulkUpdates,
   FinalCta,
   HowItWorks,
-  ListingIntelligence,
-  ProfitIntelligence,
   ShopPerformance,
   WhyChoose,
 } from '@/components/marketing/previews'
@@ -121,29 +119,31 @@ export default async function LandingPage({
       {/* ── 4. three questions: Discover, Understand, Improve ── */}
       <Benefits />
 
-      {/* ───────────────────────────── 5. revenue is not profit ── */}
-      <ProfitIntelligence />
+      {/*
+        * The profit and listing sections used to stand here. Their panels
+        * moved up into the Understand and Improve rows above — see
+        * components/marketing/previews.tsx — so the same waterfall and the
+        * same audit findings are not shown twice on one page, and `#profit`
+        * and `#listings` moved with them.
+        */}
 
-      {/* ─────────── 6. a finding, a reason, and what to do ── */}
-      <ListingIntelligence />
-
-      {/* ──────────────────────────────────── 7. shop performance ── */}
+      {/* ──────────────────────────────────── 5. shop performance ── */}
       <ShopPerformance />
 
-      {/* ───────────────────────────────── 8. safer bulk updates ── */}
+      {/* ───────────────────────────────── 6. safer bulk updates ── */}
       <BulkUpdates />
 
-      {/* ──────────────────────────────────────── 9. how it works ── */}
+      {/* ──────────────────────────────────────── 7. how it works ── */}
       <HowItWorks />
 
-      {/* ── 10. the pricing preview and the rest of the CTA area ── */}
+      {/* ── 8. the pricing preview and the rest of the CTA area ── */}
       <PricingSection interval={interval} />
       <Faq />
       <WaitlistForm state={waitlist} />
       <ContactCta />
       <FinalCta />
 
-      {/* ─────────────────────────────────────────────── M. footer ── */}
+      {/* ─────────────────────────────────────────────── 9. footer ── */}
       <MarketingFooter />
     </div>
   )

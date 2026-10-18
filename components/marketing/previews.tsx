@@ -53,7 +53,7 @@ const WRAP = 'mx-auto max-w-[1180px]'
 function Eyebrow({ children, onTint = false }: { children: React.ReactNode; onTint?: boolean }) {
   return (
     <span
-      className="mono block text-[10.5px] font-semibold uppercase tracking-[0.1em]"
+      className="mono t-eyebrow block font-semibold"
       style={{ color: onTint ? 'var(--brand-strong)' : 'var(--brand)' }}
     >
       {children}
@@ -134,9 +134,9 @@ function StartFree({
   return (
     <Link
       href="/signup"
-      className={`plan-cta inline-flex items-center gap-1.5 px-5 text-[14px] font-semibold ${className}`}
+      className={`plan-cta inline-flex items-center gap-1.5 px-6 text-[15.5px] font-semibold ${className}`}
       style={{
-        minHeight: '44px',
+        minHeight: '48px',
         background: solid ? 'var(--brand)' : 'var(--surface)',
         color: solid ? 'var(--on-brand)' : 'var(--brand-strong)',
         border: `1px solid ${solid ? 'var(--brand)' : 'var(--border-strong)'}`,
@@ -158,7 +158,11 @@ function StartFree({
  * decorative shapes are not worth eight more components in the public bundle,
  * and these are `aria-hidden` — the heading beside each one is the label.
  */
-function Glyph({ name }: { name: 'search' | 'coins' | 'check' | 'layers' | 'plug' | 'trend' }) {
+function Glyph({
+  name,
+}: {
+  name: 'search' | 'coins' | 'check' | 'layers' | 'plug' | 'trend' | 'users'
+}) {
   const paths: Record<typeof name, React.ReactNode> = {
     search: (
       <>
@@ -199,6 +203,14 @@ function Glyph({ name }: { name: 'search' | 'coins' | 'check' | 'layers' | 'plug
         <path d="M15 8h5v5" />
       </>
     ),
+    users: (
+      <>
+        <circle cx="9" cy="8" r="3.2" />
+        <path d="M3 20a6 6 0 0112 0" />
+        <path d="M16 5.2a3.2 3.2 0 010 5.6" />
+        <path d="M18.5 20a6 6 0 00-3-5.2" />
+      </>
+    ),
   }
 
   return (
@@ -226,58 +238,97 @@ function Glyph({ name }: { name: 'search' | 'coins' | 'check' | 'layers' | 'plug
 /* ─────────────────────────────────── B2. why choose CobaltRank */
 
 /*
- * Directly under the hero's dashboard, and deliberately NOT another dashboard.
+ * ── THE HEADING NAMED A CATEGORY INSTEAD OF A DIFFERENCE ─────────────────
  *
- * The hero already shows the product. This section's job is to say what it is
- * for, in one paragraph and four words, and then get out of the way — so it is
- * type and four glyphs, with no second screenshot competing with the one above
- * it.
+ * It read "Built to Help Etsy Sellers Grow Smarter", which every Etsy tool
+ * ever built could print without changing a word — and this section sits
+ * directly under the hero, where a visitor decides in about six seconds
+ * whether this is another keyword tool.
  *
- * The four labels are the four things the product does that a seller can
- * name. Each one links to the section that shows it, so the row doubles as a
- * contents page for the rest of the scroll.
+ * It is not another keyword tool, and the new heading says the thing the
+ * competition cannot: keyword research is table stakes, and the part nobody
+ * else does is tell you what the sale actually left you with. Charcoal for
+ * the category, indigo for the claim.
+ *
+ * ── SIX ITEMS, AND TREND TRACKING IS NOT ONE OF THEM ─────────────────────
+ *
+ * Trends live inside keyword research and competitor insights, which is where
+ * the product puts them. A seventh badge saying "Trend tracking" would be a
+ * third name for the same screen, and a strip of badges is most useful when
+ * each one is a different answer.
  */
 const WHY_CHOOSE = [
-  { icon: 'search' as const, label: 'Keyword research', href: '#features' },
-  { icon: 'coins' as const, label: 'Real profit', href: '#profit' },
-  { icon: 'check' as const, label: 'Listing checks', href: '#listings' },
-  { icon: 'layers' as const, label: 'Safer bulk updates', href: '#bulk' },
+  { icon: 'search' as const, label: 'Etsy Keyword Research', href: '#discover' },
+  { icon: 'users' as const, label: 'Competitor Insights', href: '#discover' },
+  { icon: 'coins' as const, label: 'Real Profit Clarity', href: '#profit' },
+  { icon: 'check' as const, label: 'Evidence-Based Listing Checks', href: '#listings' },
+  { icon: 'trend' as const, label: 'Shop Performance', href: '#performance' },
+  { icon: 'layers' as const, label: 'Safer Bulk Updates', href: '#bulk' },
 ]
 
 export function WhyChoose() {
   return (
     <section id="why" className={SECTION} style={{ background: 'var(--surface)' }}>
       <div className={WRAP}>
-        <div className="mx-auto max-w-[58ch] text-center">
+        {/*
+          * ── `ch` IS THE WRONG UNIT ON A HEADING WRAPPER ──────────────────
+          *
+          * `ch` resolves against the element's OWN font, and this wrapper is
+          * a plain div inheriting Inter at 16px — so `max-w-[32ch]` came out
+          * at about 290px, and the 42px serif inside it broke "More Than Etsy
+          * / SEO." mid-sentence. The measure has to be set in a unit that does
+          * not depend on a font the heading is not using.
+          *
+          * Wide enough that each of the two sentences holds one line at the
+          * desktop ceiling; below that the clamp shrinks the type faster than
+          * the container, so it keeps breaking where the <br/> says.
+          */}
+        <div className="mx-auto max-w-[44rem] text-center">
           <Eyebrow>Why Choose CobaltRank</Eyebrow>
-          <h2
-            className="display mt-2 text-[27px] leading-[1.15] md:text-[34px]"
-            style={{ color: 'var(--ink-1)' }}
-          >
-            Built to Help Etsy Sellers Grow Smarter
+          <h2 className="display t-h2 mt-3" style={{ color: 'var(--ink-1)' }}>
+            More Than Etsy SEO.
+            {/*
+              * An explicit break between the two sentences, because the two
+              * colours are doing the work of separating them and a wrap that
+              * lands mid-sentence — "More Than Etsy / SEO. Know What" — puts
+              * the colour change in the middle of a line where it reads as an
+              * accident. One line each, which is also how it is read aloud.
+              */}
+            <br />
+            <span style={{ color: 'var(--brand)' }}>Know What You Actually Made.</span>
           </h2>
-          <p className="mt-4 text-[15px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
-            From Etsy keyword research, competitor analysis, and trend tracking to real profit
-            insights, evidence-based listing checks, and safer bulk updates — CobaltRank helps you
-            optimize listings, attract shoppers, and make smarter selling decisions.
-          </p>
         </div>
 
-        <ul className="mx-auto mt-9 grid max-w-[920px] gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {/*
+          * A separate, wider measure for the paragraph than for the heading.
+          * A heading wants a short line so it breaks where the sense does; a
+          * paragraph at that width is five ragged lines. Two max-widths, one
+          * centred column, roughly three lines on a desktop.
+          */}
+        <p
+          className="t-lead mx-auto mt-5 max-w-[64ch] text-center"
+          style={{ color: 'var(--ink-2)' }}
+        >
+          Research Etsy keywords, analyze competitors, and follow trends — while understanding your
+          real profit, checking listings with evidence, monitoring shop performance, and making
+          safer bulk changes.
+        </p>
+
+        <ul className="mx-auto mt-10 grid max-w-[1000px] gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {WHY_CHOOSE.map((item) => (
             <li key={item.label}>
               <Link
                 href={item.href}
-                className="why-tile flex h-full items-center gap-3 border px-4 py-3.5"
+                className="why-tile flex h-full items-center gap-3 border px-4 py-4"
                 style={{
                   borderColor: 'var(--border)',
                   background: 'var(--surface)',
                   borderRadius: 'var(--card-radius)',
-                  minHeight: '64px',
+                  minHeight: '72px',
                 }}
               >
                 <Glyph name={item.icon} />
-                <span className="text-[13.5px] font-semibold" style={{ color: 'var(--ink-1)' }}>
+                <span className="t-body font-semibold" style={{ color: 'var(--ink-1)' }}>
                   {item.label}
                 </span>
               </Link>
@@ -285,7 +336,7 @@ export function WhyChoose() {
           ))}
         </ul>
 
-        <div className="mt-9 flex justify-center">
+        <div className="mt-10 flex justify-center">
           <StartFree />
         </div>
       </div>
@@ -426,150 +477,16 @@ export function KeywordExplorerPanel() {
   )
 }
 
-/* ──────────────────────────────────────────────────── C. core benefits */
+/* ──────────────────────────── the profit waterfall, moved intact */
 
 /*
- * ── THE SAME THREE QUESTIONS, WITH THE FIRST ONE OPENED OUT ─────────────
+ * ── THIS WAS THE "Revenue is not profit" SECTION'S PANEL ──────────────
  *
- * The heading and the three steps are unchanged: Discover, Understand,
- * Improve, answered with the seller's own numbers. What changed is that the
- * first step now carries the screen that answers it.
- *
- * The keyword explorer used to be a section of its own further down the page,
- * under "Find keywords worth targeting." That section is gone and its panel
- * moved here, intact — `KeywordExplorerPanel` below is the same markup, the
- * same sample rows and the same note about Etsy publishing no search volume.
- * Moving it rather than rebuilding it is what stops the two drifting into
- * different claims about the same table.
- *
- * `id="keywords"` moved with it. The nav's Features menu and the footer both
- * link to `/#keywords`, and an anchor that stops resolving because a section
- * was reorganised is the defect tests/unit/landing-page.test.ts exists to
- * catch — so the id lives on the row that now holds the keyword content.
- *
- * Steps 2 and 3 keep their cards, their wording and their "See it →" links,
- * which is what was asked: they already work, and rebuilding them as a second
- * two-column row would be a redesign of something nobody reported a problem
- * with.
+ * Same markup, same figures, same arithmetic — moved into the Understand
+ * row rather than retyped there, so there is one waterfall on the page and
+ * one set of sample numbers to keep honest. The section that framed it is
+ * gone; the panel is not.
  */
-
-const BENEFITS = [
-  {
-    step: '2 · Understand',
-    title: 'Know your real profit',
-    body: 'Every fee, every material, the postage you actually paid and the hour you actually worked — subtracted from what the buyer actually paid.',
-    href: '#profit',
-  },
-  {
-    step: '3 · Improve',
-    title: 'Fix listings on evidence',
-    body: `${AUDIT_RULES.length} mechanical checks against your own fields. Each finding says what it found, why it matters and what to do — never a score standing in for a reason.`,
-    href: '#listings',
-  },
-] as const
-
-export function Benefits() {
-  return (
-    <section id="features" className={SECTION} style={{ background: 'var(--page-bg)' }}>
-      <div className={WRAP}>
-        <div className="mx-auto max-w-[46ch] text-center">
-          <Eyebrow>Everything you need to sell smarter</Eyebrow>
-          <h2
-            className="display mt-2 text-[27px] leading-[1.15] md:text-[34px]"
-            style={{ color: 'var(--ink-1)' }}
-          >
-            Three questions, answered with your own numbers.
-          </h2>
-        </div>
-
-        {/* ── 1 · Discover, with the keyword explorer beside it ───────── */}
-        <div
-          id="keywords"
-          className="mt-10 grid items-center gap-9 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)]"
-        >
-          <div>
-            <span
-              className="mono text-[10.5px] uppercase tracking-[0.08em]"
-              style={{ color: 'var(--muted-1)' }}
-            >
-              1 · Discover
-            </span>
-            <h3
-              className="display mt-2 text-[24px] leading-[1.15] md:text-[28px]"
-              style={{ color: 'var(--ink-1)' }}
-            >
-              Find better keywords
-            </h3>
-            <p className="mt-3 text-[14.5px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
-              Discover promising Etsy keywords, explore competition, and track trends to find
-              better opportunities for your listings.
-            </p>
-            <div className="mt-6">
-              <StartFree />
-            </div>
-          </div>
-
-          {/*
-            * `min-w-0` is the whole reason this wrapper exists.
-            *
-            * A grid item's `min-width` defaults to `auto`, which means "no
-            * smaller than your content's min-content width" — and this item's
-            * content is a table with a 520px minimum. So at 390px the single
-            * implicit column became 522px wide and the PAGE scrolled
-            * sideways, even though the table itself was already in a scroller
-            * that would have handled it. The `minmax(0, …)` in the lg columns
-            * above says the same thing for wide screens; this says it for the
-            * stacked one.
-            */}
-          <div className="min-w-0">
-            <KeywordExplorerPanel />
-          </div>
-        </div>
-
-        {/* ── 2 · Understand and 3 · Improve, as they were ────────────── */}
-        <div className="mt-10 grid gap-4 md:grid-cols-2">
-          {BENEFITS.map((benefit) => (
-            <div
-              key={benefit.title}
-              className="flex flex-col border p-5"
-              style={{
-                borderColor: 'var(--border)',
-                background: 'var(--surface)',
-                borderRadius: 'var(--card-radius)',
-              }}
-            >
-              <span
-                className="mono text-[10.5px] uppercase tracking-[0.08em]"
-                style={{ color: 'var(--muted-1)' }}
-              >
-                {benefit.step}
-              </span>
-              <h3 className="display mt-2 text-[19px]" style={{ color: 'var(--ink-1)' }}>
-                {benefit.title}
-              </h3>
-              <p
-                className="mt-2 flex-1 text-[13.5px] leading-relaxed"
-                style={{ color: 'var(--ink-2)' }}
-              >
-                {benefit.body}
-              </p>
-              <Link
-                href={benefit.href}
-                className="mt-3 inline-flex items-center text-[13px] font-semibold"
-                style={{ color: 'var(--brand)', minHeight: '32px' }}
-              >
-                See it →
-              </Link>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-/* ────────────────────────────────────────────── F. profit intelligence */
-
 const WATERFALL = [
   { label: 'What buyers paid', amount: 24890, tone: 'ink' },
   { label: 'Etsy fees', amount: -3912, tone: 'down' },
@@ -579,199 +496,264 @@ const WATERFALL = [
   { label: 'Your time, at the rate you set', amount: -1478, tone: 'down' },
 ] as const
 
-export function ProfitIntelligence() {
+export function ProfitWaterfallPanel() {
   const money = (n: number) =>
-    `${n < 0 ? '−' : ''}$${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    `${n < 0 ? '\u2212' : ''}$${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   const widest = Math.max(...WATERFALL.map((row) => Math.abs(row.amount)))
 
   return (
-    <section id="profit" className={SECTION} style={{ background: 'var(--surface)' }}>
-      <div className={`${WRAP} grid items-start gap-10 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]`}>
-        <div>
-          <Eyebrow>Profit intelligence</Eyebrow>
-          <h2
-            className="display mt-2 text-[27px] leading-[1.15] md:text-[34px]"
-            style={{ color: 'var(--ink-1)' }}
-          >
-            Revenue is not profit.
-            <br />
-            <span style={{ color: 'var(--brand)' }}>Know the difference.</span>
-          </h2>
-          <p className="mt-4 text-[14.5px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
-            Etsy shows you what came in. The fees arrive days later in a separate payment-account
-            ledger, and what it cost you to make the thing lives in your head. CobaltRank puts all
-            three in one column and subtracts them.
-          </p>
-          <ul className="mt-5 flex flex-col gap-3">
-            {[
-              ['Itemised deductions', 'Every fee line with the arithmetic that produced it, not one lump labelled “Etsy fees”.'],
-              ['Hidden losses surfaced', 'A listing that sells below cost is a finding, not something you notice at year end.'],
-              ['Nothing invented', 'Where a cost is unknown the figure is withheld and says so, rather than being filled in with a guess.'],
-            ].map(([title, body]) => (
-              <li key={title} className="flex gap-2.5">
-                <span aria-hidden style={{ color: 'var(--success)' }}>
-                  ✓
-                </span>
-                <span>
-                  <span className="block text-[13.5px] font-semibold" style={{ color: 'var(--ink-1)' }}>
-                    {title}
-                  </span>
-                  <span className="block text-[13px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
-                    {body}
-                  </span>
-                </span>
-              </li>
-            ))}
-          </ul>
-
-          <div className="mt-7">
-            <StartFree />
-          </div>
-        </div>
-
-        <Panel label="Where a month of revenue went">
-          <div className="flex flex-col gap-2.5 p-4">
-            {WATERFALL.map((row) => (
-              <div key={row.label} className="flex flex-col gap-1">
-                <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-[12.5px]" style={{ color: 'var(--ink-2)' }}>
-                    {row.label}
-                  </span>
-                  <span
-                    className="figure text-[13px]"
-                    style={{ color: row.tone === 'down' ? 'var(--danger)' : 'var(--ink-1)' }}
-                  >
-                    {money(row.amount)}
-                  </span>
-                </div>
-                {/* A bar, drawn with a div: no chart library on a page whose
-                    only JavaScript is the calculator. */}
-                <span
-                  aria-hidden
-                  className="block h-1.5"
-                  style={{
-                    width: `${Math.max(4, (Math.abs(row.amount) / widest) * 100)}%`,
-                    background: row.tone === 'down' ? 'var(--danger-mark)' : 'var(--brand)',
-                    borderRadius: '2px',
-                    opacity: row.tone === 'down' ? 0.55 : 1,
-                  }}
-                />
-              </div>
-            ))}
-            <div
-              className="mt-1 flex items-baseline justify-between gap-3 border-t pt-3"
-              style={{ borderColor: 'var(--border)' }}
-            >
-              <span className="text-[13.5px] font-semibold" style={{ color: 'var(--ink-1)' }}>
-                Net profit · 45.9% margin
+    <Panel label="Where a month of revenue went">
+      <div className="flex flex-col gap-2.5 p-4">
+        {WATERFALL.map((row) => (
+          <div key={row.label} className="flex flex-col gap-1">
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="text-[12.5px]" style={{ color: 'var(--ink-2)' }}>
+                {row.label}
               </span>
-              <span className="figure text-[17px] font-semibold" style={{ color: 'var(--success)' }}>
-                $11,430.50
+              <span
+                className="figure text-[13px]"
+                style={{ color: row.tone === 'down' ? 'var(--danger)' : 'var(--ink-1)' }}
+              >
+                {money(row.amount)}
               </span>
             </div>
+            {/* A bar, drawn with a div: no chart library on a page whose
+                only JavaScript is the calculator. */}
+            <span
+              aria-hidden
+              className="block h-1.5"
+              style={{
+                width: `${Math.max(4, (Math.abs(row.amount) / widest) * 100)}%`,
+                background: row.tone === 'down' ? 'var(--danger-mark)' : 'var(--brand)',
+                borderRadius: '2px',
+                opacity: row.tone === 'down' ? 0.55 : 1,
+              }}
+            />
           </div>
-        </Panel>
+        ))}
+        <div
+          className="mt-1 flex items-baseline justify-between gap-3 border-t pt-3"
+          style={{ borderColor: 'var(--border)' }}
+        >
+          <span className="text-[13.5px] font-semibold" style={{ color: 'var(--ink-1)' }}>
+            Net profit · 45.9% margin
+          </span>
+          <span className="figure text-[17px] font-semibold" style={{ color: 'var(--success)' }}>
+            $11,430.50
+          </span>
+        </div>
       </div>
-    </section>
+    </Panel>
   )
 }
 
-/* ───────────────────────────────────────── G. listing intelligence */
+/* ─────────────────────────────── the listing audit, moved intact */
 
-export function ListingIntelligence() {
-  /*
-   * The first three ERROR rules, from the product's own array. Not a
-   * hand-written selection: whatever the audit treats as blocking is what the
-   * page shows, so the two cannot diverge.
-   */
+/*
+ * ── THIS WAS THE "A finding, a reason" SECTION'S PANEL ────────────────
+ *
+ * The first three ERROR rules, from the product's own array — not a
+ * hand-written selection: whatever the audit treats as blocking is what
+ * the page shows, so the two cannot diverge. Moved into the Improve row
+ * with the section folded in around it.
+ */
+export function ListingAuditPanel() {
   const shown = AUDIT_RULES.filter((rule) => rule.severity === 'ERROR').slice(0, 3)
 
   return (
-    /*
-     * ── CENTRED HEADING AND A FULL-WIDTH PANEL BECAME TWO COLUMNS ───────
-     *
-     * The section said the same thing it says now; it said it above a
-     * 860px panel rather than beside one, which left the page alternating
-     * split, centred, split, split. The copy, the panel and the rules it
-     * reads are unchanged — this is the layout catching up with its
-     * neighbours.
-     *
-     * The column order mirrors the profit section above it (text left,
-     * screen right) and inverts for shop performance below, so the page
-     * alternates rather than repeating one arrangement four times.
-     */
-    <section id="listings" className={SECTION} style={{ background: 'var(--page-bg)' }}>
-      <div className={`${WRAP} grid items-start gap-10 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)]`}>
-        <div>
-          <Eyebrow>Evidence-based listing checks</Eyebrow>
-          <h2
-            className="display mt-2 text-[27px] leading-[1.15] md:text-[34px]"
-            style={{ color: 'var(--ink-1)' }}
+    <Panel label="Listing audit">
+      <ul>
+        {shown.map((rule) => (
+          <li
+            key={rule.code}
+            className="border-b px-4 py-3.5 last:border-b-0"
+            style={{ borderColor: 'var(--border)' }}
           >
-            A finding, a reason, and what to do.
-          </h2>
-          <p className="mt-4 text-[14.5px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
-            {AUDIT_RULES.length} mechanical rules run against your own listing fields. No rule
-            models Etsy&rsquo;s ranking — nobody outside Etsy can.
-          </p>
-          <p className="mt-3 text-[13.5px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
-            Each finding carries the field it looked at, why it matters and what to change. Several
-            can be fixed across every affected listing at once, through the same confirmed diff as
-            any other bulk edit.
-          </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className="mono px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em]"
+                style={{
+                  background: 'var(--danger-surface)',
+                  color: 'var(--danger-ink)',
+                  border: '1px solid var(--danger-border)',
+                  borderRadius: '4px',
+                }}
+              >
+                Error
+              </span>
+              <span className="text-[13.5px] font-semibold" style={{ color: 'var(--ink-1)' }}>
+                {rule.label}
+              </span>
+              {rule.bulkFixable ? (
+                <span
+                  className="mono ml-auto text-[10.5px] uppercase tracking-[0.06em]"
+                  style={{ color: 'var(--muted-1)' }}
+                >
+                  Fixable in bulk
+                </span>
+              ) : null}
+            </div>
+            <p className="mt-1.5 text-[13px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
+              <strong style={{ color: 'var(--ink-1)' }}>Why this matters.</strong> {rule.why}
+            </p>
+            <p className="mt-1 text-[13px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
+              <strong style={{ color: 'var(--ink-1)' }}>What to do.</strong> {rule.fix}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </Panel>
+  )
+}
 
-          <div className="mt-7">
-            <StartFree />
-          </div>
+/* ──────────────────────────────────────────────────── C. core benefits */
+
+/*
+ * ██████████████████████████████████████████████████████████████████████████
+ *
+ *   THREE QUESTIONS, AND NOW THREE ROWS OF EQUAL WEIGHT.
+ *
+ * ██████████████████████████████████████████████████████████████████████████
+ *
+ * The heading and the three steps are unchanged. What changed is that the
+ * three steps were not equal: Discover had a full two-column row with a
+ * dashboard beside it, while Understand and Improve were small text cards
+ * underneath. A reader scanning the page saw one feature and two footnotes,
+ * which is a hierarchy nobody chose — it was an artefact of Discover having
+ * inherited the keyword panel when its own section was folded in.
+ *
+ * All three are rows now, alternating, each with its own product preview, its
+ * own Start for Free, and the same measure, spacing and radii.
+ *
+ * ── THE PROFIT AND LISTING SECTIONS WERE FOLDED IN RATHER THAN COPIED ────
+ *
+ * `ProfitIntelligence` and `ListingIntelligence` were separate sections lower
+ * down the page, carrying exactly the panels rows 2 and 3 needed. Showing the
+ * same waterfall and the same audit findings twice on one page would have
+ * been two answers to one question, so the panels moved up into the rows that
+ * ask it and the standalone sections are gone — the same move the keyword
+ * section made last time.
+ *
+ * `id="profit"` and `id="listings"` moved with them. The nav's Features menu,
+ * the footer and the "Why choose" badges all link to those fragments, and an
+ * anchor that stops resolving because a section was reorganised is the defect
+ * tests/unit/landing-page.test.ts exists to catch.
+ *
+ * ── ALTERNATING, AND STACKING IN READING ORDER ───────────────────────────
+ *
+ * Text / image, image / text, text / image on a wide screen. On a narrow one
+ * every row stacks heading-description-CTA first and preview second, whatever
+ * its desktop order — `order-first lg:order-none` on the text column does it
+ * — because a reader who meets the screenshot before the sentence has to
+ * work out what they are looking at.
+ */
+
+interface FeatureRow {
+  id: string
+  step: string
+  title: string
+  body: string
+  /** True where the preview sits on the LEFT at desktop width. */
+  previewFirst: boolean
+  preview: React.ReactNode
+  note?: string
+}
+
+export function Benefits() {
+  const rows: FeatureRow[] = [
+    {
+      id: 'discover',
+      step: '1 · Discover',
+      title: 'Find Better Keywords',
+      body: 'Discover Etsy keyword opportunities, analyze competition, and track search trends to improve your listing strategy.',
+      previewFirst: false,
+      preview: <KeywordExplorerPanel />,
+    },
+    {
+      id: 'profit',
+      step: '2 · Understand',
+      title: 'Know Your Real Profit',
+      body: 'See what you actually earn after Etsy fees, materials, shipping, advertising, and the cost of your work — subtracted from what the buyer actually paid.',
+      previewFirst: true,
+      preview: <ProfitWaterfallPanel />,
+    },
+    {
+      id: 'listings',
+      step: '3 · Improve',
+      title: 'Fix Listings on Evidence',
+      body: `Find listing issues with ${AUDIT_RULES.length} mechanical checks. See what was found, why it matters, and what to do next.`,
+      previewFirst: false,
+      preview: <ListingAuditPanel />,
+      note: 'The wording in the findings is the product’s own, read from the rules the audit runs — so this page cannot advertise a check that is not performed.',
+    },
+  ]
+
+  return (
+    <section id="features" className={SECTION} style={{ background: 'var(--page-bg)' }}>
+      <div className={WRAP}>
+        <div className="mx-auto max-w-[36rem] text-center">
+          <Eyebrow>Everything you need to sell smarter</Eyebrow>
+          <h2 className="display t-h2 mt-3" style={{ color: 'var(--ink-1)' }}>
+            Three questions, answered with your own numbers.
+          </h2>
         </div>
 
-        <div>
-          <Panel label="Listing audit">
-            <ul>
-              {shown.map((rule) => (
-                <li
-                  key={rule.code}
-                  className="border-b px-4 py-3.5 last:border-b-0"
-                  style={{ borderColor: 'var(--border)' }}
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className="mono px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em]"
-                      style={{
-                        background: 'var(--danger-surface)',
-                        color: 'var(--danger-ink)',
-                        border: '1px solid var(--danger-border)',
-                        borderRadius: '4px',
-                      }}
-                    >
-                      Error
-                    </span>
-                    <span className="text-[13.5px] font-semibold" style={{ color: 'var(--ink-1)' }}>
-                      {rule.label}
-                    </span>
-                    {rule.bulkFixable ? (
-                      <span
-                        className="mono ml-auto text-[10.5px] uppercase tracking-[0.06em]"
-                        style={{ color: 'var(--muted-1)' }}
-                      >
-                        Fixable in bulk
-                      </span>
-                    ) : null}
-                  </div>
-                  <p className="mt-1.5 text-[13px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
-                    <strong style={{ color: 'var(--ink-1)' }}>Why this matters.</strong> {rule.why}
+        <div className="mt-14 flex flex-col gap-16 md:gap-20">
+          {rows.map((row) => (
+            <div
+              key={row.id}
+              id={row.id}
+              /*
+               * ── THE TRACKS SWAP WITH THE ORDER, NOT JUST THE ORDER ────
+               *
+               * `order` alone moves the preview into the FIRST track, and the
+               * first track is the narrow one — so the Understand row's
+               * waterfall came out 400px wide against 724px for the keyword
+               * explorer and the audit panel either side of it. Three rows
+               * meant to carry equal weight, one of which had a preview
+               * nearly half the size. Measured, not noticed.
+               *
+               * Flipping the template too keeps the text column at 25rem and
+               * the preview at 1fr in all three rows, whichever side each one
+               * is on.
+               */
+              className={`grid items-center gap-8 lg:gap-14 ${
+                row.previewFirst
+                  ? 'lg:grid-cols-[minmax(0,1fr)_minmax(0,25rem)]'
+                  : 'lg:grid-cols-[minmax(0,25rem)_minmax(0,1fr)]'
+              }`}
+            >
+              <div className={`order-first ${row.previewFirst ? 'lg:order-last' : ''}`}>
+                <span className="mono t-eyebrow block" style={{ color: 'var(--muted-1)' }}>
+                  {row.step}
+                </span>
+                <h3 className="display t-h3 mt-3" style={{ color: 'var(--ink-1)' }}>
+                  {row.title}
+                </h3>
+                <p className="t-body mt-4 max-w-[46ch]" style={{ color: 'var(--ink-2)' }}>
+                  {row.body}
+                </p>
+                {row.note ? (
+                  <p className="t-note mt-3 max-w-[46ch]" style={{ color: 'var(--muted-1)' }}>
+                    {row.note}
                   </p>
-                  <p className="mt-1 text-[13px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
-                    <strong style={{ color: 'var(--ink-1)' }}>What to do.</strong> {rule.fix}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </Panel>
-          <p className="mt-3 text-[12.5px] leading-relaxed" style={{ color: 'var(--muted-1)' }}>
-            The wording above is the product&rsquo;s own, read from the rules the audit runs — so
-            this page cannot advertise a check that is not performed.
-          </p>
+                ) : null}
+                <div className="mt-7">
+                  <StartFree />
+                </div>
+              </div>
+
+              {/*
+                * `min-w-0`: a grid item's min-width defaults to `auto`, which
+                * means "no smaller than your content's min-content width" —
+                * and these contain tables. Without it the stacked column took
+                * the table's minimum and the page scrolled sideways at 390px.
+                */}
+              <div className={`min-w-0 ${row.previewFirst ? 'lg:order-first' : ''}`}>
+                {row.preview}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -824,18 +806,15 @@ export function ShopPerformance() {
 
         <div>
           <Eyebrow>Shop performance</Eyebrow>
-          <h2
-            className="display mt-2 text-[27px] leading-[1.15] md:text-[34px]"
-            style={{ color: 'var(--ink-1)' }}
-          >
+          <h2 className="display t-h3 mt-3" style={{ color: 'var(--ink-1)' }}>
             What changed, and what nobody can explain.
           </h2>
-          <p className="mt-4 text-[14.5px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
+          <p className="t-body mt-4" style={{ color: 'var(--ink-2)' }}>
             Movements are measured against your own baseline, not against other shops. Where a
             change lines up with something you did, the product says so. Where it does not, it says
             that instead of inventing a reason — which is the half most dashboards leave out.
           </p>
-          <ul className="mt-5 flex flex-col gap-2 text-[13.5px]" style={{ color: 'var(--ink-2)' }}>
+          <ul className="t-note mt-5 flex flex-col gap-2.5" style={{ color: 'var(--ink-2)' }}>
             {[
               'Orders, revenue and average order against your own 90-day baseline',
               'Every recorded change tested against the movement it might explain',
@@ -854,7 +833,7 @@ export function ShopPerformance() {
             <StartFree />
           </div>
 
-          <p className="mt-4 text-[13px] leading-relaxed" style={{ color: 'var(--muted-1)' }}>
+          <p className="t-note mt-4" style={{ color: 'var(--muted-1)' }}>
             Figures shown are from the sample shop.
           </p>
         </div>
@@ -871,13 +850,10 @@ export function BulkUpdates() {
       <div className={`${WRAP} grid items-start gap-10 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)]`}>
         <div>
           <Eyebrow>Safer bulk updates</Eyebrow>
-          <h2
-            className="display mt-2 text-[27px] leading-[1.15] md:text-[34px]"
-            style={{ color: 'var(--ink-1)' }}
-          >
+          <h2 className="display t-h3 mt-3" style={{ color: 'var(--ink-1)' }}>
             Make bulk changes with confidence.
           </h2>
-          <p className="mt-4 text-[14.5px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
+          <p className="t-body mt-4" style={{ color: 'var(--ink-2)' }}>
             Select the listings, read the diff line by line, then apply. Validation runs before
             anything is sent, and nothing reaches Etsy that you have not confirmed on screen.
           </p>
@@ -885,7 +861,7 @@ export function BulkUpdates() {
             {['1 · Select', '2 · Preview the diff', '3 · Apply'].map((step) => (
               <li
                 key={step}
-                className="mono border px-2.5 py-1 text-[11.5px]"
+                className="mono border px-3 py-1.5 text-[12.5px]"
                 style={{
                   borderColor: 'var(--border-strong)',
                   color: 'var(--ink-2)',
@@ -1000,18 +976,30 @@ export function BulkUpdates() {
 function StepArt({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="flex h-[108px] items-center justify-center overflow-hidden border-b px-3"
-      style={{ borderColor: 'var(--border)', background: 'var(--canvas-soft)' }}
+      className="flex h-[132px] items-center justify-center overflow-hidden border-b px-3"
+      style={{
+        borderColor: 'var(--border)',
+        background: 'var(--canvas-soft)',
+        borderTopLeftRadius: 'calc(var(--card-radius) - 1px)',
+        borderTopRightRadius: 'calc(var(--card-radius) - 1px)',
+      }}
     >
       {children}
     </div>
   )
 }
 
+/*
+ * The order is the owner's: connect, analyse, optimise, monitor. The
+ * analyse and optimise cards were the other way round for one build —
+ * their titles were swapped in place without their bodies and artwork
+ * moving with them, which is the hazard of renaming entries in an array
+ * instead of reordering it.
+ */
 const HOW_IT_WORKS = [
   {
-    title: 'Connect Your Shop',
-    body: 'Connect your Etsy shop and bring your listings and shop information together.',
+    title: 'Connect Your Etsy Shop',
+    body: 'Securely connect your Etsy shop to access supported listings, transactions, and shop information.',
     art: (
       <div
         className="w-full max-w-[220px] border px-3 py-2.5"
@@ -1046,8 +1034,70 @@ const HOW_IT_WORKS = [
     ),
   },
   {
-    title: 'Optimize Listings',
-    body: 'Identify listing issues and make improvements backed by evidence.',
+    title: 'Analyze Keywords & Profit',
+    body: 'Explore keyword opportunities and understand your earnings after fees and costs.',
+    /*
+     * The two halves of this card are not the same kind of number, and the
+     * card says so. Profit is arithmetic over a connected shop's own
+     * receipts; the keyword side has no data source outside the demo —
+     * lib/signals/index.ts returns null in live mode — so one is a record
+     * and the other is a modelled indicator. A step that presented them as
+     * equally solid would be the claim this product does not make.
+     */
+    note: 'Keyword figures are modelled indicators. Profit is worked out from your own connected-shop records.',
+    art: (
+      <div
+        className="w-full max-w-[220px] border px-3 py-2.5"
+        style={{
+          borderColor: 'var(--border)',
+          background: 'var(--surface)',
+          borderRadius: 'var(--paper-radius)',
+        }}
+      >
+        <span className="flex items-center justify-between gap-2">
+          <span className="text-[11px]" style={{ color: 'var(--ink-1)' }}>
+            stoneware espresso cups
+          </span>
+          <span className="figure text-[11px] font-semibold" style={{ color: 'var(--brand)' }}>
+            94
+          </span>
+        </span>
+        <span className="mt-1 flex items-center gap-1.5">
+          <span className="text-[9.5px]" style={{ color: 'var(--ink-2)' }}>
+            Demand High · Competition Low
+          </span>
+          <span
+            className="mono px-1 py-0.5 text-[8px] uppercase tracking-[0.06em]"
+            style={{ background: 'var(--canvas-soft)', color: 'var(--muted-1)', borderRadius: '3px' }}
+          >
+            Modelled
+          </span>
+        </span>
+        {/*
+          * The profit half, beside the keyword half, with its own marker.
+          * The visual carries the distinction the card's note states: one
+          * line is an indicator, the other is a record.
+          */}
+        <span
+          className="mt-2 flex items-center justify-between gap-2 border-t pt-2"
+          style={{ borderColor: 'var(--border)' }}
+        >
+          <span className="text-[10px]" style={{ color: 'var(--ink-2)' }}>
+            Net profit · 45.9%
+          </span>
+          <span className="figure text-[11px] font-semibold" style={{ color: 'var(--success)' }}>
+            $11,430.50
+          </span>
+        </span>
+        <span className="mono mt-1 block text-[8px] uppercase tracking-[0.06em]" style={{ color: 'var(--muted-1)' }}>
+          From connected-shop records
+        </span>
+      </div>
+    ),
+  },
+  {
+    title: 'Optimize & Review Listings',
+    body: 'Identify listing issues, review evidence-based recommendations, and preview changes before applying them.',
     art: (
       <div
         className="w-full max-w-[220px] border px-3 py-2.5"
@@ -1072,54 +1122,37 @@ const HOW_IT_WORKS = [
             Sells below cost
           </span>
         </span>
-        <span className="mt-1.5 block text-[10px] leading-snug" style={{ color: 'var(--ink-2)' }}>
-          Price minus fees minus cost is negative.
-        </span>
-        <span className="mono mt-1.5 block text-[9px]" style={{ color: 'var(--muted-1)' }}>
-          Fixable in bulk
-        </span>
-      </div>
-    ),
-  },
-  {
-    title: 'Explore Smarter Tools',
-    body: 'Research keywords, analyze competitors, follow trends, and understand profitability.',
-    /* Not operational on a connected shop. See the module note. */
-    note: 'Keyword, competitor and trend screens run on sample data until a source is connected.',
-    art: (
-      <div
-        className="w-full max-w-[220px] border px-3 py-2.5"
-        style={{
-          borderColor: 'var(--border)',
-          background: 'var(--surface)',
-          borderRadius: 'var(--paper-radius)',
-        }}
-      >
-        <span className="flex items-center justify-between gap-2">
-          <span className="text-[11px]" style={{ color: 'var(--ink-1)' }}>
-            stoneware espresso cups
-          </span>
-          <span className="figure text-[11px] font-semibold" style={{ color: 'var(--brand)' }}>
-            94
-          </span>
-        </span>
-        <span className="mt-1.5 flex items-center justify-between gap-2">
-          <span className="text-[10px]" style={{ color: 'var(--ink-2)' }}>
-            Demand High · Competition Low
-          </span>
+        {/*
+          * A before/after pair, because this step is about PREVIEWING a
+          * change rather than making one. No rollback or undo is shown or
+          * named: the product does have a rollback window and it is a plan
+          * entitlement, which is a different promise from "you can see this
+          * before it happens", and only the second is what this card claims.
+          */}
+        <span className="mono mt-2 block text-[9px]" style={{ color: 'var(--muted-1)' }}>
+          Before
         </span>
         <span
-          className="mono mt-2 inline-block px-1.5 py-0.5 text-[8.5px] uppercase tracking-[0.06em]"
-          style={{ background: 'var(--canvas-soft)', color: 'var(--muted-1)', borderRadius: '3px' }}
+          className="mono block truncate px-1.5 py-0.5 text-[9.5px]"
+          style={{ background: 'var(--canvas-soft)', color: 'var(--danger)', borderRadius: '3px' }}
         >
-          Sample data
+          handmade mug, gift
+        </span>
+        <span className="mono mt-1 block text-[9px]" style={{ color: 'var(--muted-1)' }}>
+          After
+        </span>
+        <span
+          className="mono block truncate px-1.5 py-0.5 text-[9.5px]"
+          style={{ background: 'var(--canvas-soft)', color: 'var(--success)', borderRadius: '3px' }}
+        >
+          stoneware mug, espresso cup
         </span>
       </div>
     ),
   },
   {
-    title: 'Track and Improve',
-    body: 'Monitor shop performance, review changes, and make smarter decisions over time.',
+    title: 'Monitor & Improve',
+    body: 'Track shop performance, review meaningful changes, and refine your selling decisions.',
     art: (
       <div
         className="w-full max-w-[220px] border px-3 py-2.5"
@@ -1169,21 +1202,36 @@ export function HowItWorks() {
   return (
     <section id="how-it-works" className={SECTION} style={{ background: 'var(--surface)' }}>
       <div className={WRAP}>
-        <div className="mx-auto max-w-[46ch] text-center">
+        <div className="mx-auto max-w-[30rem] text-center">
           <Eyebrow>How It Works</Eyebrow>
-          <h2
-            className="display mt-2 text-[27px] leading-[1.15] md:text-[34px]"
-            style={{ color: 'var(--ink-1)' }}
-          >
-            From Connection to Growth
+          <h2 className="display t-h2 mt-3" style={{ color: 'var(--ink-1)' }}>
+            How CobaltRank Works
           </h2>
         </div>
+        <p className="t-lead mx-auto mt-4 max-w-[56ch] text-center" style={{ color: 'var(--ink-2)' }}>
+          Connect your shop, understand your numbers, improve your listings, and track what
+          changes.
+        </p>
 
-        <ol className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/*
+          * `step-grid` draws the connectors between cards on a wide screen —
+          * a hairline from each card's right edge to the next, in CSS, with
+          * no extra elements in the markup and nothing to read for a screen
+          * reader. It is off below `lg`, where the cards stack and a line
+          * pointing sideways would be describing a layout that is not there.
+          */}
+        <ol className="step-grid mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {HOW_IT_WORKS.map((step, index) => (
             <li
               key={step.title}
-              className="step-card flex flex-col overflow-hidden border"
+              /*
+               * No `overflow-hidden` here, deliberately. It clipped the
+               * connector hairline that `.step-grid > li::after` draws into
+               * the gutter — the line was being painted and then cut off at
+               * the card's own edge. The illustration rounds its own top
+               * corners instead, which is all the clipping was for.
+               */
+              className="step-card flex flex-col border"
               style={{
                 borderColor: 'var(--border)',
                 background: 'var(--surface)',
@@ -1191,25 +1239,27 @@ export function HowItWorks() {
               }}
             >
               <StepArt>{step.art}</StepArt>
-              <div className="flex flex-1 flex-col p-4">
+              <div className="flex flex-1 flex-col p-5">
+                {/*
+                  * Zero-padded and in the brand colour, because the number is
+                  * the thing that makes four cards read as a sequence rather
+                  * than as a feature grid.
+                  */}
                 <span
-                  className="mono text-[10px] uppercase tracking-[0.08em]"
-                  style={{ color: 'var(--muted-1)' }}
+                  className="figure text-[13px] font-semibold tracking-[0.06em]"
+                  style={{ color: 'var(--brand)' }}
                 >
-                  Step {index + 1}
+                  {String(index + 1).padStart(2, '0')}
                 </span>
-                <h3 className="display mt-1 text-[17px]" style={{ color: 'var(--ink-1)' }}>
+                <h3 className="display mt-1.5 text-[19px] leading-snug md:text-[21px]" style={{ color: 'var(--ink-1)' }}>
                   {step.title}
                 </h3>
-                <p
-                  className="mt-1.5 flex-1 text-[13px] leading-relaxed"
-                  style={{ color: 'var(--ink-2)' }}
-                >
+                <p className="t-note mt-2 flex-1" style={{ color: 'var(--ink-2)' }}>
                   {step.body}
                 </p>
                 {step.note ? (
                   <p
-                    className="mt-2.5 border-t pt-2.5 text-[11.5px] leading-snug"
+                    className="mt-3 border-t pt-3 text-[12px] leading-snug"
                     style={{ borderColor: 'var(--border)', color: 'var(--warning-ink)' }}
                   >
                     {step.note}
@@ -1220,7 +1270,7 @@ export function HowItWorks() {
           ))}
         </ol>
 
-        <div className="mt-9 flex justify-center">
+        <div className="mt-11 flex justify-center">
           <StartFree />
         </div>
       </div>
@@ -1242,18 +1292,12 @@ export function FinalCta() {
         }}
       >
         <Eyebrow onTint>Getting started</Eyebrow>
-        <h2
-          className="display mt-2 text-[27px] leading-[1.15] md:text-[34px]"
-          style={{ color: 'var(--ink-1)' }}
-        >
+        <h2 className="display t-h2 mt-3" style={{ color: 'var(--ink-1)' }}>
           Know your numbers.
           <br />
           <span style={{ color: 'var(--brand)' }}>Grow with confidence.</span>
         </h2>
-        <p
-          className="mx-auto mt-3 max-w-[52ch] text-[14.5px] leading-relaxed"
-          style={{ color: 'var(--ink-2)' }}
-        >
+        <p className="t-lead mx-auto mt-4 max-w-[54ch]" style={{ color: 'var(--ink-2)' }}>
           Start on the free plan — the calculators and the methodology, with no shop connection and
           no card. Connect a shop when you want the rest.
         </p>
@@ -1277,7 +1321,7 @@ export function FinalCta() {
           * in dark mode — the one place on the page where a secondary line
           * sits on a coloured panel rather than on a surface.
           */}
-        <p className="mt-4 text-[12.5px]" style={{ color: 'var(--ink-2)' }}>
+        <p className="t-note mt-5" style={{ color: 'var(--ink-2)' }}>
           Prefer to hear when the paid tiers open?{' '}
           <Link href="#waitlist" style={{ color: 'var(--brand-strong)', fontWeight: 600 }}>
             Join the waitlist

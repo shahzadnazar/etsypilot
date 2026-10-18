@@ -224,15 +224,16 @@ with sync_playwright() as p:
     # component. What is checked instead is the thing a restructure actually
     # breaks — a section appearing twice, a section not appearing at all, or
     # the sequence quietly rearranging.
-    headings = [h.strip() for h in page.locator("main h2, h2").all_inner_texts()]
+    headings = [h.strip() for h in page.locator("h2, h3").all_inner_texts()]
     joined = " | ".join(headings)
 
     for once in [
-        "Built to Help Etsy Sellers Grow Smarter",
+        "More Than Etsy SEO. Know What You Actually Made.",
         "Three questions, answered with your own numbers.",
-        "From Connection to Growth",
+        "How CobaltRank Works",
     ]:
-        check(headings.count(once) == 1, f"exactly one {once!r} section (found {headings.count(once)})")
+        found = sum(1 for h in headings if " ".join(h.split()) == once)
+        check(found == 1, f"exactly one {once!r} section (found {found})")
 
     for gone in [
         "Profit is hard on Etsy",
@@ -241,27 +242,93 @@ with sync_playwright() as p:
         "Eight things you can check",
         "Try the arithmetic",
         "Find keywords worth targeting",
+        # Folded into the Understand and Improve rows rather than shown twice.
+        "Revenue is not profit",
+        "A finding, a reason",
     ]:
         check(gone not in joined, f"the {gone!r} section is gone")
 
     # The order, read off the page rather than off the source.
     def position(fragment):
         for index, heading in enumerate(headings):
-            if fragment in heading:
+            if fragment in " ".join(heading.split()):
                 return index
         return -1
 
     sequence = [
-        position("Built to Help Etsy Sellers"),
+        position("More Than Etsy SEO"),
         position("Three questions"),
-        position("Revenue is not profit"),
-        position("A finding, a reason"),
+        position("Find Better Keywords"),
+        position("Know Your Real Profit"),
+        position("Fix Listings on Evidence"),
         position("What changed, and what nobody"),
         position("Make bulk changes"),
-        position("From Connection to Growth"),
+        position("How CobaltRank Works"),
     ]
     check(all(p >= 0 for p in sequence), f"every required section is on the page ({sequence})")
     check(sequence == sorted(sequence), f"the sections are in the owner's order ({sequence})")
+
+    # ── three rows of equal weight, alternating ───────────────────────────
+    #
+    # The defect this replaces: Discover had a two-column row with a dashboard
+    # beside it while Understand and Improve were small text cards, so one
+    # feature read as the product and two read as footnotes.
+    rows = {}
+    for row_id in ["discover", "profit", "listings"]:
+        row = page.locator(f"#{row_id}")
+        check(row.count() == 1, f"#{row_id} is on the page exactly once")
+        box = row.first.bounding_box()
+        rows[row_id] = box
+        # Each row carries its own heading, its own preview and its own CTA.
+        check(row.first.locator("h3").count() == 1, f"#{row_id} has one heading")
+        # Every preview is a `Panel`, and every Panel renders a "Sample data"
+        # marker in its chrome — which is a better test than looking for a
+        # <table>, because the audit panel is a list.
+        # Case-insensitive: the Panel's marker carries `text-transform:
+        # uppercase`, so `inner_text` returns it as rendered and a check
+        # written against the markup fails on a correct page.
+        check(
+            "sample data" in row.first.inner_text().lower(),
+            f"#{row_id} carries a product preview, labelled as sample data",
+        )
+        cta = row.first.get_by_role("link", name=re.compile(r"^Start for Free"))
+        check(cta.count() == 1, f"#{row_id} has exactly one Start for Free")
+        if cta.count() >= 1:
+            check(cta.first.get_attribute("href") == "/signup", f"#{row_id}'s CTA goes to /signup")
+
+    widths = [round(b["width"]) for b in rows.values()]
+    check(max(widths) - min(widths) <= 2, f"the three rows share a width ({widths})")
+
+    # Alternating: text left, text right, text left.
+    #
+    # Compared against the row's OTHER column rather than against the row's
+    # midpoint — the first version used the midpoint and reported all three
+    # rows as text-left, because the text column is the wider one and its left
+    # edge sits left of centre even when it is on the right-hand side.
+    sides = []
+    previews = []
+    for row_id in ["discover", "profit", "listings"]:
+        geometry = page.evaluate(
+            "(id) => { const row = document.getElementById(id);"
+            " const kids = [...row.children].map(c => ({"
+            "   heading: !!c.querySelector('h3'),"
+            "   x: c.getBoundingClientRect().x,"
+            "   w: Math.round(c.getBoundingClientRect().width) }));"
+            " return kids }",
+            row_id,
+        )
+        text = next(k for k in geometry if k["heading"])
+        other = next(k for k in geometry if not k["heading"])
+        sides.append("left" if text["x"] < other["x"] else "right")
+        previews.append(other["w"])
+
+    check(sides == ["left", "right", "left"], f"the rows alternate text and image ({sides})")
+    # And the three previews are the same size, which `order` alone did not
+    # give: it moved the preview into the narrow track.
+    check(
+        max(previews) - min(previews) <= 2,
+        f"the three product previews share a width ({previews})",
+    )
 
     # ── the Discover row carries the keyword panel ────────────────────────
     #
@@ -269,23 +336,25 @@ with sync_playwright() as p:
     # Questions section, with the same note it always carried.
     explorers = page.get_by_text("Keyword explorer", exact=True)
     check(explorers.count() == 1, f"one keyword explorer panel (found {explorers.count()})")
-    discover = page.locator("#features")
+    discover = page.locator("#discover")
     check(
         "Keyword explorer" in discover.inner_text(),
-        "and it sits inside the Three Questions section",
+        "and it sits inside the Discover row",
     )
-    check("Find better keywords" in discover.inner_text(), "beside the Discover heading")
+    check("Find Better Keywords" in discover.inner_text(), "beside the Discover heading")
     check(
         "Etsy publishes no search volume" in discover.inner_text(),
         "with the search-volume position that came with it",
     )
-    check(
-        page.locator("#keywords").count() == 1,
-        "the #keywords anchor still resolves, on the row that now holds it",
-    )
+
+    # One waterfall and one audit panel on the page, not two of each.
+    for once, where in [("Where a month of revenue went", "#profit"), ("Listing audit", "#listings")]:
+        panels = page.get_by_text(once, exact=True)
+        check(panels.count() == 1, f"one {once!r} panel (found {panels.count()})")
+        check(once in page.locator(where).inner_text(), f"and it sits in {where}")
 
     # ── every section that should have one has a Start for Free ───────────
-    for section_id in ["why", "features", "profit", "listings", "performance", "bulk", "how-it-works"]:
+    for section_id in ["why", "features", "performance", "bulk", "how-it-works"]:
         section = page.locator(f"#{section_id}")
         links = section.get_by_role("link", name=re.compile(r"^Start for Free"))
         check(links.count() >= 1, f"#{section_id} has a Start for Free button")
@@ -295,14 +364,41 @@ with sync_playwright() as p:
                 f"#{section_id}'s button goes to /signup",
             )
 
-    # The two secondary links the owner asked to keep, pointing at the
-    # sections they name.
-    for label, target in [("#profit", "profit"), ("#listings", "listings")]:
-        check(
-            page.locator(f"#features a[href='{label}']").count() == 1,
-            f"the Understand/Improve card still links to {label}",
+    # ── the type scale, measured ──────────────────────────────────────────
+    #
+    # The page read as organised and understated. These are the floors the new
+    # scale was built to clear, measured in the browser rather than asserted
+    # against a class name — a clamp() that resolves wrong is still wrong.
+    def size(selector):
+        return page.evaluate(
+            "(sel) => { const e = document.querySelector(sel);"
+            " return e ? parseFloat(getComputedStyle(e).fontSize) : 0 }",
+            selector,
         )
-        check(page.locator(f"#{target}").count() == 1, f"and #{target} is on the page")
+
+    h1 = size("h1")
+    check(h1 >= 48, f"the hero h1 is at least 48px on a wide screen ({h1}px)")
+    h2 = size("#why h2")
+    check(h2 >= 36, f"a section h2 is at least 36px ({h2}px)")
+    h3 = size("#discover h3")
+    check(h3 >= 28, f"a feature row h3 is at least 28px ({h3}px)")
+    lead = size("#why p.t-lead")
+    check(lead >= 17.5, f"the lead paragraph is at least 17.5px ({lead}px)")
+    # `body_size`, not `body` — the page's own text is in `body` further up,
+    # and shadowing it made the sample-shop check downstream call .lower() on
+    # a float. A variable named after its type rather than its subject.
+    body_size = size("#discover p.t-body")
+    check(body_size >= 16, f"a feature paragraph is at least 16px ({body_size}px)")
+    # And the hierarchy is a hierarchy, not four sizes that happen to be big.
+    check(
+        h1 > h2 > h3 > lead >= body_size,
+        f"the levels descend ({h1} > {h2} > {h3} > {lead} >= {body_size})",
+    )
+
+    # The dashboard panels keep their density. A 17px table cell is a
+    # different product, not better typography.
+    cell = size("#discover table tbody td")
+    check(cell <= 14, f"product-preview table text stays dense ({cell}px)")
 
     # ── the sample data says it is sample data ─────────────────────────────
     #

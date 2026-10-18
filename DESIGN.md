@@ -119,8 +119,44 @@ in place for the display voice and is kept: the page is a financial document,
 not a product launch, and swapping it would have been a redesign rather than an
 implementation. Sizes and the tight negative tracking follow the export.
 
-Scale: `app/globals` sets `caption 11 · label 12 · small 13 · body 14 · section
-18 · page 26 · metric 30 · display 36`, in `tailwind.config.ts`.
+### The marketing scale
+
+Six classes in `styles/marketing.css`, each a `clamp()` between a mobile floor
+and a desktop ceiling, so a heading is never caught at a size nobody chose —
+the failure mode of `text-[27px] md:text-[34px]`, which jumps at exactly 768px
+and is wrong on both sides of it in a 900px window.
+
+| Class | Mobile | Desktop | Line height | Used for |
+|---|---|---|---|---|
+| `.t-h1` | 34px | 56px | 1.08 | The one page heading |
+| `.t-h2` | 28px | 42px | 1.14 | Section headings |
+| `.t-h3` | 25px | 32px | 1.18 | Feature-row headings |
+| `.t-lead` | 16px | 19px | 1.6 | The paragraph under a section heading |
+| `.t-body` | 16px | 17.5px | 1.62 | Feature prose |
+| `.t-note` | 13px | 14px | 1.55 | Caveats, sample-data notes, captions |
+| `.t-eyebrow` | 12px | 13.5px | 1.3 | Section labels, uppercase, 0.1em tracked |
+
+Buttons are 15.5px on a 48px target; navigation links are 15px on 42px.
+
+**The ratios are not uniform, deliberately.** Headings grew by about a quarter
+and body copy by about a fifth, so the distance between them widened. Scaling
+everything by the same percentage makes a page bigger and no easier to scan;
+what makes it scannable is the gap between levels.
+
+**None of it reaches a product preview.** Every number, table label and metric
+inside a dashboard panel keeps its own explicit size — a 17px table cell is not
+denser typography, it is a different product. `tests/browser/landing-page.py`
+measures both halves of that: the marketing levels must descend h1 > h2 > h3 >
+lead ≥ body, and a preview's table text must stay at or under 14px.
+
+**Measure is set in `rem`, never `ch`, on a heading wrapper.** `ch` resolves
+against the element's own font, and a wrapper div inherits the 16px body face —
+so `max-w-[32ch]` came out at about 290px and broke a 42px serif heading
+mid-sentence.
+
+The product's own scale is unchanged: `app/globals` sets `caption 11 · label 12
+· small 13 · body 14 · section 18 · page 26 · metric 30 · display 36`, in
+`tailwind.config.ts`.
 
 ---
 

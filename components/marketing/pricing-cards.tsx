@@ -394,20 +394,17 @@ export function PricingSection({ interval }: { interval: PublicBillingInterval }
       style={{ borderColor: 'var(--border)', background: 'var(--canvas-soft)' }}
     >
       <div className="mx-auto max-w-[1180px] px-5 py-16 md:py-20">
-        <div className="flex flex-col items-center text-center">
+        <div className="mx-auto flex max-w-[34rem] flex-col items-center text-center">
           <p
-            className="mono text-[11px] font-semibold uppercase tracking-[0.1em]"
+            className="mono t-eyebrow font-semibold"
             style={{ color: 'var(--brand-strong)' }}
           >
             Simple, transparent pricing
           </p>
-          <h2
-            className="display mt-3 text-[28px] leading-[1.15] md:text-[36px]"
-            style={{ color: 'var(--ink-1)' }}
-          >
+          <h2 className="display t-h2 mt-3" style={{ color: 'var(--ink-1)' }}>
             Choose Your Growth Plan
           </h2>
-          <p className="mt-3 max-w-[44ch] text-[14.5px] leading-relaxed" style={{ color: 'var(--ink-2)' }}>
+          <p className="t-lead mt-4 max-w-[46ch]" style={{ color: 'var(--ink-2)' }}>
             Start free. Upgrade when your shop needs more.
           </p>
 

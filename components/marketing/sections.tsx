@@ -210,7 +210,7 @@ export function MarketingFooter() {
           <FooterColumn
             title="Product"
             links={[
-              { label: 'Keyword research', href: '/#keywords' },
+              { label: 'Keyword research', href: '/#discover' },
               /*
                 * The homepage calculator section is gone, so this points at
                 * the calculator that has a URL of its own — a real public

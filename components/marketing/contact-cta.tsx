@@ -22,13 +22,13 @@ export function ContactCta() {
     >
       <div className="mx-auto flex max-w-[1180px] flex-col items-center px-5 py-14 text-center md:py-18">
         <h2
-          className="display text-[26px] leading-[1.15] md:text-[32px]"
+          className="display t-h2"
           style={{ color: 'var(--ink-1)' }}
         >
           Need Help Choosing?
         </h2>
         <p
-          className="mt-3 max-w-[52ch] text-[14.5px] leading-relaxed"
+          className="t-lead mt-4 max-w-[52ch]"
           style={{ color: 'var(--ink-2)' }}
         >
           Have a question about plans or features? We&rsquo;re here to help.
@@ -37,9 +37,9 @@ export function ContactCta() {
         <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
           <Link
             href="/contact"
-            className="plan-cta inline-flex items-center gap-1.5 px-5 text-[14px] font-semibold"
+            className="plan-cta inline-flex items-center gap-1.5 px-6 text-[15.5px] font-semibold"
             style={{
-              minHeight: '44px',
+              minHeight: '48px',
               background: 'var(--brand)',
               color: 'var(--on-brand)',
               borderRadius: 'var(--paper-radius)',
@@ -59,9 +59,9 @@ export function ContactCta() {
             */}
           <a
             href="/api/demo/enter"
-            className="inline-flex items-center border px-5 text-[14px] font-semibold"
+            className="inline-flex items-center border px-6 text-[15.5px] font-semibold"
             style={{
-              minHeight: '44px',
+              minHeight: '48px',
               borderColor: 'var(--border-strong)',
               background: 'var(--surface)',
               color: 'var(--ink-1)',

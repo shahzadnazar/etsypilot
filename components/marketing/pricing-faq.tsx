@@ -138,10 +138,7 @@ export function PricingFaq({ interval }: { interval: PublicBillingInterval }) {
   return (
     <section id="faq" className="border-t" style={{ borderColor: 'var(--border)' }}>
       <div className="mx-auto max-w-[820px] px-5 py-16 md:py-20">
-        <h2
-          className="display text-[28px] leading-[1.15] md:text-[34px]"
-          style={{ color: 'var(--ink-1)' }}
-        >
+        <h2 className="display t-h2" style={{ color: 'var(--ink-1)' }}>
           Frequently Asked Questions
         </h2>
 
@@ -149,8 +146,8 @@ export function PricingFaq({ interval }: { interval: PublicBillingInterval }) {
           {items(interval).map((item) => (
             <details key={item.q} className="faq-row border-b" style={{ borderColor: 'var(--border)' }}>
               <summary
-                className="flex cursor-pointer list-none items-center justify-between gap-4 py-4 text-[16px] font-semibold"
-                style={{ color: 'var(--ink-1)', minHeight: '56px' }}
+                className="t-body flex cursor-pointer list-none items-center justify-between gap-4 py-4 font-semibold"
+                style={{ color: 'var(--ink-1)', minHeight: '58px' }}
               >
                 {item.q}
                 {/*
@@ -169,7 +166,7 @@ export function PricingFaq({ interval }: { interval: PublicBillingInterval }) {
                 </span>
               </summary>
               <p
-                className="max-w-[72ch] pb-5 text-[14px] leading-relaxed"
+                className="t-note max-w-[72ch] pb-5"
                 style={{ color: 'var(--ink-2)' }}
               >
                 {item.a}
